@@ -7,23 +7,78 @@
 <div class="tabs"><button class="tab active">市场</button><button class="tab">钱包</button><button class="tab">排行榜</button></div>
 <div class="hero"><div class="card"><div class="label">ZHI / VIRTUAL</div><div class="big">1.00 ZHI</div><div class="up">+2.48% 模拟 24h</div><div class="spark"><i style="height:22%"></i><i style="height:28%"></i><i style="height:20%"></i><i style="height:31%"></i><i style="height:27%"></i><i style="height:38%"></i><i style="height:34%"></i><i style="height:42%"></i><i style="height:35%"></i><i style="height:47%"></i><i style="height:41%"></i><i style="height:50%"></i></div></div><div class="card"><div class="label">财神爷 · Treasury</div><div class="big" id="total">300,000,000,000,000,000</div><div class="label">ZHI · 3亿亿总额</div><div style="margin-top:13px;font-size:12px">流通模拟：用户预测、奖励、转账</div></div></div>
 <div class="notice">📈 参考虚拟币交易所的界面：价格、涨跌、钱包、市场深度、历史记录。这里的 ZHI 仅用于模拟预测市场。</div>
-<h3 class="section">热门预测市场</h3><div id="markets"></div><h3 class="section">交易历史</h3><div id="history" class="card table"></div><footer>ZHI知币 · Crypto Prediction Demo · ZHI 无现实货币价值</footer></main><div id="toast" class="toast"></div><script src="settlement.js"></script><script>
-const AK='zhi-coin-accounts-v1',SK='zhi-coin-session-v1',START=1000,TREASURY='财神爷',TOTAL_ZHI=300000000000000000;
-const seed=()=>[
-{id:'m1',q:'英伟达股价本周五收盘是否高于 200 美元？',meta:'市场预测 · 截止本周五 16:00',pool:{yes:620,no:340},status:'open'},
-{id:'m2',q:'国足下一场客场比赛能否取胜？',meta:'赛事预测 · 截止比赛开球前',pool:{yes:180,no:540},status:'open'},
-{id:'m3',q:'本季度某科技公司是否会发布新款旗舰手机？',meta:'事件预测 · 截止季度末',pool:{yes:410,no:260},status:'open'},
-{id:'m4',q:'上周预测：某新闻事件是否会登上热搜榜首？',meta:'已结算 · 历史市场',pool:{yes:700,no:300},status:'resolved',result:'yes'}];
-let accounts=JSON.parse(localStorage.getItem(AK)||'{}'),currentUser=localStorage.getItem(SK)||null,mode='login';
-function treasury(){if(!accounts[TREASURY])accounts[TREASURY]={balance:TOTAL_ZHI,markets:seed(),stakes:{},history:[],treasury:true};accounts[TREASURY].balance=TOTAL_ZHI;localStorage.setItem(AK,JSON.stringify(accounts))}
-treasury();
-const save=()=>localStorage.setItem(AK,JSON.stringify(accounts)),hash=s=>{let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))>>>0;return h.toString(16)},toast=m=>{const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1600)},state=()=>accounts[currentUser],pct=p=>{let t=p.yes+p.no;return t?{y:p.yes/t*100,n:p.no/t*100}:{y:50,n:50}};
-function auth(){const u=authUsername.value.trim(),p=authPassword.value;if(u===TREASURY)return err('财神爷为总账账户，不能登录');if(u.length<2||p.length<6)return err('用户名至少2位，密码至少6位');if(mode==='signup'){if(accounts[u])return err('用户名已存在');accounts[u]={passwordHash:hash(p),balance:START,markets:seed(),stakes:{},history:[{time:Date.now(),desc:'注册奖励',amount:START}]};save();login(u)}else{if(!accounts[u])return err('账户不存在');if(accounts[u].passwordHash!==hash(p))return err('密码错误');login(u)}}
+<h3 class="section">热门预测市场</h3><div id="markets"></div><h3 class="section">交易历史</h3><div id="history" class="card table"></div><footer>ZHI知币 · Crypto Prediction Demo · ZHI 无现实货币价值</footer></main><div id="toast" class="toast"></div><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-client.js"></script><script src="settlement.js"></script><script>
+const sb=window.zhiSupabase;
+let currentUser=null,mode='login',profile=null,wallet=null,marketsData=[],positionsData=[],historyData=[];
+const money=n=>Number(n||0).toLocaleString();
+const toast=m=>{const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1600)};
 function err(x){authError.textContent=x}
-function login(u){currentUser=u;localStorage.setItem(SK,u);authScreen.classList.add('hidden');app.classList.remove('hidden');user.textContent=u;render()}
-function render(){const s=state();balance.textContent=s.balance.toLocaleString();total.textContent=TOTAL_ZHI.toLocaleString();const c=markets;c.innerHTML='';s.markets.forEach(m=>{const p=pct(m.pool),mine=s.stakes[m.id],d=document.createElement('div');d.className='card market';d.innerHTML='<div class="q">'+m.q+'</div><div class="meta">'+m.meta+(mine?' · 已预测 '+mine.amount.toLocaleString()+' ZHI':'')+'</div><div class="bar"><div class="yes" style="width:'+p.y+'%"></div><div class="no" style="width:'+p.n+'%"></div></div><div class="stats"><span class="up">是 '+m.pool.yes+' ZHI</span><span class="down">否 '+m.pool.no+' ZHI</span></div><div class="row"><button class="btn y" data-id="'+m.id+'" data-side="yes" '+(m.status!=='open'?'disabled':'')+'>买入「是」</button><button class="btn n" data-id="'+m.id+'" data-side="no" '+(m.status!=='open'?'disabled':'')+'>买入「否」</button></div><div class="stake" id="s-'+m.id+'"><input type="number" min="1" id="a-'+m.id+'" placeholder="输入 ZHI 数量"><button class="btn g confirm" data-id="'+m.id+'">确认</button></div>'+(m.status==='resolved'?'<div class="meta" style="margin-top:10px">✓ 已结算结果：'+(m.result==='yes'?'是':'否')+'</div>':'' );c.appendChild(d)});c.querySelectorAll('[data-side]').forEach(b=>b.onclick=()=>{c.querySelectorAll('.stake').forEach(x=>x.classList.remove('show'));let x=document.getElementById('s-'+b.dataset.id);x.dataset.side=b.dataset.side;x.classList.add('show')});c.querySelectorAll('.confirm').forEach(b=>b.onclick=()=>stake(b.dataset.id));renderHistory()}
-function stake(id){const s=state(),box=document.getElementById('s-'+id),amt=Math.floor(Number(document.getElementById('a-'+id).value)),m=s.markets.find(x=>x.id===id);if(!amt||amt<1)return toast('请输入有效数量');if(amt>s.balance)return toast('ZHI 余额不足');const side=box.dataset.side;s.balance-=amt;m.pool[side]+=amt;s.stakes[id]={side,amount:(s.stakes[id]?.amount||0)+amt};s.history.unshift({time:Date.now(),desc:'预测「'+(side==='yes'?'是':'否')+'」 · '+m.q,amount:-amt});save();render();toast('已买入 '+amt.toLocaleString()+' ZHI')}
-function renderHistory(){const a=state().history||[];history.innerHTML=a.length?a.slice(0,10).map(h=>'<div class="tr"><span>'+h.desc+'<small class="muted"> · '+new Date(h.time).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})+'</small></span><b class="'+(h.amount>=0?'pos':'neg')+'">'+(h.amount>=0?'+':'')+h.amount.toLocaleString()+' ZHI</b></div>').join(''):'<div class="tr muted">暂无交易记录</div>'}
-authSubmit.onclick=auth;authSwitchBtn.onclick=()=>{mode=mode==='login'?'signup':'login';authSub.textContent=mode==='login'?'登录账户，开始预测':'创建你的 ZHI 账户';authSubmit.textContent=mode==='login'?'登录':'注册';authSwitchBtn.textContent=mode==='login'?'立即注册':'直接登录';authSwitchText.textContent=mode==='login'?'还没有账户？':'已有账户？';err('')};logout.onclick=()=>{localStorage.removeItem(SK);location.reload()};document.querySelectorAll('.tab').forEach(x=>x.onclick=()=>document.querySelectorAll('.tab').forEach(y=>y.classList.remove('active'))||x.classList.add('active'));
-if(currentUser&&accounts[currentUser])login(currentUser);
+async function loadCloud(){
+  const {data:{user}}=await sb.auth.getUser();
+  if(!user){authScreen.classList.remove('hidden');app.classList.add('hidden');return}
+  currentUser=user;
+  const [p,w,m,pos,h]=await Promise.all([
+    sb.from('profiles').select('*').eq('id',user.id).single(),
+    sb.from('wallets').select('*').eq('user_id',user.id).single(),
+    sb.from('markets').select('*').order('created_at',{ascending:true}),
+    sb.from('positions').select('*').eq('user_id',user.id).eq('status','open'),
+    sb.from('transactions').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(20)
+  ]);
+  if(p.error||w.error){toast('账户数据读取失败');return}
+  profile=p.data;wallet=w.data;marketsData=m.data||[];positionsData=pos.data||[];historyData=h.data||[];
+  authScreen.classList.add('hidden');app.classList.remove('hidden');user.textContent=profile.username;render();
+}
+async function auth(){
+  const u=authUsername.value.trim(),p=authPassword.value;
+  if(u==='财神爷')return err('财神爷为总账账户，不能登录');
+  if(u.length<2||p.length<6)return err('用户名至少2位，密码至少6位');
+  const email=u.toLowerCase()+'@zhi.local';
+  authError.textContent='';
+  authSubmit.disabled=true;
+  try{
+    if(mode==='signup'){
+      const {data,error}=await sb.auth.signUp({email,password:p,options:{data:{username:u}}});
+      if(error)throw error;
+      if(data.session){toast('注册成功，已发放 1000 ZHI');await loadCloud();}
+      else err('注册成功。若开启了邮箱验证，请先完成验证后登录。');
+    }else{
+      const {error}=await sb.auth.signInWithPassword({email,password:p});
+      if(error)throw error;
+      await loadCloud();
+    }
+  }catch(e){err(e.message||'操作失败')}finally{authSubmit.disabled=false}
+}
+async function render(){
+  balance.textContent=money(wallet?.balance);total.textContent='300,000,000,000,000,000';
+  markets.innerHTML='';
+  marketsData.forEach(m=>{
+    const yes=Number(m.yes_pool),no=Number(m.no_pool),t=yes+no,y=t?yes/t*100:50,n=t?no/t*100:50;
+    const mine=positionsData.find(x=>x.market_id===m.id);
+    const d=document.createElement('div');d.className='card market';
+    d.innerHTML='<div class="q">'+m.question+'</div><div class="meta">截止 '+new Date(m.close_at).toLocaleString('zh-CN')+(mine?' · 已预测 '+money(mine.stake)+' ZHI':'')+'</div><div class="bar"><div class="yes" style="width:'+y+'%"></div><div class="no" style="width:'+n+'%"></div></div><div class="stats"><span class="up">是 '+money(yes)+' ZHI</span><span class="down">否 '+money(no)+' ZHI</span></div><div class="row"><button class="btn y" data-id="'+m.id+'" data-side="yes" '+(m.status!=='open'||mine?'disabled':'')+'>买入「是」</button><button class="btn n" data-id="'+m.id+'" data-side="no" '+(m.status!=='open'||mine?'disabled':'')+'>买入「否」</button></div><div class="stake" id="s-'+m.id+'"><input type="number" min="1" id="a-'+m.id+'" placeholder="输入 ZHI 数量"><button class="btn g confirm" data-id="'+m.id+'">确认</button></div>'+(m.status==='resolved'?'<div class="meta" style="margin-top:10px">✓ 已结算结果：'+(m.result==='yes'?'是':'否')+'</div>':'');
+    markets.appendChild(d);
+  });
+  markets.querySelectorAll('[data-side]').forEach(b=>b.onclick=()=>{markets.querySelectorAll('.stake').forEach(x=>x.classList.remove('show'));let x=document.getElementById('s-'+b.dataset.id);x.dataset.side=b.dataset.side;x.classList.add('show')});
+  markets.querySelectorAll('.confirm').forEach(b=>b.onclick=()=>stake(b.dataset.id));
+  renderHistory();
+}
+async function stake(id){
+  const box=document.getElementById('s-'+id),amt=Math.floor(Number(document.getElementById('a-'+id).value)),side=box.dataset.side;
+  if(!amt||amt<1)return toast('请输入有效数量');
+  if(amt>Number(wallet.balance))return toast('ZHI 余额不足');
+  try{
+    const {error}=await sb.rpc('place_stake',{p_market_id:id,p_side:side,p_amount:amt});
+    if(error)throw error;
+    toast('已买入 '+money(amt)+' ZHI');
+    await loadCloud();
+  }catch(e){toast(e.message||'下注失败')}
+}
+function renderHistory(){
+  history.innerHTML=historyData.length?historyData.slice(0,10).map(h=>'<div class="tr"><span>'+(h.description||h.type)+'<small class="muted"> · '+new Date(h.created_at).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})+'</small></span><b class="'+(Number(h.amount)>=0?'pos':'neg')+'">'+(Number(h.amount)>=0?'+':'')+money(h.amount)+' ZHI</b></div>').join(''):'<div class="tr muted">暂无交易记录</div>';
+}
+authSubmit.onclick=auth;
+authSwitchBtn.onclick=()=>{mode=mode==='login'?'signup':'login';authSub.textContent=mode==='login'?'登录账户，开始预测':'创建你的 ZHI 账户';authSubmit.textContent=mode==='login'?'登录':'注册';authSwitchBtn.textContent=mode==='login'?'立即注册':'直接登录';authSwitchText.textContent=mode==='login'?'还没有账户？':'已有账户？';err('')};
+logout.onclick=async()=>{await sb.auth.signOut();location.reload()};
+document.querySelectorAll('.tab').forEach(x=>x.onclick=()=>document.querySelectorAll('.tab').forEach(y=>y.classList.remove('active'))||x.classList.add('active'));
+loadCloud();
 </script></body></html>

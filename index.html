@@ -39,7 +39,16 @@ footer{text-align:center;color:#aaa;font-size:11px;margin-top:24px}
 
 <h2>🎯 预测市场 / Prediction Markets</h2><div id="markets"></div>
 <div id="expiredPanel" class="hidden"><h2>⏰ 已到期 / Expired</h2><div id="expiredMarkets"></div></div>
-<div id="adminPanel" class="hidden"><h2>🛠️ 管理员 / Admin</h2><div id="adminMarkets"></div></div>
+<div id="adminPanel" class="hidden"><h2>🛠️ 管理员 / Admin</h2>
+<div class="card">
+  <div class="q">➕ 新增市场 / Create Market</div>
+  <div class="field"><label>市场 ID / Market ID</label><input id="newMarketId" placeholder="m5"></div>
+  <div class="field"><label>问题 / Question</label><input id="newMarketQuestion" placeholder="例如：某事件是否会发生？ / e.g. Will this event happen?"></div>
+  <div class="field"><label>截止时间 / Close Time</label><input id="newMarketCloseAt" type="datetime-local"></div>
+  <button id="createMarketBtn" class="btn confirm" style="width:100%">创建市场 / Create Market</button>
+  <div id="createMarketError" class="err" style="margin-top:8px"></div>
+</div>
+<div id="adminMarkets"></div></div>
 
 <h2>🧾 我的记录 / My Records</h2><div id="history" class="card history"></div>
 <button id="logout" class="link" style="display:block;margin:18px auto">退出登录 / Sign out</button>
@@ -96,6 +105,7 @@ $('markets').querySelectorAll('[data-confirm]').forEach(b=>b.onclick=()=>stake(b
  const isAdmin=user?.app_metadata?.role==='admin';
  $('adminPanel').classList.toggle('hidden',!isAdmin);
  if(isAdmin){
+   $('createMarketBtn').onclick=createMarket;
    $('adminMarkets').innerHTML=expired.length?expired.map(m=>
      '<div class="card"><div class="q">'+m.question+'</div>'+
      '<div class="meta">市场 ID / Market ID: '+m.id+' · '+new Date(m.close_at).toLocaleString('zh-CN')+'</div>'+
@@ -105,6 +115,24 @@ $('markets').querySelectorAll('[data-confirm]').forEach(b=>b.onclick=()=>stake(b
    ).join(''):'<div class="card">暂无待结算市场。 / No markets awaiting settlement.</div>';
    $('adminMarkets').querySelectorAll('[data-admin-result]').forEach(b=>b.onclick=()=>adminSetResult(b.dataset.adminResult,b.dataset.result));
  }
+}
+async function createMarket(){
+ const id=$('newMarketId').value.trim();
+ const question=$('newMarketQuestion').value.trim();
+ const closeValue=$('newMarketCloseAt').value;
+ $('createMarketError').textContent='';
+ if(!id||!question||!closeValue)return $('createMarketError').textContent='请填写完整 / Please complete all fields';
+ const closeAt=new Date(closeValue);
+ if(Number.isNaN(closeAt.getTime())||closeAt<=new Date())return $('createMarketError').textContent='截止时间必须是未来时间 / Close time must be in the future';
+ const btn=$('createMarketBtn');btn.disabled=true;
+ try{
+   const {error}=await sb.rpc('admin_create_market',{p_market_id:id,p_question:question,p_close_at:closeAt.toISOString()});
+   if(error)throw error;
+   alert('市场创建成功 / Market created');
+   $('newMarketId').value='';$('newMarketQuestion').value='';$('newMarketCloseAt').value='';
+   await load();
+ }catch(e){$('createMarketError').textContent=e.message||'创建失败 / Creation failed'}
+ finally{btn.disabled=false}
 }
 async function adminSetResult(id,result){
  const label=result==='yes'?'YES':'NO';

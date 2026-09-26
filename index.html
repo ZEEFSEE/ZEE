@@ -123,7 +123,6 @@ $('giftNoticeBtn').onclick=async()=>{if(Number($('giftNoticeCount').textContent)
  if(isAdmin){
    $('createMarketBtn').onclick=createMarket;
    $('refreshUsersBtn').onclick=loadAdminUsers;
-   $('transferBtn').onclick=transferZHI;
    loadAdminUsers();
    const editable=marketsData.filter(m=>m.status==='open'||m.status==='closed');
    $('adminMarkets').innerHTML=editable.length?editable.map(m=>
@@ -262,6 +261,7 @@ function renderHistory(list){
  $('history').innerHTML=list.length?list.map(x=>'<div class="row"><span>'+ (x.description||x.type)+'</span><b>'+(Number(x.amount)>=0?'+':'')+money(x.amount)+' ZHI</b></div>').join(''):'暂无记录 / No records yet';
 }
 let mode='login';
+$('transferBtn').onclick=transferZHI;
 $('authSubmit').onclick=async()=>{
  const u=$('authUsername').value.trim(),p=$('authPassword').value;
  if(!/^[a-zA-Z0-9_]{2,24}$/.test(u))return showErr('用户名 / Username只能用 2-24 位英文字母、数字或下划线');if(p.length<6)return showErr('密码 / Password至少6位');

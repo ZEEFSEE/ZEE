@@ -34,7 +34,7 @@ footer{text-align:center;color:#aaa;font-size:11px;margin-top:24px}
 </div></section>
 
 <main id="app" class="wrap hidden">
-<div class="top"><div class="brand">💰 ZHI</div><div class="balance">余额 / Balance <span id="balance">--</span> ZHI</div></div>
+<div class="top"><div class="brand">💰 ZHI</div><div style="display:flex;align-items:center;gap:8px"><button id="giftNoticeBtn" class="btn" style="display:none;flex:0 0 auto;padding:8px 10px;background:#fff3cd;color:#8a6500;border:1px solid #ffe69c">🎁 <span id="giftNoticeCount">0</span></button><div class="balance">余额 / Balance <span id="balance">--</span> ZHI</div></div></div><div id="giftNotice" class="notice hidden"></div>
 <div class="card"><div class="total">ZHI Treasury · Total / ZHI 总额</div><div class="big">3,000,000,000,000 ZHI</div></div>
 
 <h2>🎯 预测市场 / Prediction Markets</h2><div id="markets"></div>
@@ -85,7 +85,7 @@ async function load(){
  wallet=w.data;marketsData=m.data||[];positions=p.data||[];
  $('balance').textContent=money(wallet?.balance);
  $('authScreen').classList.add('hidden');$('app').classList.remove('hidden');
- renderMarkets();renderHistory(h.data||[]);
+ renderMarkets();renderHistory(h.data||[]);await loadGiftNotice();
 }
 function renderMarkets(){
  const open=marketsData.filter(m=>m.status==='open'&&new Date(m.close_at)>new Date());
@@ -130,6 +130,25 @@ $('markets').querySelectorAll('[data-confirm]').forEach(b=>b.onclick=()=>stake(b
    $('adminMarkets').querySelectorAll('[data-admin-cancel]').forEach(b=>b.onclick=()=>cancelMarket(b.dataset.adminCancel));
    $('adminMarkets').querySelectorAll('[data-admin-result]').forEach(b=>b.onclick=()=>adminSetResult(b.dataset.adminResult,b.dataset.result));
  }
+}
+async function loadGiftNotice(){
+ const {data,error}=await sb.from('transactions').select('id,amount,description,metadata,created_at').eq('user_id',user.id).eq('type','transfer_in').order('created_at',{ascending:false}).limit(5);
+ const box=$('giftNotice'),btn=$('giftNoticeBtn'),count=$('giftNoticeCount');
+ if(error||!data?.length){btn.style.display='none';box.classList.add('hidden');return}
+ const unseen=data.slice(0,3);
+ const ids=[...new Set(unseen.map(x=>x.metadata?.from_user_id).filter(Boolean))];
+ let names={};
+ if(ids.length){
+   const {data:profiles}=await sb.from('profiles').select('id,username').in('id',ids);
+   (profiles||[]).forEach(p=>names[p.id]=p.username);
+ }
+ count.textContent=data.length;
+ btn.style.display='block';
+ box.classList.remove('hidden');
+ box.innerHTML='🎁 收到 ZHI / Received ZHI：'+unseen.map(x=>{
+   const from=names[x.metadata?.from_user_id]||'用户 / User';
+   return '<div style="margin-top:4px"><b>'+from+'</b> 赠送了 <b>'+money(x.amount)+' ZHI</b> · '+new Date(x.created_at).toLocaleString('zh-CN')+'</div>';
+ }).join('');
 }
 async function createMarket(){
  const id=$('newMarketId').value.trim();

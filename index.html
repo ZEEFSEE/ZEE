@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -24,30 +24,30 @@ footer{text-align:center;color:#aaa;font-size:11px;margin-top:24px}
 </head>
 <body>
 <section id="authScreen" class="auth"><div class="authbox">
-<h1>💰 ZHI</h1><p id="authSub">登录账户，开始预测</p>
-<div class="field"><label>用户名</label><input id="authUsername" placeholder="zhi_player"></div>
-<div class="field"><label>密码</label><input id="authPassword" type="password" placeholder="至少 6 位"></div>
+<h1>💰 ZHI</h1><p id="authSub">登录 / Sign in账户 / Sign in to predict</p>
+<div class="field"><label>用户名 / Username</label><input id="authUsername" placeholder="zhi_player"></div>
+<div class="field"><label>密码 / Password</label><input id="authPassword" type="password" placeholder="至少 6 位 / Min. 6 characters"></div>
 <div id="authError" class="err"></div>
-<button id="authSubmit" class="btn confirm" style="width:100%">登录</button>
-<p style="text-align:center;color:#777;font-size:13px"><span id="switchText">还没有账户？</span> <button id="authSwitchBtn" class="link">立即注册</button></p>
-<div class="notice">ZHI 为本网站预测演示积分。</div>
+<button id="authSubmit" class="btn confirm" style="width:100%">登录 / Sign in</button>
+<p style="text-align:center;color:#777;font-size:13px"><span id="switchText">还没有账户？ / No account?</span> <button id="authSwitchBtn" class="link">立即注册 / Register</button></p>
+<div class="notice">ZHI is the prediction demo balance. / ZHI 为本网站预测演示积分。</div>
 </div></section>
 
 <main id="app" class="wrap hidden">
-<div class="top"><div class="brand">💰 ZHI</div><div class="balance">余额 <span id="balance">--</span> ZHI</div></div>
-<div class="card"><div class="total">财神爷 · ZHI 总额</div><div class="big">3,000,000,000,000 ZHI</div></div>
+<div class="top"><div class="brand">💰 ZHI</div><div class="balance">余额 / Balance <span id="balance">--</span> ZHI</div></div>
+<div class="card"><div class="total">ZHI Treasury · Total / ZHI 总额</div><div class="big">3,000,000,000,000 ZHI</div></div>
 
-<h2>🎯 预测市场</h2><div id="markets"></div>
-<div id="expiredPanel" class="hidden"><h2>⏰ 已到期</h2><div id="expiredMarkets"></div></div>
+<h2>🎯 预测市场 / Prediction Markets</h2><div id="markets"></div>
+<div id="expiredPanel" class="hidden"><h2>⏰ 已到期 / Expired</h2><div id="expiredMarkets"></div></div>
 
-<h2>🧾 我的记录</h2><div id="history" class="card history"></div>
-<button id="logout" class="link" style="display:block;margin:18px auto">退出登录</button>
+<h2>🧾 我的记录 / My Records</h2><div id="history" class="card history"></div>
+<button id="logout" class="link" style="display:block;margin:18px auto">退出登录 / Sign out / Sign in</button>
 <footer>ZHI · Prediction Demo</footer>
 </main>
 <div id="stakeModal" class="modal"><div class="modalbox">
-<h3>确认预测</h3><div id="choiceText" class="choice"></div>
-<input id="modalAmount" type="number" min="1" placeholder="下注多少 ZHI？">
-<div class="modalactions"><button id="modalCancel" class="btn" style="background:#eee">取消</button><button id="modalConfirm" class="btn confirm">确认</button></div>
+<h3>确认 / Confirm预测 / Confirm Prediction</h3><div id="choiceText" class="choice"></div>
+<input id="modalAmount" type="number" min="1" placeholder="下注多少 ZHI？ / Amount in ZHI?">
+<div class="modalactions"><button id="modalCancel" class="btn" style="background:#eee">取消 / Cancel</button><button id="modalConfirm" class="btn confirm">确认 / Confirm</button></div>
 </div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -76,46 +76,46 @@ function renderMarkets(){
  const open=marketsData.filter(m=>m.status==='open'&&new Date(m.close_at)>new Date());
  $('markets').innerHTML=open.map(m=>{
   const mine=positions.find(p=>p.market_id===m.id);
-  return '<div class="card"><div class="q">'+m.question+'</div><div class="meta">截止：'+new Date(m.close_at).toLocaleString('zh-CN')+'</div>'+
+  return '<div class="card"><div class="q">'+m.question+'</div><div class="meta">截止 / Closes: '+new Date(m.close_at).toLocaleString('zh-CN')+'</div>'+
   '<div class="pool">YES '+money(m.yes_pool)+' ZHI　 NO '+money(m.no_pool)+' ZHI</div>'+
   '<div class="buttons"><button class="btn yes" data-id="'+m.id+'" data-side="yes" '+(mine?'disabled':'')+'>YES</button><button class="btn no" data-id="'+m.id+'" data-side="no" '+(mine?'disabled':'')+'>NO</button></div>'+
-  '<div class="stake" id="s-'+m.id+'"><input id="a-'+m.id+'" type="number" min="1" placeholder="ZHI 数量"><button class="btn confirm" data-confirm="'+m.id+'">确认</button></div>'+
-  (mine?'<div class="notice">你已预测 '+money(mine.stake)+' ZHI</div>':'')+'</div>';
- }).join('')||'<div class="card">目前没有进行中的市场。</div>';
+  '<div class="stake" id="s-'+m.id+'"><input id="a-'+m.id+'" type="number" min="1" placeholder="ZHI 数量"><button class="btn confirm" data-confirm="'+m.id+'">确认 / Confirm</button></div>'+
+  (mine?'<div class="notice">你已预测 / Your prediction: '+money(mine.stake)+' ZHI</div>':'')+'</div>';
+ }).join('')||'<div class="card">目前没有进行中的市场。 / No active markets.</div>';
  $('markets').querySelectorAll('[data-side]').forEach(b=>b.onclick=()=>{
  selectedMarket=b.dataset.id;selectedSide=b.dataset.side;
  const m=marketsData.find(x=>x.id===selectedMarket);
- $('choiceText').textContent=(selectedSide==='yes'?'YES「是」':'NO「否」')+' · '+m.question;
+ $('choiceText').textContent=(selectedSide==='yes'?'YES / 是':'NO / 否')+' · '+m.question;
  $('modalAmount').value='';$('stakeModal').classList.add('show');setTimeout(()=>$('modalAmount').focus(),50);
 });
 $('markets').querySelectorAll('[data-confirm]').forEach(b=>b.onclick=()=>stake(b.dataset.confirm));
  const expired=marketsData.filter(m=>m.status==='closed');
  $('expiredPanel').classList.toggle('hidden',!expired.length);
- $('expiredMarkets').innerHTML=expired.map(m=>'<div class="card"><div class="q">'+m.question+'</div><div class="status expired">⏰ 已到期 · 等待结果</div></div>').join('');
+ $('expiredMarkets').innerHTML=expired.map(m=>'<div class="card"><div class="q">'+m.question+'</div><div class="status expired">⏰ 已到期 / Expired · 等待结果</div></div>').join('');
 }
 async function stake(id=selectedMarket){
  const amount=Math.floor(Number($('modalAmount').value)),side=selectedSide;
  if(!selectedMarket||!side)return;
 
- if(!amount||amount<1)return alert('请输入 ZHI 数量');
- if(amount>Number(wallet.balance))return alert('ZHI 余额不足');
+ if(!amount||amount<1)return alert('请输入 ZHI 数量 / Enter an amount in ZHI');
+ if(amount>Number(wallet.balance))return alert('ZHI 余额不足 / Insufficient ZHI balance');
  const {error}=await sb.rpc('place_stake',{p_market_id:id,p_side:side,p_amount:amount});
  if(error)return alert(error.message);
  $('stakeModal').classList.remove('show');selectedMarket=null;selectedSide=null;await load();
 }
 function renderHistory(list){
- $('history').innerHTML=list.length?list.map(x=>'<div class="row"><span>'+ (x.description||x.type)+'</span><b>'+(Number(x.amount)>=0?'+':'')+money(x.amount)+' ZHI</b></div>').join(''):'暂无记录';
+ $('history').innerHTML=list.length?list.map(x=>'<div class="row"><span>'+ (x.description||x.type)+'</span><b>'+(Number(x.amount)>=0?'+':'')+money(x.amount)+' ZHI</b></div>').join(''):'暂无记录 / No records yet';
 }
 let mode='login';
 $('authSubmit').onclick=async()=>{
  const u=$('authUsername').value.trim(),p=$('authPassword').value;
- if(!/^[a-zA-Z0-9_]{2,24}$/.test(u))return showErr('用户名只能用 2-24 位英文字母、数字或下划线');if(p.length<6)return showErr('密码至少6位');
+ if(!/^[a-zA-Z0-9_]{2,24}$/.test(u))return showErr('用户名 / Username只能用 2-24 位英文字母、数字或下划线');if(p.length<6)return showErr('密码 / Password至少6位');
  showErr('');$('authSubmit').disabled=true;
  try{
   const email=u.toLowerCase()+'@zhi-demo.com';
   if(mode==='signup'){
    const {data,error}=await sb.auth.signUp({email,password:p,options:{data:{username:u}}});
-   if(error)throw error;if(data.session)await load();else showErr('注册成功，请完成验证后登录');
+   if(error)throw error;if(data.session)await load();else showErr('注册成功，请直接登录 / Registration successful, please sign in / Sign in');
   }else{
    const {error}=await sb.auth.signInWithPassword({email,password:p});if(error)throw error;await load();
   }
@@ -123,10 +123,10 @@ $('authSubmit').onclick=async()=>{
 };
 $('authSwitchBtn').onclick=()=>{
  mode=mode==='login'?'signup':'login';
- $('authSub').textContent=mode==='login'?'登录账户，开始预测':'创建你的 ZHI 账户';
- $('authSubmit').textContent=mode==='login'?'登录':'注册';
- $('switchText').textContent=mode==='login'?'还没有账户？':'已有账户？';
- $('authSwitchBtn').textContent=mode==='login'?'立即注册':'直接登录';
+ $('authSub').textContent=mode==='login'?'登录 / Sign in账户 / Sign in to predict':'创建你的 ZHI 账户 / Create your ZHI account';
+ $('authSubmit').textContent=mode==='login'?'登录 / Sign in':'注册';
+ $('switchText').textContent=mode==='login'?'还没有账户？ / No account?':'已有账户？ / Already registered?';
+ $('authSwitchBtn').textContent=mode==='login'?'立即注册 / Register':'直接登录 / Sign in / Sign in';
  showErr('');
 };
 $('modalCancel').onclick=()=>{$('stakeModal').classList.remove('show');selectedMarket=null;selectedSide=null};

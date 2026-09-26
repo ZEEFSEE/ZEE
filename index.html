@@ -6,8 +6,8 @@
 <title>ZHI Prediction</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f6f7fb;color:#171a21;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
-.wrap{max-width:720px;margin:auto;padding:18px 14px 40px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
-.brand{font-size:22px;font-weight:800}.balance{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:8px 12px;font-weight:700}
+.wrap{max-width:760px;margin:auto;padding:18px 14px 40px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.brand{display:flex;align-items:center;gap:9px;font-size:22px;font-weight:900;letter-spacing:.2px}.zhi-coin{width:38px;height:38px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:radial-gradient(circle at 32% 28%,#fff8b8 0%,#ffe36a 25%,#f7bd19 58%,#c88700 100%);border:2px solid #d79a08;box-shadow:inset 0 2px 2px rgba(255,255,255,.85),inset 0 -3px 5px rgba(120,70,0,.25),0 4px 12px rgba(190,130,0,.3);color:#8a5700;font-size:22px;font-weight:1000;text-shadow:0 1px 0 #fff7bd}.brand-text{background:linear-gradient(90deg,#8a5700,#d49400,#8a5700);-webkit-background-clip:text;background-clip:text;color:transparent}.balance{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:8px 12px;font-weight:700}
 .card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:16px;margin-bottom:12px}
 .total{font-size:13px;color:#777}.big{font-size:28px;font-weight:800;margin-top:4px}
 h2{font-size:16px;margin:22px 2px 10px}.q{font-weight:700;line-height:1.45}.meta{font-size:12px;color:#888;margin:7px 0 13px}
@@ -21,8 +21,7 @@ footer{text-align:center;color:#aaa;font-size:11px;margin-top:24px}
 
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:18px;z-index:10}.modal.show{display:flex}.modalbox{width:100%;max-width:360px;background:#fff;border-radius:16px;padding:20px;box-shadow:0 12px 40px rgba(0,0,0,.2)}.modalbox h3{margin:0 0 6px}.choice{font-size:13px;color:#666;margin-bottom:14px}.modalbox input{width:100%;padding:12px;border:1px solid #ddd;border-radius:9px;font-size:16px;margin-bottom:10px}.modalactions{display:flex;gap:8px}.modalactions button{flex:1}
 
-.gold-balance{background:linear-gradient(135deg,#fff8d6 0%,#ffd84d 45%,#f5b400 100%);color:#7a4b00;border:1px solid #e2a900;border-radius:14px;padding:9px 14px;font-weight:800;box-shadow:0 3px 12px rgba(210,150,0,.28),inset 0 1px 0 rgba(255,255,255,.9);text-shadow:0 1px 0 rgba(255,255,255,.55)}
-.gold-balance #balance{color:#6b3f00;font-size:18px}
+.gold-balance{position:relative;overflow:hidden;background:linear-gradient(135deg,#fffbe8 0%,#ffe98a 24%,#ffd13d 52%,#f2aa00 100%);color:#704400;border:1px solid #d99a00;border-radius:16px;padding:10px 15px;font-weight:900;box-shadow:0 5px 16px rgba(190,130,0,.28),inset 0 2px 0 rgba(255,255,255,.95),inset 0 -2px 5px rgba(130,75,0,.12);text-shadow:0 1px 0 rgba(255,255,255,.65)}.gold-balance:before{content:"";position:absolute;left:-35%;top:-55%;width:45%;height:220%;background:rgba(255,255,255,.45);transform:rotate(25deg);pointer-events:none}.gold-balance #balance{color:#5f3700;font-size:19px;font-variant-numeric:tabular-nums}.gold-label{display:inline-flex;align-items:center;gap:5px}.coin-mini{font-size:17px}
 </style>
 </head>
 <body>
@@ -37,8 +36,8 @@ footer{text-align:center;color:#aaa;font-size:11px;margin-top:24px}
 </div></section>
 
 <main id="app" class="wrap hidden">
-<div class="top"><div class="brand">💰 ZHI</div><div style="display:flex;align-items:center;gap:8px"><div class="balance">用户名 / User: <b id="topUsername">--</b></div><button id="giftNoticeBtn" class="btn" style="display:none;flex:0 0 auto;padding:8px 10px;background:#fff3cd;color:#8a6500;border:1px solid #ffe69c">🎁 <span id="giftNoticeCount">0</span></button><div class="balance gold-balance">🪙 余额 / Balance <span id="balance">--</span> ZHI</div></div></div><div id="giftNotice" class="notice hidden"></div>
-<div class="card"><div class="total">ZHI Treasury · Total / ZHI 总额</div><div class="big">3,000,000,000,000,000 ZHI</div><div class="meta" style="margin-top:8px">财神爷余额 / Treasury Remaining: <b id="treasuryBalance">--</b> ZHI</div></div>
+<div class="top"><div class="brand"><span class="zhi-coin">Z</span><span class="brand-text">ZHI</span></div><div style="display:flex;align-items:center;gap:8px"><div class="balance">用户名 / User: <b id="topUsername">--</b></div><button id="giftNoticeBtn" class="btn" style="display:none;flex:0 0 auto;padding:8px 10px;background:#fff3cd;color:#8a6500;border:1px solid #ffe69c">🎁 <span id="giftNoticeCount">0</span></button><div class="balance gold-balance"><span class="gold-label"><span class="coin-mini">🪙</span> 余额 / Balance</span> <span id="balance">--</span> ZHI</div></div></div><div id="giftNotice" class="notice hidden"></div>
+<div class="card" style="background:linear-gradient(135deg,#fffdf4 0%,#fff6cf 48%,#fff 100%);border-color:#ead28a;box-shadow:0 4px 18px rgba(180,130,0,.12)"><div class="total">🏦 ZHI Treasury · Total / ZHI 总额</div><div class="big" style="color:#8a5a00">3,000,000,000,000,000 ZHI</div><div class="meta" style="margin-top:8px">财神爷余额 / Treasury Remaining: <b id="treasuryBalance">--</b> ZHI</div></div>
 <div class="card">
   <div class="q">🎁 转赠 ZHI / Send ZHI</div>
   <div class="meta">把 ZHI 转给其他用户 / Send ZHI to another user</div>

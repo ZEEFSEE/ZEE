@@ -110,9 +110,12 @@ $('markets').querySelectorAll('[data-confirm]').forEach(b=>b.onclick=()=>stake(b
      '<div class="card"><div class="q">'+m.question+'</div>'+
      '<div class="meta">市场 ID / Market ID: '+m.id+' · '+new Date(m.close_at).toLocaleString('zh-CN')+'</div>'+
      '<div class="pool">YES '+money(m.yes_pool)+' ZHI　 NO '+money(m.no_pool)+' ZHI</div>'+
-     '<div class="buttons"><button class="btn yes" data-admin-result="'+m.id+'" data-result="yes">确认 YES / Confirm YES</button>'+
+     '<div class="field"><label>修改截止时间 / Change Close Time</label><input id="close-'+m.id+'" type="datetime-local" value="'+new Date(m.close_at).toISOString().slice(0,16)+'"></div>'+
+     '<div class="buttons"><button class="btn confirm" data-admin-close="'+m.id+'">保存时间 / Save Time</button>'+
+     '<button class="btn yes" data-admin-result="'+m.id+'" data-result="yes">确认 YES / Confirm YES</button>'+
      '<button class="btn no" data-admin-result="'+m.id+'" data-result="no">确认 NO / Confirm NO</button></div></div>'
    ).join(''):'<div class="card">暂无待结算市场。 / No markets awaiting settlement.</div>';
+   $('adminMarkets').querySelectorAll('[data-admin-close]').forEach(b=>b.onclick=()=>updateCloseTime(b.dataset.adminClose));
    $('adminMarkets').querySelectorAll('[data-admin-result]').forEach(b=>b.onclick=()=>adminSetResult(b.dataset.adminResult,b.dataset.result));
  }
 }
@@ -133,6 +136,15 @@ async function createMarket(){
    await load();
  }catch(e){$('createMarketError').textContent=e.message||'创建失败 / Creation failed'}
  finally{btn.disabled=false}
+}
+async function updateCloseTime(id){
+ const input=$('close-'+id);
+ const closeAt=new Date(input.value);
+ if(Number.isNaN(closeAt.getTime())||closeAt<=new Date())return alert('截止时间必须是未来时间 / Close time must be in the future');
+ const {error}=await sb.rpc('admin_update_market_close_time',{p_market_id:id,p_close_at:closeAt.toISOString()});
+ if(error)return alert(error.message);
+ alert('截止时间已修改 / Close time updated');
+ await load();
 }
 async function adminSetResult(id,result){
  const label=result==='yes'?'YES':'NO';

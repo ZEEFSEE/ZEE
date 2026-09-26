@@ -115,9 +115,11 @@ $('markets').querySelectorAll('[data-confirm]').forEach(b=>b.onclick=()=>stake(b
      '<div class="field"><label>截止时间 / Close Time</label><input id="close-'+m.id+'" type="datetime-local" value="'+new Date(m.close_at).toISOString().slice(0,16)+'"></div>'+
      '<div class="buttons"><button class="btn confirm" data-admin-edit="'+m.id+'">保存修改 / Save Changes</button>'+
      (m.status==='closed'?'<button class="btn yes" data-admin-result="'+m.id+'" data-result="yes">确认 YES / Confirm YES</button><button class="btn no" data-admin-result="'+m.id+'" data-result="no">确认 NO / Confirm NO</button>':'')+
+     '<button class="btn" style="background:#eee" data-admin-cancel="'+m.id+'">取消市场 / Cancel Market</button>'+
      '</div></div>'
    ).join(''):'<div class="card">暂无可编辑市场。 / No editable markets.</div>';
    $('adminMarkets').querySelectorAll('[data-admin-edit]').forEach(b=>b.onclick=()=>editMarket(b.dataset.adminEdit));
+   $('adminMarkets').querySelectorAll('[data-admin-cancel]').forEach(b=>b.onclick=()=>cancelMarket(b.dataset.adminCancel));
    $('adminMarkets').querySelectorAll('[data-admin-result]').forEach(b=>b.onclick=()=>adminSetResult(b.dataset.adminResult,b.dataset.result));
  }
 }
@@ -138,6 +140,13 @@ async function createMarket(){
    await load();
  }catch(e){$('createMarketError').textContent=e.message||'创建失败 / Creation failed'}
  finally{btn.disabled=false}
+}
+async function cancelMarket(id){
+ if(!confirm('确定取消市场 '+id+' 吗？所有未结算投注将自动退款。\nCancel market '+id+'? All open stakes will be refunded automatically.'))return;
+ const {data,error}=await sb.rpc('admin_cancel_market',{p_market_id:id});
+ if(error)return alert(error.message);
+ alert('市场已取消，ZHI 已自动退款 / Market cancelled, ZHI refunded automatically');
+ await load();
 }
 async function editMarket(id){
  const question=$('question-'+id).value.trim();

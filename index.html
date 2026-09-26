@@ -48,7 +48,13 @@ footer{text-align:center;color:#aaa;font-size:11px;margin-top:24px}
   <button id="createMarketBtn" class="btn confirm" style="width:100%">创建市场 / Create Market</button>
   <div id="createMarketError" class="err" style="margin-top:8px"></div>
 </div>
-<div id="adminMarkets"></div></div>
+<div id="adminMarkets"></div>
+<div class="card">
+  <div class="q">👥 用户资金 / User Funds</div>
+  <div class="meta">所有用户钱包余额与下注金额 / All user wallet balances and bet amounts</div>
+  <button id="refreshUsersBtn" class="btn confirm" style="width:100%;margin-bottom:10px">刷新 / Refresh</button>
+  <div id="adminUsers"></div>
+</div></div>
 
 <h2>🧾 我的记录 / My Records</h2><div id="history" class="card history"></div>
 <button id="logout" class="link" style="display:block;margin:18px auto">退出登录 / Sign out</button>
@@ -106,6 +112,8 @@ $('markets').querySelectorAll('[data-confirm]').forEach(b=>b.onclick=()=>stake(b
  $('adminPanel').classList.toggle('hidden',!isAdmin);
  if(isAdmin){
    $('createMarketBtn').onclick=createMarket;
+   $('refreshUsersBtn').onclick=loadAdminUsers;
+   loadAdminUsers();
    const editable=marketsData.filter(m=>m.status==='open'||m.status==='closed');
    $('adminMarkets').innerHTML=editable.length?editable.map(m=>
      '<div class="card"><div class="q">'+m.question+'</div>'+
@@ -147,6 +155,19 @@ async function cancelMarket(id){
  if(error)return alert(error.message);
  alert('市场已取消，ZHI 已自动退款 / Market cancelled, ZHI refunded automatically');
  await load();
+}
+async function loadAdminUsers(){
+ const box=$('adminUsers');
+ box.innerHTML='<div class="notice">加载中 / Loading...</div>';
+ const {data,error}=await sb.rpc('admin_get_user_overview');
+ if(error){box.innerHTML='<div class="notice">加载失败 / Failed: '+error.message+'</div>';return}
+ box.innerHTML=data.length?data.map(x=>
+   '<div style="padding:12px 0;border-bottom:1px solid #eee">'+
+   '<div style="display:flex;justify-content:space-between"><b>'+x.username+'</b><b>'+money(x.balance)+' ZHI</b></div>'+
+   '<div class="meta">钱包 / Wallet: '+money(x.balance)+' ZHI · 锁定 / Locked: '+money(x.locked_balance)+' ZHI</div>'+
+   '<div class="meta">当前下注 / Open bets: '+money(x.open_bet_amount)+' ZHI ('+x.open_bet_count+') · 总下注 / Total bets: '+money(x.total_bet_amount)+' ZHI ('+x.total_bet_count+')</div>'+
+   '</div>'
+ ).join(''):'<div class="notice">暂无用户 / No users yet</div>';
 }
 async function editMarket(id){
  const question=$('question-'+id).value.trim();

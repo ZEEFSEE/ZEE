@@ -1,92 +1,123 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ZHI知币 · Crypto Prediction</title><style>
-:root{--bg:#0b0e13;--card:#11161e;--card2:#171d27;--line:#252d39;--text:#f5f7fa;--sub:#8d98a8;--up:#20c997;--down:#ff5c68;--blue:#5b8cff;--gold:#f5c451}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}.wrap{max-width:900px;margin:auto;padding:14px 16px 50px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0 18px}.brand{font-weight:800;font-size:20px}.dot{display:inline-block;width:11px;height:11px;border-radius:50%;background:linear-gradient(135deg,#5b8cff,#a78bfa);margin-right:7px}.wallet{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:9px 13px;font-size:12px}.wallet b{font-size:15px;color:var(--gold)}button{cursor:pointer}.tabs{display:flex;gap:8px;margin-bottom:14px}.tab{border:0;background:transparent;color:var(--sub);padding:8px 12px;border-radius:9px;font-weight:700}.tab.active{background:var(--card2);color:var(--text)}.hero{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:16px}.label{color:var(--sub);font-size:12px}.big{font-size:25px;font-weight:800;margin:7px 0}.up{color:var(--up)}.down{color:var(--down)}.spark{height:42px;display:flex;align-items:end;gap:3px;margin-top:8px}.spark i{display:block;width:5px;border-radius:3px;background:var(--blue);opacity:.8}.notice{font-size:12px;color:var(--sub);padding:10px 12px;background:#121823;border-radius:10px;margin-bottom:14px}.market{margin-bottom:12px}.q{font-weight:700;font-size:15px;line-height:1.45}.meta{font-size:11px;color:var(--sub);margin:5px 0 12px}.bar{height:7px;background:var(--card2);border-radius:7px;overflow:hidden;display:flex}.yes{background:var(--up)}.no{background:var(--down)}.stats{display:flex;justify-content:space-between;font-size:12px;margin:8px 0 12px}.row{display:flex;gap:8px}.btn{flex:1;border:0;border-radius:9px;padding:10px;font-weight:800}.btn.y{background:var(--up);color:#06120e}.btn.n{background:var(--down);color:#170609}.btn.p{background:var(--blue);color:white}.btn.g{background:var(--card2);color:var(--text);border:1px solid var(--line)}.stake{display:none;margin-top:8px;gap:8px}.stake.show{display:flex}.stake input,.transfer{flex:1;min-width:0;background:var(--card2);border:1px solid var(--line);border-radius:9px;color:var(--text);padding:10px}.section{font-size:13px;color:var(--sub);margin:22px 2px 9px}.table{overflow:hidden}.tr{display:flex;padding:11px 13px;border-bottom:1px solid var(--line);font-size:13px}.tr:last-child{border:0}.tr span:first-child{flex:1}.pos{color:var(--up)}.neg{color:var(--down)}.muted{color:var(--sub)}footer{text-align:center;color:var(--sub);font-size:11px;margin-top:25px}.auth{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}.authbox{width:100%;max-width:390px;background:var(--card);border:1px solid var(--line);border-radius:17px;padding:26px}.authbox h1{margin:0 0 5px}.field{margin:12px 0}.field label{display:block;color:var(--sub);font-size:12px;margin-bottom:5px}.field input{width:100%;padding:11px;border-radius:9px;border:1px solid var(--line);background:var(--card2);color:var(--text)}.err{height:18px;color:var(--down);font-size:12px}.link{border:0;background:none;color:var(--blue)}.hidden{display:none!important}@media(max-width:620px){.hero{grid-template-columns:1fr}.top{align-items:flex-start}.wallet{max-width:180px}}
-.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#171d27;border:1px solid #303947;padding:10px 16px;border-radius:9px;opacity:0;transition:.2s}.toast.show{opacity:1}</style></head><body>
-<section id="authScreen" class="auth"><div class="authbox"><h1><span class="dot"></span>ZHI知币</h1><p id="authSub" class="muted">登录账户，开始预测</p><div class="field"><label>用户名</label><input id="authUsername" placeholder="zhi_player"></div><div class="field"><label>密码</label><input id="authPassword" type="password" placeholder="至少 6 位"></div><div id="authError" class="err"></div><button id="authSubmit" class="btn p" style="width:100%">登录</button><p class="muted" style="text-align:center">还没有账户？ <button id="authSwitchBtn" class="link">立即注册</button></p><div class="notice">⚠️ 模拟交易：ZHI 是本网站演示积分，不是现实资产或可交易证券。</div></div></section>
-<main id="app" class="wrap hidden"><div class="top"><div><div class="brand"><span class="dot"></span>ZHI知币</div><div class="muted" style="font-size:11px">Crypto-style Prediction Market</div></div><div style="display:flex;gap:8px;align-items:center"><div class="wallet">钱包 <b id="balance">--</b> ZHI</div><span id="user" class="muted"></span><button id="logout" class="link">退出</button></div></div>
-<div class="tabs"><button class="tab active">市场</button><button class="tab">钱包</button><button class="tab">排行榜</button></div>
-<div class="hero"><div class="card"><div class="label">ZHI / VIRTUAL</div><div class="big">1.00 ZHI</div><div class="up">+2.48% 模拟 24h</div><div class="spark"><i style="height:22%"></i><i style="height:28%"></i><i style="height:20%"></i><i style="height:31%"></i><i style="height:27%"></i><i style="height:38%"></i><i style="height:34%"></i><i style="height:42%"></i><i style="height:35%"></i><i style="height:47%"></i><i style="height:41%"></i><i style="height:50%"></i></div></div><div class="card"><div class="label">财神爷 · Treasury</div><div class="big" id="total">3,000,000,000,000</div><div class="label">ZHI · 3万亿总额</div><div style="margin-top:13px;font-size:12px">流通模拟：用户预测、奖励、转账</div></div></div>
-<div class="notice">📈 参考虚拟币交易所的界面：价格、涨跌、钱包、市场深度、历史记录。这里的 ZHI 仅用于模拟预测市场。</div>
-<h3 class="section">热门预测市场</h3><div id="markets"></div><div id="expiredPanel" class="hidden"><h3 class="section">⏰ 已到期市场 <span id="expiredCount" class="muted"></span></h3><div id="expiredMarkets"></div></div><h3 class="section">交易历史</h3><div id="history" class="card table"></div><footer>ZHI知币 · Crypto Prediction Demo · ZHI 无现实货币价值</footer></main><div id="toast" class="toast"></div><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-client.js"></script><script src="settlement.js"></script><script>
-const sb=window.zhiSupabase;
-let currentUser=null,mode='login',profile=null,wallet=null,marketsData=[],positionsData=[],historyData=[];
-const money=n=>Number(n||0).toLocaleString();
-const toast=m=>{const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1600)};
-function err(x){authError.textContent=x}
-async function loadCloud(){
-  const {data:{user}}=await sb.auth.getUser();
-  if(!user){authScreen.classList.remove('hidden');app.classList.add('hidden');return}
-  currentUser=user;
-  await sb.rpc('close_expired_markets');
-  const [p,w,m,pos,h]=await Promise.all([
-    sb.from('profiles').select('*').eq('id',user.id).single(),
-    sb.from('wallets').select('*').eq('user_id',user.id).single(),
-    sb.from('markets').select('*').order('created_at',{ascending:true}),
-    sb.from('positions').select('*').eq('user_id',user.id).eq('status','open'),
-    sb.from('transactions').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(20)
-  ]);
-  if(p.error||w.error){toast('账户数据读取失败');return}
-  profile=p.data;wallet=w.data;marketsData=m.data||[];positionsData=pos.data||[];historyData=h.data||[];
-  authScreen.classList.add('hidden');app.classList.remove('hidden');user.textContent=profile.username;render();
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ZHI知币 Prediction</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f6f7fb;color:#171a21;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+.wrap{max-width:720px;margin:auto;padding:18px 14px 40px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.brand{font-size:22px;font-weight:800}.balance{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:8px 12px;font-weight:700}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:16px;margin-bottom:12px}
+.total{font-size:13px;color:#777}.big{font-size:28px;font-weight:800;margin-top:4px}
+h2{font-size:16px;margin:22px 2px 10px}.q{font-weight:700;line-height:1.45}.meta{font-size:12px;color:#888;margin:7px 0 13px}
+.pool{font-size:12px;color:#666;margin-bottom:12px}.buttons{display:flex;gap:8px}.btn{flex:1;border:0;border-radius:10px;padding:11px;font-weight:800;cursor:pointer}.yes{background:#dff8ea;color:#087443}.no{background:#ffe2e5;color:#b42332}.confirm{background:#20242c;color:#fff}
+.stake{display:none;gap:8px;margin-top:8px}.stake.show{display:flex}.stake input{flex:1;border:1px solid #ddd;border-radius:9px;padding:10px}
+.status{font-size:12px;font-weight:700}.open{color:#087443}.expired{color:#b26a00}.resolved{color:#3157b7}
+.notice{font-size:12px;color:#777;background:#f0f2f6;border-radius:10px;padding:10px;margin-top:10px}
+.auth{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px}.authbox{width:100%;max-width:380px;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:24px}.field{margin:12px 0}.field label{display:block;font-size:12px;color:#777;margin-bottom:5px}.field input{width:100%;padding:11px;border:1px solid #ddd;border-radius:9px}.link{border:0;background:none;color:#3157b7;cursor:pointer}.err{height:18px;color:#c62828;font-size:12px}
+.hidden{display:none!important}.history{font-size:13px}.row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee}.row:last-child{border:0}
+footer{text-align:center;color:#aaa;font-size:11px;margin-top:24px}
+</style>
+</head>
+<body>
+<section id="authScreen" class="auth"><div class="authbox">
+<h1>💰 ZHI知币</h1><p id="authSub">登录账户，开始预测</p>
+<div class="field"><label>用户名</label><input id="authUsername" placeholder="zhi_player"></div>
+<div class="field"><label>密码</label><input id="authPassword" type="password" placeholder="至少 6 位"></div>
+<div id="authError" class="err"></div>
+<button id="authSubmit" class="btn confirm" style="width:100%">登录</button>
+<p style="text-align:center;color:#777;font-size:13px"><span id="switchText">还没有账户？</span> <button id="authSwitchBtn" class="link">立即注册</button></p>
+<div class="notice">ZHI 为本网站预测演示积分。</div>
+</div></section>
+
+<main id="app" class="wrap hidden">
+<div class="top"><div class="brand">💰 ZHI知币</div><div class="balance">余额 <span id="balance">--</span> ZHI</div></div>
+<div class="card"><div class="total">财神爷 · ZHI 总额</div><div class="big">3,000,000,000,000 ZHI</div></div>
+
+<h2>🎯 预测市场</h2><div id="markets"></div>
+<div id="expiredPanel" class="hidden"><h2>⏰ 已到期</h2><div id="expiredMarkets"></div></div>
+
+<h2>🧾 我的记录</h2><div id="history" class="card history"></div>
+<button id="logout" class="link" style="display:block;margin:18px auto">退出登录</button>
+<footer>ZHI知币 · Prediction Demo</footer>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-client.js"></script>
+<script src="settlement.js"></script>
+<script>
+const sb=window.zhiSupabase;let user=null,wallet=null,marketsData=[],positions=[];
+const money=n=>Number(n||0).toLocaleString(),$=id=>document.getElementById(id);
+function showErr(s){$('authError').textContent=s}
+async function load(){
+ const r=await sb.auth.getUser();user=r.data.user;
+ if(!user){$('authScreen').classList.remove('hidden');$('app').classList.add('hidden');return}
+ await sb.rpc('close_expired_markets');
+ const [w,m,p,h]=await Promise.all([
+  sb.from('wallets').select('*').eq('user_id',user.id).single(),
+  sb.from('markets').select('*').order('created_at',{ascending:true}),
+  sb.from('positions').select('*').eq('user_id',user.id).eq('status','open'),
+  sb.from('transactions').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(10)
+ ]);
+ wallet=w.data;marketsData=m.data||[];positions=p.data||[];
+ $('balance').textContent=money(wallet?.balance);
+ $('authScreen').classList.add('hidden');$('app').classList.remove('hidden');
+ renderMarkets();renderHistory(h.data||[]);
 }
-async function auth(){
-  const u=authUsername.value.trim(),p=authPassword.value;
-  if(u==='财神爷')return err('财神爷为总账账户，不能登录');
-  if(u.length<2||p.length<6)return err('用户名至少2位，密码至少6位');
-  const email=u.toLowerCase()+'@zhi.local';
-  authError.textContent='';
-  authSubmit.disabled=true;
-  try{
-    if(mode==='signup'){
-      const {data,error}=await sb.auth.signUp({email,password:p,options:{data:{username:u}}});
-      if(error)throw error;
-      if(data.session){toast('注册成功，已发放 1000 ZHI');await loadCloud();}
-      else err('注册成功。若开启了邮箱验证，请先完成验证后登录。');
-    }else{
-      const {error}=await sb.auth.signInWithPassword({email,password:p});
-      if(error)throw error;
-      await loadCloud();
-    }
-  }catch(e){err(e.message||'操作失败')}finally{authSubmit.disabled=false}
-}
-async function render(){
-  balance.textContent=money(wallet?.balance);total.textContent='3,000,000,000,000';
-  markets.innerHTML='';
-  marketsData.forEach(m=>{
-    const yes=Number(m.yes_pool),no=Number(m.no_pool),t=yes+no,y=t?yes/t*100:50,n=t?no/t*100:50;
-    const mine=positionsData.find(x=>x.market_id===m.id);
-    const d=document.createElement('div');d.className='card market';
-    d.innerHTML='<div class="q">'+m.question+'</div><div class="meta">截止 '+new Date(m.close_at).toLocaleString('zh-CN')+(mine?' · 已预测 '+money(mine.stake)+' ZHI':'')+'</div><div class="bar"><div class="yes" style="width:'+y+'%"></div><div class="no" style="width:'+n+'%"></div></div><div class="stats"><span class="up">是 '+money(yes)+' ZHI</span><span class="down">否 '+money(no)+' ZHI</span></div><div class="row"><button class="btn y" data-id="'+m.id+'" data-side="yes" '+(m.status!=='open'||mine?'disabled':'')+'>买入「是」</button><button class="btn n" data-id="'+m.id+'" data-side="no" '+(m.status!=='open'||mine?'disabled':'')+'>买入「否」</button></div><div class="stake" id="s-'+m.id+'"><input type="number" min="1" id="a-'+m.id+'" placeholder="输入 ZHI 数量"><button class="btn g confirm" data-id="'+m.id+'">确认</button></div>'+(m.status==='resolved'?'<div class="meta" style="margin-top:10px">✓ 已结算结果：'+(m.result==='yes'?'是':'否')+'</div>':'');
-    markets.appendChild(d);
-  });
-  markets.querySelectorAll('[data-side]').forEach(b=>b.onclick=()=>{markets.querySelectorAll('.stake').forEach(x=>x.classList.remove('show'));let x=document.getElementById('s-'+b.dataset.id);x.dataset.side=b.dataset.side;x.classList.add('show')});
-  markets.querySelectorAll('.confirm').forEach(b=>b.onclick=()=>stake(b.dataset.id));
-  const expired=marketsData.filter(m=>m.status==='closed');
-  expiredCount.textContent='('+expired.length+' 个)';
-  expiredPanel.classList.toggle('hidden',expired.length===0);
-  expiredMarkets.innerHTML=expired.map(m=>{
-    const yes=Number(m.yes_pool),no=Number(m.no_pool),totalPool=yes+no;
-    return '<div class="card market"><div class="q">'+m.question+'</div><div class="meta">⏰ 已到期 · 原截止时间 '+new Date(m.close_at).toLocaleString('zh-CN')+'</div><div class="stats"><span class="up">是 '+money(yes)+' ZHI</span><span class="down">否 '+money(no)+' ZHI</span></div><div class="notice" style="margin:8px 0 0">等待管理员确认结果后结算 · 总奖池 '+money(totalPool)+' ZHI</div></div>';
-  }).join('');
-  renderHistory();
+function renderMarkets(){
+ const open=marketsData.filter(m=>m.status==='open'&&new Date(m.close_at)>new Date());
+ $('markets').innerHTML=open.map(m=>{
+  const mine=positions.find(p=>p.market_id===m.id);
+  return '<div class="card"><div class="q">'+m.question+'</div><div class="meta">截止：'+new Date(m.close_at).toLocaleString('zh-CN')+'</div>'+
+  '<div class="pool">YES '+money(m.yes_pool)+' ZHI　 NO '+money(m.no_pool)+' ZHI</div>'+
+  '<div class="buttons"><button class="btn yes" data-id="'+m.id+'" data-side="yes" '+(mine?'disabled':'')+'>YES</button><button class="btn no" data-id="'+m.id+'" data-side="no" '+(mine?'disabled':'')+'>NO</button></div>'+
+  '<div class="stake" id="s-'+m.id+'"><input id="a-'+m.id+'" type="number" min="1" placeholder="ZHI 数量"><button class="btn confirm" data-confirm="'+m.id+'">确认</button></div>'+
+  (mine?'<div class="notice">你已预测 '+money(mine.stake)+' ZHI</div>':'')+'</div>';
+ }).join('')||'<div class="card">目前没有进行中的市场。</div>';
+ $('markets').querySelectorAll('[data-side]').forEach(b=>b.onclick=()=>{
+   const s=$('s-'+b.dataset.id);s.dataset.side=b.dataset.side;s.classList.add('show');
+ });
+ $('markets').querySelectorAll('[data-confirm]').forEach(b=>b.onclick=()=>stake(b.dataset.confirm));
+ const expired=marketsData.filter(m=>m.status==='closed');
+ $('expiredPanel').classList.toggle('hidden',!expired.length);
+ $('expiredMarkets').innerHTML=expired.map(m=>'<div class="card"><div class="q">'+m.question+'</div><div class="status expired">⏰ 已到期 · 等待结果</div></div>').join('');
 }
 async function stake(id){
-  const box=document.getElementById('s-'+id),amt=Math.floor(Number(document.getElementById('a-'+id).value)),side=box.dataset.side;
-  if(!amt||amt<1)return toast('请输入有效数量');
-  if(amt>Number(wallet.balance))return toast('ZHI 余额不足');
-  try{
-    const {error}=await sb.rpc('place_stake',{p_market_id:id,p_side:side,p_amount:amt});
-    if(error)throw error;
-    toast('已买入 '+money(amt)+' ZHI');
-    await loadCloud();
-  }catch(e){toast(e.message||'下注失败')}
+ const s=$('s-'+id),amount=Math.floor(Number($('a-'+id).value));
+ if(!amount||amount<1)return alert('请输入 ZHI 数量');
+ if(amount>Number(wallet.balance))return alert('ZHI 余额不足');
+ const {error}=await sb.rpc('place_stake',{p_market_id:id,p_side:s.dataset.side,p_amount:amount});
+ if(error)return alert(error.message);
+ await load();
 }
-function renderHistory(){
-  history.innerHTML=historyData.length?historyData.slice(0,10).map(h=>'<div class="tr"><span>'+(h.description||h.type)+'<small class="muted"> · '+new Date(h.created_at).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})+'</small></span><b class="'+(Number(h.amount)>=0?'pos':'neg')+'">'+(Number(h.amount)>=0?'+':'')+money(h.amount)+' ZHI</b></div>').join(''):'<div class="tr muted">暂无交易记录</div>';
+function renderHistory(list){
+ $('history').innerHTML=list.length?list.map(x=>'<div class="row"><span>'+ (x.description||x.type)+'</span><b>'+(Number(x.amount)>=0?'+':'')+money(x.amount)+' ZHI</b></div>').join(''):'暂无记录';
 }
-authSubmit.onclick=auth;
-authSwitchBtn.onclick=()=>{mode=mode==='login'?'signup':'login';authSub.textContent=mode==='login'?'登录账户，开始预测':'创建你的 ZHI 账户';authSubmit.textContent=mode==='login'?'登录':'注册';authSwitchBtn.textContent=mode==='login'?'立即注册':'直接登录';authSwitchText.textContent=mode==='login'?'还没有账户？':'已有账户？';err('')};
-logout.onclick=async()=>{await sb.auth.signOut();location.reload()};
-document.querySelectorAll('.tab').forEach(x=>x.onclick=()=>document.querySelectorAll('.tab').forEach(y=>y.classList.remove('active'))||x.classList.add('active'));
-loadCloud();
-</script></body></html>
+let mode='login';
+$('authSubmit').onclick=async()=>{
+ const u=$('authUsername').value.trim(),p=$('authPassword').value;
+ if(u.length<2||p.length<6)return showErr('用户名至少2位，密码至少6位');
+ showErr('');$('authSubmit').disabled=true;
+ try{
+  const email=u.toLowerCase()+'@zhi.local';
+  if(mode==='signup'){
+   const {data,error}=await sb.auth.signUp({email,password:p,options:{data:{username:u}}});
+   if(error)throw error;if(data.session)await load();else showErr('注册成功，请完成验证后登录');
+  }else{
+   const {error}=await sb.auth.signInWithPassword({email,password:p});if(error)throw error;await load();
+  }
+ }catch(e){showErr(e.message||'操作失败')}finally{$('authSubmit').disabled=false}
+};
+$('authSwitchBtn').onclick=()=>{
+ mode=mode==='login'?'signup':'login';
+ $('authSub').textContent=mode==='login'?'登录账户，开始预测':'创建你的 ZHI 账户';
+ $('authSubmit').textContent=mode==='login'?'登录':'注册';
+ $('switchText').textContent=mode==='login'?'还没有账户？':'已有账户？';
+ $('authSwitchBtn').textContent=mode==='login'?'立即注册':'直接登录';
+ showErr('');
+};
+$('logout').onclick=async()=>{await sb.auth.signOut();location.reload()};
+load();
+</script>
+</body></html>

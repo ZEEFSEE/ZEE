@@ -112,6 +112,7 @@ function renderMarkets(){
  $('modalAmount').value='';$('stakeModal').classList.add('show');setTimeout(()=>$('modalAmount').focus(),50);
 });
 $('markets').querySelectorAll('[data-confirm]').forEach(b=>b.onclick=()=>stake(b.dataset.confirm));
+$('giftNoticeBtn').onclick=async()=>{if(Number($('giftNoticeCount').textContent)>0)await markGiftNotificationsRead();};
  const expired=marketsData.filter(m=>m.status==='closed');
  $('expiredPanel').classList.toggle('hidden',!expired.length);
  $('expiredMarkets').innerHTML=expired.map(m=>'<div class="card"><div class="q">'+m.question+'</div><div class="status expired">⏰ 已到期 / Expired · 等待管理员结果 / Awaiting admin result</div></div>').join('');
@@ -141,23 +142,26 @@ $('markets').querySelectorAll('[data-confirm]').forEach(b=>b.onclick=()=>stake(b
  }
 }
 async function loadGiftNotice(){
- const {data,error}=await sb.from('transactions').select('id,amount,description,metadata,created_at').eq('user_id',user.id).eq('type','transfer_in').order('created_at',{ascending:false}).limit(5);
+ const {data,error}=await sb.from('transactions').select('id,amount,description,metadata,created_at,read_at').eq('user_id',user.id).eq('type','transfer_in').order('created_at',{ascending:false}).limit(20);
  const box=$('giftNotice'),btn=$('giftNoticeBtn'),count=$('giftNoticeCount');
- if(error||!data?.length){btn.style.display='none';box.classList.add('hidden');return}
- const unseen=data.slice(0,3);
- const ids=[...new Set(unseen.map(x=>x.metadata?.from_user_id).filter(Boolean))];
- let names={};
- if(ids.length){
-   const {data:profiles}=await sb.from('profiles').select('id,username').in('id',ids);
-   (profiles||[]).forEach(p=>names[p.id]=p.username);
- }
- count.textContent=data.length;
+ if(error){btn.style.display='none';box.classList.add('hidden');return}
+ const unread=(data||[]).filter(x=>!x.read_at);
+ const visible=(unread.length?unread:data||[]).slice(0,5);
+ if(!data?.length){btn.style.display='none';box.classList.add('hidden');return}
+ count.textContent=unread.length;
  btn.style.display='block';
+ btn.style.background=unread.length?'#fff3cd':'#f0f2f6';
+ btn.style.color=unread.length?'#8a6500':'#777';
  box.classList.remove('hidden');
- box.innerHTML='🎁 收到 ZHI / Received ZHI：'+unseen.map(x=>{
-   const from=names[x.metadata?.from_user_id]||'用户 / User';
-   return '<div style="margin-top:4px"><b>'+from+'</b> 赠送了 <b>'+money(x.amount)+' ZHI</b> · '+new Date(x.created_at).toLocaleString('zh-CN')+'</div>';
+ box.innerHTML=(unread.length?'🎁 <b>未读转赠 / Unread gifts</b>':'🎁 转赠记录 / Gift history')+visible.map(x=>{
+   const fromId=x.metadata?.from_user_id;
+   return '<div style="margin-top:4px" data-gift-row="'+x.id+'"><b>'+(x.metadata?.from_username||'用户 / User')+'</b> 赠送了 <b>'+money(x.amount)+' ZHI</b> · '+new Date(x.created_at).toLocaleString('zh-CN')+(x.read_at?'':' · <span style="color:#b26a00">未读 / Unread</span>')+'</div>';
  }).join('');
+}
+async function markGiftNotificationsRead(){
+ const {error}=await sb.rpc('mark_transfer_notifications_read');
+ if(error)return alert(error.message||'标记已读失败 / Failed to mark as read');
+ await loadGiftNotice();
 }
 async function transferZHI(){
  const username=$('transferUsername').value.trim();

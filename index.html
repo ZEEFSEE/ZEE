@@ -48,6 +48,7 @@ footer{text-align:center;color:#aaa;font-size:11px;margin-top:24px}
 <h2>🎯 预测市场 / Prediction Markets</h2><div id="markets"></div>
 <div id="expiredPanel" class="hidden"><h2>⏰ 已到期 / Expired</h2><div id="expiredMarkets"></div></div>
 <div id="adminPanel" class="hidden"><h2>🛠️ 管理员 / Admin</h2>
+<div class="card" id="settlementPanel"><div class="q">⏳ 待结算市场 / Settlement</div><div class="meta">投注截止后会自动出现在这里。管理员确认结果后，系统立即自动派奖。</div><div id="settlementMarkets"></div></div>
 <div class="card">
   <div class="q">➕ 新增市场 / Create Market</div>
   <div class="field"><label>市场 ID / Market ID</label><input id="newMarketId" placeholder="m5"></div>
@@ -124,7 +125,17 @@ $('giftNoticeBtn').onclick=async()=>{if(Number($('giftNoticeCount').textContent)
    $('createMarketBtn').onclick=createMarket;
    $('refreshUsersBtn').onclick=loadAdminUsers;
    loadAdminUsers();
-   const editable=marketsData.filter(m=>m.status==='open'||m.status==='closed');
+   const awaiting=marketsData.filter(m=>m.status==='closed');
+   $('settlementPanel').classList.toggle('hidden',!awaiting.length);
+   $('settlementMarkets').innerHTML=awaiting.length?awaiting.map(m=>
+     '<div style="padding:12px 0;border-bottom:1px solid #eee"><div class="q">'+m.question+'</div>'+
+     '<div class="meta">市场 ID / Market ID: '+m.id+' · 投注已截止 / Betting closed</div>'+
+     '<div class="pool">YES '+money(m.yes_pool)+' ZHI　 NO '+money(m.no_pool)+' ZHI</div>'+
+     '<div class="buttons"><button class="btn yes" data-settle-result="'+m.id+'" data-result="yes">确认 YES</button><button class="btn no" data-settle-result="'+m.id+'" data-result="no">确认 NO</button></div></div>'
+   ).join(''):'';
+   $('settlementMarkets').querySelectorAll('[data-settle-result]').forEach(b=>b.onclick=()=>adminSetResult(b.dataset.settleResult,b.dataset.result));
+
+   const editable=marketsData.filter(m=>m.status==='open');
    $('adminMarkets').innerHTML=editable.length?editable.map(m=>
      '<div class="card"><div class="q">'+m.question+'</div>'+
      '<div class="meta">市场 ID / Market ID: '+m.id+' · 状态 / Status: '+m.status+'</div>'+
@@ -132,13 +143,11 @@ $('giftNoticeBtn').onclick=async()=>{if(Number($('giftNoticeCount').textContent)
      '<div class="field"><label>市场问题 / Market Question</label><input id="question-'+m.id+'" value="'+String(m.question).replace(/"/g,'&quot;')+'"></div>'+
      '<div class="field"><label>截止时间 / Close Time</label><input id="close-'+m.id+'" type="datetime-local" value="'+new Date(m.close_at).toISOString().slice(0,16)+'"></div>'+
      '<div class="buttons"><button class="btn confirm" data-admin-edit="'+m.id+'">保存修改 / Save Changes</button>'+
-     (m.status==='closed'?'<button class="btn yes" data-admin-result="'+m.id+'" data-result="yes">确认 YES / Confirm YES</button><button class="btn no" data-admin-result="'+m.id+'" data-result="no">确认 NO / Confirm NO</button>':'')+
      '<button class="btn" style="background:#eee" data-admin-cancel="'+m.id+'">取消市场 / Cancel Market</button>'+
      '</div></div>'
    ).join(''):'<div class="card">暂无可编辑市场。 / No editable markets.</div>';
    $('adminMarkets').querySelectorAll('[data-admin-edit]').forEach(b=>b.onclick=()=>editMarket(b.dataset.adminEdit));
    $('adminMarkets').querySelectorAll('[data-admin-cancel]').forEach(b=>b.onclick=()=>cancelMarket(b.dataset.adminCancel));
-   $('adminMarkets').querySelectorAll('[data-admin-result]').forEach(b=>b.onclick=()=>adminSetResult(b.dataset.adminResult,b.dataset.result));
  }
 }
 async function loadGiftNotice(){

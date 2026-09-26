@@ -36,6 +36,14 @@ footer{text-align:center;color:#aaa;font-size:11px;margin-top:24px}
 <main id="app" class="wrap hidden">
 <div class="top"><div class="brand">💰 ZHI</div><div style="display:flex;align-items:center;gap:8px"><button id="giftNoticeBtn" class="btn" style="display:none;flex:0 0 auto;padding:8px 10px;background:#fff3cd;color:#8a6500;border:1px solid #ffe69c">🎁 <span id="giftNoticeCount">0</span></button><div class="balance">余额 / Balance <span id="balance">--</span> ZHI</div></div></div><div id="giftNotice" class="notice hidden"></div>
 <div class="card"><div class="total">ZHI Treasury · Total / ZHI 总额</div><div class="big">3,000,000,000,000 ZHI</div></div>
+<div class="card">
+  <div class="q">🎁 转赠 ZHI / Send ZHI</div>
+  <div class="meta">把 ZHI 转给其他用户 / Send ZHI to another user</div>
+  <div class="field"><label>收赠用户名 / Recipient Username</label><input id="transferUsername" placeholder="输入对方用户名 / Username"></div>
+  <div class="field"><label>转赠数量 / Amount</label><input id="transferAmount" type="number" min="1" step="1" placeholder="例如：1000"></div>
+  <button id="transferBtn" class="btn confirm" style="width:100%">🎁 确认转赠 / Send ZHI</button>
+  <div id="transferError" class="err" style="margin-top:8px"></div>
+</div>
 
 <h2>🎯 预测市场 / Prediction Markets</h2><div id="markets"></div>
 <div id="expiredPanel" class="hidden"><h2>⏰ 已到期 / Expired</h2><div id="expiredMarkets"></div></div>
@@ -113,6 +121,7 @@ $('markets').querySelectorAll('[data-confirm]').forEach(b=>b.onclick=()=>stake(b
  if(isAdmin){
    $('createMarketBtn').onclick=createMarket;
    $('refreshUsersBtn').onclick=loadAdminUsers;
+   $('transferBtn').onclick=transferZHI;
    loadAdminUsers();
    const editable=marketsData.filter(m=>m.status==='open'||m.status==='closed');
    $('adminMarkets').innerHTML=editable.length?editable.map(m=>
@@ -149,6 +158,25 @@ async function loadGiftNotice(){
    const from=names[x.metadata?.from_user_id]||'用户 / User';
    return '<div style="margin-top:4px"><b>'+from+'</b> 赠送了 <b>'+money(x.amount)+' ZHI</b> · '+new Date(x.created_at).toLocaleString('zh-CN')+'</div>';
  }).join('');
+}
+async function transferZHI(){
+ const username=$('transferUsername').value.trim();
+ const amount=Math.floor(Number($('transferAmount').value));
+ $('transferError').textContent='';
+ if(!username)return $('transferError').textContent='请输入收赠用户名 / Enter recipient username';
+ if(!amount||amount<1)return $('transferError').textContent='请输入有效数量 / Enter a valid amount';
+ if(amount>Number(wallet?.balance||0))return $('transferError').textContent='余额不足 / Insufficient balance';
+ if(username.toLowerCase()===String(user?.user_metadata?.username||'').toLowerCase())return $('transferError').textContent='不能转给自己 / Cannot transfer to yourself';
+ if(!confirm('确定转赠 '+money(amount)+' ZHI 给 '+username+'？\\nSend '+money(amount)+' ZHI to '+username+'?'))return;
+ $('transferBtn').disabled=true;
+ try{
+   const {error}=await sb.rpc('transfer_zhi',{p_to_username:username,p_amount:amount});
+   if(error)throw error;
+   alert('转赠成功 / Transfer sent');
+   $('transferUsername').value='';$('transferAmount').value='';
+   await load();
+ }catch(e){$('transferError').textContent=e.message||'转赠失败 / Transfer failed'}
+ finally{$('transferBtn').disabled=false}
 }
 async function createMarket(){
  const id=$('newMarketId').value.trim();

@@ -38,7 +38,7 @@ footer{text-align:center;color:#aaa;font-size:11px;margin-top:24px}
 <main id="app" class="wrap hidden">
 <div class="top"><div class="brand"><span class="zhi-coin">Z</span><span class="brand-text">ZHI</span></div><div style="display:flex;align-items:center;gap:8px"><div class="balance user-balance">用户名 / User: <b id="topUsername">--</b></div><button id="giftNoticeBtn" class="btn" style="display:none;flex:0 0 auto;padding:8px 10px;background:#fff3cd;color:#8a6500;border:1px solid #ffe69c">🎁 <span id="giftNoticeCount">0</span></button><div class="balance gold-balance"><span class="gold-label"><span class="coin-mini">🪙</span> 余额 / Balance</span> <span id="balance">--</span> ZHI</div></div></div><div id="giftNotice" class="notice hidden"></div>
 <div class="hero"><div class="section-label">ZHI PREDICTION</div><div class="hero-title">🪙 Predict. Play. Earn ZHI.</div><div class="hero-sub">选择 YES / NO，下注 ZHI。市场截止后进入结算，管理员确认结果后自动派奖。</div><div class="hero-stat"><span class="hero-pill">⚡ 自动结算</span><span class="hero-pill">🏆 自动派奖</span><span class="hero-pill">🎁 自由转赠</span></div></div>
-<div class="home-dashboard">
+<div class="card" id="savingsCard"><div class="q">🏦 ZHI 存储 · 财神爷利息</div><div class="meta">把 ZHI 存入财神爷，按年利率计算收益；可随时领取已产生的利息。</div><div style="display:flex;gap:8px;margin-top:10px"><input id="saveAmount" type="number" min="1" step="1" placeholder="存入 ZHI" style="flex:1"><button id="saveBtn" class="btn confirm">存入财神爷</button><button id="claimBtn" class="btn">💰 领取利息</button></div><div id="savingsMsg" class="meta" style="margin-top:8px"></div></div><div class="home-dashboard">
   <div class="dash-card dash-feature" id="dashFeatured"><div class="dash-title"><span>⭐ 今日焦点 / Featured Prediction</span><span class="dash-chip chip-gold">FEATURED</span></div><div id="dashFeaturedContent"></div></div>
   <div class="dash-card"><div class="dash-title"><span>🔥 正在热门预测</span><span class="dash-chip chip-gold">HOT</span></div><div class="dash-sub">按当前奖池排序 / By pool</div><div id="dashHot" class="dash-list"></div></div>
   <div class="dash-card"><div class="dash-title"><span>⏰ 即将截止</span><span class="dash-chip chip-blue">SOON</span></div><div class="dash-sub">最接近投注截止 / Closing soon</div><div id="dashSoon" class="dash-list"></div></div>
@@ -166,6 +166,8 @@ $('giftSendToggle').onclick=()=>{$('giftSendDetails').classList.toggle('open');$
    $('adminMarkets').querySelectorAll('[data-admin-cancel]').forEach(b=>b.onclick=()=>cancelMarket(b.dataset.adminCancel));
  }
 }
+async function saveZhi(){const a=Math.floor(Number($('saveAmount').value));if(!Number.isFinite(a)||a<1)return alert('请输入至少 1 ZHI');const {error}=await sb.rpc('save_zhi',{p_amount:a});if(error)return alert(error.message);$('saveAmount').value='';$('savingsMsg').textContent='已存入 '+money(a)+' ZHI / Saved';await load();}
+async function claimSavings(){const {data,error}=await sb.rpc('claim_zhi_savings');if(error)return alert(error.message);const n=Number(data?.interest||0);$('savingsMsg').textContent=n>0?'已领取 '+money(n)+' ZHI 利息 / Interest claimed':'目前还没有可领取的整数利息 / No claimable interest yet';await load();}
 async function loadHomeDashboard(){
  const {data,error}=await sb.rpc('get_home_dashboard');
  if(error||!data)return;
@@ -177,7 +179,7 @@ async function loadHomeDashboard(){
  $('dashWinners').innerHTML=(d.recent_winners||[]).map(x=>'<div class="dash-item"><div class="dash-question">🏆 '+(x.username||'用户')+' 获得 <b>'+money(x.amount)+' ZHI</b></div><div class="dash-meta">'+(x.question||'预测结算')+' · '+fmtTime(x.created_at)+'</div></div>').join('')||'<div class="dash-empty">还没有中奖记录 / No winners yet</div>';
  $('dashLeaderboard').innerHTML=(d.leaderboard||[]).map((x,i)=>'<div class="dash-item" style="display:flex;justify-content:space-between;gap:8px"><span><b>'+(i+1)+'.</b> '+x.username+'</span><b style="color:#8a5a00">'+money(x.balance)+' ZHI</b></div>').join('')||'<div class="dash-empty">暂无排行榜 / No ranking yet</div>';
  $('dashTransfers').textContent='已发生 '+Number(d.transfer_count||0)+' 笔转赠 / '+Number(d.transfer_count||0)+' transfers';
- $('dashPool').textContent=money(d.total_pool||0)+' ZHI';
+ $('dashPool').textContent=money(d.total_pool||0)+' ZHI'; $('saveBtn').onclick=saveZhi;$('claimBtn').onclick=claimSavings;
  const shareText=m=>m?'🪙 ZHI 预测\n\n🔥 '+m.question+'\n💰 当前奖池：'+money(m.yes_pool+m.no_pool)+' ZHI\n⏰ 截止：'+new Date(m.close_at).toLocaleString('zh-CN')+'\n\n👉 立即加入 ZHI Prediction':'';
  const shareMarket=async id=>{
    const m=marketsData.find(x=>x.id===id); if(!m)return;

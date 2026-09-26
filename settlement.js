@@ -1,7 +1,7 @@
-// Zee知币 Prediction Settlement - simulated points only
+// ZHI知币 Prediction Settlement - simulated points only
 // Winning payout = winning stake / total winning pool × total market pool.
 // This module is intentionally client-side for the demo and is not a real-money settlement system.
-window.ZeeSettlement={
+window.ZHISettlement={
  settleMarket:function(accounts,marketId,result){
   let poolTotal=0,winningPool=0;
   Object.values(accounts).forEach(a=>{

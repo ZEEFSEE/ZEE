@@ -109,10 +109,10 @@ function renderHistory(list){
 let mode='login';
 $('authSubmit').onclick=async()=>{
  const u=$('authUsername').value.trim(),p=$('authPassword').value;
- if(u.length<2||p.length<6)return showErr('用户名至少2位，密码至少6位');
+ if(!/^[a-zA-Z0-9_]{2,24}$/.test(u))return showErr('用户名只能用 2-24 位英文字母、数字或下划线');if(p.length<6)return showErr('密码至少6位');
  showErr('');$('authSubmit').disabled=true;
  try{
-  const email=u.toLowerCase()+'@zhi.local';
+  const email=u.toLowerCase()+'@zhi-demo.com';
   if(mode==='signup'){
    const {data,error}=await sb.auth.signUp({email,password:p,options:{data:{username:u}}});
    if(error)throw error;if(data.session)await load();else showErr('注册成功，请完成验证后登录');

@@ -20,14 +20,14 @@
 </div></div>
 
 <div class="wrap hidden" id="appScreen"><header><div class="topbar"><div class="brand"><span class="dot"></span>Zee知币</div><div><span id="currentUserLabel" style="color:var(--sub);font-size:13px"></span> <button class="link-btn" id="logoutBtn">退出</button></div><div class="balance">余额 <b id="balanceVal">--</b> ZEE</div></div>
-<div class="note">💰 财富总额 · 财神爷 <b style="color:var(--accent)">3,000,000,000 ZEE</b>（3G ZEE）<br>预测市场：选择「是 / 否」并质押 ZEE。</div></header>
+<div class="note">💰 财富总额 · 财神爷 <b style="color:var(--accent)">300,000,000,000,000,000 ZEE</b>（3亿亿 ZEE）<br>预测市场：选择「是 / 否」并质押 ZEE。</div></header>
 <h2 class="section">公共预测市场</h2><div id="markets"></div>
 <h2 class="section">转账</h2><div class="market"><div class="row"><input class="transfer-input" id="transferTo" placeholder="收款用户名"><input class="transfer-input" style="max-width:100px" type="number" min="1" id="transferAmt" placeholder="数量"><button class="btn primary" id="transferBtn">转账</button></div></div>
 <h2 class="section">积分排行榜</h2><div class="lb" id="leaderboard"></div>
 <h2 class="section">交易 / 预测历史</h2><div class="hist" id="history"></div><footer>Zee知币原型 · ZEE 为演示积分，不代表现实资产</footer></div>
 <div class="toast" id="toast"></div>
 <script>
-const AK='zee-coin-accounts-v2',SK='zee-coin-session-v2',START=1000,TREASURY='财神爷',TOTAL_ZEE=3000000000;
+const AK='zee-coin-accounts-v2',SK='zee-coin-session-v2',START=1000,TREASURY='财神爷',TOTAL_ZEE=300000000000000000;
 function ensureTreasury(){if(!accounts[TREASURY])accounts[TREASURY]={passwordHash:null,balance:TOTAL_ZEE,markets:marketsSeed(),stakes:{},history:[{time:Date.now(),type:'treasury',desc:'财富总额',amount:TOTAL_ZEE}],treasury:true};else accounts[TREASURY].balance=TOTAL_ZEE;}
 const marketsSeed=()=>[
 {id:'m1',q:'英伟达股价本周五收盘是否高于 200 美元？',meta:'股价预测 · 截止本周五 16:00',pool:{yes:620,no:340},status:'open'},

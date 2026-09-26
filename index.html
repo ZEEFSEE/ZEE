@@ -5,17 +5,17 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ZHI Prediction</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#f6f7fb;color:#171a21;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% -10%,#fff8d9 0,#f7f7fb 30%,#f4f5f8 100%);color:#171a21;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}.wrap{position:relative}.wrap:before{content:"";position:absolute;inset:0 0 auto;height:180px;background:linear-gradient(180deg,rgba(255,214,70,.13),transparent);pointer-events:none;z-index:-1}
 .wrap{max-width:760px;margin:auto;padding:18px 14px 40px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
 .brand{display:flex;align-items:center;gap:9px;font-size:22px;font-weight:900;letter-spacing:.2px}.zhi-coin{width:38px;height:38px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:radial-gradient(circle at 32% 28%,#fff8b8 0%,#ffe36a 25%,#f7bd19 58%,#c88700 100%);border:2px solid #d79a08;box-shadow:inset 0 2px 2px rgba(255,255,255,.85),inset 0 -3px 5px rgba(120,70,0,.25),0 4px 12px rgba(190,130,0,.3);color:#8a5700;font-size:22px;font-weight:1000;text-shadow:0 1px 0 #fff7bd}.brand-text{background:linear-gradient(90deg,#8a5700,#d49400,#8a5700);-webkit-background-clip:text;background-clip:text;color:transparent}.balance{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:8px 12px;font-weight:700}
-.card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:16px;margin-bottom:12px}
+.card{background:rgba(255,255,255,.94);border:1px solid #e6e8ed;border-radius:16px;padding:17px;margin-bottom:12px;box-shadow:0 4px 16px rgba(25,30,40,.045)}.card:hover{box-shadow:0 7px 22px rgba(25,30,40,.07)}
 .total{font-size:13px;color:#777}.big{font-size:28px;font-weight:800;margin-top:4px}
-h2{font-size:16px;margin:22px 2px 10px}.q{font-weight:700;line-height:1.45}.meta{font-size:12px;color:#888;margin:7px 0 13px}
-.pool{font-size:12px;color:#666;margin-bottom:12px}.buttons{display:flex;gap:8px}.btn{flex:1;border:0;border-radius:10px;padding:11px;font-weight:800;cursor:pointer}.yes{background:#dff8ea;color:#087443}.no{background:#ffe2e5;color:#b42332}.confirm{background:#20242c;color:#fff}
+h2{font-size:16px;margin:24px 2px 10px;display:flex;align-items:center;gap:7px}h2:after{content:"";height:1px;flex:1;background:linear-gradient(90deg,#ead28a,transparent)}.q{font-weight:700;line-height:1.45}.meta{font-size:12px;color:#888;margin:7px 0 13px}
+.pool{font-size:12px;color:#666;margin-bottom:12px;background:#fafafa;border-radius:10px;padding:9px}.buttons{display:flex;gap:8px}.btn{flex:1;border:0;border-radius:11px;padding:11px;font-weight:800;cursor:pointer;transition:.15s transform,.15s box-shadow}.btn:hover{transform:translateY(-1px)}.yes{background:linear-gradient(135deg,#e8fff1,#bff0d5);color:#06713e;border:1px solid #a9dfc2}.no{background:linear-gradient(135deg,#fff0f1,#ffd4d8);color:#a51f2d;border:1px solid #f1bcc2}.confirm{background:linear-gradient(135deg,#292d35,#12151a);color:#fff;box-shadow:0 5px 12px rgba(20,22,28,.16)}
 .stake{display:none;gap:8px;margin-top:8px}.stake.show{display:flex}.stake input{flex:1;border:1px solid #ddd;border-radius:9px;padding:10px}
 .status{font-size:12px;font-weight:700}.open{color:#087443}.expired{color:#b26a00}.resolved{color:#3157b7}
-.notice{font-size:12px;color:#777;background:#f0f2f6;border-radius:10px;padding:10px;margin-top:10px}
-.auth{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px}.authbox{width:100%;max-width:380px;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:24px}.field{margin:12px 0}.field label{display:block;font-size:12px;color:#777;margin-bottom:5px}.field input{width:100%;padding:11px;border:1px solid #ddd;border-radius:9px}.link{border:0;background:none;color:#3157b7;cursor:pointer}.err{height:18px;color:#c62828;font-size:12px}
+.notice{font-size:12px;color:#777;background:#f5f6f8;border-radius:11px;padding:10px;margin-top:10px}.hero{background:linear-gradient(135deg,#17130a 0%,#2c210d 48%,#111318 100%);color:#fff;border:1px solid #6f5318;border-radius:20px;padding:22px 19px;margin-bottom:14px;box-shadow:0 12px 30px rgba(70,50,10,.2);position:relative;overflow:hidden}.hero:after{content:"🪙";position:absolute;right:-4px;top:-18px;font-size:110px;opacity:.13;transform:rotate(18deg)}.hero-title{font-size:25px;font-weight:950;letter-spacing:.3px}.hero-sub{color:#d8cda9;font-size:12px;margin-top:7px;max-width:520px}.hero-stat{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}.hero-pill{background:rgba(255,215,80,.12);border:1px solid rgba(255,215,80,.25);color:#ffe78a;border-radius:999px;padding:7px 11px;font-size:11px;font-weight:800}.section-label{font-size:11px;color:#9a6a00;font-weight:900;letter-spacing:.7px;text-transform:uppercase}
+.auth{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px}.authbox{width:100%;max-width:400px;background:rgba(255,255,255,.97);border:1px solid #ead28a;border-radius:22px;padding:27px;box-shadow:0 18px 55px rgba(85,65,15,.14)}.field{margin:12px 0}.field label{display:block;font-size:12px;color:#777;margin-bottom:5px}.field input{width:100%;padding:11px;border:1px solid #ddd;border-radius:9px}.link{border:0;background:none;color:#3157b7;cursor:pointer}.err{height:18px;color:#c62828;font-size:12px}
 .hidden{display:none!important}.history{font-size:13px}.row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee}.row:last-child{border:0}
 footer{text-align:center;color:#aaa;font-size:11px;margin-top:24px}
 
@@ -26,7 +26,7 @@ footer{text-align:center;color:#aaa;font-size:11px;margin-top:24px}
 </head>
 <body>
 <section id="authScreen" class="auth"><div class="authbox">
-<h1>💰 ZHI</h1><p id="authSub">登录 / Sign in账户 / Sign in to predict</p>
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px"><span class="zhi-coin" style="width:46px;height:46px;font-size:26px">Z</span><h1 style="margin:0;background:linear-gradient(90deg,#8a5700,#d49400,#8a5700);-webkit-background-clip:text;background-clip:text;color:transparent">ZHI</h1></div><p id="authSub">登录 / Sign in账户 / Sign in to predict</p>
 <div class="field"><label>用户名 / Username</label><input id="authUsername" placeholder="zhi_player"></div>
 <div class="field"><label>密码 / Password</label><input id="authPassword" type="password" placeholder="至少 6 位 / Min. 6 characters"></div>
 <div id="authError" class="err"></div>
@@ -37,6 +37,7 @@ footer{text-align:center;color:#aaa;font-size:11px;margin-top:24px}
 
 <main id="app" class="wrap hidden">
 <div class="top"><div class="brand"><span class="zhi-coin">Z</span><span class="brand-text">ZHI</span></div><div style="display:flex;align-items:center;gap:8px"><div class="balance">用户名 / User: <b id="topUsername">--</b></div><button id="giftNoticeBtn" class="btn" style="display:none;flex:0 0 auto;padding:8px 10px;background:#fff3cd;color:#8a6500;border:1px solid #ffe69c">🎁 <span id="giftNoticeCount">0</span></button><div class="balance gold-balance"><span class="gold-label"><span class="coin-mini">🪙</span> 余额 / Balance</span> <span id="balance">--</span> ZHI</div></div></div><div id="giftNotice" class="notice hidden"></div>
+<div class="hero"><div class="section-label">ZHI PREDICTION</div><div class="hero-title">🪙 Predict. Play. Earn ZHI.</div><div class="hero-sub">选择 YES / NO，下注 ZHI。市场截止后进入结算，管理员确认结果后自动派奖。</div><div class="hero-stat"><span class="hero-pill">⚡ 自动结算</span><span class="hero-pill">🏆 自动派奖</span><span class="hero-pill">🎁 自由转赠</span></div></div>
 <div class="card" style="background:linear-gradient(135deg,#fffdf4 0%,#fff6cf 48%,#fff 100%);border-color:#ead28a;box-shadow:0 4px 18px rgba(180,130,0,.12)"><div class="total">🏦 ZHI Treasury · Total / ZHI 总额</div><div class="big" style="color:#8a5a00">3,000,000,000,000,000 ZHI</div><div class="meta" style="margin-top:8px">财神爷余额 / Treasury Remaining: <b id="treasuryBalance">--</b> ZHI</div></div>
 <div class="card">
   <div class="q">🎁 转赠 ZHI / Send ZHI</div>
@@ -69,7 +70,7 @@ footer{text-align:center;color:#aaa;font-size:11px;margin-top:24px}
 
 <h2>🧾 我的记录 / My Records</h2><div id="history" class="card history"></div>
 <button id="logout" class="link" style="display:block;margin:18px auto">退出登录 / Sign out</button>
-<footer>ZHI · Prediction Demo</footer>
+<footer>🪙 <b style="color:#8a5a00">ZHI</b> · Prediction Platform · Demo</footer>
 </main>
 <div id="stakeModal" class="modal"><div class="modalbox">
 <h3>确认 / Confirm预测 / Confirm Prediction</h3><div id="choiceText" class="choice"></div>

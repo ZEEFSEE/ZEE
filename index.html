@@ -39,9 +39,10 @@ footer{text-align:center;color:#aaa;font-size:11px;margin-top:24px}
 
 <h2>🎯 预测市场 / Prediction Markets</h2><div id="markets"></div>
 <div id="expiredPanel" class="hidden"><h2>⏰ 已到期 / Expired</h2><div id="expiredMarkets"></div></div>
+<div id="adminPanel" class="hidden"><h2>🛠️ 管理员 / Admin</h2><div id="adminMarkets"></div></div>
 
 <h2>🧾 我的记录 / My Records</h2><div id="history" class="card history"></div>
-<button id="logout" class="link" style="display:block;margin:18px auto">退出登录 / Sign out / Sign in</button>
+<button id="logout" class="link" style="display:block;margin:18px auto">退出登录 / Sign out</button>
 <footer>ZHI · Prediction Demo</footer>
 </main>
 <div id="stakeModal" class="modal"><div class="modalbox">
@@ -60,7 +61,6 @@ function showErr(s){$('authError').textContent=s}
 async function load(){
  const r=await sb.auth.getUser();user=r.data.user;
  if(!user){$('authScreen').classList.remove('hidden');$('app').classList.add('hidden');return}
- await sb.rpc('close_expired_markets');
  const [w,m,p,h]=await Promise.all([
   sb.from('wallets').select('*').eq('user_id',user.id).single(),
   sb.from('markets').select('*').order('created_at',{ascending:true}),
@@ -91,7 +91,28 @@ function renderMarkets(){
 $('markets').querySelectorAll('[data-confirm]').forEach(b=>b.onclick=()=>stake(b.dataset.confirm));
  const expired=marketsData.filter(m=>m.status==='closed');
  $('expiredPanel').classList.toggle('hidden',!expired.length);
- $('expiredMarkets').innerHTML=expired.map(m=>'<div class="card"><div class="q">'+m.question+'</div><div class="status expired">⏰ 已到期 / Expired · 等待结果</div></div>').join('');
+ $('expiredMarkets').innerHTML=expired.map(m=>'<div class="card"><div class="q">'+m.question+'</div><div class="status expired">⏰ 已到期 / Expired · 等待管理员结果 / Awaiting admin result</div></div>').join('');
+
+ const isAdmin=user?.app_metadata?.role==='admin';
+ $('adminPanel').classList.toggle('hidden',!isAdmin);
+ if(isAdmin){
+   $('adminMarkets').innerHTML=expired.length?expired.map(m=>
+     '<div class="card"><div class="q">'+m.question+'</div>'+
+     '<div class="meta">市场 ID / Market ID: '+m.id+' · '+new Date(m.close_at).toLocaleString('zh-CN')+'</div>'+
+     '<div class="pool">YES '+money(m.yes_pool)+' ZHI　 NO '+money(m.no_pool)+' ZHI</div>'+
+     '<div class="buttons"><button class="btn yes" data-admin-result="'+m.id+'" data-result="yes">确认 YES / Confirm YES</button>'+
+     '<button class="btn no" data-admin-result="'+m.id+'" data-result="no">确认 NO / Confirm NO</button></div></div>'
+   ).join(''):'<div class="card">暂无待结算市场。 / No markets awaiting settlement.</div>';
+   $('adminMarkets').querySelectorAll('[data-admin-result]').forEach(b=>b.onclick=()=>adminSetResult(b.dataset.adminResult,b.dataset.result));
+ }
+}
+async function adminSetResult(id,result){
+ const label=result==='yes'?'YES':'NO';
+ if(!confirm('确定将市场 '+id+' 结果设为 '+label+'？\nConfirm result '+label+' for market '+id+'?'))return;
+ const {data,error}=await sb.rpc('admin_set_result',{p_market_id:id,p_result:result});
+ if(error)return alert(error.message);
+ alert('结算完成 / Settlement completed\n已自动派奖并到账 / Payout credited automatically');
+ await load();
 }
 async function stake(id=selectedMarket){
  const amount=Math.floor(Number($('modalAmount').value)),side=selectedSide;

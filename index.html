@@ -83,6 +83,7 @@ const sb=window.zhiSupabase;let user=null,wallet=null,marketsData=[],positions=[
 const money=n=>Number(n||0).toLocaleString(),$=id=>document.getElementById(id);
 function showErr(s){$('authError').textContent=s}
 async function load(){
+ await sb.auth.refreshSession();
  const r=await sb.auth.getUser();user=r.data.user;
  if(!user){$('authScreen').classList.remove('hidden');$('app').classList.add('hidden');return}
  const [w,m,p,h]=await Promise.all([

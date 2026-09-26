@@ -171,7 +171,7 @@ async function transferZHI(){
  if(!amount||amount<1)return $('transferError').textContent='请输入有效数量 / Enter a valid amount';
  if(amount>Number(wallet?.balance||0))return $('transferError').textContent='余额不足 / Insufficient balance';
  if(username.toLowerCase()===String(user?.user_metadata?.username||'').toLowerCase())return $('transferError').textContent='不能转给自己 / Cannot transfer to yourself';
- if(!confirm('确定转赠 '+money(amount)+' ZHI 给 '+username+'？\\nSend '+money(amount)+' ZHI to '+username+'?'))return;
+ if(!confirm('确定转赠 '+money(amount)+' ZHI 给 '+username+'？\nSend '+money(amount)+' ZHI to '+username+'?'))return;
  $('transferBtn').disabled=true;
  try{
    const {error}=await sb.rpc('transfer_zhi',{p_to_username:username,p_amount:amount});

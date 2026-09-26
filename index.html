@@ -18,6 +18,8 @@ h2{font-size:16px;margin:22px 2px 10px}.q{font-weight:700;line-height:1.45}.meta
 .auth{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px}.authbox{width:100%;max-width:380px;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:24px}.field{margin:12px 0}.field label{display:block;font-size:12px;color:#777;margin-bottom:5px}.field input{width:100%;padding:11px;border:1px solid #ddd;border-radius:9px}.link{border:0;background:none;color:#3157b7;cursor:pointer}.err{height:18px;color:#c62828;font-size:12px}
 .hidden{display:none!important}.history{font-size:13px}.row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee}.row:last-child{border:0}
 footer{text-align:center;color:#aaa;font-size:11px;margin-top:24px}
+
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:18px;z-index:10}.modal.show{display:flex}.modalbox{width:100%;max-width:360px;background:#fff;border-radius:16px;padding:20px;box-shadow:0 12px 40px rgba(0,0,0,.2)}.modalbox h3{margin:0 0 6px}.choice{font-size:13px;color:#666;margin-bottom:14px}.modalbox input{width:100%;padding:12px;border:1px solid #ddd;border-radius:9px;font-size:16px;margin-bottom:10px}.modalactions{display:flex;gap:8px}.modalactions button{flex:1}
 </style>
 </head>
 <body>
@@ -42,12 +44,17 @@ footer{text-align:center;color:#aaa;font-size:11px;margin-top:24px}
 <button id="logout" class="link" style="display:block;margin:18px auto">退出登录</button>
 <footer>ZHI知币 · Prediction Demo</footer>
 </main>
+<div id="stakeModal" class="modal"><div class="modalbox">
+<h3>确认预测</h3><div id="choiceText" class="choice"></div>
+<input id="modalAmount" type="number" min="1" placeholder="下注多少 ZHI？">
+<div class="modalactions"><button id="modalCancel" class="btn" style="background:#eee">取消</button><button id="modalConfirm" class="btn confirm">确认</button></div>
+</div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-client.js"></script>
 <script src="settlement.js"></script>
 <script>
-const sb=window.zhiSupabase;let user=null,wallet=null,marketsData=[],positions=[];
+const sb=window.zhiSupabase;let user=null,wallet=null,marketsData=[],positions=[],selectedMarket=null,selectedSide=null;
 const money=n=>Number(n||0).toLocaleString(),$=id=>document.getElementById(id);
 function showErr(s){$('authError').textContent=s}
 async function load(){
@@ -76,20 +83,25 @@ function renderMarkets(){
   (mine?'<div class="notice">你已预测 '+money(mine.stake)+' ZHI</div>':'')+'</div>';
  }).join('')||'<div class="card">目前没有进行中的市场。</div>';
  $('markets').querySelectorAll('[data-side]').forEach(b=>b.onclick=()=>{
-   const s=$('s-'+b.dataset.id);s.dataset.side=b.dataset.side;s.classList.add('show');
- });
- $('markets').querySelectorAll('[data-confirm]').forEach(b=>b.onclick=()=>stake(b.dataset.confirm));
+ selectedMarket=b.dataset.id;selectedSide=b.dataset.side;
+ const m=marketsData.find(x=>x.id===selectedMarket);
+ $('choiceText').textContent=(selectedSide==='yes'?'YES「是」':'NO「否」')+' · '+m.question;
+ $('modalAmount').value='';$('stakeModal').classList.add('show');setTimeout(()=>$('modalAmount').focus(),50);
+});
+$('markets').querySelectorAll('[data-confirm]').forEach(b=>b.onclick=()=>stake(b.dataset.confirm));
  const expired=marketsData.filter(m=>m.status==='closed');
  $('expiredPanel').classList.toggle('hidden',!expired.length);
  $('expiredMarkets').innerHTML=expired.map(m=>'<div class="card"><div class="q">'+m.question+'</div><div class="status expired">⏰ 已到期 · 等待结果</div></div>').join('');
 }
-async function stake(id){
- const s=$('s-'+id),amount=Math.floor(Number($('a-'+id).value));
+async function stake(id=selectedMarket){
+ const amount=Math.floor(Number($('modalAmount').value)),side=selectedSide;
+ if(!selectedMarket||!side)return;
+
  if(!amount||amount<1)return alert('请输入 ZHI 数量');
  if(amount>Number(wallet.balance))return alert('ZHI 余额不足');
- const {error}=await sb.rpc('place_stake',{p_market_id:id,p_side:s.dataset.side,p_amount:amount});
+ const {error}=await sb.rpc('place_stake',{p_market_id:id,p_side:side,p_amount:amount});
  if(error)return alert(error.message);
- await load();
+ $('stakeModal').classList.remove('show');selectedMarket=null;selectedSide=null;await load();
 }
 function renderHistory(list){
  $('history').innerHTML=list.length?list.map(x=>'<div class="row"><span>'+ (x.description||x.type)+'</span><b>'+(Number(x.amount)>=0?'+':'')+money(x.amount)+' ZHI</b></div>').join(''):'暂无记录';
@@ -117,6 +129,10 @@ $('authSwitchBtn').onclick=()=>{
  $('authSwitchBtn').textContent=mode==='login'?'立即注册':'直接登录';
  showErr('');
 };
+$('modalCancel').onclick=()=>{$('stakeModal').classList.remove('show');selectedMarket=null;selectedSide=null};
+$('stakeModal').onclick=e=>{if(e.target.id==='stakeModal')$('modalCancel').click()};
+$('modalConfirm').onclick=()=>stake();
+$('modalAmount').onkeydown=e=>{if(e.key==='Enter')stake()};
 $('logout').onclick=async()=>{await sb.auth.signOut();location.reload()};
 load();
 </script>

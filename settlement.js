@@ -58,9 +58,23 @@ window.ZHISettlement={
      return '<div style="padding:10px 0;border-bottom:1px solid #eee"><div style="display:flex;justify-content:space-between;gap:8px"><b>'+esc(label[g.flow_type]||g.flow_type||'资金流水')+'</b><span class="meta" style="margin:0">'+new Date(g.created_at).toLocaleString('zh-CN')+'</span></div>'+detail+'<div class="meta" style="margin:4px 0 0">流水号 / Flow ID: '+esc(g.key)+' · 本组净额: '+(total>=0?'+':'')+money(total)+' ZHI</div></div>';
    }).join(''):'<div class="notice">暂无资金流水 / No funds flow yet</div>';
  }
+ function ensureAdminUserEntry(){
+   if(document.getElementById('zhiAdminUsersEntry'))return;
+   const panel=document.getElementById('adminPanel');
+   if(!panel||panel.classList.contains('hidden'))return;
+   const card=document.createElement('div'); card.id='zhiAdminUsersEntry'; card.className='card';
+   card.style.cssText='background:linear-gradient(135deg,#f8f5ff,#fff);border-color:#d8c8f5;box-shadow:0 5px 18px rgba(105,65,198,.10)';
+   card.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">'+
+     '<div><div class="q">👥 10,000 ZHI 用户管理</div><div class="meta" style="margin-bottom:0">查看全部 SR 与真人用户 · 钱包 · 下注 · 储蓄 · 贷款 · 盈亏 · 最后活动</div></div>'+
+     '<button id="zhiAdminUsersBtn" class="btn confirm" style="flex:0 0 auto;min-width:180px">👥 打开用户管理</button></div>';
+   const first=panel.querySelector('#treasuryFinancePanel');
+   if(first)first.insertAdjacentElement('beforebegin',card);else panel.prepend(card);
+   card.querySelector('#zhiAdminUsersBtn').onclick=()=>{window.location.href='admin-users.html';};
+ }
  function boot(){
    ensurePanel();
-   setInterval(load,2500);
+   ensureAdminUserEntry();
+   setInterval(()=>{ensureAdminUserEntry();load();},2500);
    load();
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();

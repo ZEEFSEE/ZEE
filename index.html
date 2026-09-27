@@ -122,23 +122,35 @@ const money=n=>Number(n||0).toLocaleString(),$=id=>document.getElementById(id);
 function showErr(s){$('authError').textContent=s}
 const togglePanel=(toggleId,detailsId,arrowId)=>{const t=$(toggleId),d=$(detailsId),a=$(arrowId);if(!t||!d||!a)return;t.onclick=()=>{d.classList.toggle('open');a.classList.toggle('open')}};togglePanel('savingsToggle','savingsDetails','savingsArrow');togglePanel('loanToggle','loanDetails','loanArrow');
 async function load(){
- await sb.auth.refreshSession();
- const r=await sb.auth.getUser();user=r.data.user;
+ try{
+  const r=await sb.auth.getUser();
+  if(r.error)throw r.error;
+  user=r.data.user;
+ }catch(e){
+  user=null;
+ }
  if(!user){$('authScreen').classList.remove('hidden');$('app').classList.add('hidden');return}
- const [w,m,p,h]=await Promise.all([
-  sb.from('wallets').select('*').eq('user_id',user.id).single(),
-  sb.from('markets').select('*').order('created_at',{ascending:true}),
-  sb.from('positions').select('*').eq('user_id',user.id).eq('status','open'),
-  sb.from('transactions').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(10)
- ]);
- wallet=w.data;marketsData=m.data||[];positions=p.data||[];
- const treasury=await sb.rpc('get_treasury_balance');
- const {data:profile}=await sb.from('profiles').select('username,z_id').eq('id',user.id).maybeSingle();
- $('topUsername').textContent=profile?.username||user?.user_metadata?.username||user?.email?.split('@')[0]||'--';
- $('topZId').textContent=profile?.z_id?('ID: ZHI-'+String(profile.z_id).padStart(12,'0')):'ID: ZHI-000000000000';
- $('balance').textContent=money(wallet?.balance);$('treasuryBalance').textContent=money(treasury.data);
  $('authScreen').classList.add('hidden');$('app').classList.remove('hidden');
- renderMarkets();renderHistory(h.data||[]);$('saveBtn').onclick=saveZhi;$('withdrawBtn').onclick=withdrawZhi;$('claimBtn').onclick=claimSavings;$('loanBtn').onclick=takeLoan;$('repayBtn').onclick=repayLoan;await loadFinancePanel();await loadGiftNotice();await loadHomeDashboard();
+ try{
+  const [w,m,p,h]=await Promise.all([
+   sb.from('wallets').select('*').eq('user_id',user.id).single(),
+   sb.from('markets').select('*').order('created_at',{ascending:true}),
+   sb.from('positions').select('*').eq('user_id',user.id).eq('status','open'),
+   sb.from('transactions').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(10)
+  ]);
+  wallet=w.data;marketsData=m.data||[];positions=p.data||[];
+  const treasury=await sb.rpc('get_treasury_balance');
+  const {data:profile}=await sb.from('profiles').select('username,z_id').eq('id',user.id).maybeSingle();
+  $('topUsername').textContent=profile?.username||user?.user_metadata?.username||user?.email?.split('@')[0]||'--';
+  $('topZId').textContent=profile?.z_id?('ID: ZHI-'+String(profile.z_id).padStart(12,'0')):'ID: ZHI-000000000000';
+  $('balance').textContent=money(wallet?.balance);$('treasuryBalance').textContent=money(treasury.data);
+  renderMarkets();renderHistory(h.data||[]);
+ }catch(e){
+  showErr('登录成功，但资料加载失败：'+(e.message||'请刷新页面'));
+  return;
+ }
+ $('saveBtn').onclick=saveZhi;$('withdrawBtn').onclick=withdrawZhi;$('claimBtn').onclick=claimSavings;$('loanBtn').onclick=takeLoan;$('repayBtn').onclick=repayLoan;
+ await Promise.allSettled([loadFinancePanel(),loadGiftNotice(),loadHomeDashboard()]);
 }
 function renderMarkets(){
  const open=marketsData.filter(m=>m.status==='open'&&new Date(m.close_at)>new Date());

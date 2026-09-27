@@ -24,11 +24,14 @@ window.ZHISettlement={
  }
  async function load(){
    const panel=ensurePanel();
-   if(!panel||!window.zhiSupabase||!window.user?.id)return;
+   if(!panel||!window.zhiSupabase)return;
    const body=panel.querySelector('#flowBody');
    if(body.style.display==='none')return;
    const sb=window.zhiSupabase;
-   const {data,error}=await sb.from('transactions').select('id,amount,description,metadata,created_at,flow_id,flow_type,type').eq('user_id',window.user.id).order('created_at',{ascending:false}).limit(100);
+   const auth=await sb.auth.getUser();
+   const uid=auth?.data?.user?.id;
+   if(!uid)return;
+   const {data,error}=await sb.from('transactions').select('id,amount,description,metadata,created_at,flow_id,flow_type,type').eq('user_id',uid).order('created_at',{ascending:false}).limit(100);
    if(error){panel.querySelector('#flowList').innerHTML='<div class="notice">流水加载失败 / Failed to load flow</div>';return;}
    const rows=data||[];
    const groups=[];

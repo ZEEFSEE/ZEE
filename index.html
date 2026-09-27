@@ -22,7 +22,81 @@ footer{text-align:center;color:#aaa;font-size:11px;margin-top:24px}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:18px;z-index:10}.modal.show{display:flex}.modalbox{width:100%;max-width:360px;background:#fff;border-radius:16px;padding:20px;box-shadow:0 12px 40px rgba(0,0,0,.2)}.modalbox h3{margin:0 0 6px}.choice{font-size:13px;color:#666;margin-bottom:14px}.modalbox input{width:100%;padding:12px;border:1px solid #ddd;border-radius:9px;font-size:16px;margin-bottom:10px}.modalactions{display:flex;gap:8px}.modalactions button{flex:1}
 
 .gold-balance{position:relative;overflow:hidden;background:linear-gradient(135deg,#fffbe8 0%,#ffe98a 24%,#ffd13d 52%,#f2aa00 100%);color:#704400;border:1px solid #d99a00;border-radius:16px;padding:10px 15px;font-weight:900;box-shadow:0 5px 16px rgba(190,130,0,.28),inset 0 2px 0 rgba(255,255,255,.95),inset 0 -2px 5px rgba(130,75,0,.12);text-shadow:0 1px 0 rgba(255,255,255,.65)}.gold-balance:before{content:"";position:absolute;left:-35%;top:-55%;width:45%;height:220%;background:rgba(255,255,255,.45);transform:rotate(25deg);pointer-events:none}.gold-balance #balance{color:#5f3700;font-size:19px;font-variant-numeric:tabular-nums}.gold-label{display:inline-flex;align-items:center;gap:5px}.coin-mini{font-size:17px}
-</style>
+
+/* Responsive layout tuning: phone / iPad / desktop only. No business logic changes. */
+html{width:100%;overflow-x:hidden}
+body{min-width:0}
+button,input,select{font:inherit}
+@media (min-width:761px){
+  .wrap{max-width:1180px;padding-left:24px;padding-right:24px}
+}
+@media (min-width:621px) and (max-width:1024px){
+  .wrap{max-width:960px;padding-left:22px;padding-right:22px}
+  .top{gap:12px}
+  .top>div:last-child{flex-wrap:wrap;justify-content:flex-end}
+  .home-dashboard{grid-template-columns:1fr 1fr}
+  .hero{padding:24px}
+  .card{padding:18px}
+}
+@media (max-width:620px){
+  .wrap{width:100%;max-width:none;padding:12px 10px 28px}
+  .top{align-items:flex-start;gap:10px;margin-bottom:12px}
+  .brand{font-size:20px;gap:7px;flex:0 0 auto}
+  .zhi-coin{width:34px;height:34px;font-size:20px}
+  .top>div:last-child{min-width:0;flex:1;display:grid;grid-template-columns:1fr;gap:6px;justify-items:stretch}
+  .top .balance{width:100%;padding:7px 9px;border-radius:10px;font-size:12px}
+  .user-balance{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .user-balance small{white-space:normal}
+  .gold-balance #balance{font-size:17px}
+  .hero{padding:18px 15px;border-radius:16px;margin-bottom:10px}
+  .hero-title{font-size:21px}
+  .hero-sub{font-size:11px;line-height:1.55}
+  .hero-stat{gap:6px;margin-top:12px}
+  .hero-pill{padding:6px 8px;font-size:10px}
+  .card{padding:13px;border-radius:13px;margin-bottom:9px}
+  h2{font-size:15px;margin:18px 1px 8px}
+  .finance-grid{gap:6px}
+  .finance-stat{padding:9px}
+  .finance-stat b{font-size:14px}
+  .finance-actions,.buttons,.dash-actions{gap:6px}
+  .finance-actions input{min-width:0;width:100%;flex:1 1 100%}
+  .finance-actions .btn{min-width:0}
+  .home-dashboard{grid-template-columns:1fr;gap:8px;margin-top:14px;padding-top:14px}
+  .dash-feature-question{font-size:16px}
+  .dash-feature-row{align-items:stretch}
+  .dash-feature-main{min-width:0}
+  .dash-feature-btn{width:100%}
+  .dash-feature-row .dash-feature-btn{flex:1 1 100%}
+  .gift-send-details,.gift-details{margin-top:7px}
+  .savings-action-row{gap:7px}
+  .savings-input-wrap input{min-height:42px;font-size:14px}
+  .savings-action-row .btn{min-height:42px}
+  .savings-secondary-row{gap:7px}
+  .savings-secondary-row .btn{padding:9px 6px;font-size:12px}
+  .sr-live{padding:9px}
+  .sr-live-list{max-height:300px}
+  .sr-live-item{gap:7px;padding:8px 0}
+  .sr-live-time{font-size:9px}
+  .modal{padding:10px}
+  .modalbox{max-width:none;padding:17px;border-radius:14px}
+  .modalbox input{font-size:16px}
+  footer{margin-top:18px}
+}
+@media (max-width:380px){
+  .brand-text{font-size:18px}
+  .brand{font-size:18px}
+  .top{gap:7px}
+  .top>div:last-child{font-size:11px}
+  .finance-grid{grid-template-columns:1fr 1fr}
+  .finance-stat b{font-size:13px}
+  .hero-title{font-size:19px}
+  .hero-pill{font-size:9px}
+  .dash-title{font-size:13px}
+}
+@media (min-width:621px) and (max-width:900px){
+  .finance-grid{grid-template-columns:repeat(2,1fr)}
+}
+\n</style>
 </head>
 <body>
 <section id="authScreen" class="auth"><div class="authbox">

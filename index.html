@@ -408,8 +408,12 @@ async function loadAdminFundFlows(){
  const rows=data?.rows||[], filter=$('afFilter').value, userFilter=$('afUser').value.trim().toLowerCase();
  const filtered=rows.filter(x=>(filter==='all'||x.flow_type===filter)&&(!userFilter||String(x.username||'').toLowerCase().includes(userFilter)));
  $('afIn').textContent=money(data.total_inflow||0)+' ZHI'; $('afOut').textContent=money(data.total_outflow||0)+' ZHI'; $('afNet').textContent=(Number(data.net||0)>=0?'+':'')+money(data.net||0)+' ZHI'; $('afCount').textContent=filtered.length;
- const label={savings_deposit:'🏦 存入',savings_withdrawal:'↩️ 取出',loan_disbursement:'💳 贷款发放',savings_interest:'📈 存款利息',loan_interest_accrual:'📊 贷款计息',loan_repayment:'↩️ 还款'};
- box.innerHTML=filtered.slice(0,200).map(x=>'<div style="padding:10px 0;border-bottom:1px solid #eee"><div style="display:flex;justify-content:space-between;gap:8px"><b>'+esc(x.username||'系统')+'</b><b style="color:'+(Number(x.amount)>=0?'#087443':'#b42318')+'">'+(Number(x.amount)>=0?'+':'')+money(x.amount)+' ZHI</b></div><div class="meta" style="margin:3px 0">'+(label[x.flow_type]||x.type)+' · '+new Date(x.created_at).toLocaleString('zh-CN')+'</div><div style="font-size:12px">'+esc(x.description||'')+'</div><div class="meta" style="margin:3px 0">Flow ID: '+esc(x.flow_id||'-')+'</div></div>').join('')||'<div class="notice">暂无匹配流水 / No matching flows</div>';
+ const label={savings_deposit:'🏦 存入',savings_withdrawal:'↩️ 取出',loan_disbursement:'💳 贷款发放',savings_interest:'📈 存款利息',loan_interest_accrual:'📊 贷款计息',loan_repayment:'↩️ 还款',stake:'🎯 预测下注',settlement_win:'🏆 预测派奖',transfer_out:'🎁 转赠',transfer_in:'🎁 收到转赠',signup_bonus:'🎁 注册奖励'};
+ box.innerHTML=filtered.slice(0,200).map(x=>{
+   const sr=!!x.is_simulated;
+   const tag=sr?'<span style="display:inline-block;padding:2px 7px;border-radius:10px;background:#f1eaff;color:#6941c6;font-size:11px;margin-left:6px">SR · 模拟用户</span>':'<span style="display:inline-block;padding:2px 7px;border-radius:10px;background:#eef2f6;color:#475467;font-size:11px;margin-left:6px">真人用户</span>';
+   return '<div style="padding:10px 0;border-bottom:1px solid #eee"><div style="display:flex;justify-content:space-between;gap:8px"><span><b>'+esc(x.username||'系统')+'</b>'+tag+'</span><b style="color:'+(Number(x.amount)>=0?'#087443':'#b42318')+'">'+(Number(x.amount)>=0?'+':'')+money(x.amount)+' ZHI</b></div><div class="meta" style="margin:3px 0">'+(label[x.flow_type]||label[x.type]||x.type)+' · '+new Date(x.created_at).toLocaleString('zh-CN')+'</div><div style="font-size:12px">'+esc(x.description||'')+'</div><div class="meta" style="margin:3px 0">ZHI ID: '+esc(x.z_id?'ZHI-'+String(x.z_id).padStart(12,'0'):'-')+' · SR Group: '+esc(x.bot_group||'-')+' · Flow ID: '+esc(x.flow_id||'-')+'</div></div>';
+ }).join('')||'<div class="notice">暂无匹配流水 / No matching flows</div>';
 }
 async function loadAdminUsers(){
  const box=$('adminUsers');

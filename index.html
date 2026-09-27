@@ -390,15 +390,24 @@ async function loadSRActivity(){
  const {data,error}=await sb.rpc('admin_get_sr_recent_activity',{p_limit:40});
  if(error){box.innerHTML='<div class="notice">活动加载失败 / Failed: '+String(error.message||'')+'</div>';return}
  const rows=Array.isArray(data)?data:[];
- const labels={login:['🔐','登录'],logout:['🚪','离开'],view_market:['👀','查看市场'],predict:['🎯','预测'],save:['🏦','存储'],loan:['💳','贷款'],repay:['↩️','还款'],wallet_check:['👛','查看钱包']};
+ const core=rows.filter(x=>['predict','save','loan','repay','transfer'].includes(x.action_type));
+ const labels={predict:['🎯','预测'],save:['🏦','存储'],loan:['💳','贷款'],repay:['↩️','还款'],transfer:['🔄','转账'],login:['🔐','登录'],logout:['🚪','离开'],view_market:['👀','查看市场'],wallet_check:['👛','查看钱包']};
  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- $('srLiveCount').textContent=rows.length+' 条最新行为';
- box.innerHTML=rows.map(x=>{
+ const since=Date.now()-5*60*1000;
+ const recent=rows.filter(x=>new Date(x.created_at).getTime()>=since);
+ const counts={predict:0,save:0,loan:0,repay:0,transfer:0};
+ recent.forEach(x=>{if(counts[x.action_type]!=null)counts[x.action_type]++});
+ const summary=$('srLiveSummary');
+ if(summary)summary.innerHTML=[
+  ['🎯 预测',counts.predict],['🏦 存储',counts.save],['💳 贷款',counts.loan],['↩️ 还款',counts.repay],['🔄 转账',counts.transfer]
+ ].map(x=>'<div class="finance-stat"><span>'+x[0]+' · 最近5分钟</span><b>'+Number(x[1]).toLocaleString()+' 次</b></div>').join('');
+ $('srLiveCount').textContent=core.length+' 条核心行为';
+ box.innerHTML=core.slice(0,20).map(x=>{
    const l=labels[x.action_type]||['⚙️',x.action_type||'动作'];
    const amount=x.amount!=null?' · '+money(x.amount)+' ZHI':'';
    const market=x.market_id?' · 市场 '+esc(x.market_id):'';
    return '<div class="sr-live-item"><div class="sr-live-icon">'+l[0]+'</div><div class="sr-live-main"><div class="sr-live-user">'+esc(x.username||x.sr_id||'SR')+'</div><div class="sr-live-action">'+l[1]+amount+market+'</div></div><div class="sr-live-time">'+fmtSGTime(x.created_at)+'</div></div>';
- }).join('')||'<div class="notice">暂时没有行为 / No activity yet</div>';
+ }).join('')||'<div class="notice">最近没有核心经济行为 / No core economic activity yet</div>';
 }
 async function loadSRTreasuryGrants(){const {data,error}=await sb.rpc('admin_get_sr_treasury_grants');if(error){$('srGrantCount').textContent='--';$('srGrantEach').textContent='--';$('srGrantTotal').textContent='--';$('srGrantSource').textContent='加载失败';return}$('srGrantCount').textContent=Number(data.grant_count||0).toLocaleString();$('srGrantEach').textContent=money(data.grant_each||0)+' ZHI';$('srGrantTotal').textContent=money(data.grant_total||0)+' ZHI';$('srGrantSource').textContent=data.funding_source==='treasury'?'财神爷 Treasury':'--';}
 async function loadSRSummary(){const {data,error}=await sb.rpc('admin_get_sr_simulation_summary');if(error){$('srMsg').textContent='SR 状态加载失败：'+error.message;return}$('srUsers').textContent=Number(data.users||0).toLocaleString();$('srActive').textContent=Number(data.active||0).toLocaleString();$('srActions').textContent=Number(data.actions_today||0).toLocaleString();$('srLogins').textContent=Number(data.logins_today||0).toLocaleString();$('srPredictions').textContent=Number(data.predictions_today||0).toLocaleString();$('srSaves').textContent=Number(data.saves_today||0).toLocaleString();$('srLoans').textContent=Number(data.loans_today||0).toLocaleString();$('srRepays').textContent=Number(data.repayments_today||0).toLocaleString();$('srWallet').textContent=money(data.wallet||0)+' ZHI';$('srSavings').textContent=money(data.savings||0)+' ZHI';$('srLoanBalance').textContent=money(data.loans||0)+' ZHI';$('srLast').textContent=data.last_action_at?fmtSG(data.last_action_at)+' · '+SR_TIME_LABEL:'--';loadSRActivity();$('srMsg').textContent=data.enabled?'🟢 SR 自动运行中 / Running':'⏸ SR 已暂停 / Paused';$('srPauseBtn').textContent=data.enabled?'⏸ 暂停 SR':'▶️ 启动 SR';}

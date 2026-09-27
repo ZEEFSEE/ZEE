@@ -789,4 +789,12 @@ setInterval(loadWinnersOnly,2500);
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run);else run();
   new MutationObserver(ms=>ms.forEach(m=>m.addedNodes.forEach(n=>{if(n.nodeType===1)walk(n);else if(n.nodeType===3){const v=n.nodeValue,nv=tr(v);if(v!==nv)n.nodeValue=nv}})).observe(document.body,{childList:true,subtree:true});
 })();
-</script></body></html>
+</script><script data-zhi-24h="1">
+(function(){
+  const nativeToLocaleString=Date.prototype.toLocaleString;
+  const nativeToLocaleTimeString=Date.prototype.toLocaleTimeString;
+  Date.prototype.toLocaleString=function(locales,options){const o=Object.assign({},options||{});if(o.hour12===undefined)o.hour12=false;return nativeToLocaleString.call(this,locales,o)};
+  Date.prototype.toLocaleTimeString=function(locales,options){const o=Object.assign({},options||{});if(o.hour12===undefined)o.hour12=false;return nativeToLocaleTimeString.call(this,locales,o)};
+})();
+</script>
+</body></html>

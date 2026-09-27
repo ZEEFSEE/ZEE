@@ -1,0 +1,47 @@
+name: one-time 24h time format
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  apply:
+    if: ${{ contains(github.event.head_commit.message, '24-hour time format') == false }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply 24-hour time formatting
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          script = r'''<script data-zhi-24h="1">
+          (function(){
+            const nativeToLocaleString = Date.prototype.toLocaleString;
+            const nativeToLocaleTimeString = Date.prototype.toLocaleTimeString;
+            Date.prototype.toLocaleString = function(locales, options){
+              const o = Object.assign({}, options || {});
+              if (o.hour12 === undefined) o.hour12 = false;
+              return nativeToLocaleString.call(this, locales, o);
+            };
+            Date.prototype.toLocaleTimeString = function(locales, options){
+              const o = Object.assign({}, options || {});
+              if (o.hour12 === undefined) o.hour12 = false;
+              return nativeToLocaleTimeString.call(this, locales, o);
+            };
+          })();
+          </script>'''
+          for name in ('index.html','en.html'):
+              p=Path(name)
+              s=p.read_text(encoding='utf-8')
+              if 'data-zhi-24h="1"' not in s:
+                  s=s.replace('</body>', script+'\n</body>')
+                  p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit changes and remove one-time workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html en.html
+          git rm .github/workflows/zhi-24h.yml
+          git commit -m "Apply 24-hour time format"
+          git push

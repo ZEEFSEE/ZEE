@@ -198,6 +198,17 @@ $('giftSendToggle').onclick=()=>{$('giftSendDetails').classList.toggle('open');$
    ).join(''):'<div class="card">暂无可编辑市场。 / No editable markets.</div>';
    $('adminMarkets').querySelectorAll('[data-admin-edit]').forEach(b=>b.onclick=()=>editMarket(b.dataset.adminEdit));
    $('adminMarkets').querySelectorAll('[data-admin-cancel]').forEach(b=>b.onclick=()=>cancelMarket(b.dataset.adminCancel));
+   const cancelled=marketsData.filter(m=>m.status==='cancelled');
+   let cancelledHtml='';
+   if(cancelled.length){
+     const {data:refundRows}=await sb.rpc('admin_get_cancelled_market_refunds');
+     const rm=new Map((refundRows||[]).map(x=>[x.market_id,x]));
+     cancelledHtml='<h3 style="margin:18px 0 8px;font-size:15px">↩️ 已取消市场 / Cancelled Markets</h3>'+cancelled.map(m=>{
+       const r=rm.get(m.id)||{};
+       return '<div class="card"><div class="q">'+m.question+'</div><div class="meta">市场 ID / Market ID: '+m.id+' · 已取消 / Cancelled</div><div class="pool">↩️ 已退款 <b>'+money(r.refunded_total||0)+' ZHI</b> · '+Number(r.refund_count||0)+' 笔投注全部退回各自余额</div></div>';
+     }).join('');
+   }
+   $('adminMarkets').insertAdjacentHTML('beforeend',cancelledHtml);
  }
 }
 async function loadLoanLimit(){const {data,error}=await sb.rpc('get_loan_limit');if(error)return;const el=$('loanLimit');if(el)el.textContent='最高可贷 '+money(data.max_loan)+' ZHI';}

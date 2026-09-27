@@ -120,7 +120,7 @@ footer{text-align:center;color:#aaa;font-size:11px;margin-top:24px}
 const sb=window.zhiSupabase;let user=null,wallet=null,marketsData=[],positions=[],selectedMarket=null,selectedSide=null;
 const money=n=>Number(n||0).toLocaleString(),$=id=>document.getElementById(id);
 function showErr(s){$('authError').textContent=s}
-async const togglePanel=(toggleId,detailsId,arrowId)=>{const t=$(toggleId),d=$(detailsId),a=$(arrowId);if(!t||!d||!a)return;t.onclick=()=>{d.classList.toggle('open');a.classList.toggle('open')}};togglePanel('savingsToggle','savingsDetails','savingsArrow');togglePanel('loanToggle','loanDetails','loanArrow');
+const togglePanel=(toggleId,detailsId,arrowId)=>{const t=$(toggleId),d=$(detailsId),a=$(arrowId);if(!t||!d||!a)return;t.onclick=()=>{d.classList.toggle('open');a.classList.toggle('open')}};togglePanel('savingsToggle','savingsDetails','savingsArrow');togglePanel('loanToggle','loanDetails','loanArrow');
 function load(){
  await sb.auth.refreshSession();
  const r=await sb.auth.getUser();user=r.data.user;

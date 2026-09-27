@@ -314,7 +314,7 @@ async function loadAdminFundFlows(){
  const rows=data?.rows||[], filter=$('afFilter').value, userFilter=$('afUser').value.trim().toLowerCase();
  const filtered=rows.filter(x=>(filter==='all'||x.flow_type===filter)&&(!userFilter||String(x.username||'').toLowerCase().includes(userFilter)));
  $('afIn').textContent=money(data.total_inflow||0)+' ZHI'; $('afOut').textContent=money(data.total_outflow||0)+' ZHI'; $('afNet').textContent=(Number(data.net||0)>=0?'+':'')+money(data.net||0)+' ZHI'; $('afCount').textContent=filtered.length;
- const label={savings_deposit:'🏦 存款',loan_disbursement:'💳 贷款',savings_interest:'📈 存款利息',loan_interest_accrual:'📊 贷款计息',loan_repayment:'↩️ 还款'};
+ const label={savings_deposit:'🏦 存入',savings_withdrawal:'↩️ 取出',loan_disbursement:'💳 贷款发放',savings_interest:'📈 存款利息',loan_interest_accrual:'📊 贷款计息',loan_repayment:'↩️ 还款'};
  box.innerHTML=filtered.slice(0,200).map(x=>'<div style="padding:10px 0;border-bottom:1px solid #eee"><div style="display:flex;justify-content:space-between;gap:8px"><b>'+esc(x.username||'系统')+'</b><b style="color:'+(Number(x.amount)>=0?'#087443':'#b42318')+'">'+(Number(x.amount)>=0?'+':'')+money(x.amount)+' ZHI</b></div><div class="meta" style="margin:3px 0">'+(label[x.flow_type]||x.type)+' · '+new Date(x.created_at).toLocaleString('zh-CN')+'</div><div style="font-size:12px">'+esc(x.description||'')+'</div><div class="meta" style="margin:3px 0">Flow ID: '+esc(x.flow_id||'-')+'</div></div>').join('')||'<div class="notice">暂无匹配流水 / No matching flows</div>';
 }
 async function loadAdminUsers(){

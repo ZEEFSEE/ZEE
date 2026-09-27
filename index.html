@@ -156,7 +156,7 @@ button,input,select{font:inherit}
 </div>
 
 <div class="card proposal-card" id="userProposalCard">
-  <div class="gift-toggle" id="userProposalToggle"><span>🔮 <b>我想发起预测 / Suggest a Prediction</b></span><span class="gift-arrow" id="userProposalArrow">▼</span></div>
+  <div class="gift-toggle" id="userProposalToggle" onclick="document.getElementById('userProposalDetails').classList.toggle('open');document.getElementById('userProposalArrow').classList.toggle('open')"><span>🔮 <b>我想发起预测 / Suggest a Prediction</b></span><span class="gift-arrow" id="userProposalArrow">▼</span></div>
   <div class="gift-details" id="userProposalDetails">
     <div class="proposal-note">任何 ZHI 用户都可以提出预测问题。只需填写问题和未来截至日期，系统会自动生成另一语言版本，再交给管理员审核。</div>
     <div class="proposal-form">
@@ -187,7 +187,7 @@ button,input,select{font:inherit}
   </div>
 </div>
 <div class="card proposal-card" id="adminProposalPanel">
-  <div class="gift-toggle" id="adminProposalToggle"><span>📥 <b>用户预测提案 / User Prediction Proposals</b></span><span class="gift-arrow" id="adminProposalArrow">▼</span></div>
+  <div class="gift-toggle" id="adminProposalToggle" onclick="document.getElementById('adminProposalDetails').classList.toggle('open');document.getElementById('adminProposalArrow').classList.toggle('open')"><span>📥 <b>用户预测提案 / User Prediction Proposals</b></span><span class="gift-arrow" id="adminProposalArrow">▼</span></div>
   <div class="gift-details" id="adminProposalDetails">
     <div class="meta">管理员审核用户问题、双语内容、截止时间和结算规则。通过后自动创建市场，并从财神爷支付 1,000 ZHI 贡献奖。</div>
     <button id="adminProposalRefresh" class="btn confirm" style="width:100%;margin-top:8px">🔄 刷新提案 / Refresh Proposals</button>

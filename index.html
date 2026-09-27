@@ -98,7 +98,7 @@ footer{text-align:center;color:#aaa;font-size:11px;margin-top:24px}
         <option value="loan_disbursement">💳 贷款</option>
         <option value="savings_interest">📈 存款利息</option>
         <option value="loan_interest_accrual">📊 贷款计息</option>
-        <option value="loan_repayment">↩️ 还款</option>
+        <option value="loan_repayment">↩️ 还款</option><option value="sr_simulation">🤖 SR 模拟流水</option>
       </select>
       <input id="afUser" placeholder="用户名筛选 / Username">
       <button id="afRefresh" class="btn confirm">刷新</button>
@@ -408,7 +408,7 @@ async function loadAdminFundFlows(){
  const rows=data?.rows||[], filter=$('afFilter').value, userFilter=$('afUser').value.trim().toLowerCase();
  const filtered=rows.filter(x=>(filter==='all'||x.flow_type===filter)&&(!userFilter||String(x.username||'').toLowerCase().includes(userFilter)));
  $('afIn').textContent=money(data.total_inflow||0)+' ZHI'; $('afOut').textContent=money(data.total_outflow||0)+' ZHI'; $('afNet').textContent=(Number(data.net||0)>=0?'+':'')+money(data.net||0)+' ZHI'; $('afCount').textContent=filtered.length;
- const label={savings_deposit:'🏦 存入',savings_withdrawal:'↩️ 取出',loan_disbursement:'💳 贷款发放',savings_interest:'📈 存款利息',loan_interest_accrual:'📊 贷款计息',loan_repayment:'↩️ 还款',stake:'🎯 预测下注',settlement_win:'🏆 预测派奖',transfer_out:'🎁 转赠',transfer_in:'🎁 收到转赠',signup_bonus:'🎁 注册奖励'};
+ const label={savings_deposit:'🏦 存入',savings_withdrawal:'↩️ 取出',loan_disbursement:'💳 贷款发放',savings_interest:'📈 存款利息',loan_interest_accrual:'📊 贷款计息',loan_repayment:'↩️ 还款',stake:'🎯 预测下注',settlement_win:'🏆 预测派奖',transfer_out:'🎁 转赠',transfer_in:'🎁 收到转赠',signup_bonus:'🎁 注册奖励',sr_simulation:'🤖 SR 模拟流水'};
  box.innerHTML=filtered.slice(0,200).map(x=>{
    const sr=!!x.is_simulated;
    const tag=sr?'<span style="display:inline-block;padding:2px 7px;border-radius:10px;background:#f1eaff;color:#6941c6;font-size:11px;margin-left:6px">SR · 模拟用户</span>':'<span style="display:inline-block;padding:2px 7px;border-radius:10px;background:#eef2f6;color:#475467;font-size:11px;margin-left:6px">真人用户</span>';

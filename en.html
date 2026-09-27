@@ -935,4 +935,12 @@ setInterval(loadWinnersOnly,2500);
   });
   observer.observe(document.body,{childList:true,subtree:true});
 })();
-</script></body></html>
+</script><script data-zhi-24h="1">
+(function(){
+  const nativeToLocaleString=Date.prototype.toLocaleString;
+  const nativeToLocaleTimeString=Date.prototype.toLocaleTimeString;
+  Date.prototype.toLocaleString=function(locales,options){const o=Object.assign({},options||{});if(o.hour12===undefined)o.hour12=false;return nativeToLocaleString.call(this,locales,o)};
+  Date.prototype.toLocaleTimeString=function(locales,options){const o=Object.assign({},options||{});if(o.hour12===undefined)o.hour12=false;return nativeToLocaleTimeString.call(this,locales,o)};
+})();
+</script>
+</body></html>

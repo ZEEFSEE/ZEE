@@ -148,7 +148,8 @@ button,input,select{font:inherit}
   </div>
   <div class="gift-details" id="createMarketDetails">
     <div class="field"><label>市场 ID / Market ID</label><input id="newMarketId" placeholder="m5"></div>
-    <div class="field"><label>问题 / Question</label><input id="newMarketQuestion" placeholder="例如：某事件是否会发生？ / e.g. Will this event happen?"></div>
+    <div class="field"><label>中文问题 / Chinese Question</label><input id="newMarketQuestionZh" placeholder="例如：某事件是否会发生？"></div>
+    <div class="field"><label>英文问题 / English Question</label><input id="newMarketQuestionEn" placeholder="e.g. Will this event happen?"></div>
     <div class="field"><label>截止时间 / Close Time</label><input id="newMarketCloseAt" type="datetime-local"></div>
     <button id="createMarketBtn" class="btn confirm" style="width:100%">创建市场 / Create Market</button>
     <div id="createMarketError" class="err" style="margin-top:8px"></div>
@@ -268,11 +269,13 @@ async function load(passedUser=null){
   if(msg)msg.textContent='系统提示：'+(e.message||'部分资料暂时无法加载');
  }
 }
+function marketQuestion(m){return m?.question_zh||m?.question||'';}
+function marketQuestionEn(m){return m?.question_en||m?.question_zh||m?.question||'';}
 async function renderMarkets(){
  const open=marketsData.filter(m=>m.status==='open'&&new Date(m.close_at)>new Date());
  $('markets').innerHTML=open.map(m=>{
   const mine=positions.find(p=>p.market_id===m.id);
-  return '<div class="card"><div class="q">'+m.question+'</div><div class="meta">截止 / Closes: '+new Date(m.close_at).toLocaleString('zh-CN')+'</div>'+
+  return '<div class="card"><div class="q">'+marketQuestion(m)+'</div><div class="meta">截止 / Closes: '+new Date(m.close_at).toLocaleString('zh-CN')+'</div>'+
   '<div class="pool">YES '+money(m.yes_pool)+' ZHI　 NO '+money(m.no_pool)+' ZHI</div>'+
   '<div class="buttons"><button class="btn yes" data-id="'+m.id+'" data-side="yes" '+(mine?'disabled':'')+'>YES</button><button class="btn no" data-id="'+m.id+'" data-side="no" '+(mine?'disabled':'')+'>NO</button></div>'+
   '<div class="stake" id="s-'+m.id+'"><input id="a-'+m.id+'" type="number" min="1" placeholder="ZHI 数量"><button class="btn confirm" data-confirm="'+m.id+'">确认 / Confirm</button></div>'+
@@ -281,7 +284,7 @@ async function renderMarkets(){
  $('markets').querySelectorAll('[data-side]').forEach(b=>b.onclick=()=>{
  selectedMarket=b.dataset.id;selectedSide=b.dataset.side;
  const m=marketsData.find(x=>x.id===selectedMarket);
- $('choiceText').textContent=(selectedSide==='yes'?'YES / 是':'NO / 否')+' · '+m.question;
+ $('choiceText').textContent=(selectedSide==='yes'?'YES / 是':'NO / 否')+' · '+marketQuestion(m);
  $('directionChoice').style.display='none';
  $('modalAmount').style.display='block';
  $('modalConfirm').style.display='block';
@@ -294,7 +297,7 @@ $('giftNoticeBtn').onclick=async()=>{if(Number($('giftNoticeCount').textContent)
 $('giftSendToggle').onclick=()=>{$('giftSendDetails').classList.toggle('open');$('giftSendArrow').classList.toggle('open')};
  const expired=marketsData.filter(m=>m.status==='closed');
  $('expiredPanel').classList.toggle('hidden',!expired.length);
- $('expiredMarkets').innerHTML=expired.map(m=>'<div class="card"><div class="q">'+m.question+'</div><div class="status expired">⏰ 已到期 / Expired · 等待管理员结果 / Awaiting admin result</div></div>').join('');
+ $('expiredMarkets').innerHTML=expired.map(m=>'<div class="card"><div class="q">'+marketQuestion(m)+'</div><div class="status expired">⏰ 已到期 / Expired · 等待管理员结果 / Awaiting admin result</div></div>').join('');
 
  const isAdmin=user?.app_metadata?.role==='admin';
  $('adminPanel').classList.toggle('hidden',!isAdmin);
@@ -306,7 +309,7 @@ $('giftSendToggle').onclick=()=>{$('giftSendDetails').classList.toggle('open');$
    const awaiting=marketsData.filter(m=>m.status==='closed');
    $('settlementPanel').classList.toggle('hidden',!awaiting.length);
    $('settlementMarkets').innerHTML=awaiting.length?awaiting.map(m=>
-     '<div style="padding:12px 0;border-bottom:1px solid #eee"><div class="q">'+m.question+'</div>'+
+     '<div style="padding:12px 0;border-bottom:1px solid #eee"><div class="q">'+marketQuestion(m)+'</div>'+
      '<div class="meta">市场 ID / Market ID: '+m.id+' · 投注已截止 / Betting closed</div>'+
      '<div class="pool">YES '+money(m.yes_pool)+' ZHI　 NO '+money(m.no_pool)+' ZHI</div>'+
      '<div class="buttons"><button class="btn yes" data-settle-result="'+m.id+'" data-result="yes">确认 YES</button><button class="btn no" data-settle-result="'+m.id+'" data-result="no">确认 NO</button></div></div>'
@@ -315,10 +318,10 @@ $('giftSendToggle').onclick=()=>{$('giftSendDetails').classList.toggle('open');$
 
    const editable=marketsData.filter(m=>m.status==='open');
    $('adminMarkets').innerHTML=editable.length?editable.map(m=>
-     '<div class="card"><div class="q">'+m.question+'</div>'+
+     '<div class="card"><div class="q">'+marketQuestion(m)+'</div>'+
      '<div class="meta">市场 ID / Market ID: '+m.id+' · 状态 / Status: '+m.status+'</div>'+
      '<div class="pool">YES '+money(m.yes_pool)+' ZHI　 NO '+money(m.no_pool)+' ZHI</div>'+
-     '<div class="field"><label>市场问题 / Market Question</label><input id="question-'+m.id+'" value="'+String(m.question).replace(/"/g,'&quot;')+'"></div>'+
+     '<div class="field"><label>市场问题 / Market Question</label><input id="question-'+m.id+'" value="'+String(marketQuestion(m)).replace(/"/g,'&quot;')+'"></div>'+
      '<div class="field"><label>截止时间 / Close Time</label><input id="close-'+m.id+'" type="datetime-local" value="'+sgInputValue(m.close_at)+'"></div>'+
      '<div class="buttons"><button class="btn confirm" data-admin-edit="'+m.id+'">保存修改 / Save Changes</button>'+
      '<button class="btn" style="background:#eee" data-admin-cancel="'+m.id+'">取消市场 / Cancel Market</button>'+
@@ -337,7 +340,7 @@ $('giftSendToggle').onclick=()=>{$('giftSendDetails').classList.toggle('open');$
      const rm=new Map((refundRows||[]).map(x=>[x.market_id,x]));
      cancelledHtml='<h3 style="margin:18px 0 8px;font-size:15px">↩️ 已取消市场 / Cancelled Markets</h3>'+cancelled.map(m=>{
        const r=rm.get(m.id)||{};
-       return '<div class="card"><div class="q">'+m.question+'</div><div class="meta">市场 ID / Market ID: '+m.id+' · 已取消 / Cancelled</div><div class="pool">↩️ 已退款 <b>'+money(r.refunded_total||0)+' ZHI</b> · '+Number(r.refund_count||0)+' 笔投注全部退回各自余额</div></div>';
+       return '<div class="card"><div class="q">'+marketQuestion(m)+'</div><div class="meta">市场 ID / Market ID: '+m.id+' · 已取消 / Cancelled</div><div class="pool">↩️ 已退款 <b>'+money(r.refunded_total||0)+' ZHI</b> · '+Number(r.refund_count||0)+' 笔投注全部退回各自余额</div></div>';
      }).join('');
    }
    $('adminMarkets').insertAdjacentHTML('beforeend',cancelledHtml);
@@ -380,14 +383,14 @@ async function loadHomeDashboard(){
  if(error||!data)return;
  const d=data;
  const fmtTime=x=>new Date(x).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
- const marketRow=m=>'<div class="dash-item"><div class="dash-question">'+m.question+'</div><div class="dash-meta">💰 '+money(m.total_pool)+' ZHI · ⏰ '+fmtTime(m.close_at)+'</div><div class="dash-actions"><button class="dash-action" data-predict="'+m.id+'">🎯 立即预测</button><button class="share-btn" data-share="'+m.id+'">📤 分享</button></div></div>';
+ const marketRow=m=>'<div class="dash-item"><div class="dash-question">'+marketQuestion(m)+'</div><div class="dash-meta">💰 '+money(m.total_pool)+' ZHI · ⏰ '+fmtTime(m.close_at)+'</div><div class="dash-actions"><button class="dash-action" data-predict="'+m.id+'">🎯 立即预测</button><button class="share-btn" data-share="'+m.id+'">📤 分享</button></div></div>';
  $('dashHot').innerHTML=(d.hot_markets||[]).map(m=>marketRow(m)).join('')||'<div class="dash-empty">暂无热门市场 / No hot markets</div>';
  $('dashSoon').innerHTML=(d.upcoming||[]).map(m=>marketRow(m)).join('')||'<div class="dash-empty">暂无即将截止市场 / None</div>';
  $('dashWinners').innerHTML=(d.recent_winners||[]).map(x=>'<div class="dash-item"><div class="dash-question">🏆 '+(x.username||'用户')+' 获得 <b>'+money(x.amount)+' ZHI</b></div><div class="dash-meta">'+(x.question||'预测结算')+' · '+fmtTime(x.created_at)+'</div></div>').join('')||'<div class="dash-empty">还没有中奖记录 / No winners yet</div>';
  $('dashLeaderboard').innerHTML=(d.leaderboard||[]).map((x,i)=>{const tag=x.is_simulated?' · SR':' ';return '<div class="dash-item" style="display:flex;justify-content:space-between;gap:8px"><span><b>'+(i+1)+'.</b> '+x.username+tag+'</span><b style="color:#8a5a00">'+money(x.balance)+' ZHI</b></div>';}).join('')||'<div class="dash-empty">暂无排行榜 / No ranking yet</div>';
  $('dashTransfers').textContent='已发生 '+Number(d.transfer_count||0)+' 笔转赠 / '+Number(d.transfer_count||0)+' transfers';
  $('dashPool').textContent=money(d.total_pool||0)+' ZHI'; $('saveBtn').onclick=saveZhi;$('claimBtn').onclick=claimSavings;$('loanBtn').onclick=takeLoan;$('repayBtn').onclick=repayLoan;loadFinancePanel();$('loanBtn').onclick=takeLoan;loadLoanLimit();
- const shareText=m=>m?'🪙 ZHI 预测\n\n🔥 '+m.question+'\n💰 当前奖池：'+money(m.yes_pool+m.no_pool)+' ZHI\n⏰ 截止：'+new Date(m.close_at).toLocaleString('zh-CN')+'\n\n👉 立即加入 ZHI Prediction':'';
+ const shareText=m=>m?'🪙 ZHI 预测\n\n🔥 '+marketQuestion(m)+'\n💰 当前奖池：'+money(m.yes_pool+m.no_pool)+' ZHI\n⏰ 截止：'+new Date(m.close_at).toLocaleString('zh-CN')+'\n\n👉 立即加入 ZHI Prediction':'';
  const shareMarket=async id=>{
    const m=marketsData.find(x=>x.id===id); if(!m)return;
    const url=location.href.split('#')[0]+'?market='+encodeURIComponent(id);
@@ -449,18 +452,19 @@ async function transferZHI(){
 }
 async function createMarket(){
  const id=$('newMarketId').value.trim();
- const question=$('newMarketQuestion').value.trim();
+ const questionZh=$('newMarketQuestionZh').value.trim();
+ const questionEn=$('newMarketQuestionEn').value.trim();
  const closeValue=$('newMarketCloseAt').value;
  $('createMarketError').textContent='';
- if(!id||!question||!closeValue)return $('createMarketError').textContent='请填写完整 / Please complete all fields';
+ if(!id||!questionZh||!questionEn||!closeValue)return $('createMarketError').textContent='请填写完整 / Please complete all fields';
  const closeAt=parseSGInput(closeValue);
  if(Number.isNaN(closeAt.getTime())||closeAt<=new Date())return $('createMarketError').textContent='截止时间必须是未来时间 / Close time must be in the future';
  const btn=$('createMarketBtn');btn.disabled=true;
  try{
-   const {error}=await sb.rpc('admin_create_market',{p_market_id:id,p_question:question,p_close_at:closeAt.toISOString()});
+   const {error}=await sb.rpc('admin_create_market',{p_market_id:id,p_question_zh:questionZh,p_question_en:questionEn,p_close_at:closeAt.toISOString()});
    if(error)throw error;
    alert('市场创建成功 / Market created');
-   $('newMarketId').value='';$('newMarketQuestion').value='';$('newMarketCloseAt').value='';
+   $('newMarketId').value='';$('newMarketQuestionZh').value='';$('newMarketQuestionEn').value='';$('newMarketCloseAt').value='';
    await load();
  }catch(e){$('createMarketError').textContent=e.message||'创建失败 / Creation failed'}
  finally{btn.disabled=false}
@@ -545,11 +549,12 @@ async function loadAdminUsers(){
  ).join(''):'<div class="notice">暂无用户 / No users yet</div>';
 }
 async function editMarket(id){
- const question=$('question-'+id).value.trim();
+ const questionZh=$('question-zh-'+id).value.trim();
+ const questionEn=$('question-en-'+id).value.trim();
  const closeAt=parseSGInput($('close-'+id).value);
- if(!question)return alert('请输入市场问题 / Enter the market question');
+ if(!questionZh||!questionEn)return alert('中文和英文预测问题都必须填写 / Both Chinese and English questions are required');
  if(Number.isNaN(closeAt.getTime())||closeAt<=new Date())return alert('截止时间必须是未来时间 / Close time must be in the future');
- const {error}=await sb.rpc('admin_edit_market',{p_market_id:id,p_question:question,p_close_at:closeAt.toISOString()});
+ const {error}=await sb.rpc('admin_edit_market',{p_market_id:id,p_question_zh:questionZh,p_question_en:questionEn,p_close_at:closeAt.toISOString()});
  if(error)return alert(error.message);
  alert('市场修改成功 / Market updated');
  await load();
@@ -584,7 +589,7 @@ async function stake(id=selectedMarket){
 function openPredictionChoice(id){
  const m=marketsData.find(x=>x.id===id); if(!m)return;
  selectedMarket=id; selectedSide=null;
- $('choiceText').textContent=m.question+' · 请选择预测方向 / Choose YES or NO';
+ $('choiceText').textContent=marketQuestion(m)+' · 请选择预测方向 / Choose YES or NO';
  $('directionChoice').style.display='flex';
  $('modalAmount').style.display='none';
  $('modalConfirm').style.display='none';
@@ -595,7 +600,7 @@ function choosePredictionSide(side){
  if(!selectedMarket)return;
  selectedSide=side;
  const m=marketsData.find(x=>x.id===selectedMarket);
- $('choiceText').textContent=(side==='yes'?'YES / 是':'NO / 否')+' · '+m.question;
+ $('choiceText').textContent=(side==='yes'?'YES / 是':'NO / 否')+' · '+marketQuestion(m);
  $('directionChoice').style.display='none';
  $('modalAmount').style.display='block';
  $('modalConfirm').style.display='block';

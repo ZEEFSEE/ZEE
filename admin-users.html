@@ -3,7 +3,29 @@
 <title>ZHI 后台 · 用户管理</title>
 <style>
 body{margin:0;background:#f5f6f8;color:#171a21;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}.wrap{max-width:1180px;margin:auto;padding:22px 16px 50px}.head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.brand{font-size:25px;font-weight:950;color:#8a5a00}.sub{color:#777;font-size:12px;margin-top:3px}.card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:16px;margin-top:14px;box-shadow:0 4px 16px rgba(20,25,35,.05)}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.stat{background:#fffaf0;border:1px solid #eadcae;border-radius:12px;padding:12px}.stat span{display:block;color:#8a7650;font-size:11px}.stat b{display:block;margin-top:4px;font-size:20px;color:#8a5a00}.tools{display:flex;gap:8px;flex-wrap:wrap}.tools input,.tools select{padding:10px;border:1px solid #ddd;border-radius:9px;min-width:180px}.btn{border:0;border-radius:9px;padding:10px 14px;font-weight:850;cursor:pointer}.primary{background:#171a21;color:#fff}.light{background:#f1f3f6}.table-wrap{overflow:auto}.table{width:100%;border-collapse:collapse;min-width:1050px}.table th,.table td{padding:11px 9px;border-bottom:1px solid #eee;text-align:left;font-size:12px;white-space:nowrap}.table th{font-size:11px;color:#777;background:#fafafa;position:sticky;top:0}.sr{color:#6941c6;font-weight:900}.real{color:#475467;font-weight:800}.money{font-variant-numeric:tabular-nums}.pager{display:flex;justify-content:center;align-items:center;gap:10px;margin-top:14px}.msg{margin-top:9px;color:#777;font-size:12px}.err{color:#b42318}.empty{text-align:center;padding:35px;color:#999}@media(max-width:760px){.stats{grid-template-columns:1fr 1fr}}
-</style></head>
+
+@media (max-width:760px){
+  .wrap{padding:14px 10px 32px}
+  .head{align-items:flex-start}
+  .brand{font-size:21px}
+  .head .btn{width:100%}
+  .card{padding:12px;border-radius:13px}
+  .stats{grid-template-columns:1fr 1fr;gap:7px}
+  .stat{padding:9px}
+  .stat b{font-size:17px}
+  .tools{display:grid;grid-template-columns:1fr 1fr}
+  .tools input{grid-column:1/-1;min-width:0;width:100%}
+  .tools select,.tools .btn{min-width:0;width:100%}
+  .table-wrap{-webkit-overflow-scrolling:touch}
+  .table{min-width:1050px}
+  .pager{justify-content:space-between;gap:6px}
+  .pager .btn{padding:9px 10px}
+  .pager span{font-size:11px}
+}
+@media (min-width:761px) and (max-width:1100px){
+  .wrap{padding-left:20px;padding-right:20px}
+}
+\n</style></head>
 <body><main class="wrap">
 <div class="head"><div><div class="brand">🪙 ZHI · 用户管理中心</div><div class="sub">正式 ZHI 用户 + 10,000 SR 独立账户 · 实时数据库数据</div></div><button class="btn light" onclick="location.href='index.html'">← 返回 ZHI</button></div>
 <div class="card"><div class="stats">

@@ -121,11 +121,14 @@ const sb=window.zhiSupabase;let user=null,wallet=null,marketsData=[],positions=[
 const money=n=>Number(n||0).toLocaleString(),$=id=>document.getElementById(id);
 function showErr(s){$('authError').textContent=s}
 const togglePanel=(toggleId,detailsId,arrowId)=>{const t=$(toggleId),d=$(detailsId),a=$(arrowId);if(!t||!d||!a)return;t.onclick=()=>{d.classList.toggle('open');a.classList.toggle('open')}};togglePanel('savingsToggle','savingsDetails','savingsArrow');togglePanel('loanToggle','loanDetails','loanArrow');
-async function load(){
+async function load(passedUser=null){
  try{
-  const r=await sb.auth.getUser();
-  if(r.error)throw r.error;
-  user=r.data.user;
+  if(passedUser) user=passedUser;
+  else{
+   const r=await sb.auth.getSession();
+   if(r.error)throw r.error;
+   user=r.data.session?.user||null;
+  }
  }catch(e){
   user=null;
  }
@@ -450,7 +453,10 @@ $('authSubmit').onclick=async()=>{
    const {data,error}=await sb.auth.signUp({email,password:p,options:{data:{username:u}}});
    if(error)throw error;if(data.session)await load();else showErr('注册成功，请直接登录 / Registration successful, please sign in / Sign in');
   }else{
-   const {error}=await sb.auth.signInWithPassword({email,password:p});if(error)throw error;await load();
+   const {data,error}=await sb.auth.signInWithPassword({email,password:p});
+   if(error)throw error;
+   if(!data?.user)throw new Error('登录成功但没有取得用户会话，请重新登录');
+   await load(data.user);
   }
  }catch(e){showErr(e.message||'操作失败')}finally{$('authSubmit').disabled=false}
 };

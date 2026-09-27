@@ -136,7 +136,7 @@ const fmtSGMinute=x=>x?new Date(x).toLocaleString('zh-CN',sgDateMinuteOptions):'
 const fmtSGShort=x=>x?new Date(x).toLocaleString('zh-CN',sgDateShortOptions):'--';
 const fmtSGTime=x=>x?new Date(x).toLocaleTimeString('zh-CN',sgTimeOptions):'--';
 const sgInputValue=x=>{if(!x)return '';const d=new Date(x);const p=new Intl.DateTimeFormat('en-CA',{timeZone:ZHI_TIME_ZONE,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(d).reduce((o,v)=>(o[v.type]=v.value,o),{});return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;};
-const parseSGInput=x=>{if(!x)return new Date(NaN);const m=x.match(/^(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2})$/);if(!m)return new Date(NaN);const utc=Date.UTC(+m[1],+m[2]-1,+m[3],+m[4]-8,+m[5]);return new Date(utc);};
+const parseSGInput=x=>{if(!x)return new Date(NaN);const m=x.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);if(!m)return new Date(NaN);const utc=Date.UTC(+m[1],+m[2]-1,+m[3],+m[4]-8,+m[5]);return new Date(utc);};
 function showErr(s){$('authError').textContent=s}
 const togglePanel=(toggleId,detailsId,arrowId)=>{const t=$(toggleId),d=$(detailsId),a=$(arrowId);if(!t||!d||!a)return;t.onclick=()=>{d.classList.toggle('open');a.classList.toggle('open')}};togglePanel('savingsToggle','savingsDetails','savingsArrow');togglePanel('adminFundFlowsToggle','adminFundFlowsDetails','adminFundFlowsArrow');togglePanel('srSimulationToggle','srSimulationDetails','srSimulationArrow');$('srCreateAuthBtn').onclick=createSRAuthUsers;$('srRunBtn').onclick=runSRTick;$('srPauseBtn').onclick=toggleSRSummary;$('srRefreshBtn').onclick=()=>{loadSRSummary();loadSRActivity()};togglePanel('loanToggle','loanDetails','loanArrow');
 async function load(passedUser=null){
@@ -231,7 +231,7 @@ $('giftSendToggle').onclick=()=>{$('giftSendDetails').classList.toggle('open');$
      '<div class="meta">市场 ID / Market ID: '+m.id+' · 状态 / Status: '+m.status+'</div>'+
      '<div class="pool">YES '+money(m.yes_pool)+' ZHI　 NO '+money(m.no_pool)+' ZHI</div>'+
      '<div class="field"><label>市场问题 / Market Question</label><input id="question-'+m.id+'" value="'+String(m.question).replace(/"/g,'&quot;')+'"></div>'+
-     '<div class="field"><label>截止时间 / Close Time</label><input id="close-'+m.id+'" type="datetime-local" value="'+new Date(m.close_at).toISOString().slice(0,16)+'"></div>'+
+     '<div class="field"><label>截止时间 / Close Time</label><input id="close-'+m.id+'" type="datetime-local" value="'+sgInputValue(m.close_at)+'"></div>'+
      '<div class="buttons"><button class="btn confirm" data-admin-edit="'+m.id+'">保存修改 / Save Changes</button>'+
      '<button class="btn" style="background:#eee" data-admin-cancel="'+m.id+'">取消市场 / Cancel Market</button>'+
      '</div></div>'

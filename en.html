@@ -501,15 +501,15 @@ async function loadSRActivity(){
  recent.forEach(x=>{if(counts[x.action_type]!=null)counts[x.action_type]++});
  const summary=$('srLiveSummary');
  if(summary)summary.innerHTML=[
-  ['🎯 预测',counts.predict],['🏦 存储',counts.save],['💳 贷款',counts.loan],['↩️ 还款',counts.repay],['🔄 转账',counts.transfer]
+  ['🎯 Predictions',counts.predict],['🏦 Savings',counts.save],['💳 Loans',counts.loan],['↩️ Repayments',counts.repay],['🔄 Transfers',counts.transfer]
  ].map(x=>'<div class="finance-stat"><span>'+x[0]+' · 最近5分钟</span><b>'+Number(x[1]).toLocaleString()+' 次</b></div>').join('');
- $('srLiveCount').textContent=core.length+' 条核心行为';
+ $('srLiveCount').textContent=core.length+' core actions';
  box.innerHTML=core.slice(0,20).map(x=>{
    const l=labels[x.action_type]||['⚙️',uiSide(x.action_type)];
    const amount=x.amount!=null?' · '+money(x.amount)+' ZHI':'';
-   const market=x.market_id?' · 市场 '+esc(x.market_id):'';
+   const market=x.market_id?' · Market '+esc(x.market_id):'';
    return '<div class="sr-live-item"><div class="sr-live-icon">'+l[0]+'</div><div class="sr-live-main"><div class="sr-live-user">'+esc(x.username||x.sr_id||'SR')+'</div><div class="sr-live-action">'+l[1]+amount+market+'</div></div><div class="sr-live-time">'+fmtSGTime(x.created_at)+'</div></div>';
- }).join('')||'<div class="notice">最近没有核心经济行为 / No core economic activity yet</div>';
+ }).join('')||'<div class="notice">No core economic activity yet</div>';
 }
 async function loadSRTreasuryGrants(){const {data,error}=await sb.rpc('admin_get_sr_treasury_grants');if(error){$('srGrantCount').textContent='--';$('srGrantEach').textContent='--';$('srGrantTotal').textContent='--';$('srGrantSource').textContent='加载失败';return}$('srGrantCount').textContent=Number(data.grant_count||0).toLocaleString();$('srGrantEach').textContent=money(data.grant_each||0)+' ZHI';$('srGrantTotal').textContent=money(data.grant_total||0)+' ZHI';$('srGrantSource').textContent=data.funding_source==='treasury'?'财神爷 Treasury':'--';}
 async function loadSRSummary(){const {data,error}=await sb.rpc('admin_get_sr_simulation_summary');if(error){$('srMsg').textContent='SR 状态加载失败：'+error.message;return}$('srUsers').textContent=Number(data.users||0).toLocaleString();$('srActive').textContent=Number(data.active||0).toLocaleString();$('srActions').textContent=Number(data.actions_today||0).toLocaleString();$('srLogins').textContent=Number(data.logins_today||0).toLocaleString();$('srPredictions').textContent=Number(data.predictions_today||0).toLocaleString();$('srSaves').textContent=Number(data.saves_today||0).toLocaleString();$('srLoans').textContent=Number(data.loans_today||0).toLocaleString();$('srRepays').textContent=Number(data.repayments_today||0).toLocaleString();$('srWallet').textContent=money(data.wallet||0)+' ZHI';$('srSavings').textContent=money(data.savings||0)+' ZHI';$('srLoanBalance').textContent=money(data.loans||0)+' ZHI';$('srLast').textContent=data.last_action_at?fmtSG(data.last_action_at)+' · '+SR_TIME_LABEL:'--';loadSRActivity();$('srMsg').textContent=data.enabled?'🟢 SR 自动运行中 / Running':'⏸ SR 已暂停 / Paused';$('srPauseBtn').textContent=data.enabled?'⏸ 暂停 SR':'▶️ 启动 SR';}
@@ -579,7 +579,7 @@ async function updateCloseTime(id){
 }
 async function adminSetResult(id,result){
  const label=uiResult(result);
- if(!confirm('确定将市场 '+id+' 结果设为 '+label+'？\nConfirm result '+label+' for market '+id+'?'))return;
+ if(!confirm('Set market '+id+' result to '+label+'?'))return;
  const {data,error}=await sb.rpc('admin_set_result',{p_market_id:id,p_result:result});
  if(error)return alert(error.message);
  alert('Settlement completed\nPayout credited automatically');

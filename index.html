@@ -79,27 +79,32 @@ footer{text-align:center;color:#aaa;font-size:11px;margin-top:24px}
   <div id="adminUsers"></div>
 </div>
 <div class="card" id="adminFundFlows" style="background:linear-gradient(135deg,#fffdf4,#fff8df);border-color:#ead28a">
-  <div class="q">📒 全部用户资金流水 / All Users Fund Flows</div>
-  <div class="meta">管理员查看所有用户的 ZHI 流入、流出、存款、贷款、利息与还款。</div>
-  <div class="finance-grid">
-    <div class="finance-stat"><span>⬆️ 总流入</span><b id="afIn">--</b></div>
-    <div class="finance-stat"><span>⬇️ 总流出</span><b id="afOut">--</b></div>
-    <div class="finance-stat"><span>⚖️ 净流量</span><b id="afNet">--</b></div>
-    <div class="finance-stat"><span>📋 显示流水</span><b id="afCount">--</b></div>
+  <div class="gift-toggle" id="adminFundFlowsToggle">
+    <span>📒 <b>全部用户资金流水 / All Users Fund Flows</b></span>
+    <span class="gift-arrow" id="adminFundFlowsArrow">▼</span>
   </div>
-  <div class="finance-actions">
-    <select id="afFilter" style="flex:1;min-width:150px;padding:10px;border:1px solid #ddd;border-radius:9px">
-      <option value="all">全部类型 / All</option>
-      <option value="savings_deposit">🏦 存款</option>
-      <option value="loan_disbursement">💳 贷款</option>
-      <option value="savings_interest">📈 存款利息</option>
-      <option value="loan_interest_accrual">📊 贷款计息</option>
-      <option value="loan_repayment">↩️ 还款</option>
-    </select>
-    <input id="afUser" placeholder="用户名筛选 / Username">
-    <button id="afRefresh" class="btn confirm">刷新</button>
+  <div class="gift-details" id="adminFundFlowsDetails">
+    <div class="meta">管理员查看所有用户的 ZHI 流入、流出、存款、贷款、利息与还款。</div>
+    <div class="finance-grid">
+      <div class="finance-stat"><span>⬆️ 总流入</span><b id="afIn">--</b></div>
+      <div class="finance-stat"><span>⬇️ 总流出</span><b id="afOut">--</b></div>
+      <div class="finance-stat"><span>⚖️ 净流量</span><b id="afNet">--</b></div>
+      <div class="finance-stat"><span>📋 显示流水</span><b id="afCount">--</b></div>
+    </div>
+    <div class="finance-actions">
+      <select id="afFilter" style="flex:1;min-width:150px;padding:10px;border:1px solid #ddd;border-radius:9px">
+        <option value="all">全部类型 / All</option>
+        <option value="savings_deposit">🏦 存款</option>
+        <option value="loan_disbursement">💳 贷款</option>
+        <option value="savings_interest">📈 存款利息</option>
+        <option value="loan_interest_accrual">📊 贷款计息</option>
+        <option value="loan_repayment">↩️ 还款</option>
+      </select>
+      <input id="afUser" placeholder="用户名筛选 / Username">
+      <button id="afRefresh" class="btn confirm">刷新</button>
+    </div>
+    <div id="afList" style="margin-top:10px"></div>
   </div>
-  <div id="afList" style="margin-top:10px"></div>
 </div></div>
 
 <h2>🧾 我的记录 / My Records</h2><div id="history" class="card history"></div>
@@ -120,7 +125,7 @@ footer{text-align:center;color:#aaa;font-size:11px;margin-top:24px}
 const sb=window.zhiSupabase;let user=null,wallet=null,marketsData=[],positions=[],selectedMarket=null,selectedSide=null;
 const money=n=>Number(n||0).toLocaleString(),$=id=>document.getElementById(id);
 function showErr(s){$('authError').textContent=s}
-const togglePanel=(toggleId,detailsId,arrowId)=>{const t=$(toggleId),d=$(detailsId),a=$(arrowId);if(!t||!d||!a)return;t.onclick=()=>{d.classList.toggle('open');a.classList.toggle('open')}};togglePanel('savingsToggle','savingsDetails','savingsArrow');togglePanel('loanToggle','loanDetails','loanArrow');
+const togglePanel=(toggleId,detailsId,arrowId)=>{const t=$(toggleId),d=$(detailsId),a=$(arrowId);if(!t||!d||!a)return;t.onclick=()=>{d.classList.toggle('open');a.classList.toggle('open')}};togglePanel('savingsToggle','savingsDetails','savingsArrow');togglePanel('adminFundFlowsToggle','adminFundFlowsDetails','adminFundFlowsArrow');togglePanel('loanToggle','loanDetails','loanArrow');
 async function load(passedUser=null){
  try{
   if(passedUser) user=passedUser;

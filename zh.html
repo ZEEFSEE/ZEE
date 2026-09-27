@@ -1,0 +1,712 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ZHI 预测</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% -10%,#fff8d9 0,#f7f7fb 30%,#f4f5f8 100%);color:#171a21;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}.wrap{position:relative}.wrap:before{content:"";position:absolute;inset:0 0 auto;height:180px;background:linear-gradient(180deg,rgba(255,214,70,.13),transparent);pointer-events:none;z-index:-1}
+.wrap{max-width:760px;margin:auto;padding:18px 14px 40px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.brand{display:flex;align-items:center;gap:9px;font-size:22px;font-weight:900;letter-spacing:.2px}.zhi-coin{width:38px;height:38px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:radial-gradient(circle at 32% 28%,#fff8b8 0%,#ffe36a 25%,#f7bd19 58%,#c88700 100%);border:2px solid #d79a08;box-shadow:inset 0 2px 2px rgba(255,255,255,.85),inset 0 -3px 5px rgba(120,70,0,.25),0 4px 12px rgba(190,130,0,.3);color:#8a5700;font-size:22px;font-weight:1000;text-shadow:0 1px 0 #fff7bd}.brand-text{background:linear-gradient(90deg,#8a5700,#d49400,#8a5700);-webkit-background-clip:text;background-clip:text;color:transparent}.balance{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:8px 12px;font-weight:700}.user-balance{background:linear-gradient(135deg,#fffdf4 0%,#fff8df 100%);border-color:#eadcae;color:#7a5a18;box-shadow:0 3px 10px rgba(180,140,40,.08)}.user-balance b{color:#8a5a00}
+.card{background:rgba(255,255,255,.94);border:1px solid #e6e8ed;border-radius:16px;padding:17px;margin-bottom:12px;box-shadow:0 4px 16px rgba(25,30,40,.045)}.finance-panel{margin-top:22px;padding-top:18px;border-top:3px solid #ead28a}.home-dashboard{margin-top:22px;padding-top:20px;border-top:3px solid #e6e8ed}.card:hover{box-shadow:0 7px 22px rgba(25,30,40,.07)}
+.total{font-size:13px;color:#777}.big{font-size:28px;font-weight:800;margin-top:4px}
+h2{font-size:16px;margin:24px 2px 10px;display:flex;align-items:center;gap:7px}h2:after{content:"";height:1px;flex:1;background:linear-gradient(90deg,#ead28a,transparent)}.q{font-weight:700;line-height:1.45}.meta{font-size:12px;color:#888;margin:7px 0 13px}
+.pool{font-size:12px;color:#666;margin-bottom:12px;background:#fafafa;border-radius:10px;padding:9px}.buttons{display:flex;gap:8px}.btn{flex:1;border:0;border-radius:11px;padding:11px;font-weight:800;cursor:pointer;transition:.15s transform,.15s box-shadow}.btn:hover{transform:translateY(-1px)}.yes{background:linear-gradient(135deg,#e8fff1,#bff0d5);color:#06713e;border:1px solid #a9dfc2}.no{background:linear-gradient(135deg,#fff0f1,#ffd4d8);color:#a51f2d;border:1px solid #f1bcc2}.confirm{background:linear-gradient(135deg,#292d35,#12151a);color:#fff;box-shadow:0 5px 12px rgba(20,22,28,.16)}
+.stake{display:none;gap:8px;margin-top:8px}.stake.show{display:flex}.stake input{flex:1;border:1px solid #ddd;border-radius:9px;padding:10px}
+.status{font-size:12px;font-weight:700}.open{color:#087443}.expired{color:#b26a00}.resolved{color:#3157b7}
+.notice{font-size:12px;color:#777;background:#f5f6f8;border-radius:11px;padding:10px;margin-top:10px}.gift-toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer}.share-btn{border:1px solid #ead28a;background:linear-gradient(135deg,#fffdf1,#ffe98a);color:#8a5a00;border-radius:9px;padding:8px 10px;font-weight:800;cursor:pointer;font-size:11px}.share-btn:hover{transform:translateY(-1px)}.dash-actions{display:flex;gap:7px;margin-top:8px}.dash-actions .dash-action{margin-top:0;flex:1}.dash-link{border:0;background:none;color:#8a5a00;font-size:11px;font-weight:800;cursor:pointer;padding:0}.dash-link:hover{text-decoration:underline}.dash-feature{grid-column:1/-1;background:#fff;color:#171717;border-color:#e7e9ee}.dash-feature .dash-title{color:#171717}.dash-feature .dash-sub{color:#555}.dash-feature-row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.dash-feature-main{flex:1;min-width:220px}.dash-feature-question{font-size:18px;font-weight:900;line-height:1.4;margin-top:8px;color:#171717}.dash-feature-pool{font-size:12px;color:#555;margin-top:7px}.dash-feature-btn{border:0;border-radius:10px;padding:10px 14px;background:linear-gradient(135deg,#ffe98a,#f2aa00);color:#694100;font-weight:900;cursor:pointer;white-space:nowrap}@media(max-width:620px){.dash-feature{grid-column:auto}}.finance-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.finance-stat{background:linear-gradient(135deg,#fffdf4,#fff8df);border:1px solid #eadcae;border-radius:12px;padding:10px}.finance-stat span{display:block;font-size:10px;color:#8a7650}.finance-stat b{display:block;margin-top:4px;color:#8a5a00;font-size:16px}.finance-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}.finance-actions input{flex:1;min-width:150px;padding:10px;border:1px solid #ddd;border-radius:9px}.savings-rate{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding:11px 13px;border-radius:12px;background:linear-gradient(135deg,#fff8d8,#fffdf4);border:1px solid #ead28a;color:#7a5700;font-size:13px;font-weight:800}.savings-rate b{font-size:18px;color:#a86b00}.savings-actions{margin-top:12px}.savings-msg{display:none;margin-top:10px;padding:10px 12px;border-radius:10px;font-size:12px;font-weight:800}.savings-msg.show{display:block}.savings-msg.success{background:#eaf9f0;border:1px solid #b9dfc8;color:#087443}.savings-msg.error{background:#fff0f1;border:1px solid #f1bcc2;color:#a51f2d}.reward-pop{position:fixed;left:50%;top:22px;transform:translate(-50%,-18px);opacity:0;pointer-events:none;z-index:30;width:min(92vw,420px);background:linear-gradient(135deg,#fffdf0,#fff4b8);border:1px solid #e3b92f;border-radius:16px;padding:14px 16px;box-shadow:0 12px 35px rgba(120,85,0,.2);transition:.25s}.reward-pop.show{transform:translate(-50%,0);opacity:1}.reward-pop-title{font-size:16px;font-weight:950;color:#8a5a00}.reward-pop-body{font-size:12px;color:#6f5a25;margin-top:5px;line-height:1.55}.reward-pop-amount{font-size:22px;font-weight:950;color:#a86b00;margin-top:6px}.savings-action-row{display:flex;gap:9px;align-items:stretch}.savings-action-row+.savings-action-row{margin-top:9px}.savings-input-wrap{position:relative;flex:1;min-width:0}.savings-input-wrap input{width:100%;height:100%;min-height:44px;padding:11px 12px 11px 38px;border:1px solid #dfd5b7;border-radius:12px;background:#fffdf6;font-size:14px;font-weight:700;color:#5f4700;outline:none;transition:.15s border-color,.15s box-shadow}.savings-input-wrap input:focus{border-color:#d7a72b;box-shadow:0 0 0 3px rgba(215,167,43,.13)}.savings-input-wrap input::placeholder{color:#a99b79;font-weight:600}.savings-input-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:17px;z-index:1}.savings-main-btn{flex:0 0 auto;min-width:126px}.savings-secondary-row{display:flex;gap:9px;margin-top:9px}.savings-secondary-row .btn{padding:10px;background:#f8f9fb;border:1px solid #e1e4e9;color:#555}.savings-secondary-row .savings-withdraw-btn{color:#7b4f12;background:linear-gradient(135deg,#fffaf0,#f8f2e5);border-color:#ead8ad}.savings-secondary-row .savings-claim-btn{color:#087443;background:linear-gradient(135deg,#f1fff6,#e2f7ea);border-color:#b9dfc8}@media(max-width:520px){.savings-action-row{flex-wrap:wrap}.savings-input-wrap{flex:1 1 100%}.savings-action-row .btn{flex:1}.savings-main-btn{width:auto}.savings-secondary-row .btn{padding:10px 7px}}.home-dashboard{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}.dash-card{background:rgba(255,255,255,.96);border:1px solid #e7e9ee;border-radius:16px;padding:15px;box-shadow:0 4px 15px rgba(25,30,40,.045)}.dash-title{font-weight:900;font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:8px}.dash-sub{font-size:11px;color:#999;margin-top:3px}.dash-list{margin-top:10px}.dash-item{padding:9px 0;border-bottom:1px solid #eee}.dash-item:last-child{border-bottom:0}.dash-question{font-size:12px;font-weight:700;line-height:1.4}.dash-meta{font-size:11px;color:#888;margin-top:4px}.dash-chip{display:inline-block;padding:3px 7px;border-radius:999px;font-size:10px;font-weight:800}.chip-gold{background:#fff4c7;color:#8a5a00}.chip-green{background:#e9f9ef;color:#087443}.chip-blue{background:#edf2ff;color:#3157b7}.dash-action{margin-top:9px;width:100%;padding:8px;border:0;border-radius:9px;background:#fff6d6;color:#8a5a00;font-weight:800;cursor:pointer}.dash-empty{font-size:12px;color:#aaa;padding:8px 0}@media(max-width:620px){.home-dashboard{grid-template-columns:1fr}}.gift-send-toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer}.gift-send-arrow{font-size:12px;transition:transform .18s}.gift-send-arrow.open{transform:rotate(180deg)}.gift-send-details{display:none;margin-top:8px;padding-top:8px;border-top:1px solid #e7e7e7}.gift-send-details.open{display:block}.gift-arrow{font-size:12px;transition:transform .18s}.gift-arrow.open{transform:rotate(180deg)}.gift-details{display:none;margin-top:8px;padding-top:8px;border-top:1px solid #e7e7e7}.gift-details.open{display:block}.gift-row{padding:8px 0;border-bottom:1px solid #eee}.gift-row:last-child{border-bottom:0}.hero{background:linear-gradient(135deg,#17130a 0%,#2c210d 48%,#111318 100%);color:#fff;border:1px solid #6f5318;border-radius:20px;padding:22px 19px;margin-bottom:14px;box-shadow:0 12px 30px rgba(70,50,10,.2);position:relative;overflow:hidden}.hero:after{content:"🪙";position:absolute;right:-4px;top:-18px;font-size:110px;opacity:.13;transform:rotate(18deg)}.hero-title{font-size:25px;font-weight:950;letter-spacing:.3px}.hero-sub{color:#d8cda9;font-size:12px;margin-top:7px;max-width:520px}.hero-stat{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}.hero-pill{background:rgba(255,215,80,.12);border:1px solid rgba(255,215,80,.25);color:#ffe78a;border-radius:999px;padding:7px 11px;font-size:11px;font-weight:800}.section-label{font-size:11px;color:#9a6a00;font-weight:900;letter-spacing:.7px;text-transform:uppercase}
+.sr-live{margin-top:12px;border:1px solid #e4e7ec;border-radius:12px;background:#fbfcfe;padding:11px}.sr-live-head{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;font-weight:900}.sr-live-dot{width:7px;height:7px;border-radius:50%;background:#16a34a;display:inline-block;box-shadow:0 0 0 4px rgba(22,163,74,.10)}.sr-live-list{margin-top:8px;max-height:360px;overflow:auto}.sr-live-item{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid #edf0f3}.sr-live-item:last-child{border-bottom:0}.sr-live-icon{width:28px;height:28px;border-radius:9px;background:#f1f3f7;display:flex;align-items:center;justify-content:center;font-size:14px;flex:0 0 auto}.sr-live-main{min-width:0;flex:1}.sr-live-user{font-size:11px;font-weight:900}.sr-live-action{font-size:11px;color:#555;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sr-live-time{font-size:10px;color:#999;white-space:nowrap}.auth{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px}.authbox{width:100%;max-width:400px;background:rgba(255,255,255,.97);border:1px solid #ead28a;border-radius:22px;padding:27px;box-shadow:0 18px 55px rgba(85,65,15,.14)}.field{margin:12px 0}.field label{display:block;font-size:12px;color:#777;margin-bottom:5px}.field input{width:100%;padding:11px;border:1px solid #ddd;border-radius:9px}.link{border:0;background:none;color:#3157b7;cursor:pointer}.err{height:18px;color:#c62828;font-size:12px}
+.hidden{display:none!important}.history{font-size:13px}.row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee}.row:last-child{border:0}
+footer{text-align:center;color:#aaa;font-size:11px;margin-top:24px}
+
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:18px;z-index:10}.modal.show{display:flex}.modalbox{width:100%;max-width:360px;background:#fff;border-radius:16px;padding:20px;box-shadow:0 12px 40px rgba(0,0,0,.2)}.modalbox h3{margin:0 0 6px}.choice{font-size:13px;color:#666;margin-bottom:14px}.modalbox input{width:100%;padding:12px;border:1px solid #ddd;border-radius:9px;font-size:16px;margin-bottom:10px}.modalactions{display:flex;gap:8px}.modalactions button{flex:1}
+
+.gold-balance{position:relative;overflow:hidden;background:linear-gradient(135deg,#fffbe8 0%,#ffe98a 24%,#ffd13d 52%,#f2aa00 100%);color:#704400;border:1px solid #d99a00;border-radius:16px;padding:10px 15px;font-weight:900;box-shadow:0 5px 16px rgba(190,130,0,.28),inset 0 2px 0 rgba(255,255,255,.95),inset 0 -2px 5px rgba(130,75,0,.12);text-shadow:0 1px 0 rgba(255,255,255,.65)}.gold-balance:before{content:"";position:absolute;left:-35%;top:-55%;width:45%;height:220%;background:rgba(255,255,255,.45);transform:rotate(25deg);pointer-events:none}.gold-balance #balance{color:#5f3700;font-size:19px;font-variant-numeric:tabular-nums}.gold-label{display:inline-flex;align-items:center;gap:5px}.coin-mini{font-size:17px}
+
+/* Responsive layout tuning: phone / iPad / desktop only. No business logic changes. */
+html{width:100%;overflow-x:hidden}
+body{min-width:0}
+button,input,select{font:inherit}
+@media (min-width:761px){
+  .wrap{max-width:1180px;padding-left:24px;padding-right:24px}
+}
+@media (min-width:621px) and (max-width:1024px){
+  .wrap{max-width:960px;padding-left:22px;padding-right:22px}
+  .top{gap:12px}
+  .top>div:last-child{flex-wrap:wrap;justify-content:flex-end}
+  .home-dashboard{grid-template-columns:1fr 1fr}
+  .hero{padding:24px}
+  .card{padding:18px}
+}
+@media (max-width:620px){
+  .wrap{width:100%;max-width:none;padding:12px 10px 28px}
+  .top{align-items:flex-start;gap:10px;margin-bottom:12px}
+  .brand{font-size:20px;gap:7px;flex:0 0 auto}
+  .zhi-coin{width:34px;height:34px;font-size:20px}
+  .top>div:last-child{min-width:0;flex:1;display:grid;grid-template-columns:1fr;gap:6px;justify-items:stretch}
+  .top .balance{width:100%;padding:7px 9px;border-radius:10px;font-size:12px}
+  .user-balance{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .user-balance small{white-space:normal}
+  .gold-balance #balance{font-size:17px}
+  .hero{padding:18px 15px;border-radius:16px;margin-bottom:10px}
+  .hero-title{font-size:21px}
+  .hero-sub{font-size:11px;line-height:1.55}
+  .hero-stat{gap:6px;margin-top:12px}
+  .hero-pill{padding:6px 8px;font-size:10px}
+  .card{padding:13px;border-radius:13px;margin-bottom:9px}
+  h2{font-size:15px;margin:18px 1px 8px}
+  .finance-grid{gap:6px}
+  .finance-stat{padding:9px}
+  .finance-stat b{font-size:14px}
+  .finance-actions,.buttons,.dash-actions{gap:6px}
+  .finance-actions input{min-width:0;width:100%;flex:1 1 100%}
+  .finance-actions .btn{min-width:0}
+  .home-dashboard{grid-template-columns:1fr;gap:8px;margin-top:14px;padding-top:14px}
+  .dash-feature-question{font-size:16px}
+  .dash-feature-row{align-items:stretch}
+  .dash-feature-main{min-width:0}
+  .dash-feature-btn{width:100%}
+  .dash-feature-row .dash-feature-btn{flex:1 1 100%}
+  .gift-send-details,.gift-details{margin-top:7px}
+  .savings-action-row{gap:7px}
+  .savings-input-wrap input{min-height:42px;font-size:14px}
+  .savings-action-row .btn{min-height:42px}
+  .savings-secondary-row{gap:7px}
+  .savings-secondary-row .btn{padding:9px 6px;font-size:12px}
+  .sr-live{padding:9px}
+  .sr-live-list{max-height:300px}
+  .sr-live-item{gap:7px;padding:8px 0}
+  .sr-live-time{font-size:9px}
+  .modal{padding:10px}
+  .modalbox{max-width:none;padding:17px;border-radius:14px}
+  .modalbox input{font-size:16px}
+  footer{margin-top:18px}
+}
+@media (max-width:380px){
+  .brand-text{font-size:18px}
+  .brand{font-size:18px}
+  .top{gap:7px}
+  .top>div:last-child{font-size:11px}
+  .finance-grid{grid-template-columns:1fr 1fr}
+  .finance-stat b{font-size:13px}
+  .hero-title{font-size:19px}
+  .hero-pill{font-size:9px}
+  .dash-title{font-size:13px}
+}
+@media (min-width:621px) and (max-width:900px){
+  .finance-grid{grid-template-columns:repeat(2,1fr)}
+}
+\n</style>
+</head>
+<body>
+<section id="authScreen" class="auth"><div class="authbox">
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px"><span class="zhi-coin" style="width:46px;height:46px;font-size:26px">Z</span><h1 style="margin:0;background:linear-gradient(90deg,#8a5700,#d49400,#8a5700);-webkit-background-clip:text;background-clip:text;color:transparent">ZHI</h1></div><p id="authSub">登录 / Sign in账户 / Sign in to predict</p>
+<div class="field"><label>用户名 / Username</label><input id="authUsername" placeholder="zhi_player"></div>
+<div class="field"><label>密码 / Password</label><input id="authPassword" type="password" placeholder="至少 6 位 / Min. 6 characters"></div>
+<div id="authError" class="err"></div><div id="loginStatus" class="err" style="height:auto;min-height:18px;margin-top:6px"></div>
+<button id="authSubmit" class="btn confirm" style="width:100%">登录 / Sign in</button>
+<p style="text-align:center;color:#777;font-size:13px"><span id="switchText">还没有账户？ / No account?</span> <button id="authSwitchBtn" class="link">立即注册 / Register</button></p>
+<div class="notice">ZHI is the prediction demo balance. / ZHI 为本网站预测演示积分。</div>
+</div></section>
+
+<main id="app" class="wrap hidden">
+<div class="top"><div class="brand"><span class="zhi-coin">Z</span><span class="brand-text">ZHI</span></div><div style="display:flex;align-items:center;gap:8px"><div class="balance user-balance">用户名 / User: <b id="topUsername">--</b><small id="topZId" style="display:block;margin-top:3px;font-size:11px;color:#8a6500;font-weight:800">ID: ZHI-000000000000</small></div><button id="giftNoticeBtn" class="btn" style="display:none;flex:0 0 auto;padding:8px 10px;background:#fff3cd;color:#8a6500;border:1px solid #ffe69c">🎁 <span id="giftNoticeCount">0</span></button><div class="balance gold-balance"><span class="gold-label"><span class="coin-mini">🪙</span> 余额 / Balance</span> <span id="balance">--</span> ZHI</div></div></div><div id="giftNotice" class="notice hidden"></div><div id="rewardPop" class="reward-pop"><div class="reward-pop-title">🎉 财神爷奖励到账</div><div id="rewardPopBody" class="reward-pop-body"></div><div id="rewardPopAmount" class="reward-pop-amount"></div></div>
+<div class="hero"><div class="section-label">ZHI PREDICTION</div><div class="hero-title">🪙 Predict. Play. Earn ZHI.</div><div class="hero-sub">选择 YES / NO，下注 ZHI。市场截止后进入结算，管理员确认结果后自动派奖。</div><div class="hero-stat"><span class="hero-pill">⚡ 自动结算</span><span class="hero-pill">🏆 自动派奖</span><span class="hero-pill">🎁 自由转赠</span></div></div>
+<div class="card" id="savingsCard"><div class="gift-toggle" id="savingsToggle"><span>🪙 <b>ZHI 存储 · 财神爷利息</b></span><span class="gift-arrow" id="savingsArrow">▼</span></div><div class="gift-details" id="savingsDetails"><div class="savings-rate"><span>📈 存款年利率</span><b>5% / 年</b></div><div class="meta">把 ZHI 存入财神爷，按年利率 5% 计算收益；可随时领取已产生的利息。</div><div class="savings-actions"><div class="savings-action-row"><div class="savings-input-wrap"><span class="savings-input-icon">🪙</span><input id="saveAmount" type="number" min="1" step="1" placeholder="存入 ZHI 数量"></div><button id="saveBtn" class="btn confirm savings-main-btn">存入财神爷</button><button id="claimBtn" class="btn savings-claim-btn">💰 领取利息</button></div><div class="savings-action-row"><div class="savings-input-wrap"><span class="savings-input-icon">🪙</span><input id="withdrawAmount" type="number" min="1" step="1" placeholder="取出 ZHI 数量"></div><button id="withdrawBtn" class="btn savings-withdraw-btn">↩️ 取款</button></div></div><div id="savingsMsg" class="savings-msg"></div></div></div><div class="card finance-panel" id="loanCard"><div class="gift-toggle" id="loanToggle"><span>🪙 <b>财神爷金融中心</b></span><span class="gift-arrow" id="loanArrow">▼</span></div><div class="gift-details" id="loanDetails"><div class="meta">存款、利息、贷款与还款统一管理 · 贷款年利率 8%</div><div class="finance-grid"><div class="finance-stat"><span>💰 钱包余额</span><b id="financeWallet">--</b></div><div class="finance-stat"><span>🔒 存款本金</span><b id="financeSavings">--</b></div><div class="finance-stat"><span>💳 当前贷款</span><b id="financeLoan">--</b></div><div class="finance-stat"><span>📈 最高可贷</span><b id="financeLimit">--</b></div><div class="finance-stat"><span>💸 贷款利息</span><b id="financeInterest">--</b></div><div class="finance-stat"><span>🏦 贷款年利率</span><b id="financeRate">8%</b></div></div><div class="finance-actions"><input id="loanAmount" type="number" min="1" step="1" placeholder="输入 ZHI 数量"><button id="loanBtn" class="btn confirm">💳 申请ZHI贷款</button><button id="repayBtn" class="btn">↩️ 还款</button></div><div id="loanMsg" class="meta" style="margin-top:8px"></div></div><div class="home-dashboard">
+  <div class="dash-card dash-feature" id="dashFeatured"><div class="dash-title"><span>⭐ 今日焦点 / Featured Prediction</span><span class="dash-chip chip-gold">FEATURED</span></div><div id="dashFeaturedContent"></div></div>
+  <div class="dash-card"><div class="dash-title"><span>🔥 正在热门预测</span><span class="dash-chip chip-gold">HOT</span></div><div class="dash-sub">按当前奖池排序 / By pool</div><div id="dashHot" class="dash-list"></div></div>
+  <div class="dash-card"><div class="dash-title"><span>⏰ 即将截止</span><span class="dash-chip chip-blue">SOON</span></div><div class="dash-sub">最接近投注截止 / Closing soon</div><div id="dashSoon" class="dash-list"></div></div>
+  <div class="dash-card"><div class="dash-title"><span>🏆 最近中奖</span><span class="dash-chip chip-green">WINNERS</span></div><div class="dash-sub">最近自动派奖记录 / Recent payouts</div><div id="dashWinners" class="dash-list"></div></div>
+  <div class="dash-card"><div class="dash-title"><span>🎁 ZHI 转赠</span><span class="dash-chip chip-gold">SOCIAL</span></div><div class="dash-sub">把 ZHI 送给其他用户 / Gift ZHI</div><div class="dash-item"><div class="dash-question">🎁 与朋友分享 ZHI</div><div id="dashTransfers" class="dash-meta">已发生 0 笔转赠 / 0 transfers</div><button class="dash-action" id="dashTransferBtn">立即转赠 / Send ZHI</button></div></div>
+  <div class="dash-card"><div class="dash-title"><span>👥 用户排行榜</span><span class="dash-chip chip-blue">TOP 5</span></div><div class="dash-sub">按当前 ZHI 余额 / By balance</div><div id="dashLeaderboard" class="dash-list"></div></div>
+  <div class="dash-card"><div class="dash-title"><span>💰 当前奖池</span><span class="dash-chip chip-gold">POOL</span></div><div class="dash-sub">所有进行中市场 / Active markets</div><div class="dash-item"><div id="dashPool" style="font-size:24px;font-weight:900;color:#8a5a00">0 ZHI</div><div class="dash-meta">当前开放市场总奖池 / Total active pool</div></div></div>
+</div>
+<div class="card" style="background:linear-gradient(135deg,#fffdf4 0%,#fff6cf 48%,#fff 100%);border-color:#ead28a;box-shadow:0 4px 18px rgba(180,130,0,.12)"><div class="total">🏦 ZHI Treasury · Total / ZHI 总额</div><div class="big" style="color:#8a5a00">3,000,000,000,000,000 ZHI</div><div class="meta" style="margin-top:8px">财神爷余额 / Treasury Remaining: <b id="treasuryBalance">--</b> ZHI</div></div>
+<div class="card">
+  <div class="gift-send-toggle" id="giftSendToggle"><span>🎁 <b>转赠 ZHI / Send ZHI</b></span><span class="gift-send-arrow" id="giftSendArrow">▼</span></div>
+  <div class="gift-send-details" id="giftSendDetails">
+    <div class="meta">把 ZHI 转给其他用户 / Send ZHI to another user</div>
+    <div class="field"><label>收赠用户名 / Recipient Username</label><input id="transferUsername" placeholder="输入对方用户名 / Username"></div>
+    <div class="field"><label>转赠数量 / Amount</label><input id="transferAmount" type="number" min="1" step="1" placeholder="例如：1000"></div>
+    <button id="transferBtn" class="btn confirm" style="width:100%">🎁 确认转赠 / Send ZHI</button>
+    <div id="transferError" class="err" style="margin-top:8px"></div>
+  </div>
+</div>
+
+<div class="gift-toggle" id="predictionMarketsToggle"><span>🎯 <b>预测市场 / Prediction Markets</b></span><span class="gift-arrow" id="predictionMarketsArrow">▼</span></div><div class="gift-details" id="predictionMarketsDetails"><div id="markets"></div></div>
+<div id="expiredPanel" class="hidden"><h2>⏰ 已到期 / Expired</h2><div id="expiredMarkets"></div></div>
+<div id="adminPanel" class="hidden"><h2>🛠️ 管理员 / Admin</h2>
+<div class="card" id="treasuryFinancePanel" style="background:linear-gradient(135deg,#fffdf4,#fff8df);border-color:#ead28a"><div class="q">🏦 财神爷财务中心 / Treasury Finance</div><div class="meta">固定总供应量与财神爷资金流向</div><div class="finance-grid"><div class="finance-stat"><span>💰 财神爷总余额</span><b id="tfTotal">--</b></div><div class="finance-stat"><span>🟢 可用余额</span><b id="tfAvailable">--</b></div><div class="finance-stat"><span>🔒 用户存款</span><b id="tfSavings">--</b></div><div class="finance-stat"><span>💳 用户贷款</span><b id="tfLoans">--</b></div><div class="finance-stat"><span>💸 待收贷款利息</span><b id="tfLoanInterest">--</b></div><div class="finance-stat"><span>📉 已付存款利息</span><b id="tfSavingsInterest">--</b></div><div class="finance-stat"><span>🪙 固定总供应量</span><b id="tfSupply">3,000万亿</b></div></div><div id="tfMsg" class="meta" style="margin-top:8px"></div><div class="card" id="fundsReconcilePanel" style="background:linear-gradient(135deg,#f7fff8,#eefaf1);border-color:#b9dfc2"><div class="q">🧾 资金守恒检查 / Funds Reconciliation</div><div class="meta">固定总供应量 = 财神爷 + 真人用户资产 + SR 模拟用户资产。SR 钱包、锁定资金与存款也纳入核算，且不会重复计算。每次刷新自动核对。</div><div class="finance-grid"><div class="finance-stat"><span>🪙 固定总供应量</span><b id="frSupply">--</b></div><div class="finance-stat"><span>🏦 财神爷余额</span><b id="frTreasury">--</b></div><div class="finance-stat"><span>👛 用户钱包</span><b id="frWallets">--</b></div><div class="finance-stat"><span>🔒 锁定下注</span><b id="frLocked">--</b></div><div class="finance-stat"><span>💰 用户存款</span><b id="frSavings">--</b></div><div class="finance-stat"><span>💳 未偿贷款</span><b id="frLoans">--</b></div><div class="finance-stat"><span>🤖 SR 钱包</span><b id="frSRWallets">--</b></div><div class="finance-stat"><span>🔒 SR 锁定</span><b id="frSRLocked">--</b></div><div class="finance-stat"><span>🏦 SR 存款</span><b id="frSRSavings">--</b></div><div class="finance-stat"><span>🧮 已核算总额</span><b id="frAccounted">--</b></div></div><div id="frStatus" class="notice" style="margin-top:10px">检查中 / Checking...</div><div id="frMsg" class="meta" style="margin-top:8px"></div></div><div class="card" id="treasuryDailyPanel" style="background:linear-gradient(135deg,#fff,#f7f1dc);border-color:#e8d7a4"><div class="q">📊 财神爷每日财务报表 / Daily Finance Report</div><div class="meta">每日贷款利息收入、存款利息支出与净收益</div><div class="finance-grid"><div class="finance-stat"><span>📈 今日贷款利息收入</span><b id="tdLoanIncome">--</b></div><div class="finance-stat"><span>📉 今日存款利息支出</span><b id="tdSavingsExpense">--</b></div><div class="finance-stat"><span>💰 今日净收益</span><b id="tdNet">--</b></div></div><div id="tdDays" class="history" style="margin-top:10px"></div><div id="tdMsg" class="meta" style="margin-top:8px"></div></div></div><div class="card" id="srSimulationPanel" style="background:linear-gradient(135deg,#f6f3ff,#fff);border-color:#cfc2f5"><div class="gift-toggle" id="srSimulationToggle"><span>🤖 <b>SR · ZHI 10,000 模拟社区引擎</b></span><span class="gift-arrow" id="srSimulationArrow">▼</span></div><div class="gift-details open" id="srSimulationDetails"><div class="meta">10,000 个 SR 是管理员可识别的模拟用户；账号使用 ZHI 正式 Auth 与正式业务表，行为和资金规则与普通 ZHI 用户一致。</div><div class="finance-grid"><div class="finance-stat"><span>👥 SR 用户</span><b id="srUsers">--</b></div><div class="finance-stat"><span>🟢 活跃</span><b id="srActive">--</b></div><div class="finance-stat"><span>⚡ 今日动作</span><b id="srActions">--</b></div><div class="finance-stat"><span>🔐 今日登录</span><b id="srLogins">--</b></div><div class="finance-stat"><span>🎯 今日预测</span><b id="srPredictions">--</b></div><div class="finance-stat"><span>🏦 今日存储</span><b id="srSaves">--</b></div><div class="finance-stat"><span>💳 今日贷款</span><b id="srLoans">--</b></div><div class="finance-stat"><span>↩️ 今日还款</span><b id="srRepays">--</b></div><div class="finance-stat"><span>👛 SR 钱包</span><b id="srWallet">--</b></div><div class="finance-stat"><span>🏦 SR 存储</span><b id="srSavings">--</b></div><div class="finance-stat"><span>💳 SR 未偿贷款</span><b id="srLoanBalance">--</b></div><div class="finance-stat"><span>🕒 最近动作</span><b id="srLast" style="font-size:12px">--</b></div></div><div class="finance-actions"><button id="srCreateAuthBtn" class="btn confirm" type="button" onclick="window.createSRAuthUsers()">👥 创建/同步真实 ZHI 用户</button><button id="srRunBtn" class="btn confirm">⚡ 立即运行一批</button><button id="srPauseBtn" class="btn">⏸ 暂停 SR</button><button id="srRefreshBtn" class="btn">🔄 刷新</button></div><div class="card" style="margin-top:10px;background:linear-gradient(135deg,#fffdf0,#fff7cf);border-color:#ead28a"><div class="q">🪙 财神爷 → SR 初始资金发放</div><div class="meta">每个 SR 注册时由财神爷发放 1,000 ZHI；这里显示实际记账结果。</div><div class="finance-grid"><div class="finance-stat"><span>👥 已发放账户</span><b id="srGrantCount">--</b></div><div class="finance-stat"><span>🪙 每人发放</span><b id="srGrantEach">--</b></div><div class="finance-stat"><span>💰 累计发放</span><b id="srGrantTotal">--</b></div><div class="finance-stat"><span>🏦 资金来源</span><b id="srGrantSource">--</b></div></div></div><div id="srMsg" class="meta" style="margin-top:8px"></div><div class="sr-live" id="srLivePanel"><div class="sr-live-head" id="srLiveToggle" style="cursor:pointer"><span><span class="sr-live-dot"></span> 实时行为 / Live SR activity</span><span style="display:flex;align-items:center;gap:8px"><span id="srLiveCount" class="meta" style="margin:0">--</span><span id="srLiveArrow" class="gift-arrow">▼</span></span></div><div id="srLiveSummary" class="finance-grid" style="margin-top:10px"></div><div class="gift-details" id="srLiveDetails"><div id="srLiveList" class="sr-live-list"><div class="notice">加载中 / Loading...</div></div></div></div></div></div><div class="card" id="settlementPanel"><div class="q">⏳ 待结算市场 / Settlement</div><div class="meta">投注截止后会自动出现在这里。管理员确认结果后，系统立即自动派奖。</div><div id="settlementMarkets"></div></div>
+<div class="card" id="createMarketPanel">
+  <div class="gift-toggle" id="createMarketToggle">
+    <span>➕ <b>新增市场 / Create Market</b></span>
+    <span class="gift-arrow" id="createMarketArrow">▼</span>
+  </div>
+  <div class="gift-details" id="createMarketDetails">
+    <div class="field"><label>市场 ID / Market ID</label><input id="newMarketId" placeholder="m5"></div>
+    <div class="field"><label>问题 / Question</label><input id="newMarketQuestion" placeholder="例如：某事件是否会发生？ / e.g. Will this event happen?"></div>
+    <div class="field"><label>截止时间 / Close Time</label><input id="newMarketCloseAt" type="datetime-local"></div>
+    <button id="createMarketBtn" class="btn confirm" style="width:100%">创建市场 / Create Market</button>
+    <div id="createMarketError" class="err" style="margin-top:8px"></div>
+  </div>
+</div>
+<div id="adminMarkets"></div>
+<div class="card" id="adminUserFunds">
+  <div class="gift-toggle" id="adminUserFundsToggle">
+    <span>👥 <b>用户资金 / User Funds</b></span>
+    <span class="gift-arrow" id="adminUserFundsArrow">▼</span>
+  </div>
+  <div class="gift-details" id="adminUserFundsDetails">
+    <div class="meta">所有用户钱包余额与下注金额 / All user wallet balances and bet amounts</div>
+    <button id="refreshUsersBtn" class="btn confirm" style="width:100%;margin-bottom:10px">刷新 / Refresh</button>
+    <div id="adminUsers"></div>
+  </div>
+</div>
+<div class="card" id="adminFundFlows" style="background:linear-gradient(135deg,#fffdf4,#fff8df);border-color:#ead28a">
+  <div class="gift-toggle" id="adminFundFlowsToggle">
+    <span>📒 <b>全部用户资金流水 / All Users Fund Flows</b></span>
+    <span class="gift-arrow" id="adminFundFlowsArrow">▼</span>
+  </div>
+  <div class="gift-details" id="adminFundFlowsDetails">
+    <div class="meta">管理员查看所有用户的 ZHI 流入、流出、存款、贷款、利息与还款。</div>
+    <div class="finance-grid">
+      <div class="finance-stat"><span>⬆️ 总流入</span><b id="afIn">--</b></div>
+      <div class="finance-stat"><span>⬇️ 总流出</span><b id="afOut">--</b></div>
+      <div class="finance-stat"><span>⚖️ 净流量</span><b id="afNet">--</b></div>
+      <div class="finance-stat"><span>📋 显示流水</span><b id="afCount">--</b></div>
+    </div>
+    <div class="finance-actions">
+      <select id="afFilter" style="flex:1;min-width:150px;padding:10px;border:1px solid #ddd;border-radius:9px">
+        <option value="all">全部类型 / All</option>
+        <option value="savings_deposit">🏦 存款</option>
+        <option value="loan_disbursement">💳 贷款</option>
+        <option value="savings_interest">📈 存款利息</option>
+        <option value="loan_interest_accrual">📊 贷款计息</option>
+        <option value="loan_repayment">↩️ 还款</option><option value="sr_simulation">🤖 SR 模拟流水</option>
+      </select>
+      <input id="afUser" placeholder="用户名筛选 / Username">
+      <button id="afRefresh" class="btn confirm">刷新</button>
+    </div>
+    <div id="afList" style="margin-top:10px"></div>
+  </div>
+</div></div>
+
+<h2>🧾 我的记录 / My Records</h2><div id="history" class="card history"></div>
+<button id="logout" class="link" style="display:block;margin:18px auto">退出登录 / Sign out</button>
+<footer>🪙 <b style="color:#8a5a00">ZHI</b> · Prediction Platform · Demo</footer>
+</main>
+<div id="stakeModal" class="modal"><div class="modalbox">
+<h3>预测 / Prediction</h3><div id="choiceText" class="choice"></div>
+<div id="directionChoice" style="display:none;gap:8px;margin-bottom:10px"><button id="modalYes" class="btn yes">YES / 是</button><button id="modalNo" class="btn no">NO / 否</button></div>
+<input id="modalAmount" type="number" min="1" placeholder="下注多少 ZHI？ / Amount in ZHI?" style="display:none">
+<div class="modalactions"><button id="modalCancel" class="btn" style="background:#eee">取消 / Cancel</button><button id="modalConfirm" class="btn confirm" style="display:none">确认 / Confirm</button></div>
+</div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-client.js"></script>
+<script src="settlement.js"></script>
+<script>
+const sb=window.zhiSupabase;let user=null,wallet=null,marketsData=[],positions=[],selectedMarket=null,selectedSide=null;
+const money=n=>Number(n||0).toLocaleString(),$=id=>document.getElementById(id);
+const ZHI_TIME_ZONE='Asia/Singapore';
+const SR_TIME_LABEL='🇸🇬 新加坡时间';
+const sgDateOptions={timeZone:ZHI_TIME_ZONE};
+const sgDateTimeOptions={timeZone:ZHI_TIME_ZONE,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false};
+const sgDateMinuteOptions={timeZone:ZHI_TIME_ZONE,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false};
+const sgDateShortOptions={timeZone:ZHI_TIME_ZONE,month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'};
+const sgTimeOptions={timeZone:ZHI_TIME_ZONE,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false};
+const fmtSG=x=>x?new Date(x).toLocaleString('zh-CN',sgDateTimeOptions):'--';
+const fmtSGMinute=x=>x?new Date(x).toLocaleString('zh-CN',sgDateMinuteOptions):'--';
+const fmtSGShort=x=>x?new Date(x).toLocaleString('zh-CN',sgDateShortOptions):'--';
+const fmtSGTime=x=>x?new Date(x).toLocaleTimeString('zh-CN',sgTimeOptions):'--';
+const sgInputValue=x=>{if(!x)return '';const d=new Date(x);const p=new Intl.DateTimeFormat('en-CA',{timeZone:ZHI_TIME_ZONE,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(d).reduce((o,v)=>(o[v.type]=v.value,o),{});return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;};
+const parseSGInput=x=>{if(!x)return new Date(NaN);const m=x.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);if(!m)return new Date(NaN);const utc=Date.UTC(+m[1],+m[2]-1,+m[3],+m[4]-8,+m[5]);return new Date(utc);};
+function showErr(s){$('authError').textContent=s}
+const togglePanel=(toggleId,detailsId,arrowId)=>{const t=$(toggleId),d=$(detailsId),a=$(arrowId);if(!t||!d||!a)return;t.onclick=()=>{d.classList.toggle('open');a.classList.toggle('open')}};togglePanel('savingsToggle','savingsDetails','savingsArrow');togglePanel('adminFundFlowsToggle','adminFundFlowsDetails','adminFundFlowsArrow');togglePanel('srSimulationToggle','srSimulationDetails','srSimulationArrow');togglePanel('adminUserFundsToggle','adminUserFundsDetails','adminUserFundsArrow');togglePanel('srLiveToggle','srLiveDetails','srLiveArrow');togglePanel('predictionMarketsToggle','predictionMarketsDetails','predictionMarketsArrow');togglePanel('createMarketToggle','createMarketDetails','createMarketArrow');$('srCreateAuthBtn').onclick=createSRAuthUsers;$('srRunBtn').onclick=runSRTick;$('srPauseBtn').onclick=toggleSRSummary;$('srRefreshBtn').onclick=()=>{loadSRSummary();loadSRActivity()};togglePanel('loanToggle','loanDetails','loanArrow');
+async function load(passedUser=null){
+ try{
+  if(passedUser) user=passedUser;
+  else{
+   const r=await sb.auth.getSession();
+   if(r.error)throw r.error;
+   user=r.data.session?.user||null;
+  }
+ }catch(e){
+  user=null;
+ }
+ if(!user){$('authScreen').classList.remove('hidden');$('app').classList.add('hidden');return}
+ $('authScreen').classList.add('hidden');$('app').classList.remove('hidden');
+ try{
+  try{
+   const [w,m,p,h]=await Promise.all([
+    sb.from('wallets').select('*').eq('user_id',user.id).single(),
+    sb.from('markets').select('*').order('created_at',{ascending:true}),
+    sb.from('positions').select('*').eq('user_id',user.id).eq('status','open'),
+    sb.from('transactions').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(10)
+   ]);
+   wallet=w.data;marketsData=m.data||[];positions=p.data||[];
+   const treasury=await sb.rpc('get_treasury_balance');
+   const {data:profile}=await sb.from('profiles').select('username,z_id').eq('id',user.id).maybeSingle();
+   $('topUsername').textContent=profile?.username||user?.user_metadata?.username||user?.email?.split('@')[0]||'--';
+   $('topZId').textContent=profile?.z_id?('ID: ZHI-'+String(profile.z_id).padStart(12,'0')):'ID: ZHI-000000000000';
+   $('balance').textContent=money(wallet?.balance||0);$('treasuryBalance').textContent=money(treasury.data||0);
+   renderMarkets();renderHistory(h.data||[]);
+  }catch(e){
+   $('balance').textContent=money(wallet?.balance||0);
+   $('treasuryBalance').textContent='--';
+   const msg=$('loginStatus');
+   if(msg)msg.textContent='资料加载提示：'+(e.message||'部分资料暂时无法加载');
+ }
+ $('saveBtn').onclick=saveZhi;$('withdrawBtn').onclick=withdrawZhi;$('claimBtn').onclick=claimSavings;$('loanBtn').onclick=takeLoan;$('repayBtn').onclick=repayLoan;
+ await Promise.allSettled([loadFinancePanel(),loadGiftNotice(),loadHomeDashboard()]);
+ }catch(e){
+  const msg=$('loginStatus');
+  if(msg)msg.textContent='系统提示：'+(e.message||'部分资料暂时无法加载');
+ }
+}
+async function renderMarkets(){
+ const open=marketsData.filter(m=>m.status==='open'&&new Date(m.close_at)>new Date());
+ $('markets').innerHTML=open.map(m=>{
+  const mine=positions.find(p=>p.market_id===m.id);
+  return '<div class="card"><div class="q">'+m.question+'</div><div class="meta">截止 / Closes: '+new Date(m.close_at).toLocaleString('zh-CN')+'</div>'+
+  '<div class="pool">YES '+money(m.yes_pool)+' ZHI　 NO '+money(m.no_pool)+' ZHI</div>'+
+  '<div class="buttons"><button class="btn yes" data-id="'+m.id+'" data-side="yes" '+(mine?'disabled':'')+'>YES</button><button class="btn no" data-id="'+m.id+'" data-side="no" '+(mine?'disabled':'')+'>NO</button></div>'+
+  '<div class="stake" id="s-'+m.id+'"><input id="a-'+m.id+'" type="number" min="1" placeholder="ZHI 数量"><button class="btn confirm" data-confirm="'+m.id+'">确认 / Confirm</button></div>'+
+  (mine?'<div class="notice">你已预测 / Your prediction: <b style="color:'+(mine.side==='yes'?'#087443':'#a51f2d')+'">'+(mine.side==='yes'?'YES / 是':'NO / 否')+'</b> · '+money(mine.stake)+' ZHI</div>':'')+'</div>';
+ }).join('')||'<div class="card">目前没有进行中的市场。 / No active markets.</div>';
+ $('markets').querySelectorAll('[data-side]').forEach(b=>b.onclick=()=>{
+ selectedMarket=b.dataset.id;selectedSide=b.dataset.side;
+ const m=marketsData.find(x=>x.id===selectedMarket);
+ $('choiceText').textContent=(selectedSide==='yes'?'YES / 是':'NO / 否')+' · '+m.question;
+ $('directionChoice').style.display='none';
+ $('modalAmount').style.display='block';
+ $('modalConfirm').style.display='block';
+ $('modalAmount').value='';
+ $('stakeModal').classList.add('show');
+ setTimeout(()=>$('modalAmount').focus(),50);
+});
+$('markets').querySelectorAll('[data-confirm]').forEach(b=>b.onclick=()=>stake(b.dataset.confirm));
+$('giftNoticeBtn').onclick=async()=>{if(Number($('giftNoticeCount').textContent)>0)await markGiftNotificationsRead();};
+$('giftSendToggle').onclick=()=>{$('giftSendDetails').classList.toggle('open');$('giftSendArrow').classList.toggle('open')};
+ const expired=marketsData.filter(m=>m.status==='closed');
+ $('expiredPanel').classList.toggle('hidden',!expired.length);
+ $('expiredMarkets').innerHTML=expired.map(m=>'<div class="card"><div class="q">'+m.question+'</div><div class="status expired">⏰ 已到期 / Expired · 等待管理员结果 / Awaiting admin result</div></div>').join('');
+
+ const isAdmin=user?.app_metadata?.role==='admin';
+ $('adminPanel').classList.toggle('hidden',!isAdmin);
+ if(isAdmin){
+   loadTreasuryFinance();loadSRSummary();loadSRTreasuryGrants();loadTreasuryDailyReport();loadFundsReconciliation();loadAdminFundFlows();
+   $('createMarketBtn').onclick=createMarket;
+   $('refreshUsersBtn').onclick=loadAdminUsers;$('afRefresh').onclick=loadAdminFundFlows;$('afFilter').onchange=loadAdminFundFlows;
+   loadAdminUsers();
+   const awaiting=marketsData.filter(m=>m.status==='closed');
+   $('settlementPanel').classList.toggle('hidden',!awaiting.length);
+   $('settlementMarkets').innerHTML=awaiting.length?awaiting.map(m=>
+     '<div style="padding:12px 0;border-bottom:1px solid #eee"><div class="q">'+m.question+'</div>'+
+     '<div class="meta">市场 ID / Market ID: '+m.id+' · 投注已截止 / Betting closed</div>'+
+     '<div class="pool">YES '+money(m.yes_pool)+' ZHI　 NO '+money(m.no_pool)+' ZHI</div>'+
+     '<div class="buttons"><button class="btn yes" data-settle-result="'+m.id+'" data-result="yes">确认 YES</button><button class="btn no" data-settle-result="'+m.id+'" data-result="no">确认 NO</button></div></div>'
+   ).join(''):'';
+   $('settlementMarkets').querySelectorAll('[data-settle-result]').forEach(b=>b.onclick=()=>adminSetResult(b.dataset.settleResult,b.dataset.result));
+
+   const editable=marketsData.filter(m=>m.status==='open');
+   $('adminMarkets').innerHTML=editable.length?editable.map(m=>
+     '<div class="card"><div class="q">'+m.question+'</div>'+
+     '<div class="meta">市场 ID / Market ID: '+m.id+' · 状态 / Status: '+m.status+'</div>'+
+     '<div class="pool">YES '+money(m.yes_pool)+' ZHI　 NO '+money(m.no_pool)+' ZHI</div>'+
+     '<div class="field"><label>市场问题 / Market Question</label><input id="question-'+m.id+'" value="'+String(m.question).replace(/"/g,'&quot;')+'"></div>'+
+     '<div class="field"><label>截止时间 / Close Time</label><input id="close-'+m.id+'" type="datetime-local" value="'+sgInputValue(m.close_at)+'"></div>'+
+     '<div class="buttons"><button class="btn confirm" data-admin-edit="'+m.id+'">保存修改 / Save Changes</button>'+
+     '<button class="btn" style="background:#eee" data-admin-cancel="'+m.id+'">取消市场 / Cancel Market</button>'+
+     '</div></div>'
+   ).join(''):'<div class="card">暂无可编辑市场。 / No editable markets.</div>';
+   $('adminMarkets').querySelectorAll('[data-admin-edit]').forEach(b=>b.onclick=()=>editMarket(b.dataset.adminEdit));
+   $('adminMarkets').querySelectorAll('[data-admin-cancel]').forEach(b=>b.onclick=()=>cancelMarket(b.dataset.adminCancel));
+   const cancelled=marketsData.filter(m=>m.status==='cancelled');
+   let cancelledHtml='';
+   if(cancelled.length){
+     let refundRows=[];
+     try{
+       const rr=await sb.rpc('admin_get_cancelled_market_refunds');
+       if(!rr.error)refundRows=rr.data||[];
+     }catch(e){refundRows=[];}
+     const rm=new Map((refundRows||[]).map(x=>[x.market_id,x]));
+     cancelledHtml='<h3 style="margin:18px 0 8px;font-size:15px">↩️ 已取消市场 / Cancelled Markets</h3>'+cancelled.map(m=>{
+       const r=rm.get(m.id)||{};
+       return '<div class="card"><div class="q">'+m.question+'</div><div class="meta">市场 ID / Market ID: '+m.id+' · 已取消 / Cancelled</div><div class="pool">↩️ 已退款 <b>'+money(r.refunded_total||0)+' ZHI</b> · '+Number(r.refund_count||0)+' 笔投注全部退回各自余额</div></div>';
+     }).join('');
+   }
+   $('adminMarkets').insertAdjacentHTML('beforeend',cancelledHtml);
+ }
+}
+async function loadLoanLimit(){const {data,error}=await sb.rpc('get_loan_limit');if(error)return;const el=$('loanLimit');if(el)el.textContent='最高可贷 '+money(data.max_loan)+' ZHI';}
+async function takeLoan(){const a=Math.floor(Number($('loanAmount').value));if(!Number.isFinite(a)||a<1)return alert('请输入至少 1 ZHI');const {data,error}=await sb.rpc('take_zhi_loan',{p_amount:a});if(error)return alert(error.message);$('loanAmount').value='';$('loanMsg').textContent='贷款 '+money(a)+' ZHI 已到账 · 年利率 '+(data?.annual_rate||8)+'%，利息将按时间自动累计';await loadFinancePanel();await load();}
+async function loadFinancePanel(){const w=await sb.from('wallets').select('balance').eq('user_id',user.id).maybeSingle();const s=await sb.from('zhi_savings').select('principal').eq('user_id',user.id).maybeSingle();const l=await sb.from('zhi_loans').select('outstanding,accrued_interest,annual_rate').eq('user_id',user.id).gt('outstanding',0);const lim=await sb.rpc('get_loan_limit');const rows=l.data||[];$('financeWallet').textContent=money(w.data?.balance||0)+' ZHI';$('financeSavings').textContent=money(s.data?.principal||0)+' ZHI';$('financeLoan').textContent=money(rows.reduce((a,x)=>a+Number(x.outstanding||0),0))+' ZHI';$('financeInterest').textContent=money(rows.reduce((a,x)=>a+Number(x.accrued_interest||0),0))+' ZHI';$('financeRate').textContent=(rows[0]?.annual_rate||8)+'%';$('financeLimit').textContent=money(lim.data?.max_loan||0)+' ZHI';}
+async function repayLoan(){const a=Math.floor(Number($('loanAmount').value));if(!Number.isFinite(a)||a<1)return alert('请输入还款金额');const {data,error}=await sb.rpc('repay_zhi_loan',{p_amount:a});if(error)return alert(error.message);$('loanAmount').value='';$('loanMsg').textContent='已还款 '+money(data.repaid)+' ZHI，剩余本金 '+money(data.remaining_principal||0)+' ZHI · 待付利息 '+money(data.remaining_interest||0)+' ZHI';await loadFinancePanel();await load();}
+function showSavingsMsg(text,type='success'){const el=$('savingsMsg');if(!el)return;el.textContent=text;el.className='savings-msg show '+type;clearTimeout(window.__savingsMsgTimer);window.__savingsMsgTimer=setTimeout(()=>{el.classList.remove('show')},5000);}
+function showRewardNotice(data){
+ const amount=Number(data?.rewarded||0);
+ if(!amount)return;
+ const reasons=(data?.new_rewards||[]).map(x=>{
+   const m={
+     prediction_count_100:'累计参与预测活动达到 100 次',
+     prediction_amount_5000:'累计参与预测金额达到 5,000 ZHI',
+     gift_users_50:'累计赠送 ZHI 给 50 个不同用户',
+     prediction_consecutive_30_days:'连续 30 天参与预测活动'
+   };
+   return '🎁 '+(m[x.milestone]||'达成财神爷奖励条件')+'：'+money(x.reward)+' ZHI';
+ }).join('<br>')||'🎁 达成财神爷奖励条件';
+ $('rewardPopBody').innerHTML=reasons+'<br><span style="color:#8a5a00;font-weight:800">奖励来源：财神爷</span>';
+ $('rewardPopAmount').textContent='+'+money(amount)+' ZHI';
+ const el=$('rewardPop');el.classList.add('show');
+ clearTimeout(window.__rewardPopTimer);
+ window.__rewardPopTimer=setTimeout(()=>el.classList.remove('show'),6000);
+}
+async function saveZhi(){const a=Math.floor(Number($('saveAmount').value));if(!Number.isFinite(a)||a<1)return showSavingsMsg('请输入至少 1 ZHI','error');const {error}=await sb.rpc('save_zhi',{p_amount:a});if(error)return showSavingsMsg('存入失败：'+error.message,'error');$('saveAmount').value='';showSavingsMsg('✅ 已成功存入 '+money(a)+' ZHI 到财神爷','success');await load();}
+async function withdrawZhi(){const a=Math.floor(Number($('withdrawAmount').value));if(!Number.isFinite(a)||a<1)return showSavingsMsg('请输入取款金额','error');const {data,error}=await sb.rpc('withdraw_zhi',{p_amount:a});if(error)return showSavingsMsg('取款失败：'+error.message,'error');$('withdrawAmount').value='';showSavingsMsg('✅ 已成功取出 '+money(a)+' ZHI，已回到钱包','success');await load();}
+async function claimSavings(){const {data,error}=await sb.rpc('claim_zhi_savings');if(error)return showSavingsMsg('领取利息失败：'+error.message,'error');const n=Number(data?.interest||0);showSavingsMsg(n>0?'💰 已成功领取 '+money(n)+' ZHI 利息':'目前还没有可领取的整数利息 / No claimable interest yet',n>0?'success':'error');await load();}
+async function loadWinnersOnly(){
+ const {data,error}=await sb.rpc('get_home_dashboard');
+ if(error||!data||!$('dashWinners'))return;
+ const fmtTime=x=>new Date(x).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+ $('dashWinners').innerHTML=(data.recent_winners||[]).map(x=>'<div class="dash-item"><div class="dash-question">🏆 '+(x.username||'用户')+' 获得 <b>'+money(x.amount)+' ZHI</b></div><div class="dash-meta">'+(x.question||'预测结算')+' · '+fmtTime(x.created_at)+'</div></div>').join('')||'<div class="dash-empty">还没有中奖记录 / No winners yet</div>';
+}
+async function loadHomeDashboard(){
+ const {data,error}=await sb.rpc('get_home_dashboard');
+ if(error||!data)return;
+ const d=data;
+ const fmtTime=x=>new Date(x).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+ const marketRow=m=>'<div class="dash-item"><div class="dash-question">'+m.question+'</div><div class="dash-meta">💰 '+money(m.total_pool)+' ZHI · ⏰ '+fmtTime(m.close_at)+'</div><div class="dash-actions"><button class="dash-action" data-predict="'+m.id+'">🎯 立即预测</button><button class="share-btn" data-share="'+m.id+'">📤 分享</button></div></div>';
+ $('dashHot').innerHTML=(d.hot_markets||[]).map(m=>marketRow(m)).join('')||'<div class="dash-empty">暂无热门市场 / No hot markets</div>';
+ $('dashSoon').innerHTML=(d.upcoming||[]).map(m=>marketRow(m)).join('')||'<div class="dash-empty">暂无即将截止市场 / None</div>';
+ $('dashWinners').innerHTML=(d.recent_winners||[]).map(x=>'<div class="dash-item"><div class="dash-question">🏆 '+(x.username||'用户')+' 获得 <b>'+money(x.amount)+' ZHI</b></div><div class="dash-meta">'+(x.question||'预测结算')+' · '+fmtTime(x.created_at)+'</div></div>').join('')||'<div class="dash-empty">还没有中奖记录 / No winners yet</div>';
+ $('dashLeaderboard').innerHTML=(d.leaderboard||[]).map((x,i)=>{const tag=x.is_simulated?' · SR':' ';return '<div class="dash-item" style="display:flex;justify-content:space-between;gap:8px"><span><b>'+(i+1)+'.</b> '+x.username+tag+'</span><b style="color:#8a5a00">'+money(x.balance)+' ZHI</b></div>';}).join('')||'<div class="dash-empty">暂无排行榜 / No ranking yet</div>';
+ $('dashTransfers').textContent='已发生 '+Number(d.transfer_count||0)+' 笔转赠 / '+Number(d.transfer_count||0)+' transfers';
+ $('dashPool').textContent=money(d.total_pool||0)+' ZHI'; $('saveBtn').onclick=saveZhi;$('claimBtn').onclick=claimSavings;$('loanBtn').onclick=takeLoan;$('repayBtn').onclick=repayLoan;loadFinancePanel();$('loanBtn').onclick=takeLoan;loadLoanLimit();
+ const shareText=m=>m?'🪙 ZHI 预测\n\n🔥 '+m.question+'\n💰 当前奖池：'+money(m.yes_pool+m.no_pool)+' ZHI\n⏰ 截止：'+new Date(m.close_at).toLocaleString('zh-CN')+'\n\n👉 立即加入 ZHI Prediction':'';
+ const shareMarket=async id=>{
+   const m=marketsData.find(x=>x.id===id); if(!m)return;
+   const url=location.href.split('#')[0]+'?market='+encodeURIComponent(id);
+   const text=shareText(m)+'\n\n'+url;
+   try{
+     if(navigator.share){await navigator.share({title:'ZHI Prediction',text,url});}
+     else{await navigator.clipboard.writeText(text);alert('分享内容已复制 / Share text copied');}
+   }catch(e){if(e?.name!=='AbortError'){try{await navigator.clipboard.writeText(text);alert('分享内容已复制 / Share text copied')}catch(_){alert(text)}}}
+ };
+ document.querySelectorAll('[data-share]').forEach(b=>b.onclick=()=>shareMarket(b.dataset.share));
+ document.querySelectorAll('[data-predict]').forEach(b=>b.onclick=()=>openPredictionChoice(b.dataset.predict));
+ const featured=(d.hot_markets||[])[0];
+ $('dashFeaturedContent').innerHTML=featured?'<div class="dash-feature-row"><div class="dash-feature-main"><div class="dash-feature-question">'+featured.question+'</div><div class="dash-feature-pool">💰 奖池 '+money(featured.total_pool)+' ZHI　·　⏰ 截止 '+fmtTime(featured.close_at)+'</div></div><button class="dash-feature-btn" data-featured="'+featured.id+'">立即预测 / Predict</button></div>':'<div class="dash-empty" style="color:#d8cda9">暂无焦点预测 / No featured prediction</div>';
+ const fb=$('dashFeaturedContent').querySelector('[data-featured]');
+ if(fb)fb.onclick=()=>openPredictionChoice(fb.dataset.featured);
+ const bt=$('dashTransferBtn');if(bt)bt.onclick=()=>{const box=$('giftSendDetails');box.classList.add('open');$('giftSendArrow').classList.add('open');box.scrollIntoView({behavior:'smooth',block:'center'});};
+}
+async function loadGiftNotice(){
+ const {data,error}=await sb.from('transactions').select('id,amount,description,metadata,created_at,read_at').eq('user_id',user.id).eq('type','transfer_in').order('created_at',{ascending:false}).limit(20);
+ const box=$('giftNotice'),btn=$('giftNoticeBtn'),count=$('giftNoticeCount');
+ if(error){btn.style.display='none';box.classList.add('hidden');return}
+ const unread=(data||[]).filter(x=>!x.read_at);
+ const visible=(unread.length?unread:data||[]).slice(0,5);
+ if(!data?.length){btn.style.display='none';box.classList.add('hidden');return}
+ count.textContent=unread.length;
+ btn.style.display='block';
+ btn.style.background=unread.length?'#fff3cd':'#f0f2f6';
+ btn.style.color=unread.length?'#8a6500':'#777';
+ box.classList.remove('hidden');
+ box.innerHTML='<div class="gift-toggle" id="giftToggle"><span>🎁 <b>'+(unread.length?'未读转赠 / Unread gifts':'转赠记录 / Gift history')+'</b>'+(unread.length?' <span style="color:#b26a00">('+unread.length+')</span>':'')+'</span><span class="gift-arrow" id="giftArrow">▼</span></div><div class="gift-details" id="giftDetails">'+visible.map(x=>{
+   return '<div class="gift-row" data-gift-row="'+x.id+'"><b>'+(x.metadata?.from_username||'用户 / User')+'</b> 赠送了 <b>'+money(x.amount)+' ZHI</b><br><span style="color:#999">'+fmtSG(x.created_at)+'</span>'+(x.read_at?'':' · <span style="color:#b26a00">未读 / Unread</span>')+'</div>';
+ }).join('')+'</div>';
+ const toggle=$('giftToggle'),details=$('giftDetails'),arrow=$('giftArrow');
+ toggle.onclick=()=>{details.classList.toggle('open');arrow.classList.toggle('open');};
+}
+async function markGiftNotificationsRead(){
+ const {error}=await sb.rpc('mark_transfer_notifications_read');
+ if(error)return alert(error.message||'标记已读失败 / Failed to mark as read');
+ await loadGiftNotice();
+}
+async function transferZHI(){
+ const username=$('transferUsername').value.trim();
+ const amount=Math.floor(Number($('transferAmount').value));
+ $('transferError').textContent='';
+ if(!username)return $('transferError').textContent='请输入收赠用户名 / Enter recipient username';
+ if(!amount||amount<1)return $('transferError').textContent='请输入有效数量 / Enter a valid amount';
+ if(amount>Number(wallet?.balance||0))return $('transferError').textContent='余额不足 / Insufficient balance';
+ if(username.toLowerCase()===String(user?.user_metadata?.username||'').toLowerCase())return $('transferError').textContent='不能转给自己 / Cannot transfer to yourself';
+ if(!confirm('确定转赠 '+money(amount)+' ZHI 给 '+username+'？\nSend '+money(amount)+' ZHI to '+username+'?'))return;
+ $('transferBtn').disabled=true;
+ try{
+   const {data,error}=await sb.rpc('transfer_zhi',{p_to_username:username,p_amount:amount});
+   if(error)throw error;
+   alert('转赠成功 / Transfer sent');
+   $('transferUsername').value='';$('transferAmount').value='';
+   await load();showRewardNotice(data);
+ }catch(e){$('transferError').textContent=e.message||'转赠失败 / Transfer failed'}
+ finally{$('transferBtn').disabled=false}
+}
+async function createMarket(){
+ const id=$('newMarketId').value.trim();
+ const question=$('newMarketQuestion').value.trim();
+ const closeValue=$('newMarketCloseAt').value;
+ $('createMarketError').textContent='';
+ if(!id||!question||!closeValue)return $('createMarketError').textContent='请填写完整 / Please complete all fields';
+ const closeAt=parseSGInput(closeValue);
+ if(Number.isNaN(closeAt.getTime())||closeAt<=new Date())return $('createMarketError').textContent='截止时间必须是未来时间 / Close time must be in the future';
+ const btn=$('createMarketBtn');btn.disabled=true;
+ try{
+   const {error}=await sb.rpc('admin_create_market',{p_market_id:id,p_question:question,p_close_at:closeAt.toISOString()});
+   if(error)throw error;
+   alert('市场创建成功 / Market created');
+   $('newMarketId').value='';$('newMarketQuestion').value='';$('newMarketCloseAt').value='';
+   await load();
+ }catch(e){$('createMarketError').textContent=e.message||'创建失败 / Creation failed'}
+ finally{btn.disabled=false}
+}
+async function cancelMarket(id){
+ if(!confirm('确定取消市场 '+id+' 吗？所有未结算投注将自动退款。\nCancel market '+id+'? All open stakes will be refunded automatically.'))return;
+ const {data,error}=await sb.rpc('admin_cancel_market',{p_market_id:id});
+ if(error)return alert(error.message);
+ alert('市场已取消，ZHI 已自动退款 / Market cancelled, ZHI refunded automatically');
+ await load();
+}
+async function loadTreasuryFinance(){const {data,error}=await sb.rpc('get_treasury_finance');if(error)return;$('tfTotal').textContent=money(data.total_treasury)+' ZHI';$('tfAvailable').textContent=money(data.available_balance)+' ZHI';$('tfSavings').textContent=money(data.user_savings)+' ZHI';$('tfLoans').textContent=money(data.user_loans)+' ZHI';$('tfLoanInterest').textContent=money(data.loan_interest_due)+' ZHI';$('tfSavingsInterest').textContent=money(data.savings_interest_paid)+' ZHI';$('tfSupply').textContent=money(data.fixed_supply)+' ZHI';}
+async function loadFundsReconciliation(){const {data,error}=await sb.rpc('get_funds_reconciliation');if(error){$('frStatus').textContent='检查失败 / Check failed: '+error.message;$('frStatus').style.color='#b42318';return}$('frSupply').textContent=money(data.fixed_supply)+' ZHI';$('frTreasury').textContent=money(data.treasury_balance)+' ZHI';$('frWallets').textContent=money(data.user_wallet_balance)+' ZHI';$('frLocked').textContent=money(data.user_locked_balance)+' ZHI';$('frSavings').textContent=money(data.user_savings_principal)+' ZHI';$('frLoans').textContent=money(data.loan_outstanding)+' ZHI';$('frSRWallets').textContent=money(data.sr_wallet_balance||0)+' ZHI';$('frSRLocked').textContent=money(data.sr_locked_balance||0)+' ZHI';$('frSRSavings').textContent=money(data.sr_savings_principal||0)+' ZHI';$('frAccounted').textContent=money(data.accounted_supply||0)+' ZHI';const ok=!!data.ok;$('frStatus').textContent=ok?'✅ 资金守恒正常 / Funds reconciled':'⚠️ 发现对账差异 / Reconciliation mismatch';$('frStatus').style.color=ok?'#087443':'#b42318';$('frMsg').textContent='供应差额: '+money(data.supply_difference||0)+' ZHI · 可用余额差额: '+money(data.treasury_available_difference||0)+' ZHI · 锁定资金差额: '+money(data.locked_position_difference||0)+' ZHI';}
+async function loadSRActivity(){
+ const box=$('srLiveList');if(!box)return;
+ const {data,error}=await sb.rpc('admin_get_sr_recent_activity',{p_limit:40});
+ if(error){box.innerHTML='<div class="notice">活动加载失败 / Failed: '+String(error.message||'')+'</div>';return}
+ const rows=Array.isArray(data)?data:[];
+ const core=rows.filter(x=>['predict','save','loan','repay','transfer'].includes(x.action_type));
+ const labels={predict:['🎯','预测'],save:['🏦','存储'],loan:['💳','贷款'],repay:['↩️','还款'],transfer:['🔄','转账'],login:['🔐','登录'],logout:['🚪','离开'],view_market:['👀','查看市场'],wallet_check:['👛','查看钱包']};
+ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const since=Date.now()-5*60*1000;
+ const recent=rows.filter(x=>new Date(x.created_at).getTime()>=since);
+ const counts={predict:0,save:0,loan:0,repay:0,transfer:0};
+ recent.forEach(x=>{if(counts[x.action_type]!=null)counts[x.action_type]++});
+ const summary=$('srLiveSummary');
+ if(summary)summary.innerHTML=[
+  ['🎯 预测',counts.predict],['🏦 存储',counts.save],['💳 贷款',counts.loan],['↩️ 还款',counts.repay],['🔄 转账',counts.transfer]
+ ].map(x=>'<div class="finance-stat"><span>'+x[0]+' · 最近5分钟</span><b>'+Number(x[1]).toLocaleString()+' 次</b></div>').join('');
+ $('srLiveCount').textContent=core.length+' 条核心行为';
+ box.innerHTML=core.slice(0,20).map(x=>{
+   const l=labels[x.action_type]||['⚙️',x.action_type||'动作'];
+   const amount=x.amount!=null?' · '+money(x.amount)+' ZHI':'';
+   const market=x.market_id?' · 市场 '+esc(x.market_id):'';
+   return '<div class="sr-live-item"><div class="sr-live-icon">'+l[0]+'</div><div class="sr-live-main"><div class="sr-live-user">'+esc(x.username||x.sr_id||'SR')+'</div><div class="sr-live-action">'+l[1]+amount+market+'</div></div><div class="sr-live-time">'+fmtSGTime(x.created_at)+'</div></div>';
+ }).join('')||'<div class="notice">最近没有核心经济行为 / No core economic activity yet</div>';
+}
+async function loadSRTreasuryGrants(){const {data,error}=await sb.rpc('admin_get_sr_treasury_grants');if(error){$('srGrantCount').textContent='--';$('srGrantEach').textContent='--';$('srGrantTotal').textContent='--';$('srGrantSource').textContent='加载失败';return}$('srGrantCount').textContent=Number(data.grant_count||0).toLocaleString();$('srGrantEach').textContent=money(data.grant_each||0)+' ZHI';$('srGrantTotal').textContent=money(data.grant_total||0)+' ZHI';$('srGrantSource').textContent=data.funding_source==='treasury'?'财神爷 Treasury':'--';}
+async function loadSRSummary(){const {data,error}=await sb.rpc('admin_get_sr_simulation_summary');if(error){$('srMsg').textContent='SR 状态加载失败：'+error.message;return}$('srUsers').textContent=Number(data.users||0).toLocaleString();$('srActive').textContent=Number(data.active||0).toLocaleString();$('srActions').textContent=Number(data.actions_today||0).toLocaleString();$('srLogins').textContent=Number(data.logins_today||0).toLocaleString();$('srPredictions').textContent=Number(data.predictions_today||0).toLocaleString();$('srSaves').textContent=Number(data.saves_today||0).toLocaleString();$('srLoans').textContent=Number(data.loans_today||0).toLocaleString();$('srRepays').textContent=Number(data.repayments_today||0).toLocaleString();$('srWallet').textContent=money(data.wallet||0)+' ZHI';$('srSavings').textContent=money(data.savings||0)+' ZHI';$('srLoanBalance').textContent=money(data.loans||0)+' ZHI';$('srLast').textContent=data.last_action_at?fmtSG(data.last_action_at)+' · '+SR_TIME_LABEL:'--';loadSRActivity();$('srMsg').textContent=data.enabled?'🟢 SR 自动运行中 / Running':'⏸ SR 已暂停 / Paused';$('srPauseBtn').textContent=data.enabled?'⏸ 暂停 SR':'▶️ 启动 SR';}
+async function toggleSRSummary(){const {data,error}=await sb.rpc('admin_get_sr_simulation_summary');if(error)return alert(error.message);const {error:e}=await sb.rpc('admin_set_sr_simulation',{p_enabled:!data.enabled});if(e)return alert(e.message);await loadSRSummary();}
+async function createSRAuthUsers(){
+ const b=$('srCreateAuthBtn'); if(!b)return;
+ if(!confirm('将按每批最多 100 个，把 SR 创建为真正的 ZHI Auth 用户。继续？'))return;
+ b.disabled=true;
+ try{
+  const {data,error}=await sb.functions.invoke('sr-create-auth-users',{body:{limit:100}});
+  if(error)throw error;
+  $('srMsg').textContent='✅ 本批创建 '+Number(data?.created||0)+' 个真实 ZHI 用户，失败 '+Number(data?.failed||0)+' 个';
+  await loadSRSummary();
+ }catch(e){$('srMsg').textContent='创建失败：'+(e.message||String(e))}
+ finally{b.disabled=false}
+}
+async function runSRTick(){const b=$('srRunBtn');b.disabled=true;const {data,error}=await sb.rpc('admin_run_sr_tick');if(error){$('srMsg').textContent='运行失败：'+error.message}else{$('srMsg').textContent='已运行一批 SR：'+JSON.stringify(data);await loadSRSummary();}b.disabled=false;}
+async function loadTreasuryDailyReport(){const {data,error}=await sb.rpc('get_treasury_daily_report',{p_days:7});if(error){$('tdMsg').textContent='日报加载失败：'+error.message;return}const t=data?.today||{};$('tdMsg').textContent='✅ 日报已启用 / Daily report active';$('tdLoanIncome').textContent=money(t.loan_interest_income||0)+' ZHI';$('tdSavingsExpense').textContent=money(t.savings_interest_expense||0)+' ZHI';$('tdNet').textContent=money(t.net||0)+' ZHI';$('tdDays').innerHTML=(data.daily||[]).map(x=>'<div class="row"><span>'+x.day+'</span><b>'+((Number(x.loan_interest_income||0)-Number(x.savings_interest_expense||0))>=0?'+':'')+money(Number(x.loan_interest_income||0)-Number(x.savings_interest_expense||0))+' ZHI</b></div>').join('')||'暂无日报数据 / No daily data';}
+async function loadAdminFundFlows(){
+ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const box=$('afList'); if(!box)return;
+ box.innerHTML='<div class="notice">加载中 / Loading...</div>';
+ const {data,error}=await sb.rpc('admin_get_fund_flows',{p_limit:500});
+ if(error){box.innerHTML='<div class="notice">加载失败 / Failed: '+error.message+'</div>';return}
+ const rows=data?.rows||[], filter=$('afFilter').value, userFilter=$('afUser').value.trim().toLowerCase();
+ const filtered=rows.filter(x=>(filter==='all'||x.flow_type===filter)&&(!userFilter||String(x.username||'').toLowerCase().includes(userFilter)));
+ $('afIn').textContent=money(data.total_inflow||0)+' ZHI'; $('afOut').textContent=money(data.total_outflow||0)+' ZHI'; $('afNet').textContent=(Number(data.net||0)>=0?'+':'')+money(data.net||0)+' ZHI'; $('afCount').textContent=filtered.length;
+ const label={savings_deposit:'🏦 存入',savings_withdrawal:'↩️ 取出',loan_disbursement:'💳 贷款发放',savings_interest:'📈 存款利息',loan_interest_accrual:'📊 贷款计息',loan_repayment:'↩️ 还款',stake:'🎯 预测下注',settlement_win:'🏆 预测派奖',transfer_out:'🎁 转赠',transfer_in:'🎁 收到转赠',signup_bonus:'🎁 注册奖励',sr_simulation:'🤖 SR 模拟流水'};
+ box.innerHTML=filtered.slice(0,200).map(x=>{
+   const sr=!!x.is_simulated;
+   const tag=sr?'<span style="display:inline-block;padding:2px 7px;border-radius:10px;background:#f1eaff;color:#6941c6;font-size:11px;margin-left:6px">SR · 模拟用户</span>':'<span style="display:inline-block;padding:2px 7px;border-radius:10px;background:#eef2f6;color:#475467;font-size:11px;margin-left:6px">真人用户</span>';
+   return '<div style="padding:10px 0;border-bottom:1px solid #eee"><div style="display:flex;justify-content:space-between;gap:8px"><span><b>'+esc(x.username||'系统')+'</b>'+tag+'</span><b style="color:'+(Number(x.amount)>=0?'#087443':'#b42318')+'">'+(Number(x.amount)>=0?'+':'')+money(x.amount)+' ZHI</b></div><div class="meta" style="margin:3px 0">'+(label[x.flow_type]||label[x.type]||x.type)+' · '+fmtSG(x.created_at)+'</div><div style="font-size:12px">'+esc(x.description||'')+'</div><div class="meta" style="margin:3px 0">ZHI ID: '+esc(x.z_id?'ZHI-'+String(x.z_id).padStart(12,'0'):'-')+' · SR Group: '+esc(x.bot_group||'-')+' · Flow ID: '+esc(x.flow_id||'-')+'</div></div>';
+ }).join('')||'<div class="notice">暂无匹配流水 / No matching flows</div>';
+}
+async function loadAdminUsers(){
+ const box=$('adminUsers');
+ box.innerHTML='<div class="notice">加载中 / Loading...</div>';
+ const {data,error}=await sb.rpc('admin_get_user_overview');
+ if(error){box.innerHTML='<div class="notice">加载失败 / Failed: '+error.message+'</div>';return}
+ box.innerHTML=data.length?data.map(x=>
+   '<div style="padding:12px 0;border-bottom:1px solid #eee">'+
+   '<div style="display:flex;justify-content:space-between"><b>'+x.username+'</b><b>'+money(x.balance)+' ZHI</b></div>'+
+   '<div class="meta">钱包 / Wallet: '+money(x.balance)+' ZHI · 锁定 / Locked: '+money(x.locked_balance)+' ZHI</div>'+
+   '<div class="meta">当前下注 / Open bets: '+money(x.open_bet_amount)+' ZHI ('+x.open_bet_count+') · 总下注 / Total bets: '+money(x.total_bet_amount)+' ZHI ('+x.total_bet_count+')</div>'+
+   '</div>'
+ ).join(''):'<div class="notice">暂无用户 / No users yet</div>';
+}
+async function editMarket(id){
+ const question=$('question-'+id).value.trim();
+ const closeAt=parseSGInput($('close-'+id).value);
+ if(!question)return alert('请输入市场问题 / Enter the market question');
+ if(Number.isNaN(closeAt.getTime())||closeAt<=new Date())return alert('截止时间必须是未来时间 / Close time must be in the future');
+ const {error}=await sb.rpc('admin_edit_market',{p_market_id:id,p_question:question,p_close_at:closeAt.toISOString()});
+ if(error)return alert(error.message);
+ alert('市场修改成功 / Market updated');
+ await load();
+}
+async function updateCloseTime(id){
+ const input=$('close-'+id);
+ const closeAt=parseSGInput(input.value);
+ if(Number.isNaN(closeAt.getTime())||closeAt<=new Date())return alert('截止时间必须是未来时间 / Close time must be in the future');
+ const {error}=await sb.rpc('admin_update_market_close_time',{p_market_id:id,p_close_at:closeAt.toISOString()});
+ if(error)return alert(error.message);
+ alert('截止时间已修改 / Close time updated');
+ await load();
+}
+async function adminSetResult(id,result){
+ const label=result==='yes'?'YES':'NO';
+ if(!confirm('确定将市场 '+id+' 结果设为 '+label+'？\nConfirm result '+label+' for market '+id+'?'))return;
+ const {data,error}=await sb.rpc('admin_set_result',{p_market_id:id,p_result:result});
+ if(error)return alert(error.message);
+ alert('结算完成 / Settlement completed\n已自动派奖并到账 / Payout credited automatically');
+ await load();
+}
+async function stake(id=selectedMarket){
+ const amount=Math.floor(Number($('modalAmount').value)),side=selectedSide;
+ if(!selectedMarket||!side)return;
+
+ if(!amount||amount<1)return alert('请输入 ZHI 数量 / Enter an amount in ZHI');
+ if(amount>Number(wallet.balance))return alert('ZHI 余额不足 / Insufficient ZHI balance');
+ const {data,error}=await sb.rpc('place_stake',{p_market_id:id,p_side:side,p_amount:amount});
+ if(error)return alert(error.message);
+ $('stakeModal').classList.remove('show');selectedMarket=null;selectedSide=null;await load();showRewardNotice(data);
+}
+function openPredictionChoice(id){
+ const m=marketsData.find(x=>x.id===id); if(!m)return;
+ selectedMarket=id; selectedSide=null;
+ $('choiceText').textContent=m.question+' · 请选择预测方向 / Choose YES or NO';
+ $('directionChoice').style.display='flex';
+ $('modalAmount').style.display='none';
+ $('modalConfirm').style.display='none';
+ $('modalAmount').value='';
+ $('stakeModal').classList.add('show');
+}
+function choosePredictionSide(side){
+ if(!selectedMarket)return;
+ selectedSide=side;
+ const m=marketsData.find(x=>x.id===selectedMarket);
+ $('choiceText').textContent=(side==='yes'?'YES / 是':'NO / 否')+' · '+m.question;
+ $('directionChoice').style.display='none';
+ $('modalAmount').style.display='block';
+ $('modalConfirm').style.display='block';
+ $('modalAmount').focus();
+}
+function renderHistory(list){
+ $('history').innerHTML=list.length?list.map(x=>'<div class="row"><span>'+ (x.description||x.type)+'</span><b>'+(Number(x.amount)>=0?'+':'')+money(x.amount)+' ZHI</b></div>').join(''):'暂无记录 / No records yet';
+}
+let mode='login';
+$('transferBtn').onclick=transferZHI;
+$('srCreateAuthBtn').onclick=createSRAuthUsers;
+$('srRunBtn').onclick=runSRTick;
+$('srPauseBtn').onclick=toggleSRSummary;
+$('srRefreshBtn').onclick=loadSRSummary;
+$('authSubmit').onclick=async()=>{
+ const u=$('authUsername').value.trim(),p=$('authPassword').value;
+ if(!/^[a-zA-Z0-9_]{2,24}$/.test(u))return showErr('用户名 / Username只能用 2-24 位英文字母、数字或下划线');if(p.length<6)return showErr('密码 / Password至少6位');
+ showErr('');$('authSubmit').disabled=true;
+ try{
+  const email=u.toLowerCase()+'@zhi-demo.com';
+  if(mode==='signup'){
+   const {data,error}=await sb.auth.signUp({email,password:p,options:{data:{username:u}}});
+   if(error)throw error;if(data.session)await load();else showErr('注册成功，请直接登录 / Registration successful, please sign in / Sign in');
+  }else{
+   const {data,error}=await sb.auth.signInWithPassword({email,password:p});
+   if(error)throw error;
+   if(!data?.user)throw new Error('登录成功但没有取得用户会话，请重新登录');
+   $('authError').textContent='';
+   $('loginStatus').textContent='登录成功，正在进入 ZHI… / Signed in, opening ZHI…';
+   $('authScreen').classList.add('hidden');$('app').classList.remove('hidden');
+   await load(data.user);
+  }
+ }catch(e){showErr(e.message||'操作失败')}finally{$('authSubmit').disabled=false}
+};
+$('authSwitchBtn').onclick=()=>{
+ mode=mode==='login'?'signup':'login';
+ $('authSub').textContent=mode==='login'?'登录 / Sign in账户 / Sign in to predict':'创建你的 ZHI 账户 / Create your ZHI account';
+ $('authSubmit').textContent=mode==='login'?'登录 / Sign in':'注册';
+ $('switchText').textContent=mode==='login'?'还没有账户？ / No account?':'已有账户？ / Already registered?';
+ $('authSwitchBtn').textContent=mode==='login'?'立即注册 / Register':'直接登录 / Sign in / Sign in';
+ showErr('');
+};
+$('modalYes').onclick=()=>choosePredictionSide('yes');
+$('modalNo').onclick=()=>choosePredictionSide('no');
+$('modalCancel').onclick=()=>{$('stakeModal').classList.remove('show');selectedMarket=null;selectedSide=null;$('directionChoice').style.display='none';$('modalAmount').style.display='none';$('modalConfirm').style.display='none'};
+$('stakeModal').onclick=e=>{if(e.target.id==='stakeModal')$('modalCancel').click()};
+$('modalConfirm').onclick=()=>stake();
+$('modalAmount').onkeydown=e=>{if(e.key==='Enter')stake()};
+$('logout').onclick=async()=>{await sb.auth.signOut();location.reload()};
+load();
+setInterval(loadWinnersOnly,2500);
+</script>
+<script>
+(function(){
+  const LANG='zh';
+  const map={
+    '登录 / Sign in账户 / Sign in to predict':'登录账户','ZHI is the prediction demo balance. / ZHI 为本网站预测演示积分。':'ZHI 是本网站的预测演示积分。',
+    '选择 YES / NO，下注 ZHI。市场截止后进入结算，管理员确认结果后自动派奖。':'选择 YES 或 NO，下注 ZHI。市场截止后进入结算，管理员确认结果后系统自动派奖。',
+    '⚡ 自动结算':'⚡ 自动结算','🏆 自动派奖':'🏆 自动派奖','🎁 自由转赠':'🎁 自由转赠',
+    '⭐ 今日焦点 / Featured Prediction':'⭐ 今日焦点','按当前奖池排序 / By pool':'按当前奖池排序','最近自动派奖记录 / Recent payouts':'最近自动派奖记录',
+    '把 ZHI 送给其他用户 / Gift ZHI':'把 ZHI 送给其他用户','按当前 ZHI 余额 / By balance':'按当前 ZHI 余额',
+    '🏦 ZHI Treasury · Total / ZHI 总额':'🏦 财神爷 · ZHI 总额','财神爷余额 / Treasury Remaining:':'财神爷余额：',
+    '🧾 资金守恒检查 / Funds Reconciliation':'🧾 资金守恒检查','📊 财神爷每日财务报表 / Daily Finance Report':'📊 财神爷每日财务报表',
+    '实时行为 / Live SR activity':'实时行为','⏳ 待结算市场 / Settlement':'⏳ 待结算市场','新增市场 / Create Market':'新增市场',
+    '用户资金 / User Funds':'用户资金','全部用户资金流水 / All Users Fund Flows':'全部用户资金流水','🧾 我的记录 / My Records':'🧾 我的记录',
+    'YES / 是':'是','NO / 否':'否','取消 / Cancel':'取消','确认 / Confirm':'确认',
+    '立即预测 / Predict':'立即预测','🎯 立即预测':'🎯 立即预测','📤 分享':'📤 分享',
+    '暂无热门市场 / No hot markets':'暂无热门市场','暂无即将截止市场 / None':'暂无即将截止市场','暂无排行榜 / No ranking yet':'暂无排行榜',
+    '暂无焦点预测 / No featured prediction':'暂无焦点预测','No active markets.':'目前没有进行中的市场。','No winners yet':'还没有中奖记录',
+    'No core economic activity yet':'最近没有核心经济行为','Loading...':'加载中……','Refresh':'刷新','Sign out':'退出登录',
+    'Username':'用户名','Password':'密码','Sign in':'登录','No account?':'还没有账户？','Register':'立即注册','User:':'用户：','Balance':'余额',
+    '5% / year':'5% / 年','Deposit to Treasury':'存入财神爷','Claim Interest':'领取利息','Withdraw':'取款','Treasury Finance Center':'财神爷金融中心',
+    'Wallet Balance':'钱包余额','Savings Principal':'存款本金','Current Loan':'当前贷款','Maximum Loan':'最高可贷','Loan Interest':'贷款利息','Annual Loan Rate':'贷款年利率',
+    'Apply for ZHI Loan':'申请 ZHI 贷款','Hot Predictions':'正在热门预测','Closing Soon':'即将截止','Recent Winners':'最近中奖',
+    'ZHI Transfers':'ZHI 转赠','Share ZHI with Friends':'与朋友分享 ZHI','User Leaderboard':'用户排行榜','Current Pool':'当前奖池',
+    'Prediction Markets':'预测市场','Admin':'管理员','Treasury Finance':'财神爷财务中心','Treasury Balance':'财神爷余额','Available Balance':'可用余额',
+    'User Savings':'用户存款','User Loans':'用户贷款','Loan Interest Due':'待收贷款利息','Savings Interest Paid':'已付存款利息','Fixed Total Supply':'固定总供应量',
+    'User Wallets':'用户钱包','Locked Stakes':'锁定下注','Outstanding Loans':'未偿贷款','SR Wallet':'SR 钱包','SR Locked':'SR 锁定','SR Savings':'SR 存款','Accounted Total':'已核算总额',
+    'Treasury Daily Finance Report':'财神爷每日财务报表','Daily loan interest income, savings interest expense and net result':'每日贷款利息收入、存款利息支出与净收益',
+    'Today Loan Interest Income':'今日贷款利息收入','Today Savings Interest Expense':'今日存款利息支出','Today Net Result':'今日净收益',
+    'SR Users':'SR 用户','Active':'活跃','Actions Today':'今日动作','Logins Today':'今日登录','Predictions Today':'今日预测','Savings Today':'今日存储','Loans Today':'今日贷款','Repayments Today':'今日还款',
+    'Last Action':'最近动作','Create / Sync Real ZHI Users':'创建/同步真实 ZHI 用户','Run Batch Now':'立即运行一批','Pause SR':'暂停 SR',
+    'Treasury → SR Initial Funding':'财神爷 → SR 初始资金发放','Funded Accounts':'已发放账户','Per Account':'每人发放','Total Funded':'累计发放','Funding Source':'资金来源',
+    'Markets Awaiting Settlement':'待结算市场','Markets appear here after betting closes. The administrator confirms the result and the system pays winners immediately.':'投注截止后会自动出现在这里。管理员确认结果后，系统立即自动派奖。',
+    'Market ID':'市场 ID','Question':'问题','Close Time':'截止时间','Create Market':'创建市场','Total Inflow':'总流入','Total Outflow':'总流出','Net Flow':'净流量','Show Flows':'显示流水',
+    'All':'全部类型','Savings':'存款','Loans':'贷款','Savings Interest':'存款利息','Loan Interest Accrual':'贷款计息','SR Flow':'SR 模拟流水','Predict Now':'立即预测','Unread':'未读','Unread Gifts':'未读转赠','Gift History':'转赠记录',
+    'Reward source: Treasury':'奖励来源：财神爷','Funds reconciled':'资金守恒正常','Reconciliation mismatch':'发现对账差异','Checking...':'检查中……'
+  };
+  function cjk(s){return /[\u3400-\u9fff]/.test(s)}
+  function tr(s){
+    if(!s)return s;
+    let o=s;
+    Object.keys(map).sort((a,b)=>b.length-a.length).forEach(k=>o=o.split(k).join(map[k]));
+    o=o.replace(/([^\n\/]{1,90})\s\/\s([^\n\/]{1,120})/g,(m,a,b)=>{
+      if(cjk(a)&&!cjk(b))return a.trim();
+      if(!cjk(a)&&cjk(b))return b.trim();
+      return m;
+    });
+    return o;
+  }
+  function walk(root){
+    const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);const ns=[];let n;
+    while(n=w.nextNode())ns.push(n);
+    ns.forEach(x=>{if(x.parentElement&&['SCRIPT','STYLE'].includes(x.parentElement.tagName))return;const v=x.nodeValue,nv=tr(v);if(v!==nv)x.nodeValue=nv});
+    root.querySelectorAll?.('input[placeholder],input[title],button[title],*[aria-label]').forEach(el=>['placeholder','title','aria-label'].forEach(a=>{if(el.hasAttribute(a)){const v=el.getAttribute(a),nv=tr(v);if(v!==nv)el.setAttribute(a,nv)}}));
+  }
+  function switcher(){
+    if(document.getElementById('zhiLangSwitch'))return;
+    const b=document.createElement('div');b.id='zhiLangSwitch';
+    b.style.cssText='position:fixed;top:10px;right:10px;z-index:9999;display:flex;gap:5px;background:rgba(255,255,255,.96);border:1px solid #ead28a;border-radius:999px;padding:4px;box-shadow:0 5px 18px rgba(0,0,0,.12)';
+    b.innerHTML='<a href="zh.html" style="padding:5px 9px;border-radius:999px;text-decoration:none;font-size:11px;font-weight:900;color:#fff;background:#8a5a00">中文</a><a href="en.html" style="padding:5px 9px;border-radius:999px;text-decoration:none;font-size:11px;font-weight:900;color:#3157b7">English</a>';
+    document.body.appendChild(b);
+  }
+  function run(){switcher();walk(document.body)}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run);else run();
+  new MutationObserver(ms=>ms.forEach(m=>m.addedNodes.forEach(n=>{if(n.nodeType===1)walk(n);else if(n.nodeType===3){const v=n.nodeValue,nv=tr(v);if(v!==nv)n.nodeValue=nv}})).observe(document.body,{childList:true,subtree:true});
+})();
+</script></body></html>

@@ -201,7 +201,7 @@ async function loadHomeDashboard(){
  if(error||!data)return;
  const d=data;
  const fmtTime=x=>new Date(x).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
- const marketRow=m='<div class="dash-item"><div class="dash-question">'+m.question+'</div><div class="dash-meta">💰 '+money(m.total_pool)+' ZHI · ⏰ '+fmtTime(m.close_at)+'</div><div class="dash-actions"><button class="dash-action" data-predict="'+m.id+'">🎯 立即预测</button><button class="share-btn" data-share="'+m.id+'">📤 分享</button></div></div>';
+ const marketRow=m=>'<div class="dash-item"><div class="dash-question">'+m.question+'</div><div class="dash-meta">💰 '+money(m.total_pool)+' ZHI · ⏰ '+fmtTime(m.close_at)+'</div><div class="dash-actions"><button class="dash-action" data-predict="'+m.id+'">🎯 立即预测</button><button class="share-btn" data-share="'+m.id+'">📤 分享</button></div></div>';
  $('dashHot').innerHTML=(d.hot_markets||[]).map(m=>marketRow(m)).join('')||'<div class="dash-empty">暂无热门市场 / No hot markets</div>';
  $('dashSoon').innerHTML=(d.upcoming||[]).map(m=>marketRow(m)).join('')||'<div class="dash-empty">暂无即将截止市场 / None</div>';
  $('dashWinners').innerHTML=(d.recent_winners||[]).map(x=>'<div class="dash-item"><div class="dash-question">🏆 '+(x.username||'用户')+' 获得 <b>'+money(x.amount)+' ZHI</b></div><div class="dash-meta">'+(x.question||'预测结算')+' · '+fmtTime(x.created_at)+'</div></div>').join('')||'<div class="dash-empty">还没有中奖记录 / No winners yet</div>';

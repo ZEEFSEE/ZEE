@@ -320,7 +320,8 @@ $('giftSendToggle').onclick=()=>{$('giftSendDetails').classList.toggle('open');$
      '<div class="card"><div class="q">'+marketQuestion(m)+'</div>'+
      '<div class="meta">市场 ID / Market ID: '+m.id+' · 状态 / Status: '+m.status+'</div>'+
      '<div class="pool">YES '+money(m.yes_pool)+' ZHI　 NO '+money(m.no_pool)+' ZHI</div>'+
-     '<div class="field"><label>市场问题 / Market Question</label><input id="question-'+m.id+'" value="'+String(marketQuestion(m)).replace(/"/g,'&quot;')+'"></div>'+
+     '<div class="field"><label>中文问题 / Chinese Question</label><input id="question-zh-'+m.id+'" value="'+String(m.question_zh||m.question||'').replace(/"/g,'&quot;')+'"></div>'+
+     '<div class="field"><label>英文问题 / English Question</label><input id="question-en-'+m.id+'" value="'+String(m.question_en||m.question_zh||m.question||'').replace(/"/g,'&quot;')+'"></div>'+
      '<div class="field"><label>截止时间 / Close Time</label><input id="close-'+m.id+'" type="datetime-local" value="'+sgInputValue(m.close_at)+'"></div>'+
      '<div class="buttons"><button class="btn confirm" data-admin-edit="'+m.id+'">保存修改 / Save Changes</button>'+
      '<button class="btn" style="background:#eee" data-admin-cancel="'+m.id+'">取消市场 / Cancel Market</button>'+

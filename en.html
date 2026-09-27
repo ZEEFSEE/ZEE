@@ -986,4 +986,42 @@ const mo=new MutationObserver(()=>initZhiDateTimes()); mo.observe(document.docum
   Date.prototype.toLocaleTimeString=function(locales,options){const o=Object.assign({},options||{});if(o.hour12===undefined)o.hour12=false;return nativeToLocaleTimeString.call(this,locales,o)};
 })();
 </script>
-</body></html>
+<script>
+/* ZHI_PROPOSAL_EMERGENCY_HANDLER */
+(function(){
+window.zhiSubmitProposal=function(){
+  const q=document.getElementById('proposalQuestion')?.value?.trim()||'';
+  const msg=document.getElementById('proposalMsg');
+  const btn=document.getElementById('proposalSubmitBtn');
+  const box=document.querySelector('[data-zdt-for="proposalCloseAt"]');
+  const date=box?.querySelector('[data-zdt-date]')?.value||'';
+  const hour=box?.querySelector('[data-zdt-hour]')?.value||'';
+  const minute=box?.querySelector('[data-zdt-minute]')?.value||'';
+  const close=date?date+'T'+hour+':'+minute:'';
+  if(!q||!close){if(msg)msg.textContent='❌ 请填写预测问题和截至日期 / Please enter the question and closing date';return;}
+  const parts=close.split(/[-T:]/).map(Number);
+  const closeDate=new Date(parts[0],parts[1]-1,parts[2],parts[3],parts[4]);
+  if(Number.isNaN(closeDate.getTime())||closeDate<=new Date()){if(msg)msg.textContent='❌ 截止时间必须是未来时间 / Closing time must be in the future';return;}
+  if(typeof sb==='undefined'||!sb.rpc){if(msg)msg.textContent='❌ 数据库连接尚未完成，请刷新后再试 / Database connection is not ready';return;}
+  if(btn)btn.disabled=true;
+  if(msg)msg.textContent='正在提交预测提案…… / Submitting prediction proposal...';
+  const zh=/[\u3400-\u9fff]/.test(q);
+  sb.rpc('submit_prediction_proposal',{
+    p_question_original:q,
+    p_original_language:zh?'zh':'en',
+    p_question_zh:zh?q:q,
+    p_question_en:zh?q:q,
+    p_requested_close_at:closeDate.toISOString()
+  }).then(function(res){
+    if(res.error)throw res.error;
+    if(msg)msg.textContent='✅ 提案已提交，等待管理员审核 / Submitted for admin review';
+    document.getElementById('proposalQuestion').value='';
+    if(box){box.dataset.zdtValue='';const d=box.querySelector('[data-zdt-date]');if(d)d.value='';}
+    const hidden=document.getElementById('proposalCloseAt');if(hidden)hidden.value='';
+    setTimeout(function(){if(typeof loadMyProposals==='function')loadMyProposals();},100);
+  }).catch(function(e){
+    if(msg)msg.textContent='❌ '+(e?.message||'提交失败 / Submission failed');
+  }).finally(function(){if(btn)btn.disabled=false;});
+};
+})();
+</script></body></html>

@@ -107,9 +107,10 @@ footer{text-align:center;color:#aaa;font-size:11px;margin-top:24px}
 <footer>🪙 <b style="color:#8a5a00">ZHI</b> · Prediction Platform · Demo</footer>
 </main>
 <div id="stakeModal" class="modal"><div class="modalbox">
-<h3>确认 / Confirm预测 / Confirm Prediction</h3><div id="choiceText" class="choice"></div>
-<input id="modalAmount" type="number" min="1" placeholder="下注多少 ZHI？ / Amount in ZHI?">
-<div class="modalactions"><button id="modalCancel" class="btn" style="background:#eee">取消 / Cancel</button><button id="modalConfirm" class="btn confirm">确认 / Confirm</button></div>
+<h3>预测 / Prediction</h3><div id="choiceText" class="choice"></div>
+<div id="directionChoice" style="display:none;gap:8px;margin-bottom:10px"><button id="modalYes" class="btn yes">YES / 是</button><button id="modalNo" class="btn no">NO / 否</button></div>
+<input id="modalAmount" type="number" min="1" placeholder="下注多少 ZHI？ / Amount in ZHI?" style="display:none">
+<div class="modalactions"><button id="modalCancel" class="btn" style="background:#eee">取消 / Cancel</button><button id="modalConfirm" class="btn confirm" style="display:none">确认 / Confirm</button></div>
 </div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -149,7 +150,12 @@ function renderMarkets(){
  selectedMarket=b.dataset.id;selectedSide=b.dataset.side;
  const m=marketsData.find(x=>x.id===selectedMarket);
  $('choiceText').textContent=(selectedSide==='yes'?'YES / 是':'NO / 否')+' · '+m.question;
- $('modalAmount').value='';$('stakeModal').classList.add('show');setTimeout(()=>$('modalAmount').focus(),50);
+ $('directionChoice').style.display='none';
+ $('modalAmount').style.display='block';
+ $('modalConfirm').style.display='block';
+ $('modalAmount').value='';
+ $('stakeModal').classList.add('show');
+ setTimeout(()=>$('modalAmount').focus(),50);
 });
 $('markets').querySelectorAll('[data-confirm]').forEach(b=>b.onclick=()=>stake(b.dataset.confirm));
 $('giftNoticeBtn').onclick=async()=>{if(Number($('giftNoticeCount').textContent)>0)await markGiftNotificationsRead();};
@@ -219,11 +225,11 @@ async function loadHomeDashboard(){
    }catch(e){if(e?.name!=='AbortError'){try{await navigator.clipboard.writeText(text);alert('分享内容已复制 / Share text copied')}catch(_){alert(text)}}}
  };
  document.querySelectorAll('[data-share]').forEach(b=>b.onclick=()=>shareMarket(b.dataset.share));
- document.querySelectorAll('[data-predict]').forEach(b=>b.onclick=()=>{const m=marketsData.find(x=>x.id===b.dataset.predict);if(!m)return;document.getElementById('markets').scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>{const yes=document.querySelector('[data-id="'+m.id+'"][data-side="yes"]');if(yes)yes.click()},300)});
+ document.querySelectorAll('[data-predict]').forEach(b=>b.onclick=()=>openPredictionChoice(b.dataset.predict));
  const featured=(d.hot_markets||[])[0];
  $('dashFeaturedContent').innerHTML=featured?'<div class="dash-feature-row"><div class="dash-feature-main"><div class="dash-feature-question">'+featured.question+'</div><div class="dash-feature-pool">💰 奖池 '+money(featured.total_pool)+' ZHI　·　⏰ 截止 '+fmtTime(featured.close_at)+'</div></div><button class="dash-feature-btn" data-featured="'+featured.id+'">立即预测 / Predict</button></div>':'<div class="dash-empty" style="color:#d8cda9">暂无焦点预测 / No featured prediction</div>';
  const fb=$('dashFeaturedContent').querySelector('[data-featured]');
- if(fb)fb.onclick=()=>{const m=marketsData.find(x=>x.id===fb.dataset.featured);if(!m)return;document.getElementById('markets').scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>{const b=document.querySelector('[data-id="'+m.id+'"][data-side="yes"]');if(b)b.click()},350)};
+ if(fb)fb.onclick=()=>openPredictionChoice(fb.dataset.featured);
  const bt=$('dashTransferBtn');if(bt)bt.onclick=()=>{const box=$('giftSendDetails');box.classList.add('open');$('giftSendArrow').classList.add('open');box.scrollIntoView({behavior:'smooth',block:'center'});};
 }
 async function loadGiftNotice(){
@@ -358,6 +364,26 @@ async function stake(id=selectedMarket){
  if(error)return alert(error.message);
  $('stakeModal').classList.remove('show');selectedMarket=null;selectedSide=null;await load();
 }
+function openPredictionChoice(id){
+ const m=marketsData.find(x=>x.id===id); if(!m)return;
+ selectedMarket=id; selectedSide=null;
+ $('choiceText').textContent=m.question+' · 请选择预测方向 / Choose YES or NO';
+ $('directionChoice').style.display='flex';
+ $('modalAmount').style.display='none';
+ $('modalConfirm').style.display='none';
+ $('modalAmount').value='';
+ $('stakeModal').classList.add('show');
+}
+function choosePredictionSide(side){
+ if(!selectedMarket)return;
+ selectedSide=side;
+ const m=marketsData.find(x=>x.id===selectedMarket);
+ $('choiceText').textContent=(side==='yes'?'YES / 是':'NO / 否')+' · '+m.question;
+ $('directionChoice').style.display='none';
+ $('modalAmount').style.display='block';
+ $('modalConfirm').style.display='block';
+ $('modalAmount').focus();
+}
 function renderHistory(list){
  $('history').innerHTML=list.length?list.map(x=>'<div class="row"><span>'+ (x.description||x.type)+'</span><b>'+(Number(x.amount)>=0?'+':'')+money(x.amount)+' ZHI</b></div>').join(''):'暂无记录 / No records yet';
 }
@@ -385,7 +411,9 @@ $('authSwitchBtn').onclick=()=>{
  $('authSwitchBtn').textContent=mode==='login'?'立即注册 / Register':'直接登录 / Sign in / Sign in';
  showErr('');
 };
-$('modalCancel').onclick=()=>{$('stakeModal').classList.remove('show');selectedMarket=null;selectedSide=null};
+$('modalYes').onclick=()=>choosePredictionSide('yes');
+$('modalNo').onclick=()=>choosePredictionSide('no');
+$('modalCancel').onclick=()=>{$('stakeModal').classList.remove('show');selectedMarket=null;selectedSide=null;$('directionChoice').style.display='none';$('modalAmount').style.display='none';$('modalConfirm').style.display='none'};
 $('stakeModal').onclick=e=>{if(e.target.id==='stakeModal')$('modalCancel').click()};
 $('modalConfirm').onclick=()=>stake();
 $('modalAmount').onkeydown=e=>{if(e.key==='Enter')stake()};

@@ -269,7 +269,7 @@ async function load(passedUser=null){
   if(msg)msg.textContent='系统提示：'+(e.message||'部分资料暂时无法加载');
  }
 }
-function marketQuestion(m){return m?.question_en||m?.question_zh||m?.question||'';}
+function marketQuestion(m){return m?.question_en||m?.question||'English question unavailable';}
 const uiSide=side=>side==='yes'?'YES':'NO';
 const uiResult=result=>result==='yes'?'YES':result==='no'?'NO':'--';
 const uiTx=x=>{
@@ -385,7 +385,7 @@ async function loadWinnersOnly(){
  const {data,error}=await sb.rpc('get_home_dashboard');
  if(error||!data||!$('dashWinners'))return;
  const fmtTime=x=>new Date(x).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
- $('dashWinners').innerHTML=(data.recent_winners||[]).map(x=>'<div class="dash-item"><div class="dash-question">🏆 '+(x.username||'用户')+' 获得 <b>'+money(x.amount)+' ZHI</b></div><div class="dash-meta">'+(x.question||'预测结算')+' · '+fmtTime(x.created_at)+'</div></div>').join('')||'<div class="dash-empty">还没有中奖记录 / No winners yet</div>';
+ $('dashWinners').innerHTML=(data.recent_winners||[]).map(x=>'<div class="dash-item"><div class="dash-question">🏆 '+(x.username||'用户')+' 获得 <b>'+money(x.amount)+' ZHI</b></div><div class="dash-meta">'+(x.question_en||x.question||'Prediction settlement')+' · '+fmtTime(x.created_at)+'</div></div>').join('')||'<div class="dash-empty">还没有中奖记录 / No winners yet</div>';
 }
 async function loadHomeDashboard(){
  const {data,error}=await sb.rpc('get_home_dashboard');
@@ -412,7 +412,7 @@ async function loadHomeDashboard(){
  document.querySelectorAll('[data-share]').forEach(b=>b.onclick=()=>shareMarket(b.dataset.share));
  document.querySelectorAll('[data-predict]').forEach(b=>b.onclick=()=>openPredictionChoice(b.dataset.predict));
  const featured=(d.hot_markets||[])[0];
- $('dashFeaturedContent').innerHTML=featured?'<div class="dash-feature-row"><div class="dash-feature-main"><div class="dash-feature-question">'+featured.question+'</div><div class="dash-feature-pool">💰 奖池 '+money(featured.total_pool)+' ZHI　·　⏰ 截止 '+fmtTime(featured.close_at)+'</div></div><button class="dash-feature-btn" data-featured="'+featured.id+'">立即预测 / Predict</button></div>':'<div class="dash-empty" style="color:#d8cda9">暂无焦点预测 / No featured prediction</div>';
+ $('dashFeaturedContent').innerHTML=featured?'<div class="dash-feature-row"><div class="dash-feature-main"><div class="dash-feature-question">'+(featured.question_en||featured.question||'English question unavailable')+'</div><div class="dash-feature-pool">💰 奖池 '+money(featured.total_pool)+' ZHI　·　⏰ 截止 '+fmtTime(featured.close_at)+'</div></div><button class="dash-feature-btn" data-featured="'+featured.id+'">立即预测 / Predict</button></div>':'<div class="dash-empty" style="color:#d8cda9">暂无焦点预测 / No featured prediction</div>';
  const fb=$('dashFeaturedContent').querySelector('[data-featured]');
  if(fb)fb.onclick=()=>openPredictionChoice(fb.dataset.featured);
  const bt=$('dashTransferBtn');if(bt)bt.onclick=()=>{const box=$('giftSendDetails');box.classList.add('open');$('giftSendArrow').classList.add('open');box.scrollIntoView({behavior:'smooth',block:'center'});};
@@ -505,7 +505,7 @@ async function loadSRActivity(){
  ].map(x=>'<div class="finance-stat"><span>'+x[0]+' · 最近5分钟</span><b>'+Number(x[1]).toLocaleString()+' 次</b></div>').join('');
  $('srLiveCount').textContent=core.length+' core actions';
  box.innerHTML=core.slice(0,20).map(x=>{
-   const l=labels[x.action_type]||['⚙️',uiSide(x.action_type)];
+   const l=labels[x.action_type]||['⚙️','Action'];
    const amount=x.amount!=null?' · '+money(x.amount)+' ZHI':'';
    const market=x.market_id?' · Market '+esc(x.market_id):'';
    return '<div class="sr-live-item"><div class="sr-live-icon">'+l[0]+'</div><div class="sr-live-main"><div class="sr-live-user">'+esc(x.username||x.sr_id||'SR')+'</div><div class="sr-live-action">'+l[1]+amount+market+'</div></div><div class="sr-live-time">'+fmtSGTime(x.created_at)+'</div></div>';

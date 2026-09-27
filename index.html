@@ -157,6 +157,10 @@ async function load(passedUser=null){
  }
  $('saveBtn').onclick=saveZhi;$('withdrawBtn').onclick=withdrawZhi;$('claimBtn').onclick=claimSavings;$('loanBtn').onclick=takeLoan;$('repayBtn').onclick=repayLoan;
  await Promise.allSettled([loadFinancePanel(),loadGiftNotice(),loadHomeDashboard()]);
+ }catch(e){
+  const msg=$('loginStatus');
+  if(msg)msg.textContent='系统提示：'+(e.message||'部分资料暂时无法加载');
+ }
 }
 function renderMarkets(){
  const open=marketsData.filter(m=>m.status==='open'&&new Date(m.close_at)>new Date());

@@ -147,10 +147,11 @@ button,input,select{font:inherit}
     <span class="gift-arrow" id="createMarketArrow">▼</span>
   </div>
   <div class="gift-details" id="createMarketDetails">
-    <div class="field"><label>市场 ID / Market ID</label><input id="newMarketId" placeholder="m5"></div>
+    <div class="notice">Market ID will be generated automatically. YES / NO are fixed options.</div>
     <div class="field"><label>中文问题 / Chinese Question</label><input id="newMarketQuestionZh" placeholder="例如：某事件是否会发生？"></div>
     <div class="field"><label>英文问题 / English Question</label><input id="newMarketQuestionEn" placeholder="e.g. Will this event happen?"></div>
     <div class="field"><label>截止时间 / Close Time</label><input id="newMarketCloseAt" type="datetime-local"></div>
+    <div class="field"><label>结算规则 / Settlement Rule</label><textarea id="newMarketSettlementRule" rows="3" style="width:100%;padding:11px;border:1px solid #ddd;border-radius:9px" placeholder="例如：以官方来源在指定时间公布的结果为准。 / e.g. Settle according to the official source at the specified time."></textarea></div>
     <button id="createMarketBtn" class="btn confirm" style="width:100%">创建市场 / Create Market</button>
     <div id="createMarketError" class="err" style="margin-top:8px"></div>
   </div>
@@ -320,6 +321,7 @@ $('giftSendToggle').onclick=()=>{$('giftSendDetails').classList.toggle('open');$
    $('settlementMarkets').innerHTML=awaiting.length?awaiting.map(m=>
      '<div style="padding:12px 0;border-bottom:1px solid #eee"><div class="q">'+marketQuestion(m)+'</div>'+
      '<div class="meta">市场 ID / Market ID: '+m.id+' · 投注已截止 / Betting closed</div>'+
+     '<div class="notice">📜 '+(m.settlement_rule||'Settlement rule not specified')+'</div>'+
      '<div class="pool">YES '+money(m.yes_pool)+' ZHI　 NO '+money(m.no_pool)+' ZHI</div>'+
      '<div class="buttons"><button class="btn yes" data-settle-result="'+m.id+'" data-result="yes">确认 YES</button><button class="btn no" data-settle-result="'+m.id+'" data-result="no">确认 NO</button></div></div>'
    ).join(''):'';
@@ -333,6 +335,7 @@ $('giftSendToggle').onclick=()=>{$('giftSendDetails').classList.toggle('open');$
      '<div class="field"><label>中文问题 / Chinese Question</label><input id="question-zh-'+m.id+'" value="'+String(m.question_zh||m.question||'').replace(/"/g,'&quot;')+'"></div>'+
      '<div class="field"><label>英文问题 / English Question</label><input id="question-en-'+m.id+'" value="'+String(m.question_en||m.question_zh||m.question||'').replace(/"/g,'&quot;')+'"></div>'+
      '<div class="field"><label>截止时间 / Close Time</label><input id="close-'+m.id+'" type="datetime-local" value="'+sgInputValue(m.close_at)+'"></div>'+
+     '<div class="field"><label>结算规则 / Settlement Rule</label><textarea id="settlement-rule-'+m.id+'" rows="3" style="width:100%;padding:11px;border:1px solid #ddd;border-radius:9px">'+String(m.settlement_rule||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</textarea></div>'+
      '<div class="buttons"><button class="btn confirm" data-admin-edit="'+m.id+'">保存修改 / Save Changes</button>'+
      '<button class="btn" style="background:#eee" data-admin-cancel="'+m.id+'">取消市场 / Cancel Market</button>'+
      '</div></div>'
@@ -461,20 +464,20 @@ async function transferZHI(){
  finally{$('transferBtn').disabled=false}
 }
 async function createMarket(){
- const id=$('newMarketId').value.trim();
  const questionZh=$('newMarketQuestionZh').value.trim();
  const questionEn=$('newMarketQuestionEn').value.trim();
  const closeValue=$('newMarketCloseAt').value;
+ const settlementRule=$('newMarketSettlementRule').value.trim();
  $('createMarketError').textContent='';
- if(!id||!questionZh||!questionEn||!closeValue)return $('createMarketError').textContent='请填写完整 / Please complete all fields';
+ if(!questionZh||!questionEn||!closeValue||!settlementRule)return $('createMarketError').textContent='请填写完整 / Please complete all fields';
  const closeAt=parseSGInput(closeValue);
  if(Number.isNaN(closeAt.getTime())||closeAt<=new Date())return $('createMarketError').textContent='截止时间必须是未来时间 / Close time must be in the future';
  const btn=$('createMarketBtn');btn.disabled=true;
  try{
-   const {error}=await sb.rpc('admin_create_market',{p_market_id:id,p_question_zh:questionZh,p_question_en:questionEn,p_close_at:closeAt.toISOString()});
+   const {data,error}=await sb.rpc('admin_create_market',{p_question_zh:questionZh,p_question_en:questionEn,p_close_at:closeAt.toISOString(),p_settlement_rule:settlementRule});
    if(error)throw error;
-   alert('市场创建成功 / Market created');
-   $('newMarketId').value='';$('newMarketQuestionZh').value='';$('newMarketQuestionEn').value='';$('newMarketCloseAt').value='';
+   alert('市场创建成功 / Market created\\nMarket ID: '+(data?.id||'auto-generated'));
+   $('newMarketQuestionZh').value='';$('newMarketQuestionEn').value='';$('newMarketCloseAt').value='';$('newMarketSettlementRule').value='';
    await load();
  }catch(e){$('createMarketError').textContent=e.message||'创建失败 / Creation failed'}
  finally{btn.disabled=false}
@@ -561,10 +564,11 @@ async function loadAdminUsers(){
 async function editMarket(id){
  const questionZh=$('question-zh-'+id).value.trim();
  const questionEn=$('question-en-'+id).value.trim();
+ const settlementRule=$('settlement-rule-'+id).value.trim();
  const closeAt=parseSGInput($('close-'+id).value);
- if(!questionZh||!questionEn)return alert('中文和英文预测问题都必须填写 / Both Chinese and English questions are required');
+ if(!questionZh||!questionEn||!settlementRule)return alert('中文、英文问题和结算规则都必须填写 / Chinese, English questions and settlement rule are required');
  if(Number.isNaN(closeAt.getTime())||closeAt<=new Date())return alert('截止时间必须是未来时间 / Close time must be in the future');
- const {error}=await sb.rpc('admin_edit_market',{p_market_id:id,p_question_zh:questionZh,p_question_en:questionEn,p_close_at:closeAt.toISOString()});
+ const {error}=await sb.rpc('admin_edit_market',{p_market_id:id,p_question_zh:questionZh,p_question_en:questionEn,p_close_at:closeAt.toISOString(),p_settlement_rule:settlementRule});
  if(error)return alert(error.message);
  alert('市场修改成功 / Market updated');
  await load();

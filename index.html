@@ -201,7 +201,11 @@ $('giftSendToggle').onclick=()=>{$('giftSendDetails').classList.toggle('open');$
    const cancelled=marketsData.filter(m=>m.status==='cancelled');
    let cancelledHtml='';
    if(cancelled.length){
-     const {data:refundRows}=await sb.rpc('admin_get_cancelled_market_refunds');
+     let refundRows=[];
+     try{
+       const rr=await sb.rpc('admin_get_cancelled_market_refunds');
+       if(!rr.error)refundRows=rr.data||[];
+     }catch(e){refundRows=[];}
      const rm=new Map((refundRows||[]).map(x=>[x.market_id,x]));
      cancelledHtml='<h3 style="margin:18px 0 8px;font-size:15px">↩️ 已取消市场 / Cancelled Markets</h3>'+cancelled.map(m=>{
        const r=rm.get(m.id)||{};

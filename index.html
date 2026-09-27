@@ -124,6 +124,17 @@ footer{text-align:center;color:#aaa;font-size:11px;margin-top:24px}
 <script>
 const sb=window.zhiSupabase;let user=null,wallet=null,marketsData=[],positions=[],selectedMarket=null,selectedSide=null;
 const money=n=>Number(n||0).toLocaleString(),$=id=>document.getElementById(id);
+const ZHI_TIME_ZONE='Asia/Singapore';
+const sgDateOptions={timeZone:ZHI_TIME_ZONE};
+const sgDateTimeOptions={timeZone:ZHI_TIME_ZONE,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false};
+const sgDateMinuteOptions={timeZone:ZHI_TIME_ZONE,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false};
+const sgDateShortOptions={timeZone:ZHI_TIME_ZONE,month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'};
+const sgTimeOptions={timeZone:ZHI_TIME_ZONE,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false};
+const fmtSG=x=>x?new Date(x).toLocaleString('zh-CN',sgDateTimeOptions):'--';
+const fmtSGMinute=x=>x?new Date(x).toLocaleString('zh-CN',sgDateMinuteOptions):'--';
+const fmtSGShort=x=>x?new Date(x).toLocaleString('zh-CN',sgDateShortOptions):'--';
+const fmtSGTime=x=>x?new Date(x).toLocaleTimeString('zh-CN',sgTimeOptions):'--';
+const sgInputValue=x=>{if(!x)return '';const d=new Date(x);const p=new Intl.DateTimeFormat('en-CA',{timeZone:ZHI_TIME_ZONE,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(d).reduce((o,v)=>(o[v.type]=v.value,o),{});return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;};
 function showErr(s){$('authError').textContent=s}
 const togglePanel=(toggleId,detailsId,arrowId)=>{const t=$(toggleId),d=$(detailsId),a=$(arrowId);if(!t||!d||!a)return;t.onclick=()=>{d.classList.toggle('open');a.classList.toggle('open')}};togglePanel('savingsToggle','savingsDetails','savingsArrow');togglePanel('adminFundFlowsToggle','adminFundFlowsDetails','adminFundFlowsArrow');togglePanel('srSimulationToggle','srSimulationDetails','srSimulationArrow');$('srCreateAuthBtn').onclick=createSRAuthUsers;$('srRunBtn').onclick=runSRTick;$('srPauseBtn').onclick=toggleSRSummary;$('srRefreshBtn').onclick=()=>{loadSRSummary();loadSRActivity()};togglePanel('loanToggle','loanDetails','loanArrow');
 async function load(passedUser=null){

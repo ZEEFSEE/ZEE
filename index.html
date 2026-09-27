@@ -162,7 +162,7 @@ async function load(passedUser=null){
   if(msg)msg.textContent='系统提示：'+(e.message||'部分资料暂时无法加载');
  }
 }
-function renderMarkets(){
+async function renderMarkets(){
  const open=marketsData.filter(m=>m.status==='open'&&new Date(m.close_at)>new Date());
  $('markets').innerHTML=open.map(m=>{
   const mine=positions.find(p=>p.market_id===m.id);

@@ -267,7 +267,7 @@ async function renderMarkets(){
   '<div class="pool">YES '+money(m.yes_pool)+' ZHI　 NO '+money(m.no_pool)+' ZHI</div>'+
   '<div class="buttons"><button class="btn yes" data-id="'+m.id+'" data-side="yes" '+(mine?'disabled':'')+'>YES</button><button class="btn no" data-id="'+m.id+'" data-side="no" '+(mine?'disabled':'')+'>NO</button></div>'+
   '<div class="stake" id="s-'+m.id+'"><input id="a-'+m.id+'" type="number" min="1" placeholder="ZHI 数量"><button class="btn confirm" data-confirm="'+m.id+'">确认 / Confirm</button></div>'+
-  (mine?'<div class="notice">你已预测 / Your prediction: '+money(mine.stake)+' ZHI</div>':'')+'</div>';
+  (mine?'<div class="notice">你已预测 / Your prediction: <b style="color:'+(mine.side==='yes'?'#087443':'#a51f2d')+'">'+(mine.side==='yes'?'YES / 是':'NO / 否')+'</b> · '+money(mine.stake)+' ZHI</div>':'')+'</div>';
  }).join('')||'<div class="card">目前没有进行中的市场。 / No active markets.</div>';
  $('markets').querySelectorAll('[data-side]').forEach(b=>b.onclick=()=>{
  selectedMarket=b.dataset.id;selectedSide=b.dataset.side;

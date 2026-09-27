@@ -104,13 +104,13 @@ button,input,select{font:inherit}
 </head>
 <body>
 <section id="authScreen" class="auth"><div class="authbox">
-<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px"><span class="zhi-coin" style="width:46px;height:46px;font-size:26px">Z</span><h1 style="margin:0;background:linear-gradient(90deg,#8a5700,#d49400,#8a5700);-webkit-background-clip:text;background-clip:text;color:transparent">ZHI</h1></div><p id="authSub">登录 / Sign in账户 / Sign in to predict</p>
-<div class="field"><label>用户名 / Username</label><input id="authUsername" placeholder="zhi_player"></div>
-<div class="field"><label>密码 / Password</label><input id="authPassword" type="password" placeholder="至少 6 位 / Min. 6 characters"></div>
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px"><span class="zhi-coin" style="width:46px;height:46px;font-size:26px">Z</span><h1 style="margin:0;background:linear-gradient(90deg,#8a5700,#d49400,#8a5700);-webkit-background-clip:text;background-clip:text;color:transparent">ZHI</h1></div><p id="authSub">登录账户</p>
+<div class="field"><label>用户名</label><input id="authUsername" placeholder="zhi_player"></div>
+<div class="field"><label>密码</label><input id="authPassword" type="password" placeholder="至少 6 位 / Min. 6 characters"></div>
 <div id="authError" class="err"></div><div id="loginStatus" class="err" style="height:auto;min-height:18px;margin-top:6px"></div>
-<button id="authSubmit" class="btn confirm" style="width:100%">登录 / Sign in</button>
-<p style="text-align:center;color:#777;font-size:13px"><span id="switchText">还没有账户？ / No account?</span> <button id="authSwitchBtn" class="link">立即注册 / Register</button></p>
-<div class="notice">ZHI is the prediction demo balance. / ZHI 为本网站预测演示积分。</div>
+<button id="authSubmit" class="btn confirm" style="width:100%">登录</button>
+<p style="text-align:center;color:#777;font-size:13px"><span id="switchText">还没有账户？</span> <button id="authSwitchBtn" class="link">立即注册</button></p>
+<div class="notice">ZHI 是本网站的预测演示积分。</div>
 </div></section>
 
 <main id="app" class="wrap hidden">
@@ -130,7 +130,7 @@ button,input,select{font:inherit}
   <div class="gift-send-toggle" id="giftSendToggle"><span>🎁 <b>转赠 ZHI / Send ZHI</b></span><span class="gift-send-arrow" id="giftSendArrow">▼</span></div>
   <div class="gift-send-details" id="giftSendDetails">
     <div class="meta">把 ZHI 转给其他用户 / Send ZHI to another user</div>
-    <div class="field"><label>收赠用户名 / Recipient Username</label><input id="transferUsername" placeholder="输入对方用户名 / Username"></div>
+    <div class="field"><label>收赠用户名 / Recipient Username</label><input id="transferUsername" placeholder="输入对方用户名"></div>
     <div class="field"><label>转赠数量 / Amount</label><input id="transferAmount" type="number" min="1" step="1" placeholder="例如：1000"></div>
     <button id="transferBtn" class="btn confirm" style="width:100%">🎁 确认转赠 / Send ZHI</button>
     <div id="transferError" class="err" style="margin-top:8px"></div>
@@ -612,7 +612,7 @@ $('srPauseBtn').onclick=toggleSRSummary;
 $('srRefreshBtn').onclick=loadSRSummary;
 $('authSubmit').onclick=async()=>{
  const u=$('authUsername').value.trim(),p=$('authPassword').value;
- if(!/^[a-zA-Z0-9_]{2,24}$/.test(u))return showErr('用户名 / Username只能用 2-24 位英文字母、数字或下划线');if(p.length<6)return showErr('密码 / Password至少6位');
+ if(!/^[a-zA-Z0-9_]{2,24}$/.test(u))return showErr('用户名只能用 2-24 位英文字母、数字或下划线');if(p.length<6)return showErr('密码至少6位');
  showErr('');$('authSubmit').disabled=true;
  try{
   const email=u.toLowerCase()+'@zhi-demo.com';
@@ -632,10 +632,10 @@ $('authSubmit').onclick=async()=>{
 };
 $('authSwitchBtn').onclick=()=>{
  mode=mode==='login'?'signup':'login';
- $('authSub').textContent=mode==='login'?'登录 / Sign in账户 / Sign in to predict':'创建你的 ZHI 账户 / Create your ZHI account';
- $('authSubmit').textContent=mode==='login'?'登录 / Sign in':'注册';
- $('switchText').textContent=mode==='login'?'还没有账户？ / No account?':'已有账户？ / Already registered?';
- $('authSwitchBtn').textContent=mode==='login'?'立即注册 / Register':'直接登录 / Sign in / Sign in';
+ $('authSub').textContent=mode==='login'?'登录账户':'创建你的 ZHI 账户 / Create your ZHI account';
+ $('authSubmit').textContent=mode==='login'?'登录':'注册';
+ $('switchText').textContent=mode==='login'?'还没有账户？':'已有账户？ / Already registered?';
+ $('authSwitchBtn').textContent=mode==='login'?'立即注册':'直接登录 / Sign in';
  showErr('');
 };
 $('modalYes').onclick=()=>choosePredictionSide('yes');
@@ -652,7 +652,7 @@ setInterval(loadWinnersOnly,2500);
 (function(){
   const LANG='zh';
   const map={
-    '登录 / Sign in账户 / Sign in to predict':'登录账户','ZHI is the prediction demo balance. / ZHI 为本网站预测演示积分。':'ZHI 是本网站的预测演示积分。',
+    '登录账户':'登录账户','ZHI 是本网站的预测演示积分。':'ZHI 是本网站的预测演示积分。',
     '选择 YES / NO，下注 ZHI。市场截止后进入结算，管理员确认结果后自动派奖。':'选择 YES 或 NO，下注 ZHI。市场截止后进入结算，管理员确认结果后系统自动派奖。',
     '⚡ 自动结算':'⚡ 自动结算','🏆 自动派奖':'🏆 自动派奖','🎁 自由转赠':'🎁 自由转赠',
     '⭐ 今日焦点 / Featured Prediction':'⭐ 今日焦点','按当前奖池排序 / By pool':'按当前奖池排序','最近自动派奖记录 / Recent payouts':'最近自动派奖记录',

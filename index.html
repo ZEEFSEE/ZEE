@@ -135,6 +135,7 @@ const fmtSGMinute=x=>x?new Date(x).toLocaleString('zh-CN',sgDateMinuteOptions):'
 const fmtSGShort=x=>x?new Date(x).toLocaleString('zh-CN',sgDateShortOptions):'--';
 const fmtSGTime=x=>x?new Date(x).toLocaleTimeString('zh-CN',sgTimeOptions):'--';
 const sgInputValue=x=>{if(!x)return '';const d=new Date(x);const p=new Intl.DateTimeFormat('en-CA',{timeZone:ZHI_TIME_ZONE,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(d).reduce((o,v)=>(o[v.type]=v.value,o),{});return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;};
+const parseSGInput=x=>{if(!x)return new Date(NaN);const m=x.match(/^(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2})$/);if(!m)return new Date(NaN);const utc=Date.UTC(+m[1],+m[2]-1,+m[3],+m[4]-8,+m[5]);return new Date(utc);};
 function showErr(s){$('authError').textContent=s}
 const togglePanel=(toggleId,detailsId,arrowId)=>{const t=$(toggleId),d=$(detailsId),a=$(arrowId);if(!t||!d||!a)return;t.onclick=()=>{d.classList.toggle('open');a.classList.toggle('open')}};togglePanel('savingsToggle','savingsDetails','savingsArrow');togglePanel('adminFundFlowsToggle','adminFundFlowsDetails','adminFundFlowsArrow');togglePanel('srSimulationToggle','srSimulationDetails','srSimulationArrow');$('srCreateAuthBtn').onclick=createSRAuthUsers;$('srRunBtn').onclick=runSRTick;$('srPauseBtn').onclick=toggleSRSummary;$('srRefreshBtn').onclick=()=>{loadSRSummary();loadSRActivity()};togglePanel('loanToggle','loanDetails','loanArrow');
 async function load(passedUser=null){
@@ -357,7 +358,7 @@ async function createMarket(){
  const closeValue=$('newMarketCloseAt').value;
  $('createMarketError').textContent='';
  if(!id||!question||!closeValue)return $('createMarketError').textContent='请填写完整 / Please complete all fields';
- const closeAt=new Date(closeValue);
+ const closeAt=parseSGInput(closeValue);
  if(Number.isNaN(closeAt.getTime())||closeAt<=new Date())return $('createMarketError').textContent='截止时间必须是未来时间 / Close time must be in the future';
  const btn=$('createMarketBtn');btn.disabled=true;
  try{
@@ -441,7 +442,7 @@ async function loadAdminUsers(){
 }
 async function editMarket(id){
  const question=$('question-'+id).value.trim();
- const closeAt=new Date($('close-'+id).value);
+ const closeAt=parseSGInput($('close-'+id).value);
  if(!question)return alert('请输入市场问题 / Enter the market question');
  if(Number.isNaN(closeAt.getTime())||closeAt<=new Date())return alert('截止时间必须是未来时间 / Close time must be in the future');
  const {error}=await sb.rpc('admin_edit_market',{p_market_id:id,p_question:question,p_close_at:closeAt.toISOString()});
@@ -451,7 +452,7 @@ async function editMarket(id){
 }
 async function updateCloseTime(id){
  const input=$('close-'+id);
- const closeAt=new Date(input.value);
+ const closeAt=parseSGInput(input.value);
  if(Number.isNaN(closeAt.getTime())||closeAt<=new Date())return alert('截止时间必须是未来时间 / Close time must be in the future');
  const {error}=await sb.rpc('admin_update_market_close_time',{p_market_id:id,p_close_at:closeAt.toISOString()});
  if(error)return alert(error.message);

@@ -270,6 +270,15 @@ async function load(passedUser=null){
  }
 }
 function marketQuestion(m){return m?.question_zh||m?.question||'';}
+const uiSide=side=>side==='yes'?'YES / 是':'NO / 否';
+const uiResult=result=>result==='yes'?'YES / 是':result==='no'?'NO / 否':'--';
+const uiTx=x=>{
+ let s=String(x?.description||x?.type||'');
+ const map={'预测下注':'🎯 预测下注','SR 预测下注':'🤖 SR 预测下注','预测中奖派奖 / Prediction payout':'🏆 预测中奖派奖','预测退款 / Prediction refund: no winner':'↩️ 预测退款：无人获胜','SR simulation funding':'🤖 SR 模拟资金','signup_bonus':'🎁 注册奖励','daily_reward':'🎁 财神爷奖励','stake':'🎯 预测下注','settlement_win':'🏆 预测派奖','refund':'↩️ 预测退款'};
+ Object.keys(map).forEach(k=>{s=s.split(k).join(map[k])});
+ return s;
+};
+
 function marketQuestionEn(m){return m?.question_en||m?.question_zh||m?.question||'';}
 async function renderMarkets(){
  const open=marketsData.filter(m=>m.status==='open'&&new Date(m.close_at)>new Date());
@@ -279,12 +288,12 @@ async function renderMarkets(){
   '<div class="pool">YES '+money(m.yes_pool)+' ZHI　 NO '+money(m.no_pool)+' ZHI</div>'+
   '<div class="buttons"><button class="btn yes" data-id="'+m.id+'" data-side="yes" '+(mine?'disabled':'')+'>YES</button><button class="btn no" data-id="'+m.id+'" data-side="no" '+(mine?'disabled':'')+'>NO</button></div>'+
   '<div class="stake" id="s-'+m.id+'"><input id="a-'+m.id+'" type="number" min="1" placeholder="ZHI 数量"><button class="btn confirm" data-confirm="'+m.id+'">确认 / Confirm</button></div>'+
-  (mine?'<div class="notice">你已预测 / Your prediction: <b style="color:'+(mine.side==='yes'?'#087443':'#a51f2d')+'">'+(mine.side==='yes'?'YES / 是':'NO / 否')+'</b> · '+money(mine.stake)+' ZHI</div>':'')+'</div>';
+  (mine?'<div class="notice">你已预测 / Your prediction: <b style="color:'+(mine.side==='yes'?'#087443':'#a51f2d')+'">'+uiSide(mine.side)+'</b> · '+money(mine.stake)+' ZHI</div>':'')+'</div>';
  }).join('')||'<div class="card">目前没有进行中的市场。 / No active markets.</div>';
  $('markets').querySelectorAll('[data-side]').forEach(b=>b.onclick=()=>{
  selectedMarket=b.dataset.id;selectedSide=b.dataset.side;
  const m=marketsData.find(x=>x.id===selectedMarket);
- $('choiceText').textContent=(selectedSide==='yes'?'YES / 是':'NO / 否')+' · '+marketQuestion(m);
+ $('choiceText').textContent=uiSide(selectedSide)+' · '+marketQuestion(m);
  $('directionChoice').style.display='none';
  $('modalAmount').style.display='block';
  $('modalConfirm').style.display='block';
@@ -497,7 +506,7 @@ async function loadSRActivity(){
  ].map(x=>'<div class="finance-stat"><span>'+x[0]+' · 最近5分钟</span><b>'+Number(x[1]).toLocaleString()+' 次</b></div>').join('');
  $('srLiveCount').textContent=core.length+' 条核心行为';
  box.innerHTML=core.slice(0,20).map(x=>{
-   const l=labels[x.action_type]||['⚙️',x.action_type||'动作'];
+   const l=labels[x.action_type]||['⚙️',uiSide(x.action_type)];
    const amount=x.amount!=null?' · '+money(x.amount)+' ZHI':'';
    const market=x.market_id?' · 市场 '+esc(x.market_id):'';
    return '<div class="sr-live-item"><div class="sr-live-icon">'+l[0]+'</div><div class="sr-live-main"><div class="sr-live-user">'+esc(x.username||x.sr_id||'SR')+'</div><div class="sr-live-action">'+l[1]+amount+market+'</div></div><div class="sr-live-time">'+fmtSGTime(x.created_at)+'</div></div>';
@@ -570,7 +579,7 @@ async function updateCloseTime(id){
  await load();
 }
 async function adminSetResult(id,result){
- const label=result==='yes'?'YES':'NO';
+ const label=uiResult(result);
  if(!confirm('确定将市场 '+id+' 结果设为 '+label+'？\nConfirm result '+label+' for market '+id+'?'))return;
  const {data,error}=await sb.rpc('admin_set_result',{p_market_id:id,p_result:result});
  if(error)return alert(error.message);
@@ -601,14 +610,14 @@ function choosePredictionSide(side){
  if(!selectedMarket)return;
  selectedSide=side;
  const m=marketsData.find(x=>x.id===selectedMarket);
- $('choiceText').textContent=(side==='yes'?'YES / 是':'NO / 否')+' · '+marketQuestion(m);
+ $('choiceText').textContent=uiSide(side)+' · '+marketQuestion(m);
  $('directionChoice').style.display='none';
  $('modalAmount').style.display='block';
  $('modalConfirm').style.display='block';
  $('modalAmount').focus();
 }
 function renderHistory(list){
- $('history').innerHTML=list.length?list.map(x=>'<div class="row"><span>'+ (x.description||x.type)+'</span><b>'+(Number(x.amount)>=0?'+':'')+money(x.amount)+' ZHI</b></div>').join(''):'暂无记录 / No records yet';
+ $('history').innerHTML=list.length?list.map(x=>'<div class="row"><span>'+uiTx(x)+'</span><b>'+(Number(x.amount)>=0?'+':'')+money(x.amount)+' ZHI</b></div>').join(''):'暂无记录';
 }
 let mode='login';
 $('transferBtn').onclick=transferZHI;

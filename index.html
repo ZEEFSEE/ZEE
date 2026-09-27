@@ -503,6 +503,10 @@ function renderHistory(list){
 }
 let mode='login';
 $('transferBtn').onclick=transferZHI;
+$('srCreateAuthBtn').onclick=createSRAuthUsers;
+$('srRunBtn').onclick=runSRTick;
+$('srPauseBtn').onclick=toggleSRSummary;
+$('srRefreshBtn').onclick=loadSRSummary;
 $('authSubmit').onclick=async()=>{
  const u=$('authUsername').value.trim(),p=$('authPassword').value;
  if(!/^[a-zA-Z0-9_]{2,24}$/.test(u))return showErr('用户名 / Username只能用 2-24 位英文字母、数字或下划线');if(p.length<6)return showErr('密码 / Password至少6位');

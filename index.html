@@ -771,15 +771,26 @@ async function loadSRSummary(){const {data,error}=await sb.rpc('admin_get_sr_sim
 async function toggleSRSummary(){const {data,error}=await sb.rpc('admin_get_sr_simulation_summary');if(error)return alert(error.message);const {error:e}=await sb.rpc('admin_set_sr_simulation',{p_enabled:!data.enabled});if(e)return alert(e.message);await loadSRSummary();}
 async function createSRAuthUsers(){
  const b=$('srCreateAuthBtn'); if(!b)return;
- if(!confirm('将按每批最多 100 个，把 SR 创建为真正的 ZHI Auth 用户。继续？'))return;
+ if(!confirm('将自动分批把全部 SR 创建/绑定为真正的 ZHI Auth 用户，并保持正式 Wallet 为唯一资金账本。继续？'))return;
  b.disabled=true;
+ let totalCreated=0,totalFailed=0,remaining=null,batches=0;
  try{
-  const {data,error}=await sb.functions.invoke('sr-create-auth-users',{body:{limit:100}});
-  if(error)throw error;
-  $('srMsg').textContent='✅ 本批创建 '+Number(data?.created||0)+' 个真实 ZHI 用户，失败 '+Number(data?.failed||0)+' 个';
+  while(batches<25){
+   batches++;
+   $('srMsg').textContent='🔄 正在绑定 SR→ZHI User：第 '+batches+' 批…';
+   const {data,error}=await sb.functions.invoke('sr-create-auth-users',{body:{limit:500}});
+   if(error)throw error;
+   totalCreated+=Number(data?.created||0);
+   totalFailed+=Number(data?.failed||0);
+   remaining=data?.remaining;
+   if(Number(remaining||0)<=0)break;
+   if(!Number(data?.created||0)&&!Number(data?.failed||0))break;
+  }
+  $('srMsg').textContent='✅ SR→ZHI User 绑定完成：新增 '+totalCreated+' 个，失败 '+totalFailed+' 个，剩余 '+Number(remaining||0)+' 个';
   await loadSRSummary();
- }catch(e){$('srMsg').textContent='创建失败：'+(e.message||String(e))}
- finally{b.disabled=false}
+ }catch(e){
+  $('srMsg').textContent='⚠️ SR 绑定中断：'+(e.message||String(e))+' · 已新增 '+totalCreated+' 个';
+ }finally{b.disabled=false}
 }
 async function runSRTick(){const b=$('srRunBtn');b.disabled=true;const {data,error}=await sb.rpc('admin_run_sr_tick');if(error){$('srMsg').textContent='运行失败：'+error.message}else{$('srMsg').textContent='已运行一批 SR：'+JSON.stringify(data);await loadSRSummary();}b.disabled=false;}
 async function loadTreasuryDailyReport(){
@@ -837,13 +848,38 @@ async function updateCloseTime(id){
  alert('截止时间已修改 / Close time updated');
  await load();
 }
+async function waitForMarketResolved(id,result,timeoutMs=100000){
+ const started=Date.now();
+ while(Date.now()-started<timeoutMs){
+  const {data,error}=await sb.from('markets').select('id,status,result,resolved_at').eq('id',id).maybeSingle();
+  if(error)throw error;
+  if(data?.status==='resolved'&&data?.result===result)return data;
+  await new Promise(r=>setTimeout(r,3000));
+ }
+ throw new Error('后台结算仍在处理中，请稍后刷新查看 / Settlement is still processing in the background.');
+}
 async function adminSetResult(id,result){
  const label=uiResult(result);
  if(!confirm('确定将市场 '+id+' 结果设为 '+label+'？\nConfirm result '+label+' for market '+id+'?'))return;
- const {data,error}=await sb.rpc('admin_set_result',{p_market_id:id,p_result:result});
- if(error)return alert(error.message);
- alert('结算完成 / Settlement completed\n已自动派奖并到账 / Payout credited automatically');
- await load();
+ const buttons=[...document.querySelectorAll('[data-expired-settle="'+id+'"],[data-settle-result="'+id+'"]')];
+ buttons.forEach(b=>{b.disabled=true;b.dataset.originalText=b.textContent;b.textContent='⏳ 结算中 / Settling…';});
+ try{
+  const {data,error}=await sb.rpc('admin_set_result',{p_market_id:id,p_result:result});
+  if(error)throw error;
+  if(data?.already_settled){
+   await load();
+   alert('市场已经结算 / Market already settled');
+   return;
+  }
+  await waitForMarketResolved(id,result);
+  await load();
+  if(typeof loadAdminFinanceSuite==='function')await loadAdminFinanceSuite();
+  alert('✅ 结算完成 / Settlement completed\n🏆 已自动派奖并到账 / Payout credited automatically');
+ }catch(e){
+  alert('结算失败 / Settlement failed\n'+(e?.message||String(e)));
+ }finally{
+  buttons.forEach(b=>{b.disabled=false;if(b.dataset.originalText)b.textContent=b.dataset.originalText;});
+ }
 }
 async function stake(id=selectedMarket){
  const amount=Math.floor(Number($('modalAmount').value)),side=selectedSide;

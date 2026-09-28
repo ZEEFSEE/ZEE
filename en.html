@@ -1134,46 +1134,39 @@ const mo=new MutationObserver(()=>initZhiDateTimes()); mo.observe(document.docum
   function boot(){const b=document.getElementById('adminProposalRefresh');if(!b||!window.zhiSupabase)return false;if(!b.dataset.zhiIndependent){b.dataset.zhiIndependent='1';b.onclick=zhiAdminProposalLoader;} zhiAdminProposalLoader();return true;}
   let n=0;const t=setInterval(()=>{if(boot()||++n>40)clearInterval(t);},500);
 })();
-</script><script data-zhi-proposal-direct-submit="1">
+</script><script data-zhi-proposal-admin-fill="1">
 (function(){
   function $(id){return document.getElementById(id)}
   function getCloseIso(){
     const box=document.querySelector('[data-zdt-for="proposalCloseAt"]');
     const d=box?.querySelector('[data-zdt-date]')?.value||'',h=box?.querySelector('[data-zdt-hour]')?.value||'',m=box?.querySelector('[data-zdt-minute]')?.value||'';
     if(!d||h===''||m==='')return '';
-    const dt=new Date(d+'T'+h+':'+m+':00+08:00');
-    return Number.isFinite(dt.getTime())?dt.toISOString():'';
+    const dt=new Date(d+'T'+h+':'+m+':00+08:00'); return Number.isFinite(dt.getTime())?dt.toISOString():'';
   }
   async function submit(){
     const q=$('proposalQuestion')?.value?.trim()||'',msg=$('proposalMsg'),btn=$('proposalSubmitBtn'),closeAt=getCloseIso();
     if(!q||!closeAt){if(msg)msg.textContent='❌ 请填写预测问题和未来截至日期 / Please enter the question and a future closing date';return}
     if(new Date(closeAt)<=new Date()){if(msg)msg.textContent='❌ 截止时间必须是未来时间 / Closing time must be in the future';return}
-    const client=window.zhiSupabase;
-    if(!client?.rpc){if(msg)msg.textContent='❌ 数据库连接尚未完成 / Database connection is not ready';return}
-    if(btn)btn.disabled=true;
-    if(msg)msg.textContent='正在提交提案…… / Submitting proposal...';
+    const client=window.zhiSupabase;if(!client?.rpc){if(msg)msg.textContent='❌ 数据库连接尚未完成 / Database connection is not ready';return}
+    if(btn)btn.disabled=true;if(msg)msg.textContent='正在提交提案…… / Submitting proposal...';
     try{
+      const zh=/[\u3400-\u9fff]/.test(q);
       const {error}=await client.rpc('submit_prediction_proposal',{
-        p_question_original:q,
-        p_original_language:/[\u3400-\u9fff]/.test(q)?'zh':'en',
-        p_question_zh:/[\u3400-\u9fff]/.test(q)?q:q,
-        p_question_en:/[\u3400-\u9fff]/.test(q)?q:q,
-        p_requested_close_at:closeAt
+        p_question_original:q,p_original_language:zh?'zh':'en',
+        p_question_zh:zh?q:'',p_question_en:zh?'':q,p_requested_close_at:closeAt
       });
       if(error)throw error;
-      if(msg)msg.textContent='✅ 提案已提交，等待管理员审核 / Submitted for admin review';
+      if(msg)msg.textContent='✅ 提案已提交，等待管理员补充缺失语言版本并审核 / Submitted. Admin will complete the missing language version and review it.';
       $('proposalQuestion').value='';
       const box=document.querySelector('[data-zdt-for="proposalCloseAt"]'),d=box?.querySelector('[data-zdt-date]');if(d)d.value='';
       const hidden=$('proposalCloseAt');if(hidden)hidden.value='';
-      const preview=$('proposalTranslationPreview');if(preview)preview.classList.add('hidden');
       if(window.zhiLoadMyProposals)await window.zhiLoadMyProposals();
     }catch(e){if(msg)msg.textContent='❌ '+(e?.message||'提交失败 / Submission failed')}finally{if(btn)btn.disabled=false}
   }
   function bind(){
-    const oldGenerate=$('proposalGenerateBtn'),preview=$('proposalTranslationPreview'),submitBtn=$('proposalSubmitBtn');
-    if(oldGenerate)oldGenerate.style.display='none';
-    if(preview)preview.style.display='none';
-    if(submitBtn){submitBtn.disabled=false;submitBtn.textContent='🚀 Submit Prediction Proposal / 提交预测提案';submitBtn.onclick=submit}
+    const g=$('proposalGenerateBtn'),preview=$('proposalTranslationPreview'),btn=$('proposalSubmitBtn');
+    if(g)g.style.display='none';if(preview)preview.style.display='none';
+    if(btn){btn.disabled=false;btn.textContent='🚀 Submit Prediction Proposal / 提交预测提案';btn.onclick=submit}
     window.zhiSubmitProposal=submit;
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();

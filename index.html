@@ -359,6 +359,9 @@ $('giftSendToggle').onclick=()=>{$('giftSendDetails').classList.toggle('open');$
    $('createMarketBtn').onclick=createMarket;
    $('refreshUsersBtn').onclick=loadAdminUsers;$('afRefresh').onclick=loadAdminFundFlows;$('afFilter').onchange=loadAdminFundFlows;
    loadAdminUsers();
+   // Load user prediction proposals after the authenticated user is known.
+   // The proposal UI initializer can run before auth finishes, so it cannot be the only loader.
+   loadAdminProposals();
    const awaiting=marketsData.filter(m=>m.status==='closed');
    $('settlementPanel').classList.toggle('hidden',!awaiting.length);
    $('settlementMarkets').innerHTML=awaiting.length?awaiting.map(m=>

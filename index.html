@@ -808,6 +808,7 @@ const mo=new MutationObserver(()=>initZhiDateTimes()); mo.observe(document.docum
   async function loadAdminProposals(){const box=$('adminProposals');if(!box)return;const {data,error}=await sb.rpc('admin_get_prediction_proposals',{p_status:'pending'});if(error){box.innerHTML='<div class="notice">加载失败 / Failed: '+String(error.message||'')+'</div>';return}const rows=Array.isArray(data)?data:[];if(!rows.length){box.innerHTML='<div class="dash-empty">目前没有待审核提案 / No pending proposals</div>';return}box.innerHTML=rows.map(p=>'<div class="proposal-item" data-proposal-id="'+p.id+'"><span class="proposal-status proposal-pending">待审核 / Pending</span><div class="proposal-meta">用户 / User: <b>'+escProposal(p.username)+'</b> · 提案 #'+p.id+'</div><div class="proposal-admin"><label>中文问题 / Chinese Question</label><textarea data-pzh rows="2">'+escProposal(p.question_zh)+'</textarea><label>English Question</label><textarea data-pen rows="2">'+escProposal(p.question_en)+'</textarea><div class="proposal-grid"><div><label>最终截止时间 / Final Close Time</label><div class="zhi-datetime" data-zdt-for="proposal-'+p.id+'" data-zdt-value="'+toLocalInput(p.requested_close_at)+'"><input type="date" data-zdt-date><select data-zdt-hour aria-label="Hour"></select><span class="zhi-time-sep">:</span><select data-zdt-minute aria-label="Minute"></select></div><input data-pclose type="hidden" value="'+toLocalInput(p.requested_close_at)+'"></div><div><label>结算规则 / Settlement Rule</label><textarea data-rule rows="3" placeholder="例如：以官方来源为准 / Use the official source">'+escProposal(p.settlement_rule||'')+'</textarea></div></div><div class="proposal-actions"><button class="btn confirm" data-approve>✅ 通过并创建市场 / Approve & Publish</button><button class="btn no" data-reject>❌ 驳回 / Reject</button></div><div data-msg class="meta"></div></div></div>').join('');
     box.querySelectorAll('[data-approve]').forEach(btn=>btn.onclick=async()=>{const item=btn.closest('[data-proposal-id]'),id=Number(item.dataset.proposalId),msg=item.querySelector('[data-msg]'),pzh=item.querySelector('[data-pzh]').value.trim(),pen=item.querySelector('[data-pen]').value.trim(),close=zhiDateTimeValue(item.querySelector('[data-pclose]')),rule=item.querySelector('[data-rule]').value.trim(),iso=localDateToIso(close);if(!pzh||!pen||!iso||new Date(iso)<=new Date()||!rule){msg.textContent='请填写完整，且截止时间必须是未来时间 / Complete all fields; close time must be in the future';return}btn.disabled=true;msg.textContent='正在创建市场并发放 1,000 ZHI…… / Publishing and paying 1,000 ZHI...';try{const {data,error}=await sb.rpc('admin_approve_prediction_proposal',{p_proposal_id:id,p_question_zh:pzh,p_question_en:pen,p_close_at:iso,p_settlement_rule:rule});if(error)throw error;msg.textContent='✅ 已发布 '+data.market_id+'，贡献奖 +1,000 ZHI / Published';await loadAdminProposals();await loadMyProposals();if(typeof load==='function')await load()}catch(e){msg.textContent='❌ '+(e.message||'审核失败 / Approval failed');btn.disabled=false}});
     box.querySelectorAll('[data-reject]').forEach(btn=>btn.onclick=async()=>{const item=btn.closest('[data-proposal-id]'),id=Number(item.dataset.proposalId),msg=item.querySelector('[data-msg]'),reason=prompt('驳回原因 / Rejection reason (optional):','');btn.disabled=true;try{const {error}=await sb.rpc('admin_reject_prediction_proposal',{p_proposal_id:id,p_reason:reason||null});if(error)throw error;await loadAdminProposals();if(typeof load==='function')await load()}catch(e){msg.textContent='❌ '+(e.message||'Reject failed');btn.disabled=false}})}
+  window.zhiLoadMyProposals=loadMyProposals;
   function initProposalUI(){if(typeof sb==='undefined'||!document)return false;const toggle=$('userProposalToggle');if(toggle&&!toggle.dataset.bound){toggle.dataset.bound='1';toggle.onclick=()=>{$('userProposalDetails').classList.toggle('open');$('userProposalArrow').classList.toggle('open')}}if($('proposalCloseAt'))setFutureMin();if($('proposalSubmitBtn')&&!$('proposalSubmitBtn').dataset.bound){$('proposalSubmitBtn').dataset.bound='1';$('proposalSubmitBtn').onclick=submitProposal}const at=$('adminProposalToggle');if(at&&!at.dataset.bound){at.dataset.bound='1';at.onclick=()=>{$('adminProposalDetails').classList.toggle('open');$('adminProposalArrow').classList.toggle('open')}}if($('adminProposalRefresh')&&!$('adminProposalRefresh').dataset.bound){$('adminProposalRefresh').dataset.bound='1';$('adminProposalRefresh').onclick=loadAdminProposals}loadMyProposals();if(typeof user!=='undefined'&&user?.app_metadata?.role==='admin')loadAdminProposals();return true}
   let tries=0;const timer=setInterval(()=>{tries++;if(initProposalUI()||tries>30)clearInterval(timer)},500);
 })();
@@ -888,42 +889,32 @@ const mo=new MutationObserver(()=>initZhiDateTimes()); mo.observe(document.docum
 <script>
 /* ZHI_PROPOSAL_EMERGENCY_HANDLER */
 (function(){
-window.zhiSubmitProposal=function(){
-  const q=document.getElementById('proposalQuestion')?.value?.trim()||'';
-  const msg=document.getElementById('proposalMsg');
-  const btn=document.getElementById('proposalSubmitBtn');
-  const box=document.querySelector('[data-zdt-for="proposalCloseAt"]');
-  const date=box?.querySelector('[data-zdt-date]')?.value||'';
-  const hour=box?.querySelector('[data-zdt-hour]')?.value||'';
-  const minute=box?.querySelector('[data-zdt-minute]')?.value||'';
-  const close=date?date+'T'+hour+':'+minute:'';
-  if(!q||!close){if(msg)msg.textContent='❌ 请填写预测问题和截至日期 / Please enter the question and closing date';return;}
-  const parts=close.split(/[-T:]/).map(Number);
-  const closeDate=new Date(parts[0],parts[1]-1,parts[2],parts[3],parts[4]);
-  if(Number.isNaN(closeDate.getTime())||closeDate<=new Date()){if(msg)msg.textContent='❌ 截止时间必须是未来时间 / Closing time must be in the future';return;}
-  if(typeof sb==='undefined'||!sb.rpc){if(msg)msg.textContent='❌ 数据库连接尚未完成，请刷新后再试 / Database connection is not ready';return;}
-  if(btn)btn.disabled=true;
-  if(msg)msg.textContent='正在提交预测提案…… / Submitting prediction proposal...';
-  const zh=/[\u3400-\u9fff]/.test(q);
-  sb.rpc('submit_prediction_proposal',{
-    p_question_original:q,
-    p_original_language:zh?'zh':'en',
-    p_question_zh:zh?q:q,
-    p_question_en:zh?q:q,
-    p_requested_close_at:closeDate.toISOString()
-  }).then(function(res){
-    if(res.error)throw res.error;
-    if(msg)msg.textContent='✅ 提案已提交，等待管理员审核 / Submitted for admin review';
-    document.getElementById('proposalQuestion').value='';
-    if(box){box.dataset.zdtValue='';const d=box.querySelector('[data-zdt-date]');if(d)d.value='';}
-    const hidden=document.getElementById('proposalCloseAt');if(hidden)hidden.value='';
-    setTimeout(function(){if(typeof loadMyProposals==='function')loadMyProposals();},100);
-  }).catch(function(e){
-    if(msg)msg.textContent='❌ '+(e?.message||'提交失败 / Submission failed');
-  }).finally(function(){if(btn)btn.disabled=false;});
-};
-})();
-</script><script>
+  // Keep the emergency entry point translation-aware; never store the same text in both languages.
+  window.zhiSubmitProposal=async function(){
+    const q=document.getElementById('proposalQuestion')?.value?.trim()||'';
+    const msg=document.getElementById('proposalMsg'), btn=document.getElementById('proposalSubmitBtn');
+    const box=document.querySelector('[data-zdt-for="proposalCloseAt"]');
+    const date=box?.querySelector('[data-zdt-date]')?.value||'', hour=box?.querySelector('[data-zdt-hour]')?.value||'', minute=box?.querySelector('[data-zdt-minute]')?.value||'';
+    const close=date?date+'T'+hour+':'+minute:'';
+    if(!q||!close){if(msg)msg.textContent='❌ 请填写预测问题和截至日期 / Please enter the question and closing date';return;}
+    const parts=close.split(/[-T:]/).map(Number), closeDate=new Date(parts[0],parts[1]-1,parts[2],parts[3],parts[4]);
+    if(Number.isNaN(closeDate.getTime())||closeDate<=new Date()){if(msg)msg.textContent='❌ 截止时间必须是未来时间 / Closing time must be in the future';return;}
+    if(typeof sb==='undefined'||!sb.rpc){if(msg)msg.textContent='❌ 数据库连接尚未完成，请刷新后再试 / Database connection is not ready';return;}
+    if(btn)btn.disabled=true; if(msg)msg.textContent='正在生成另一语言版本…… / Generating the other language version...';
+    try{
+      const zh=/[\\u3400-\\u9fff]/.test(q), from=zh?'zh':'en', to=zh?'en':'zh';
+      let translated=q;
+      if(typeof translateProposal==='function') translated=await translateProposal(q,from,to);
+      if(!translated||translated===q)throw new Error('另一语言版本生成失败，请稍后重试 / Translation failed, please try again');
+      const questionZh=zh?q:translated, questionEn=zh?translated:q;
+      const {error}=await sb.rpc('submit_prediction_proposal',{p_question_original:q,p_original_language:from,p_question_zh:questionZh,p_question_en:questionEn,p_requested_close_at:closeDate.toISOString()});
+      if(error)throw error;
+      if(msg)msg.textContent='✅ 提案已提交，等待管理员审核 / Submitted for admin review';
+      document.getElementById('proposalQuestion').value=''; if(box){box.dataset.zdtValue='';const d=box.querySelector('[data-zdt-date]');if(d)d.value='';} const hidden=document.getElementById('proposalCloseAt');if(hidden)hidden.value='';
+      if(window.zhiLoadMyProposals)await window.zhiLoadMyProposals();
+    }catch(e){if(msg)msg.textContent='❌ '+(e?.message||'提交失败 / Submission failed');}finally{if(btn)btn.disabled=false;}
+  };
+})();</script><script>
 (function(){
   // Independent admin proposal loader: does not depend on the main proposal initializer.
   async function zhiAdminProposalLoader(){
@@ -959,7 +950,7 @@ window.zhiSubmitProposal=function(){
         const payload={p_proposal_id:Number(item.dataset.zhiAdminProposal),p_question_zh:item.querySelector('[data-zhi-pzh]').value.trim(),p_question_en:item.querySelector('[data-zhi-pen]').value.trim(),p_close_at:close,p_settlement_rule:item.querySelector('[data-zhi-rule]').value.trim()};
         if(!payload.p_question_zh||!payload.p_question_en||!payload.p_settlement_rule||new Date(close)<=new Date()){msg.textContent='❌ 请填写完整，且截止时间必须是未来时间 / Complete all fields and use a future time';return;}
         b.disabled=true;msg.textContent='正在创建市场并发放 1,000 ZHI…… / Publishing...';
-        try{const {data,error}=await window.zhiSupabase.rpc('admin_approve_prediction_proposal',payload);if(error)throw error;msg.textContent='✅ 已发布 '+(data?.market_id||'')+'，贡献奖 +1,000 ZHI / Published';await zhiAdminProposalLoader();}catch(e){msg.textContent='❌ '+(e.message||'Approval failed');b.disabled=false;}
+        try{const {data,error}=await window.zhiSupabase.rpc('admin_approve_prediction_proposal',payload);if(error)throw error;msg.textContent='✅ 已发布 '+(data?.market_id||'')+'，贡献奖 +1,000 ZHI / Published';if(window.zhiLoadMyProposals)await window.zhiLoadMyProposals();if(typeof load==='function')await load();await zhiAdminProposalLoader();}catch(e){msg.textContent='❌ '+(e.message||'Approval failed');b.disabled=false;}
       });
       box.querySelectorAll('[data-zhi-reject]').forEach(b=>b.onclick=async()=>{
         const item=b.closest('[data-zhi-admin-proposal]'),msg=item.querySelector('[data-zhi-msg]'),reason=prompt('驳回原因 / Rejection reason (optional):','');

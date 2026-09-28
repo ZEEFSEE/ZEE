@@ -767,8 +767,31 @@ async function loadSRActivity(){
  }).join('')||'<div class="notice">最近没有核心经济行为 / No core economic activity yet</div>';
 }
 async function loadSRTreasuryGrants(){const {data,error}=await sb.rpc('admin_get_sr_treasury_grants');if(error){$('srGrantCount').textContent='--';$('srGrantEach').textContent='--';$('srGrantTotal').textContent='--';$('srGrantSource').textContent='加载失败';return}$('srGrantCount').textContent=Number(data.grant_count||0).toLocaleString();$('srGrantEach').textContent=money(data.grant_each||0)+' ZHI';$('srGrantTotal').textContent=money(data.grant_total||0)+' ZHI';$('srGrantSource').textContent=data.funding_source==='treasury'?'财神爷 Treasury':'--';}
-async function loadSRSummary(){const {data,error}=await sb.rpc('admin_get_sr_simulation_summary');if(error){$('srMsg').textContent='SR 状态加载失败：'+error.message;return}$('srUsers').textContent=Number(data.users||0).toLocaleString();$('srActive').textContent=Number(data.active||0).toLocaleString();$('srActions').textContent=Number(data.actions_today||0).toLocaleString();$('srLogins').textContent=Number(data.logins_today||0).toLocaleString();$('srPredictions').textContent=Number(data.predictions_today||0).toLocaleString();$('srSaves').textContent=Number(data.saves_today||0).toLocaleString();$('srLoans').textContent=Number(data.loans_today||0).toLocaleString();$('srRepays').textContent=Number(data.repayments_today||0).toLocaleString();$('srWallet').textContent=money(data.wallet||0)+' ZHI';$('srSavings').textContent=money(data.savings||0)+' ZHI';$('srLoanBalance').textContent=money(data.loans||0)+' ZHI';$('srLast').textContent=data.last_action_at?fmtSG(data.last_action_at)+' · '+SR_TIME_LABEL:'--';loadSRActivity();$('srMsg').textContent=data.enabled?'🟢 SR 自动运行中 / Running':'⏸ SR 已暂停 / Paused';$('srPauseBtn').textContent=data.enabled?'⏸ 暂停 SR':'▶️ 启动 SR';}
+async function loadSRSummary(){const {data,error}=await sb.rpc('admin_get_sr_simulation_summary');if(error){$('srMsg').textContent='SR 状态加载失败：'+error.message;return}$('srUsers').textContent=Number(data.users||0).toLocaleString();$('srActive').textContent=Number(data.active||0).toLocaleString();$('srActions').textContent=Number(data.actions_today||0).toLocaleString();$('srLogins').textContent=Number(data.logins_today||0).toLocaleString();$('srPredictions').textContent=Number(data.predictions_today||0).toLocaleString();$('srSaves').textContent=Number(data.saves_today||0).toLocaleString();$('srLoans').textContent=Number(data.loans_today||0).toLocaleString();$('srRepays').textContent=Number(data.repayments_today||0).toLocaleString();$('srWallet').textContent=money(data.wallet||0)+' ZHI';$('srSavings').textContent=money(data.savings||0)+' ZHI';$('srLoanBalance').textContent=money(data.loans||0)+' ZHI';$('srLast').textContent=data.last_action_at?fmtSG(data.last_action_at)+' · '+SR_TIME_LABEL:'--';loadSRActivity();$('srMsg').textContent=data.enabled?'🟢 SR 自动运行中 / Running':'⏸ SR 已暂停 / Paused';$('srPauseBtn').textContent=data.enabled?'⏸ 暂停 SR':'▶️ 启动 SR';if(user?.app_metadata?.role==='admin'&&!window.__srAuthBootstrapStarted){window.__srAuthBootstrapStarted=true;setTimeout(()=>ensureSRAuthUsers(),800);}}
 async function toggleSRSummary(){const {data,error}=await sb.rpc('admin_get_sr_simulation_summary');if(error)return alert(error.message);const {error:e}=await sb.rpc('admin_set_sr_simulation',{p_enabled:!data.enabled});if(e)return alert(e.message);await loadSRSummary();}
+async function ensureSRAuthUsers(){
+ if(window.__srAuthBootstrapRunning)return;
+ window.__srAuthBootstrapRunning=true;
+ let created=0,failed=0,remaining=9096,batches=0;
+ try{
+  while(batches<25&&Number(remaining)>0){
+   batches++;
+   if($('srMsg'))$('srMsg').textContent='🔄 自动绑定 SR→ZHI User：第 '+batches+' 批…';
+   const {data,error}=await sb.functions.invoke('sr-create-auth-users',{body:{limit:500}});
+   if(error)throw error;
+   created+=Number(data?.created||0);
+   failed+=Number(data?.failed||0);
+   remaining=Number(data?.remaining||0);
+   if(!Number(data?.created||0)&&!Number(data?.failed||0))break;
+  }
+  if($('srMsg'))$('srMsg').textContent=remaining<=0?'✅ 10,000 个 SR 已完成 ZHI User 绑定':'⚠️ SR 绑定暂未完成：剩余 '+remaining+' 个，已新增 '+created+' 个';
+ }catch(e){
+  if($('srMsg'))$('srMsg').textContent='⚠️ SR 自动绑定暂停：'+(e.message||String(e))+' · 剩余约 '+remaining+' 个';
+ }finally{
+  window.__srAuthBootstrapRunning=false;
+  await loadSRSummary().catch(()=>{});
+ }
+}
 async function createSRAuthUsers(){
  const b=$('srCreateAuthBtn'); if(!b)return;
  if(!confirm('将自动分批把全部 SR 创建/绑定为真正的 ZHI Auth 用户，并保持正式 Wallet 为唯一资金账本。继续？'))return;

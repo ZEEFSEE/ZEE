@@ -347,7 +347,104 @@ button,input,select{font:inherit}
   </select><button id="zhiSrFlowRefresh" class="btn confirm" type="button">刷新</button>
  </div>
  <div id="zhiSrFlowSummary" class="notice" style="margin-top:8px">加载中……</div>
- <div id="zhiSrFlowWall" style="margin-top:8px;max-height:620px;overflow:auto"></div></section><script data-zhi-real-execution-ui="20260928-chain">(function(){const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));function cc(i,t,v,m){return '<div class="card" style="margin:0;padding:11px"><div style="font-size:12px;font-weight:900">'+i+' '+t+'</div><div style="font-size:19px;font-weight:950;margin-top:5px">'+v+'</div><div style="font-size:10px;color:#888;margin-top:3px">'+m+'</div></div>'}function st(l,v){return '<div class="finance-stat"><span>'+l+'</span><b>'+v+'</b></div>}function render(d,logs){const c=d?.control||{},on=!!c.real_execution_enabled,r=d?.research||{},p=d?.preview||{},g=d?.gate||{},e=d?.execution||{},s=d?.settlement||{},l=d?.learning||{},b=$('zhiRealExecBadge'),t=$('zhiRealExecToggle');if(b){b.textContent=on?'开启':'关闭';b.className='dash-chip '+(on?'chip-green':'chip-blue')}if(t)t.textContent=on?'关闭 REAL_EXECUTION':'开启 REAL_EXECUTION';const q=$('zhiRealExecChain');if(q)q.innerHTML=cc('🔬','研究',r.sr_research_rows??0,(r.recent_24h??0)+' / 24h')+cc('🟢','Gate',(g.ready_24h??0)+(g.skipped_24h??0),(g.ready_24h??0)+' ready · '+(g.skipped_24h??0)+' skipped')+cc('🧪','预览',p.pending??0,(p.eligible_confidence??0)+' eligible')+cc('💳','执行',e.success_24h??0,(e.failed_24h??0)+' failed / 24h')+cc('🏁','结算',s.resolved_markets_24h??0,'resolved / 24h')+cc('🧠','学习',l.recent_24h??0,(l.correct??0)+' correct · '+(l.incorrect??0)+' incorrect');const x=$('zhiRealExecStats');if(x)x.innerHTML=st('研究市场',r.markets_researched??0)+st('预览总数',p.total??0)+st('待执行预览',p.pending??0)+st('24小时成功执行',e.success_24h??0)+st('开放仓位',s.open_positions??0)+st('学习历史',l.history_rows??0)+st('单次上限',c.max_stake_per_action??0)+st('最低置信度',c.min_confidence??0);const gs=$('zhiRealExecGateStatus');if(gs)gs.innerHTML=(c.last_cycle_at?'最近 Gate：'+esc(new Date(c.last_cycle_at).toLocaleString()):'最近 Gate：--')+' · '+(on?'🟢 REAL_EXECUTION 开启':'🔴 REAL_EXECUTION 关闭');const ev=$('zhiRealExecEvents'),events=Array.isArray(d?.events)?d.events:[];if(ev)ev.innerHTML=events.length?events.map(x=>'<div class="proposal-item"><span class="proposal-status '+(x.status==='ready'?'proposal-published':'proposal-rejected')+'">'+esc(x.status)+'</span><div class="proposal-meta">'+esc(x.event_type)+(x.sr_id?' · SR '+esc(x.sr_id):'')+(x.market_id?' · '+esc(x.market_id):'')+'</div><div class="proposal-meta">'+esc(x.created_at)+' · '+esc(x.message||'')+'</div></div>').join(''):'<div class="notice">暂无记录</div>';const box=$('zhiRealExecLog');if(box)box.innerHTML=logs?.length?logs.map(x=>'<div class="proposal-item"><span class="proposal-status '+(x.success?'proposal-published':'proposal-rejected')+'">'+(x.success?'成功':'失败')+'</span><div class="proposal-meta">SR '+esc(x.sr_id)+' · '+esc(x.market_id)+' · '+esc(x.side)+' · '+esc(x.amount)+'</div><div class="proposal-meta">'+esc(x.created_at)+(x.error_message?' · '+esc(x.error_message):'')+'</div></div>').join(''):'<div class="notice">暂无记录</div>'}async function load(){const client=window.zhiSupabase;if(!client?.rpc)return;try{const ss=await client.auth.getSession();if(ss.error)throw ss.error;if(!ss.data?.session)throw new Error('请先登录管理员账号');if(ss.data.session.user?.app_metadata?.role!=='admin')throw new Error('当前账号不是管理员');const [d,lg]=await Promise.all([client.rpc('admin_get_execution_chain_dashboard'),client.rpc('admin_get_execution_log',{p_limit:30})]); await loadSrFlowWall();if(d.error)throw d.error;if(lg.error)throw lg.error;render(d.data,Array.isArray(lg.data)?lg.data:[]);const m=$('zhiRealExecMsg');if(m)m.textContent='链路状态已加载 · '+(d.data?.control?.real_execution_enabled?'REAL_EXECUTION 开启':'REAL_EXECUTION 关闭')}catch(e){const m=$('zhiRealExecMsg');if(m)m.textContent='❌ '+(e?.message||e)}}async function loadSrFlowWall(){const client=window.zhiSupabase;if(!client?.rpc)return;const q=document.getElementById('zhiSrFlowSearch')?.value?.trim()||'',node=document.getElementById('zhiSrFlowNode')?.value||'all',box=document.getElementById('zhiSrFlowWall'),sum=document.getElementById('zhiSrFlowSummary');try{const r=await client.rpc('admin_get_sr_flow_wall',{p_limit:200,p_offset:0,p_node:node,p_search:q});if(r.error)throw r.error;const rows=Array.isArray(r.data)?r.data:[];if(sum)sum.textContent='显示 '+rows.length+' / 10,000 SR';if(!box)return;box.innerHTML=rows.map(x=>{const n=x.current_node;const steps=[['research','🔬'],['gate','🟢'],['preview','🧪'],['execution','💳'],['position','📌'],['settlement','🏁'],['learning','🧠']];const html=steps.map(s=>'<span style="display:inline-block;padding:3px 6px;margin:2px;border-radius:999px;font-size:9px;font-weight:800;background:'+(s[0]===n?'#fff0bd':'#f1f3f6')+';color:'+(s[0]===n?'#8a5a00':'#999')+'">'+s[1]+' '+s[0]+'</span>').join('');return '<div class="proposal-item"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b>'+esc(x.sr_id)+' · '+esc(x.username||'--')+'</b><span class="dash-chip '+(n==='learning'?'chip-green':n==='research'?'chip-blue':'chip-gold')+'">'+esc(x.node_label)+'</span></div><div style="margin-top:5px">'+html+'</div><div class="proposal-meta" style="margin-top:4px">R:'+x.research_count+' · P:'+x.preview_count+' · E:'+x.execution_count+' · O:'+x.open_position_count+' · S:'+x.settled_position_count+' · L:'+x.learning_count+'</div></div>'}).join('')||'<div class="notice">没有符合条件的 SR</div>'}catch(e){if(sum)sum.textContent='❌ '+(e?.message||e)}}async function tog(){const b=$('zhiRealExecBadge'),on=b?.textContent==='开启';const client=window.zhiSupabase;if(!client?.rpc)return;const ss=await client.auth.getSession();if(ss.error){const m=$('zhiRealExecMsg');if(m)m.textContent='❌ '+ss.error.message;return}if(!ss.data?.session||ss.data.session.user?.app_metadata?.role!=='admin'){const m=$('zhiRealExecMsg');if(m)m.textContent='❌ 当前账号不是管理员，无法开启 REAL_EXECUTION';return}if(!confirm(on?'确定关闭 REAL_EXECUTION？':'确定开启 REAL_EXECUTION？开启后允许定时执行周期运行。'))return;const x=$('zhiRealExecToggle');if(x)x.disabled=true;try{const r=await client.rpc('admin_set_real_execution',{p_enabled:!on});if(r.error)throw r.error;await load()}catch(e){const m=$('zhiRealExecMsg');if(m)m.textContent='❌ '+(e?.message||e)}finally{if(x)x.disabled=false}}function boot(){if(!$('zhiRealExecutionDashboard')||!window.zhiSupabase)return false;$('zhiRealExecToggle').onclick=tog;$('zhiRealExecRefresh').onclick=()=>{load();loadSrFlowWall()};$('zhiSrFlowRefresh').onclick=loadSrFlowWall;$('zhiSrFlowNode').onchange=loadSrFlowWall;$('zhiSrFlowSearch').onkeydown=e=>{if(e.key==='Enter')loadSrFlowWall()};load();loadSrFlowWall();return true}let n=0;const tt=setInterval(()=>{if(boot()||++n>40)clearInterval(tt)},500)})();</script></main>
+ <div id="zhiSrFlowWall" style="margin-top:8px;max-height:620px;overflow:auto"></div></section><script data-zhi-real-execution-ui="20260928-chain">
+(function(){
+  const $=id=>document.getElementById(id);
+  const esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const setMsg=(s,err=false)=>{const m=$('zhiRealExecMsg');if(m){m.textContent=s;m.style.color=err?'#a51f2d':'';}};
+  const setFlow=(s,err=false)=>{const m=$('zhiSrFlowSummary');if(m){m.textContent=s;m.style.color=err?'#a51f2d':'';}};
+  function cc(i,t,v,m){return '<div class="card" style="margin:0;padding:11px"><div style="font-size:12px;font-weight:900">'+i+' '+t+'</div><div style="font-size:19px;font-weight:950;margin-top:5px">'+v+'</div><div style="font-size:10px;color:#888;margin-top:3px">'+m+'</div></div>'}
+  function st(l,v){return '<div class="finance-stat"><span>'+l+'</span><b>'+v+'</b></div>'}
+  function withTimeout(p,ms,label){return Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error(label||'请求超时 / Request timed out')),ms))])}
+  async function adminSession(){
+    const client=window.zhiSupabase;
+    if(!client?.auth) throw new Error('Supabase 连接尚未准备好 / Supabase client is not ready');
+    let ss=await withTimeout(client.auth.getSession(),8000,'登录状态读取超时 / Session lookup timed out');
+    if(ss.error) throw ss.error;
+    if(!ss.data?.session) throw new Error('请先登录管理员账号 / Please sign in as admin');
+    const rr=await withTimeout(client.auth.refreshSession(),8000,'登录凭证刷新超时 / Session refresh timed out');
+    if(!rr.error && rr.data?.session) ss=rr;
+    const role=ss.data?.session?.user?.app_metadata?.role;
+    if(role!=='admin') throw new Error('当前账号不是管理员 / Current account is not admin');
+    return ss.data.session;
+  }
+  function render(d,logs){
+    const c=d?.control||{},on=!!c.real_execution_enabled,r=d?.research||{},p=d?.preview||{},g=d?.gate||{},e=d?.execution||{},s=d?.settlement||{},l=d?.learning||{},b=$('zhiRealExecBadge'),t=$('zhiRealExecToggle');
+    if(b){b.textContent=on?'开启':'关闭';b.className='dash-chip '+(on?'chip-green':'chip-blue')}
+    if(t)t.textContent=on?'关闭 REAL_EXECUTION':'开启 REAL_EXECUTION';
+    const q=$('zhiRealExecChain');if(q)q.innerHTML=cc('🔬','研究',r.sr_research_rows??0,(r.recent_24h??0)+' / 24h')+cc('🟢','Gate',(g.ready_24h??0)+(g.skipped_24h??0),(g.ready_24h??0)+' ready · '+(g.skipped_24h??0)+' skipped')+cc('🧪','预览',p.pending??0,(p.eligible_confidence??0)+' eligible')+cc('💳','执行',e.success_24h??0,(e.failed_24h??0)+' failed / 24h')+cc('🏁','结算',s.resolved_markets_24h??0,'resolved / 24h')+cc('🧠','学习',l.recent_24h??0,(l.correct??0)+' correct · '+(l.incorrect??0)+' incorrect');
+    const x=$('zhiRealExecStats');if(x)x.innerHTML=st('研究市场',r.markets_researched??0)+st('预览总数',p.total??0)+st('待执行预览',p.pending??0)+st('24小时成功执行',e.success_24h??0)+st('开放仓位',s.open_positions??0)+st('学习历史',l.history_rows??0)+st('单次上限',c.max_stake_per_action??0)+st('最低置信度',c.min_confidence??0);
+    const gs=$('zhiRealExecGateStatus');if(gs)gs.innerHTML=(c.last_cycle_at?'最近 Gate：'+esc(new Date(c.last_cycle_at).toLocaleString()):'最近 Gate：--')+' · '+(on?'🟢 REAL_EXECUTION 开启':'🔴 REAL_EXECUTION 关闭');
+    const ev=$('zhiRealExecEvents'),events=Array.isArray(d?.events)?d.events:[];if(ev)ev.innerHTML=events.length?events.map(x=>'<div class="proposal-item"><span class="proposal-status '+(x.status==='ready'?'proposal-published':'proposal-rejected')+'">'+esc(x.status)+'</span><div class="proposal-meta">'+esc(x.event_type)+(x.sr_id?' · SR '+esc(x.sr_id):'')+(x.market_id?' · '+esc(x.market_id):'')+'</div><div class="proposal-meta">'+esc(x.created_at)+' · '+esc(x.message||'')+'</div></div>').join(''):'<div class="notice">暂无记录</div>';
+    const box=$('zhiRealExecLog');if(box)box.innerHTML=logs?.length?logs.map(x=>'<div class="proposal-item"><span class="proposal-status '+(x.success?'proposal-published':'proposal-rejected')+'">'+(x.success?'成功':'失败')+'</span><div class="proposal-meta">SR '+esc(x.sr_id)+' · '+esc(x.market_id)+' · '+esc(x.side)+' · '+esc(x.amount)+'</div><div class="proposal-meta">'+esc(x.created_at)+(x.error_message?' · '+esc(x.error_message):'')+'</div></div>').join(''):'<div class="notice">暂无记录</div>';
+  }
+  async function loadSrFlowWall(){
+    const client=window.zhiSupabase,box=$('zhiSrFlowWall'),sum=$('zhiSrFlowSummary');
+    if(!client?.rpc){setFlow('❌ Supabase 连接尚未准备好 / Supabase client is not ready',true);return;}
+    setFlow('正在加载 10,000 SR 流水…… / Loading SR flow wall...');
+    if(box)box.innerHTML='<div class="notice">正在读取 SR 数据…… / Loading SR data...</div>';
+    try{
+      await adminSession();
+      const q=$('zhiSrFlowSearch')?.value?.trim()||'',node=$('zhiSrFlowNode')?.value||'all';
+      const r=await withTimeout(client.rpc('admin_get_sr_flow_wall',{p_limit:200,p_offset:0,p_node:node,p_search:q}),12000,'SR 流水墙请求超时 / SR flow wall request timed out');
+      if(r.error)throw r.error;
+      const rows=Array.isArray(r.data)?r.data:[];
+      if(sum)sum.textContent='显示 '+rows.length+' / 10,000 SR';
+      if(!box)return;
+      box.innerHTML=rows.map(x=>{
+        const n=x.current_node,steps=[['research','🔬'],['gate','🟢'],['preview','🧪'],['execution','💳'],['position','📌'],['settlement','🏁'],['learning','🧠']];
+        const html=steps.map(s=>'<span style="display:inline-block;padding:3px 6px;margin:2px;border-radius:999px;font-size:9px;font-weight:800;background:'+(s[0]===n?'#fff0bd':'#f1f3f6')+';color:'+(s[0]===n?'#8a5a00':'#999')+'">'+s[1]+' '+s[0]+'</span>').join('');
+        return '<div class="proposal-item"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b>'+esc(x.sr_id)+' · '+esc(x.username||'--')+'</b><span class="dash-chip '+(n==='learning'?'chip-green':n==='research'?'chip-blue':'chip-gold')+'">'+esc(x.node_label)+'</span></div><div style="margin-top:5px">'+html+'</div><div class="proposal-meta" style="margin-top:4px">R:'+(x.research_count??0)+' · P:'+(x.preview_count??0)+' · E:'+(x.execution_count??0)+' · O:'+(x.open_position_count??0)+' · S:'+(x.settled_position_count??0)+' · L:'+(x.learning_count??0)+'</div></div>';
+      }).join('')||'<div class="notice">没有符合条件的 SR / No matching SR</div>';
+    }catch(e){
+      const msg='❌ '+(e?.message||String(e)||'加载失败 / Load failed');
+      setFlow(msg,true);
+      if(box)box.innerHTML='<div class="notice" style="color:#a51f2d">'+esc(msg)+'</div>';
+    }
+  }
+  async function load(){
+    const client=window.zhiSupabase;
+    if(!client?.rpc){setMsg('❌ Supabase 连接尚未准备好 / Supabase client is not ready',true);return;}
+    setMsg('正在刷新链路…… / Refreshing execution chain...');
+    try{
+      await adminSession();
+      const [d,lg]=await Promise.all([
+        withTimeout(client.rpc('admin_get_execution_chain_dashboard'),12000,'执行链路请求超时 / Execution dashboard request timed out'),
+        withTimeout(client.rpc('admin_get_execution_log',{p_limit:30}),12000,'执行日志请求超时 / Execution log request timed out')
+      ]);
+      if(d.error)throw d.error;if(lg.error)throw lg.error;
+      render(d.data,Array.isArray(lg.data)?lg.data:[]);
+      setMsg('链路状态已加载 · '+(d.data?.control?.real_execution_enabled?'REAL_EXECUTION 开启':'REAL_EXECUTION 关闭'));
+      await loadSrFlowWall();
+    }catch(e){setMsg('❌ '+(e?.message||String(e)||'加载失败 / Load failed'),true);}
+  }
+  async function tog(){
+    const client=window.zhiSupabase;if(!client?.rpc){setMsg('❌ Supabase 连接尚未准备好 / Supabase client is not ready',true);return;}
+    const x=$('zhiRealExecToggle');if(x)x.disabled=true;
+    try{
+      const session=await adminSession(),b=$('zhiRealExecBadge'),on=b?.textContent==='开启';
+      if(!confirm(on?'确定关闭 REAL_EXECUTION？':'确定开启 REAL_EXECUTION？开启后允许定时执行周期运行。'))return;
+      const r=await withTimeout(client.rpc('admin_set_real_execution',{p_enabled:!on}),12000,'REAL_EXECUTION 设置请求超时 / REAL_EXECUTION request timed out');
+      if(r.error)throw r.error;
+      await load();
+    }catch(e){setMsg('❌ '+(e?.message||String(e)||'操作失败 / Operation failed'),true)}finally{if(x)x.disabled=false}
+  }
+  let bound=false;
+  function boot(){
+    if(bound||!$('zhiRealExecutionDashboard'))return false;
+    if(!window.zhiSupabase?.rpc)return false;
+    bound=true;
+    $('zhiRealExecToggle').onclick=tog;
+    $('zhiRealExecRefresh').onclick=()=>{load();};
+    $('zhiSrFlowRefresh').onclick=loadSrFlowWall;
+    $('zhiSrFlowNode').onchange=loadSrFlowWall;
+    $('zhiSrFlowSearch').onkeydown=e=>{if(e.key==='Enter')loadSrFlowWall()};
+    load();
+    return true;
+  }
+  let n=0;const tt=setInterval(()=>{if(boot()||++n>60)clearInterval(tt)},500);
+})();
+</script></main>
 <div id="stakeModal" class="modal"><div class="modalbox">
 <h3>预测 / Prediction</h3><div id="choiceText" class="choice"></div>
 <div id="directionChoice" style="display:none;gap:8px;margin-bottom:10px"><button id="modalYes" class="btn yes">YES / 是</button><button id="modalNo" class="btn no">NO / 否</button></div>

@@ -891,7 +891,8 @@ $('srPauseBtn').onclick=toggleSRSummary;
 $('srRefreshBtn').onclick=loadSRSummary;
 $('authSubmit').onclick=async()=>{
  const u=$('authUsername').value.trim(),p=$('authPassword').value;
- if(!/^[a-zA-Z0-9_]{2,24}$/.test(u))return showErr('用户名只能用 2-24 位英文字母、数字或下划线');if(p.length<6)return showErr('密码至少6位');
+ if(!/^[a-zA-Z0-9_]{2,24}$/.test(u))return showErr('用户名只能用 2-24 位英文字母、数字或下划线');
+ if(p.length<6)return showErr('密码至少6位');
  const client=ensureZhiClient();
  if(!client?.auth)return showErr('数据库连接尚未准备好，请稍后再试 / Database connection is not ready');
  showErr('');$('authSubmit').disabled=true;
@@ -899,7 +900,11 @@ $('authSubmit').onclick=async()=>{
   const email=u.toLowerCase()+'@zhi-demo.com';
   if(mode==='signup'){
    const {data,error}=await client.auth.signUp({email,password:p,options:{data:{username:u}}});
-   if(error)throw error;if(data.session)await load();else showErr('注册成功，请直接登录 / Registration successful, please sign in / Sign in');
+   if(error)throw error;
+   if(data.session){
+    $('authScreen').classList.add('hidden');$('app').classList.remove('hidden');
+    void load(data.user||data.session.user);
+   }else showErr('注册成功，请直接登录 / Registration successful, please sign in / Sign in');
   }else{
    const {data,error}=await client.auth.signInWithPassword({email,password:p});
    if(error)throw error;
@@ -907,7 +912,7 @@ $('authSubmit').onclick=async()=>{
    $('authError').textContent='';
    $('loginStatus').textContent='登录成功，正在进入 ZHI… / Signed in, opening ZHI…';
    $('authScreen').classList.add('hidden');$('app').classList.remove('hidden');
-   await load(data.user);
+   void load(data.user);
   }
  }catch(e){showErr(e.message||'操作失败')}finally{$('authSubmit').disabled=false}
 };
@@ -1227,74 +1232,6 @@ const mo=new MutationObserver(()=>initZhiDateTimes()); mo.observe(document.docum
   const client=window.zhiSupabase;
   if(client?.auth?.onAuthStateChange)client.auth.onAuthStateChange((_event,session)=>{if(session?.user)setTimeout(load,50);});
   setTimeout(load,500);setTimeout(load,1500);setTimeout(load,3000);
-})();
-</script><script data-zhi-login-emergency="20260928">
-(function(){
-  async function waitClient(){
-    for(let i=0;i<60;i++){
-      if(window.zhiSupabase && window.zhiSupabase.auth)return window.zhiSupabase;
-      await new Promise(r=>setTimeout(r,100));
-    }
-    throw new Error('ZHI 数据库连接失败 / Database connection failed');
-  }
-  function setText(msg,ok){
-    const e=document.getElementById('authError'),s=document.getElementById('loginStatus');
-    if(e){e.textContent=msg;e.style.color=ok?'#087443':'#c62828';}
-    if(s){s.textContent=msg;s.style.color=ok?'#087443':'#c62828';}
-  }
-  function enterApp(){
-    const a=document.getElementById('authScreen'),app=document.getElementById('app');
-    if(a)a.classList.add('hidden');
-    if(app)app.classList.remove('hidden');
-  }
-  function bind(){
-    const btn=document.getElementById('authSubmit'),u=document.getElementById('authUsername'),p=document.getElementById('authPassword');
-    if(!btn||!u||!p)return false;
-    if(btn.dataset.zhiLoginBound==='3')return true;
-    btn.dataset.zhiLoginBound='3';
-    btn.addEventListener('click',async function(ev){
-      ev.preventDefault();ev.stopImmediatePropagation();
-      const raw=u.value.trim(),pw=p.value;
-      if(!/^[a-zA-Z0-9_]{2,24}$/.test(raw)){setText('用户名只能用 2-24 位英文字母、数字或下划线',false);return;}
-      if(pw.length<6){setText('密码至少6位 / Password must be at least 6 characters',false);return;}
-      btn.disabled=true;setText('正在验证账户…… / Verifying account…',true);
-      try{
-        const client=await waitClient();
-        const res=await fetch('https://bkttvffunyvbswkxpygp.supabase.co/auth/v1/token?grant_type=password',{
-          method:'POST',
-          headers:{'Content-Type':'application/json','apikey':'sb_publishable_NYVMp3Nhk9QDtIxz1MGOEA_Z7RtbMyP'},
-          body:JSON.stringify({email:raw.toLowerCase()+'@zhi-demo.com',password:pw})
-        });
-        const data=await res.json().catch(()=>({}));
-        if(!res.ok)throw new Error(data.error_description||data.msg||data.message||'用户名或密码错误 / Incorrect username or password');
-        if(!data.access_token||!data.refresh_token)throw new Error('登录成功但会话数据不完整 / Session data incomplete');
-        const ss=await client.auth.setSession({access_token:data.access_token,refresh_token:data.refresh_token});
-        if(ss.error)throw ss.error;
-        const signedUser=ss.data?.session?.user;
-        if(!signedUser)throw new Error('登录成功但会话未建立 / Session was not established');
-        window.user=signedUser;
-        setText('登录成功，正在进入 ZHI… / Signed in, opening ZHI…',true);
-        enterApp();
-        // Do not wait for the data loader: a slow/failed dashboard query must never send the user back to login.
-        setTimeout(async()=>{
-          try{
-            if(typeof load==='function')await load(signedUser);
-          }catch(e){
-            console.error('[ZHI] post-login dashboard load failed',e);
-            enterApp();
-            setText('已登录，部分资料正在加载 / Signed in; some data is still loading.',true);
-          }
-        },0);
-      }catch(e){
-        console.error('[ZHI] login failed',e);
-        const m=String(e?.message||e||'Login failed');
-        setText(/invalid|credentials|password/i.test(m)?'用户名或密码错误 / Incorrect username or password':m,false);
-      }finally{btn.disabled=false;}
-    },true);
-    return true;
-  }
-  function boot(){if(bind())return;setTimeout(bind,250);setTimeout(bind,750);setTimeout(bind,1500);setTimeout(bind,3000);}
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
 </script>
 </body></html>

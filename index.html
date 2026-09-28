@@ -410,7 +410,7 @@ button,input,select{font:inherit}
 <script src="supabase-client.js"></script>
 <script src="settlement.js"></script>
 <script>
-const sb=window.zhiSupabase;let user=null,wallet=null,marketsData=[],positions=[],selectedMarket=null,selectedSide=null;
+let sb=window.zhiSupabase;let user=null,wallet=null,marketsData=[],positions=[],selectedMarket=null,selectedSide=null;
 const money=n=>Number(n||0).toLocaleString(),$=id=>document.getElementById(id);
 const ZHI_TIME_ZONE='Asia/Singapore';
 const SR_TIME_LABEL='🇸🇬 新加坡时间';
@@ -870,14 +870,16 @@ $('srRefreshBtn').onclick=loadSRSummary;
 $('authSubmit').onclick=async()=>{
  const u=$('authUsername').value.trim(),p=$('authPassword').value;
  if(!/^[a-zA-Z0-9_]{2,24}$/.test(u))return showErr('用户名只能用 2-24 位英文字母、数字或下划线');if(p.length<6)return showErr('密码至少6位');
+ const client=window.zhiSupabase||sb;
+ if(!client?.auth)return showErr('数据库连接尚未完成，请刷新页面后再试 / Database connection is not ready');
  showErr('');$('authSubmit').disabled=true;
  try{
   const email=u.toLowerCase()+'@zhi-demo.com';
   if(mode==='signup'){
-   const {data,error}=await sb.auth.signUp({email,password:p,options:{data:{username:u}}});
+   const {data,error}=await client.auth.signUp({email,password:p,options:{data:{username:u}}});
    if(error)throw error;if(data.session)await load();else showErr('注册成功，请直接登录 / Registration successful, please sign in / Sign in');
   }else{
-   const {data,error}=await sb.auth.signInWithPassword({email,password:p});
+   const {data,error}=await client.auth.signInWithPassword({email,password:p});
    if(error)throw error;
    if(!data?.user)throw new Error('登录成功但没有取得用户会话，请重新登录');
    $('authError').textContent='';

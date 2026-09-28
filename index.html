@@ -881,4 +881,55 @@ window.zhiSubmitProposal=function(){
   }).finally(function(){if(btn)btn.disabled=false;});
 };
 })();
+</script><script>
+(function(){
+  // Independent admin proposal loader: does not depend on the main proposal initializer.
+  async function zhiAdminProposalLoader(){
+    const box=document.getElementById('adminProposals'), btn=document.getElementById('adminProposalRefresh');
+    if(!box || !window.zhiSupabase) return;
+    box.innerHTML='<div class="notice">Loading...</div>';
+    try{
+      const sess=await window.zhiSupabase.auth.getSession();
+      const u=sess?.data?.session?.user;
+      if(!u || u.app_metadata?.role!=='admin'){
+        box.innerHTML='<div class="notice">管理员权限未确认 / Admin role not confirmed</div>';
+        return;
+      }
+      const {data,error}=await window.zhiSupabase.rpc('admin_get_prediction_proposals',{p_status:'pending'});
+      if(error) throw error;
+      const rows=Array.isArray(data)?data:[];
+      if(!rows.length){box.innerHTML='<div class="dash-empty">目前没有待审核提案 / No pending proposals</div>';return;}
+      box.innerHTML=rows.map(p=>{
+        const d=new Date(p.requested_close_at||p.final_close_at);
+        const local=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Singapore',year:'numeric',month:'2-digit',day:'2-digit'}).format(d);
+        const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Singapore',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(d);
+        const hh=(parts.find(x=>x.type==='hour')||{}).value||'00', mm=(parts.find(x=>x.type==='minute')||{}).value||'00';
+        return '<div class="proposal-item" data-zhi-admin-proposal="'+p.id+'">'+
+          '<span class="proposal-status proposal-pending">待审核 / Pending</span>'+
+          '<div class="proposal-meta">用户 / User: <b>'+String(p.username||'--').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))+'</b> · 提案 #'+p.id+'</div>'+
+          '<div class="proposal-admin"><label>中文问题 / Chinese Question</label><textarea data-zhi-pzh rows="2">'+String(p.question_zh||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</textarea>'+
+          '<label>English Question</label><textarea data-zhi-pen rows="2">'+String(p.question_en||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</textarea>'+
+          '<div class="proposal-grid"><div><label>最终截止时间 / Final Close Time</label><div style="display:flex;gap:6px;align-items:center"><input data-zhi-date type="date" value="'+local+'"><select data-zhi-hour>'+Array.from({length:24},(_,i)=>'<option value="'+String(i).padStart(2,'0')+'" '+(String(i).padStart(2,'0')===hh?'selected':'')+'>'+String(i).padStart(2,'0')+'</option>').join('')+'</select><span>:</span><select data-zhi-minute>'+Array.from({length:60},(_,i)=>'<option value="'+String(i).padStart(2,'0')+'" '+(String(i).padStart(2,'0')===mm?'selected':'')+'>'+String(i).padStart(2,'0')+'</option>').join('')+'</select></div></div>'+
+          '<div><label>结算规则 / Settlement Rule</label><textarea data-zhi-rule rows="3" placeholder="例如：以官方来源为准 / Use the official source">'+String(p.settlement_rule||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</textarea></div></div>'+
+          '<div class="proposal-actions"><button type="button" class="btn confirm" data-zhi-approve>✅ 通过并创建市场 / Approve & Publish</button><button type="button" class="btn no" data-zhi-reject>❌ 驳回 / Reject</button></div><div data-zhi-msg class="meta"></div></div></div>';
+      }).join('');
+      box.querySelectorAll('[data-zhi-approve]').forEach(b=>b.onclick=async()=>{
+        const item=b.closest('[data-zhi-admin-proposal]'), msg=item.querySelector('[data-zhi-msg]');
+        const date=item.querySelector('[data-zhi-date]').value, h=item.querySelector('[data-zhi-hour]').value, m=item.querySelector('[data-zhi-minute]').value;
+        const close=new Date(date+'T'+h+':'+m+':00+08:00').toISOString();
+        const payload={p_proposal_id:Number(item.dataset.zhiAdminProposal),p_question_zh:item.querySelector('[data-zhi-pzh]').value.trim(),p_question_en:item.querySelector('[data-zhi-pen]').value.trim(),p_close_at:close,p_settlement_rule:item.querySelector('[data-zhi-rule]').value.trim()};
+        if(!payload.p_question_zh||!payload.p_question_en||!payload.p_settlement_rule||new Date(close)<=new Date()){msg.textContent='❌ 请填写完整，且截止时间必须是未来时间 / Complete all fields and use a future time';return;}
+        b.disabled=true;msg.textContent='正在创建市场并发放 1,000 ZHI…… / Publishing...';
+        try{const {data,error}=await window.zhiSupabase.rpc('admin_approve_prediction_proposal',payload);if(error)throw error;msg.textContent='✅ 已发布 '+(data?.market_id||'')+'，贡献奖 +1,000 ZHI / Published';await zhiAdminProposalLoader();}catch(e){msg.textContent='❌ '+(e.message||'Approval failed');b.disabled=false;}
+      });
+      box.querySelectorAll('[data-zhi-reject]').forEach(b=>b.onclick=async()=>{
+        const item=b.closest('[data-zhi-admin-proposal]'),msg=item.querySelector('[data-zhi-msg]'),reason=prompt('驳回原因 / Rejection reason (optional):','');
+        b.disabled=true;try{const {error}=await window.zhiSupabase.rpc('admin_reject_prediction_proposal',{p_proposal_id:Number(item.dataset.zhiAdminProposal),p_reason:reason||null});if(error)throw error;await zhiAdminProposalLoader();}catch(e){msg.textContent='❌ '+(e.message||'Reject failed');b.disabled=false;}
+      });
+    }catch(e){box.innerHTML='<div class="notice">❌ 加载提案失败 / Failed to load: '+String(e.message||e)+'</div>';}
+  }
+  window.zhiAdminProposalLoader=zhiAdminProposalLoader;
+  function boot(){const b=document.getElementById('adminProposalRefresh');if(!b||!window.zhiSupabase)return false;if(!b.dataset.zhiIndependent){b.dataset.zhiIndependent='1';b.onclick=zhiAdminProposalLoader;} zhiAdminProposalLoader();return true;}
+  let n=0;const t=setInterval(()=>{if(boot()||++n>40)clearInterval(t);},500);
+})();
 </script></body></html>

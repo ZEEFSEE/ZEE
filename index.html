@@ -484,7 +484,7 @@ async function renderMarkets(){
  const open=marketsData.filter(m=>m.status==='open'&&new Date(m.close_at)>new Date());
  $('markets').innerHTML=open.map(m=>{
   const mine=positions.find(p=>p.market_id===m.id);
-  return '<div class="card"><div class="q">'+marketQuestion(m)+'</div><div class="meta">截止 / Closes: '+new Date(m.close_at).toLocaleString('zh-CN')+'</div>'+
+  return '<div class="card"><div class="q">'+marketQuestion(m)+'</div><div class="meta">截止 / Closes: '+fmtSGTime(m.close_at)+'</div>'+
   '<div class="pool">YES '+money(m.yes_pool)+' ZHI　 NO '+money(m.no_pool)+' ZHI</div>'+
   '<div class="buttons"><button class="btn yes" data-id="'+m.id+'" data-side="yes" '+(mine?'disabled':'')+'>YES</button><button class="btn no" data-id="'+m.id+'" data-side="no" '+(mine?'disabled':'')+'>NO</button></div>'+
   '<div class="stake" id="s-'+m.id+'"><input id="a-'+m.id+'" type="number" min="1" placeholder="ZHI 数量"><button class="btn confirm" data-confirm="'+m.id+'">确认 / Confirm</button></div>'+
@@ -515,7 +515,7 @@ $('giftSendToggle').onclick=()=>{$('giftSendDetails').classList.toggle('open');$
  }
  $('adminPanel').classList.toggle('hidden',!isAdmin);
  if(isAdmin){
-   loadTreasuryFinance();loadSRSummary();loadSRTreasuryGrants();loadTreasuryDailyReport();loadFundsReconciliation();loadAdminFundFlows();
+   loadAdminFinanceSuite();loadSRSummary();loadSRTreasuryGrants();loadAdminFundFlows();
    $('createMarketBtn').onclick=createMarket;
    $('refreshUsersBtn').onclick=loadAdminUsers;$('afRefresh').onclick=loadAdminFundFlows;$('afFilter').onchange=loadAdminFundFlows;
    loadAdminUsers();
@@ -695,8 +695,36 @@ async function cancelMarket(id){
  alert('市场已取消，ZHI 已自动退款 / Market cancelled, ZHI refunded automatically');
  await load();
 }
-async function loadTreasuryFinance(){const {data,error}=await sb.rpc('get_treasury_finance');if(error)return;$('tfTotal').textContent=money(data.total_treasury)+' ZHI';$('tfAvailable').textContent=money(data.available_balance)+' ZHI';$('tfSavings').textContent=money(data.user_savings)+' ZHI';$('tfLoans').textContent=money(data.user_loans)+' ZHI';$('tfLoanInterest').textContent=money(data.loan_interest_due)+' ZHI';$('tfSavingsInterest').textContent=money(data.savings_interest_paid)+' ZHI';$('tfSupply').textContent=money(data.fixed_supply)+' ZHI';}
-async function loadFundsReconciliation(){const {data,error}=await sb.rpc('get_funds_reconciliation');if(error){$('frStatus').textContent='检查失败 / Check failed: '+error.message;$('frStatus').style.color='#b42318';return}$('frSupply').textContent=money(data.fixed_supply)+' ZHI';$('frTreasury').textContent=money(data.treasury_balance)+' ZHI';$('frWallets').textContent=money(data.user_wallet_balance)+' ZHI';$('frLocked').textContent=money(data.user_locked_balance)+' ZHI';$('frSavings').textContent=money(data.user_savings_principal)+' ZHI';$('frLoans').textContent=money(data.loan_outstanding)+' ZHI';$('frSRWallets').textContent=money(data.sr_wallet_balance||0)+' ZHI';$('frSRLocked').textContent=money(data.sr_locked_balance||0)+' ZHI';$('frSRSavings').textContent=money(data.sr_savings_principal||0)+' ZHI';$('frAccounted').textContent=money(data.accounted_supply||0)+' ZHI';const ok=!!data.ok;$('frStatus').textContent=ok?'✅ 资金守恒正常 / Funds reconciled':'⚠️ 发现对账差异 / Reconciliation mismatch';$('frStatus').style.color=ok?'#087443':'#b42318';$('frMsg').textContent='供应差额: '+money(data.supply_difference||0)+' ZHI · 可用余额差额: '+money(data.treasury_available_difference||0)+' ZHI · 锁定资金差额: '+money(data.locked_position_difference||0)+' ZHI';}
+function fmtSGTime(value){
+ const d=new Date(value);if(Number.isNaN(d.getTime()))return '--';
+ return new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Singapore',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(d);
+}
+async function zhiAdminRpc(fn,args=null,timeoutMs=12000){
+ const client=window.zhiSupabase||sb;
+ if(!client?.rpc)return {data:null,error:new Error('Database client not ready')};
+ let timer;try{
+  const p=client.rpc(fn,args||{});
+  const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Request timed out after '+Math.round(timeoutMs/1000)+'s')),timeoutMs)});
+  return await Promise.race([p,timeout]);
+ }catch(e){return {data:null,error:e}}finally{clearTimeout(timer)}
+}
+async function loadAdminFinanceSuite(){
+ const status=$('frStatus');if(status){status.textContent='🔄 正在读取财神爷财务数据…… / Loading treasury finance…';status.style.color='#8a5a00'}
+ await loadTreasuryFinance();
+ await loadFundsReconciliation();
+ await loadTreasuryDailyReport();
+}
+async function loadTreasuryFinance(){
+ const set=(id,v)=>{const el=$(id);if(el)el.textContent=v};
+ const {data,error}=await zhiAdminRpc('get_treasury_finance',null,12000);
+ if(error){set('tfTotal','--');set('tfAvailable','--');set('tfSavings','--');set('tfLoans','--');set('tfLoanInterest','--');set('tfSavingsInterest','--');set('tfSupply','3,000,001,000,000,000 ZHI');set('tfMsg','⚠️ 财神爷财务数据暂时无法读取 / Treasury data unavailable: '+(error.message||'Request failed'));return false}
+ set('tfTotal',money(data.total_treasury)+' ZHI');set('tfAvailable',money(data.available_balance)+' ZHI');set('tfSavings',money(data.user_savings)+' ZHI');set('tfLoans',money(data.user_loans)+' ZHI');set('tfLoanInterest',money(data.loan_interest_due)+' ZHI');set('tfSavingsInterest',money(data.savings_interest_paid)+' ZHI');set('tfSupply',money(data.fixed_supply)+' ZHI');set('tfMsg','✅ 财务数据已更新 / Finance data updated · '+fmtSGTime(new Date().toISOString()));return true;
+}
+async function loadFundsReconciliation(){
+ const {data,error}=await zhiAdminRpc('get_funds_reconciliation',null,15000);
+ if(error){$('frStatus').textContent='⚠️ 检查暂时失败 / Check unavailable: '+(error.message||'Request failed');$('frStatus').style.color='#b42318';$('frMsg').textContent='系统会在下次刷新时再次检查 / It will retry on the next refresh';return false}
+ $('frSupply').textContent=money(data.fixed_supply)+' ZHI';$('frTreasury').textContent=money(data.treasury_balance)+' ZHI';$('frWallets').textContent=money(data.user_wallet_balance)+' ZHI';$('frLocked').textContent=money(data.user_locked_balance)+' ZHI';$('frSavings').textContent=money(data.user_savings_principal)+' ZHI';$('frLoans').textContent=money(data.loan_outstanding)+' ZHI';$('frSRWallets').textContent=money(data.sr_wallet_balance||0)+' ZHI';$('frSRLocked').textContent=money(data.sr_locked_balance||0)+' ZHI';$('frSRSavings').textContent=money(data.sr_savings_principal||0)+' ZHI';$('frAccounted').textContent=money(data.accounted_supply||0)+' ZHI';const ok=!!data.ok;$('frStatus').textContent=ok?'✅ 资金守恒正常 / Funds reconciled':'⚠️ 发现对账差异 / Reconciliation mismatch';$('frStatus').style.color=ok?'#087443':'#b42318';$('frMsg').textContent='供应差额: '+money(data.supply_difference||0)+' ZHI · 可用余额差额: '+money(data.treasury_available_difference||0)+' ZHI · 锁定资金差额: '+money(data.locked_position_difference||0)+' ZHI';return ok;
+}
 async function loadSRActivity(){
  const box=$('srLiveList');if(!box)return;
  const {data,error}=await sb.rpc('admin_get_sr_recent_activity',{p_limit:40});
@@ -737,7 +765,11 @@ async function createSRAuthUsers(){
  finally{b.disabled=false}
 }
 async function runSRTick(){const b=$('srRunBtn');b.disabled=true;const {data,error}=await sb.rpc('admin_run_sr_tick');if(error){$('srMsg').textContent='运行失败：'+error.message}else{$('srMsg').textContent='已运行一批 SR：'+JSON.stringify(data);await loadSRSummary();}b.disabled=false;}
-async function loadTreasuryDailyReport(){const {data,error}=await sb.rpc('get_treasury_daily_report',{p_days:7});if(error){$('tdMsg').textContent='日报加载失败：'+error.message;return}const t=data?.today||{};$('tdMsg').textContent='✅ 日报已启用 / Daily report active';$('tdLoanIncome').textContent=money(t.loan_interest_income||0)+' ZHI';$('tdSavingsExpense').textContent=money(t.savings_interest_expense||0)+' ZHI';$('tdNet').textContent=money(t.net||0)+' ZHI';$('tdDays').innerHTML=(data.daily||[]).map(x=>'<div class="row"><span>'+x.day+'</span><b>'+((Number(x.loan_interest_income||0)-Number(x.savings_interest_expense||0))>=0?'+':'')+money(Number(x.loan_interest_income||0)-Number(x.savings_interest_expense||0))+' ZHI</b></div>').join('')||'暂无日报数据 / No daily data';}
+async function loadTreasuryDailyReport(){
+ const {data,error}=await zhiAdminRpc('get_treasury_daily_report',{p_days:7},12000);
+ if(error){$('tdMsg').textContent='⚠️ 日报暂时无法读取 / Daily report unavailable: '+(error.message||'Request failed');return false}
+ const t=data?.today||{};$('tdMsg').textContent='✅ 日报已更新 / Daily report updated · '+fmtSGTime(new Date().toISOString());$('tdLoanIncome').textContent=money(t.loan_interest_income||0)+' ZHI';$('tdSavingsExpense').textContent=money(t.savings_interest_expense||0)+' ZHI';$('tdNet').textContent=money(t.net||0)+' ZHI';$('tdDays').innerHTML=(data.daily||[]).map(x=>'<div class="row"><span>'+x.day+'</span><b>'+((Number(x.loan_interest_income||0)-Number(x.savings_interest_expense||0))>=0?'+':'')+money(Number(x.loan_interest_income||0)-Number(x.savings_interest_expense||0))+' ZHI</b></div>').join('')||'暂无日报数据 / No daily data';return true;
+}
 async function loadAdminFundFlows(){
  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const box=$('afList'); if(!box)return;

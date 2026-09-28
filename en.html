@@ -1134,60 +1134,49 @@ const mo=new MutationObserver(()=>initZhiDateTimes()); mo.observe(document.docum
   function boot(){const b=document.getElementById('adminProposalRefresh');if(!b||!window.zhiSupabase)return false;if(!b.dataset.zhiIndependent){b.dataset.zhiIndependent='1';b.onclick=zhiAdminProposalLoader;} zhiAdminProposalLoader();return true;}
   let n=0;const t=setInterval(()=>{if(boot()||++n>40)clearInterval(t);},500);
 })();
-</script><script data-zhi-proposal-two-stage="1">
+</script><script data-zhi-proposal-direct-submit="1">
 (function(){
-  const state={question:'',from:'',to:'',closeAt:'',translated:''};
   function $(id){return document.getElementById(id)}
-  function detectProposalLang(s){return /[\u3400-\u9fff]/.test(s)?'zh':'en'}
   function getCloseIso(){
     const box=document.querySelector('[data-zdt-for="proposalCloseAt"]');
     const d=box?.querySelector('[data-zdt-date]')?.value||'',h=box?.querySelector('[data-zdt-hour]')?.value||'',m=box?.querySelector('[data-zdt-minute]')?.value||'';
     if(!d||h===''||m==='')return '';
-    const dt=new Date(d+'T'+h+':'+m+':00+08:00'); return Number.isFinite(dt.getTime())?dt.toISOString():'';
-  }
-  async function generate(){
-    const q=$('proposalQuestion')?.value?.trim()||'',msg=$('proposalMsg'),btn=$('proposalGenerateBtn'),closeAt=getCloseIso();
-    if(!q||!closeAt){if(msg)msg.textContent='❌ 请填写预测问题和未来截至日期 / Please enter the question and a future closing date';return}
-    if(new Date(closeAt)<=new Date()){if(msg)msg.textContent='❌ 截止时间必须是未来时间 / Closing time must be in the future';return}
-    state.question=q;state.from=detectProposalLang(q);state.to=state.from==='zh'?'en':'zh';state.closeAt=closeAt;
-    if(btn)btn.disabled=true;if(msg)msg.textContent=state.to==='en'?'正在生成英文版本…… / Generating English version...':'正在生成中文版本…… / Generating Chinese version...';
-    try{
-      if(typeof translateProposal!=='function')throw new Error('translation service unavailable');
-      const translated=(await translateProposal(q,state.from,state.to)||'').trim();
-      if(!translated||translated===q)throw new Error('翻译没有生成有效结果 / Translation did not produce a valid result');
-      state.translated=translated;
-      const preview=$('proposalTranslationPreview'),text=$('proposalTranslatedText'),confirm=$('proposalConfirmTranslation'),submit=$('proposalSubmitBtn');
-      if(text)text.value=translated;if(confirm)confirm.checked=false;if(submit)submit.disabled=true;
-      if(preview)preview.classList.remove('hidden');
-      if(msg)msg.textContent=state.to==='en'?'✅ 英文版本已生成，请确认后提交 / English version generated. Review and confirm.':'✅ 中文版本已生成，请确认后提交 / Chinese version generated. Review and confirm.';
-      text?.focus();
-    }catch(e){if(msg)msg.innerHTML='<span class="proposal-translation-error">❌ '+String(e?.message||'Translation failed')+'</span>';$('proposalTranslationPreview')?.classList.add('hidden')}
-    finally{if(btn)btn.disabled=false}
+    const dt=new Date(d+'T'+h+':'+m+':00+08:00');
+    return Number.isFinite(dt.getTime())?dt.toISOString():'';
   }
   async function submit(){
-    const msg=$('proposalMsg'),btn=$('proposalSubmitBtn'),confirm=$('proposalConfirmTranslation'),text=$('proposalTranslatedText'),translated=(text?.value||'').trim();
-    if(!state.question||!state.closeAt||!translated){if(msg)msg.textContent='❌ 请先生成并确认另一语言版本 / Generate and review the translation first';return}
-    if(!confirm?.checked){if(msg)msg.textContent='❌ 请勾选确认翻译 / Please confirm the translation';return}
-    if(new Date(state.closeAt)<=new Date()){if(msg)msg.textContent='❌ 截止时间必须是未来时间 / Closing time must be in the future';return}
-    const client=window.zhiSupabase;if(!client?.rpc){if(msg)msg.textContent='❌ 数据库连接尚未完成 / Database connection is not ready';return}
-    const questionZh=state.from==='zh'?state.question:translated,questionEn=state.from==='en'?state.question:translated;
-    if(btn)btn.disabled=true;if(msg)msg.textContent='正在提交提案…… / Submitting proposal...';
+    const q=$('proposalQuestion')?.value?.trim()||'',msg=$('proposalMsg'),btn=$('proposalSubmitBtn'),closeAt=getCloseIso();
+    if(!q||!closeAt){if(msg)msg.textContent='❌ 请填写预测问题和未来截至日期 / Please enter the question and a future closing date';return}
+    if(new Date(closeAt)<=new Date()){if(msg)msg.textContent='❌ 截止时间必须是未来时间 / Closing time must be in the future';return}
+    const client=window.zhiSupabase;
+    if(!client?.rpc){if(msg)msg.textContent='❌ 数据库连接尚未完成 / Database connection is not ready';return}
+    if(btn)btn.disabled=true;
+    if(msg)msg.textContent='正在提交提案…… / Submitting proposal...';
     try{
-      const {error}=await client.rpc('submit_prediction_proposal',{p_question_original:state.question,p_original_language:state.from,p_question_zh:questionZh,p_question_en:questionEn,p_requested_close_at:state.closeAt});
+      const {error}=await client.rpc('submit_prediction_proposal',{
+        p_question_original:q,
+        p_original_language:/[\u3400-\u9fff]/.test(q)?'zh':'en',
+        p_question_zh:/[\u3400-\u9fff]/.test(q)?q:q,
+        p_question_en:/[\u3400-\u9fff]/.test(q)?q:q,
+        p_requested_close_at:closeAt
+      });
       if(error)throw error;
       if(msg)msg.textContent='✅ 提案已提交，等待管理员审核 / Submitted for admin review';
-      $('proposalQuestion').value='';$('proposalTranslationPreview')?.classList.add('hidden');
-      const d=document.querySelector('[data-zdt-for="proposalCloseAt"] [data-zdt-date]');if(d)d.value='';const hidden=$('proposalCloseAt');if(hidden)hidden.value='';
-      state.question=state.from=state.to=state.closeAt=state.translated='';if(confirm)confirm.checked=false;if(text)text.value='';
+      $('proposalQuestion').value='';
+      const box=document.querySelector('[data-zdt-for="proposalCloseAt"]'),d=box?.querySelector('[data-zdt-date]');if(d)d.value='';
+      const hidden=$('proposalCloseAt');if(hidden)hidden.value='';
+      const preview=$('proposalTranslationPreview');if(preview)preview.classList.add('hidden');
       if(window.zhiLoadMyProposals)await window.zhiLoadMyProposals();
     }catch(e){if(msg)msg.textContent='❌ '+(e?.message||'提交失败 / Submission failed')}finally{if(btn)btn.disabled=false}
   }
   function bind(){
-    const g=$('proposalGenerateBtn'),s=$('proposalSubmitBtn'),c=$('proposalConfirmTranslation'),t=$('proposalTranslatedText');
-    if(g)g.onclick=generate;if(s)s.onclick=submit;
-    if(c)c.onchange=function(){s.disabled=!c.checked||!t?.value.trim()};if(t)t.oninput=function(){if(c)s.disabled=!c.checked||!t.value.trim()};
-    window.zhiGenerateProposal=generate;window.zhiSubmitProposal=submit;
+    const oldGenerate=$('proposalGenerateBtn'),preview=$('proposalTranslationPreview'),submitBtn=$('proposalSubmitBtn');
+    if(oldGenerate)oldGenerate.style.display='none';
+    if(preview)preview.style.display='none';
+    if(submitBtn){submitBtn.disabled=false;submitBtn.textContent='🚀 Submit Prediction Proposal / 提交预测提案';submitBtn.onclick=submit}
+    window.zhiSubmitProposal=submit;
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();setTimeout(bind,500);setTimeout(bind,1500);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
+  setTimeout(bind,300);setTimeout(bind,1000);
 })();
 </script></body></html>

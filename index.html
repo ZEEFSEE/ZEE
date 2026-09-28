@@ -407,10 +407,11 @@ button,input,select{font:inherit}
 </div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-client.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="supabase-client.js?v=20260928-login"></script>
 <script src="settlement.js"></script>
 <script>
-const ZHI_URL='https://bkttvffunyvbswkxpygp.supabase.co';const ZHI_KEY='sb_publishable_NYVMp3Nhk9QDtIxz1MGOEA_Z7RtbMyP';let sb=window.zhiSupabase||null;if(!sb&&window.supabase?.createClient){sb=window.supabase.createClient(ZHI_URL,ZHI_KEY);window.zhiSupabase=sb;}let user=null,wallet=null,marketsData=[],positions=[],selectedMarket=null,selectedSide=null;
+const ZHI_URL='https://bkttvffunyvbswkxpygp.supabase.co';const ZHI_KEY='sb_publishable_NYVMp3Nhk9QDtIxz1MGOEA_Z7RtbMyP';let sb=window.zhiSupabase||null;function ensureZhiClient(){if(window.zhiSupabase?.auth){sb=window.zhiSupabase;return sb;}if(window.supabase?.createClient){sb=window.supabase.createClient(ZHI_URL,ZHI_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});window.zhiSupabase=sb;return sb;}return null;}ensureZhiClient();let user=null,wallet=null,marketsData=[],positions=[],selectedMarket=null,selectedSide=null;
 const money=n=>Number(n||0).toLocaleString(),$=id=>document.getElementById(id);
 const ZHI_TIME_ZONE='Asia/Singapore';
 const SR_TIME_LABEL='🇸🇬 新加坡时间';
@@ -429,9 +430,11 @@ function showErr(s){$('authError').textContent=s}
 const togglePanel=(toggleId,detailsId,arrowId)=>{const t=$(toggleId),d=$(detailsId),a=$(arrowId);if(!t||!d||!a)return;t.onclick=()=>{d.classList.toggle('open');a.classList.toggle('open')}};togglePanel('savingsToggle','savingsDetails','savingsArrow');togglePanel('adminFundFlowsToggle','adminFundFlowsDetails','adminFundFlowsArrow');togglePanel('srSimulationToggle','srSimulationDetails','srSimulationArrow');togglePanel('adminUserFundsToggle','adminUserFundsDetails','adminUserFundsArrow');togglePanel('srLiveToggle','srLiveDetails','srLiveArrow');togglePanel('predictionMarketsToggle','predictionMarketsDetails','predictionMarketsArrow');togglePanel('createMarketToggle','createMarketDetails','createMarketArrow');$('srCreateAuthBtn').onclick=createSRAuthUsers;$('srRunBtn').onclick=runSRTick;$('srPauseBtn').onclick=toggleSRSummary;$('srRefreshBtn').onclick=()=>{loadSRSummary();loadSRActivity()};togglePanel('loanToggle','loanDetails','loanArrow');
 async function load(passedUser=null){
  try{
+  const client=ensureZhiClient();
+  if(!client?.auth)throw new Error('Supabase client not ready');
   if(passedUser) user=passedUser;
   else{
-   const r=await sb.auth.getSession();
+   const r=await client.auth.getSession();
    if(r.error)throw r.error;
    user=r.data.session?.user||null;
   }
@@ -870,8 +873,8 @@ $('srRefreshBtn').onclick=loadSRSummary;
 $('authSubmit').onclick=async()=>{
  const u=$('authUsername').value.trim(),p=$('authPassword').value;
  if(!/^[a-zA-Z0-9_]{2,24}$/.test(u))return showErr('用户名只能用 2-24 位英文字母、数字或下划线');if(p.length<6)return showErr('密码至少6位');
- const client=window.zhiSupabase||sb;
- if(!client?.auth)return showErr('数据库连接尚未完成，请刷新页面后再试 / Database connection is not ready');
+ const client=ensureZhiClient();
+ if(!client?.auth)return showErr('数据库连接尚未准备好，请稍后再试 / Database connection is not ready');
  showErr('');$('authSubmit').disabled=true;
  try{
   const email=u.toLowerCase()+'@zhi-demo.com';

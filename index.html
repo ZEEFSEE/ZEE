@@ -410,7 +410,7 @@ button,input,select{font:inherit}
 <script src="supabase-client.js"></script>
 <script src="settlement.js"></script>
 <script>
-let sb=window.zhiSupabase;let user=null,wallet=null,marketsData=[],positions=[],selectedMarket=null,selectedSide=null;
+const ZHI_URL='https://bkttvffunyvbswkxpygp.supabase.co';const ZHI_KEY='sb_publishable_NYVMp3Nhk9QDtIxz1MGOEA_Z7RtbMyP';let sb=window.zhiSupabase||null;if(!sb&&window.supabase?.createClient){sb=window.supabase.createClient(ZHI_URL,ZHI_KEY);window.zhiSupabase=sb;}let user=null,wallet=null,marketsData=[],positions=[],selectedMarket=null,selectedSide=null;
 const money=n=>Number(n||0).toLocaleString(),$=id=>document.getElementById(id);
 const ZHI_TIME_ZONE='Asia/Singapore';
 const SR_TIME_LABEL='🇸🇬 新加坡时间';

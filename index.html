@@ -1009,11 +1009,20 @@ $('authSubmit').onclick=async()=>{
   if(error){
    // Direct REST fallback only repairs transport/client issues; it never changes the account or wallet.
    try{
-    const res=await fetch(ZHI_URL+'/auth/v1/token?grant_type=password',{
-     method:'POST',
-     headers:{'Content-Type':'application/json','apikey':ZHI_KEY},
-     body:JSON.stringify({email,password:p})
-    });
+    const controller=new AbortController();
+    const fetchTimer=setTimeout(()=>controller.abort(),10000);
+    let res;
+    try{
+     res=await fetch(ZHI_URL+'/auth/v1/token?grant_type=password',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':ZHI_KEY},
+      body:JSON.stringify({email,password:p}),
+      signal:controller.signal
+     });
+    }catch(fetchError){
+     if(fetchError?.name==='AbortError')throw new Error('login network timeout');
+     throw fetchError;
+    }finally{clearTimeout(fetchTimer)}
     const raw=await res.text();let j={};try{j=JSON.parse(raw)}catch(_){}
     if(!res.ok)throw new Error(j.error_description||j.msg||j.message||error.message||'登录失败 / Login failed');
     if(!j?.access_token||!j?.refresh_token)throw new Error('session missing');

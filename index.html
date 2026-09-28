@@ -101,7 +101,7 @@ button,input,select{font:inherit}
   .finance-grid{grid-template-columns:repeat(2,1fr)}
 }
 \n
-.proposal-card{background:linear-gradient(135deg,#fffdf4,#fff8df);border-color:#ead28a}
+.proposal-card{background:linear-gradient(135deg,#fffdf4,#fff8df);border-color:#ead28a}.zhi-collapse-details{display:none;margin-top:10px}.zhi-collapse-details.open{display:block}.zhi-sub-collapse{border-top:1px solid #eee;padding-top:8px}.zhi-collapse-card>.gift-toggle{padding:2px 0}.zhi-collapse-card>.gift-toggle .gift-arrow,.zhi-sub-collapse .gift-arrow{transition:transform .18s}.zhi-collapse-card>.gift-toggle .gift-arrow.open,.zhi-sub-collapse .gift-arrow.open{transform:rotate(180deg)}
 .proposal-form{display:grid;gap:10px;margin-top:10px}
 .proposal-form textarea,.proposal-form input,.proposal-admin textarea,.proposal-admin input{width:100%;padding:11px;border:1px solid #ddd;border-radius:10px;background:#fff;font:inherit}
 .proposal-form textarea{min-height:92px;resize:vertical}
@@ -339,7 +339,7 @@ button,input,select{font:inherit}
 <h2>🧾 我的记录 / My Records</h2><div id="history" class="card history"></div>
 <button id="logout" class="link" style="display:block;margin:18px auto">退出登录 / Sign out</button>
 <footer>🪙 <b style="color:#8a5a00">ZHI</b> · Prediction Platform · Demo</footer>
-<section class="card hidden" id="zhiRealExecutionDashboard" style="margin-top:12px"><div class="dash-title">⚙️ SR 全链路执行监控 <span id="zhiRealExecBadge" class="dash-chip chip-blue">关闭</span></div><div class="dash-sub">研究 → Gate → 预览 → 执行 → 结算 → 学习；每一批 SR 的状态都在这里汇总。</div><div id="zhiRealExecChain" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px"></div><div id="zhiRealExecStats" class="finance-grid" style="margin-top:10px"></div><div class="card" style="margin-top:10px;padding:10px;background:#fafafa"><div style="font-weight:800;font-size:13px">🟢 系统 Gate</div><div id="zhiRealExecGateStatus" class="proposal-meta" style="margin-top:5px">--</div></div><div class="finance-actions"><button id="zhiRealExecToggle" class="btn confirm" type="button">开启 REAL_EXECUTION</button><button id="zhiRealExecRefresh" class="btn" type="button">刷新链路</button></div><div id="zhiRealExecMsg" class="notice">--</div><div style="margin-top:12px;font-weight:900;font-size:13px">🧭 系统 Gate 事件</div><div id="zhiRealExecEvents" class="proposal-list"><div class="dash-empty">暂无记录</div></div><div style="margin-top:12px;font-weight:900;font-size:13px">💳 真实钱包执行日志</div><div id="zhiRealExecLog" class="proposal-list"><div class="dash-empty">暂无记录</div></div><div style="margin-top:14px;font-weight:900;font-size:14px">🧱 10,000 SR 实时流水墙</div>
+<section class="card hidden zhi-collapse-card" id="zhiRealExecutionDashboard" style="margin-top:12px"><div class="gift-toggle" id="zhiRealExecHeader"><span>⚙️ <b>SR 全链路执行监控</b> <span id="zhiRealExecBadge" class="dash-chip chip-blue">关闭</span></span><span class="gift-arrow" id="zhiRealExecArrow">▼</span></div><div class="zhi-collapse-details" id="zhiRealExecDetails"><div class="dash-sub">研究 → Gate → 预览 → 执行 → 结算 → 学习；每一批 SR 的状态都在这里汇总。</div><div id="zhiRealExecChain" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px"></div><div id="zhiRealExecStats" class="finance-grid" style="margin-top:10px"></div><div class="card" style="margin-top:10px;padding:10px;background:#fafafa"><div style="font-weight:800;font-size:13px">🟢 系统 Gate</div><div id="zhiRealExecGateStatus" class="proposal-meta" style="margin-top:5px">--</div></div><div class="finance-actions"><button id="zhiRealExecToggle" class="btn confirm" type="button">开启 REAL_EXECUTION</button><button id="zhiRealExecRefresh" class="btn" type="button">刷新链路</button></div><div id="zhiRealExecMsg" class="notice">--</div><div class="zhi-sub-collapse" style="margin-top:12px"><div class="gift-toggle" data-zhi-collapse-target="zhiRealExecGateDetails"><span>🧭 <b>系统 Gate 事件</b></span><span class="gift-arrow" data-zhi-collapse-arrow="zhiRealExecGateDetails">▼</span></div><div class="zhi-collapse-details" id="zhiRealExecGateDetails"><div id="zhiRealExecEvents" class="proposal-list"><div class="dash-empty">暂无记录</div></div></div></div><div style="margin-top:12px;font-weight:900;font-size:13px">💳 真实钱包执行日志</div><div id="zhiRealExecLog" class="proposal-list"><div class="dash-empty">暂无记录</div></div><div class="zhi-sub-collapse" style="margin-top:14px"><div class="gift-toggle" data-zhi-collapse-target="zhiSrFlowDetails"><span>🧱 <b>10,000 SR 实时流水墙</b></span><span class="gift-arrow" data-zhi-collapse-arrow="zhiSrFlowDetails">▼</span></div><div class="zhi-collapse-details" id="zhiSrFlowDetails">
  <div class="finance-actions" style="margin-top:8px">
   <input id="zhiSrFlowSearch" placeholder="搜索 SR ID / 用户名">
   <select id="zhiSrFlowNode" style="flex:1;min-width:150px;padding:10px;border:1px solid #ddd;border-radius:9px">
@@ -347,7 +347,7 @@ button,input,select{font:inherit}
   </select><button id="zhiSrFlowRefresh" class="btn confirm" type="button">刷新</button>
  </div>
  <div id="zhiSrFlowSummary" class="notice" style="margin-top:8px">加载中……</div>
- <div id="zhiSrFlowWall" style="margin-top:8px;max-height:620px;overflow:auto"></div></section><script data-zhi-real-execution-ui="20260928-chain">
+ <div id="zhiSrFlowWall" style="margin-top:8px;max-height:620px;overflow:auto"></div></div></div></div></section><script data-zhi-real-execution-ui="20260928-chain">
 (function(){
   const $=id=>document.getElementById(id);
   const esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -447,6 +447,8 @@ button,input,select{font:inherit}
     }
     $('zhiRealExecutionDashboard').classList.remove('hidden');
     bound=true;
+    $('zhiRealExecHeader').onclick=()=>{const d=$('zhiRealExecDetails'),a=$('zhiRealExecArrow');d.classList.toggle('open');a.classList.toggle('open')};
+    document.querySelectorAll('[data-zhi-collapse-target]').forEach(h=>{if(h.dataset.zhiBound)return;h.dataset.zhiBound='1';h.onclick=()=>{const d=$(h.dataset.zhiCollapseTarget),a=h.querySelector('[data-zhi-collapse-arrow]');d.classList.toggle('open');if(a)a.classList.toggle('open')}});
     $('zhiRealExecToggle').onclick=tog;
     $('zhiRealExecRefresh').onclick=()=>{load();};
     $('zhiSrFlowRefresh').onclick=loadSrFlowWall;

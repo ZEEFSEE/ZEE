@@ -296,57 +296,7 @@ button,input,select{font:inherit}
 <h2>🧾 我的记录 / My Records</h2><div id="history" class="card history"></div>
 <button id="logout" class="link" style="display:block;margin:18px auto">退出登录 / Sign out</button>
 <footer>🪙 <b style="color:#8a5a00">ZHI</b> · Prediction Platform · Demo</footer>
-<section class="card" id="zhiRealExecutionDashboard" style="margin-top:12px">
-  <div class="dash-title">⚙️ REAL_EXECUTION 管理 <span id="zhiRealExecBadge" class="dash-chip chip-blue">关闭</span></div>
-  <div class="dash-sub">真实 ZHI 钱包执行总开关；默认关闭。开启后才允许执行周期工作。</div>
-  <div id="zhiRealExecStats" class="finance-grid" style="margin-top:10px"></div>
-  <div class="card" style="margin-top:10px;padding:10px;background:#fafafa"><div style="font-weight:800;font-size:13px">🟢 系统 Gate / System Gate</div><div id="zhiRealExecGateStatus" class="proposal-meta" style="margin-top:5px">检查中 / Checking...</div></div>
-  <div class="finance-actions">
-    <button id="zhiRealExecToggle" class="btn confirm" type="button">开启 REAL_EXECUTION</button>
-    <button id="zhiRealExecRefresh" class="btn" type="button">刷新状态</button>
-  </div>
-  <div id="zhiRealExecMsg" class="notice">正在加载……</div>
-  <div style="margin-top:12px;font-weight:900;font-size:13px">最近执行日志</div>
-  <div id="zhiRealExecLog" class="proposal-list"><div class="dash-empty">正在加载……</div></div>
-</section><script data-zhi-real-execution-ui="20260928">
-(function(){
-  const $=id=>document.getElementById(id), esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-  function stat(label,value){return '<div class="finance-stat"><span>'+label+'</span><b>'+value+'</b></div>'}
-  function render(d,logs){
-    const c=d?.control||{}, on=!!c.real_execution_enabled, badge=$('zhiRealExecBadge'), toggle=$('zhiRealExecToggle');
-    if(badge){badge.textContent=on?'开启':'关闭';badge.className='dash-chip '+(on?'chip-green':'chip-blue')}
-    if(toggle)toggle.textContent=on?'关闭 REAL_EXECUTION':'开启 REAL_EXECUTION';
-    const s=$('zhiRealExecStats');
-    if(s)s.innerHTML=stat('24小时成功执行',d?.executed_24h??0)+stat('24小时失败',d?.failed_24h??0)+stat('SR未结仓位',d?.open_real_positions??0)+stat('24小时已结算市场',d?.resolved_markets_24h??0)+stat('单次上限',c.max_stake_per_action??0)+stat('最低置信度',c.min_confidence??0);
-    const box=$('zhiRealExecLog'); if(!box)return;
-    const gate=$('zhiRealExecGateStatus');
-    if(gate)gate.innerHTML='最近 Gate：'+esc(c.last_cycle_at?new Date(c.last_cycle_at).toLocaleString():'--')+' · '+(on?'🟢 REAL_EXECUTION 已开启':'🔴 REAL_EXECUTION 已关闭');
-    if(!logs?.length){box.innerHTML='<div class="notice">暂无真实钱包执行日志 / No real wallet execution yet</div><div class="proposal-meta" style="margin-top:6px">当前没有实际钱包下注记录。系统 Gate 可以正常运行，但 REAL_EXECUTION 关闭时不会产生真实执行日志。</div>';return}
-    box.innerHTML=logs.map(x=>'<div class="proposal-item"><span class="proposal-status '+(x.success?'proposal-published':'proposal-rejected')+'">'+(x.success?'成功':'失败')+'</span><div class="proposal-meta">SR '+esc(x.sr_id)+' · '+esc(x.market_id)+' · '+esc(x.side)+' · '+esc(x.amount)+'</div><div class="proposal-meta">'+esc(x.created_at)+(x.error_message?' · '+esc(x.error_message):'')+'</div></div>').join('');
-  }
-  async function load(){
-    const client=window.zhiSupabase; if(!client?.rpc)return;
-    try{
-      const [dash,logs]=await Promise.all([
-        client.rpc('admin_get_execution_dashboard'),
-        client.rpc('admin_get_execution_log',{p_limit:30})
-      ]);
-      if(dash.error)throw dash.error; if(logs.error)throw logs.error;
-      render(dash.data,Array.isArray(logs.data)?logs.data:[]);
-      const m=$('zhiRealExecMsg'); if(m)m.textContent='状态已加载。REAL_EXECUTION 只由管理员开关控制。';
-    }catch(e){const m=$('zhiRealExecMsg');if(m)m.textContent='❌ '+(e?.message||e)}
-  }
-  async function toggle(){
-    const badge=$('zhiRealExecBadge'), on=badge?.textContent===('开启');
-    if(!confirm(on?'确定关闭 REAL_EXECUTION？':'确定开启 REAL_EXECUTION？开启后允许定时执行周期运行。'))return;
-    const client=window.zhiSupabase;if(!client?.rpc)return;
-    const b=$('zhiRealExecToggle');if(b)b.disabled=true;
-    try{const r=await client.rpc('admin_set_real_execution',{p_enabled:!on});if(r.error)throw r.error;await load()}catch(e){const m=$('zhiRealExecMsg');if(m)m.textContent='❌ '+(e?.message||e)}finally{if(b)b.disabled=false}
-  }
-  function boot(){if(!$('zhiRealExecutionDashboard')||!window.zhiSupabase)return false;$('zhiRealExecToggle').onclick=toggle;$('zhiRealExecRefresh').onclick=load;load();return true}
-  let n=0;const t=setInterval(()=>{if(boot()||++n>40)clearInterval(t)},500);
-})();
-</script></main>
+<section class="card" id="zhiRealExecutionDashboard" style="margin-top:12px"><div class="dash-title">⚙️ SR 全链路执行监控 <span id="zhiRealExecBadge" class="dash-chip chip-blue">关闭</span></div><div class="dash-sub">研究 → Gate → 预览 → 执行 → 结算 → 学习；每一批 SR 的状态都在这里汇总。</div><div id="zhiRealExecChain" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px"></div><div id="zhiRealExecStats" class="finance-grid" style="margin-top:10px"></div><div class="card" style="margin-top:10px;padding:10px;background:#fafafa"><div style="font-weight:800;font-size:13px">🟢 系统 Gate</div><div id="zhiRealExecGateStatus" class="proposal-meta" style="margin-top:5px">--</div></div><div class="finance-actions"><button id="zhiRealExecToggle" class="btn confirm" type="button">开启 REAL_EXECUTION</button><button id="zhiRealExecRefresh" class="btn" type="button">刷新链路</button></div><div id="zhiRealExecMsg" class="notice">--</div><div style="margin-top:12px;font-weight:900;font-size:13px">🧭 系统 Gate 事件</div><div id="zhiRealExecEvents" class="proposal-list"><div class="dash-empty">暂无记录</div></div><div style="margin-top:12px;font-weight:900;font-size:13px">💳 真实钱包执行日志</div><div id="zhiRealExecLog" class="proposal-list"><div class="dash-empty">暂无记录</div></div></section><script data-zhi-real-execution-ui="20260928-chain">(function(){const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));function cc(i,t,v,m){return '<div class="card" style="margin:0;padding:11px"><div style="font-size:12px;font-weight:900">'+i+' '+t+'</div><div style="font-size:19px;font-weight:950;margin-top:5px">'+v+'</div><div style="font-size:10px;color:#888;margin-top:3px">'+m+'</div></div>'}function st(l,v){return '<div class="finance-stat"><span>'+l+'</span><b>'+v+'</b></div>}function render(d,logs){const c=d?.control||{},on=!!c.real_execution_enabled,r=d?.research||{},p=d?.preview||{},g=d?.gate||{},e=d?.execution||{},s=d?.settlement||{},l=d?.learning||{},b=$('zhiRealExecBadge'),t=$('zhiRealExecToggle');if(b){b.textContent=on?'开启':'关闭';b.className='dash-chip '+(on?'chip-green':'chip-blue')}if(t)t.textContent=on?'关闭 REAL_EXECUTION':'开启 REAL_EXECUTION';const q=$('zhiRealExecChain');if(q)q.innerHTML=cc('🔬','研究',r.sr_research_rows??0,(r.recent_24h??0)+' / 24h')+cc('🟢','Gate',(g.ready_24h??0)+(g.skipped_24h??0),(g.ready_24h??0)+' ready · '+(g.skipped_24h??0)+' skipped')+cc('🧪','预览',p.pending??0,(p.eligible_confidence??0)+' eligible')+cc('💳','执行',e.success_24h??0,(e.failed_24h??0)+' failed / 24h')+cc('🏁','结算',s.resolved_markets_24h??0,'resolved / 24h')+cc('🧠','学习',l.recent_24h??0,(l.correct??0)+' correct · '+(l.incorrect??0)+' incorrect');const x=$('zhiRealExecStats');if(x)x.innerHTML=st('研究市场',r.markets_researched??0)+st('预览总数',p.total??0)+st('待执行预览',p.pending??0)+st('24小时成功执行',e.success_24h??0)+st('开放仓位',s.open_positions??0)+st('学习历史',l.history_rows??0)+st('单次上限',c.max_stake_per_action??0)+st('最低置信度',c.min_confidence??0);const gs=$('zhiRealExecGateStatus');if(gs)gs.innerHTML=(c.last_cycle_at?'最近 Gate：'+esc(new Date(c.last_cycle_at).toLocaleString()):'最近 Gate：--')+' · '+(on?'🟢 REAL_EXECUTION 开启':'🔴 REAL_EXECUTION 关闭');const ev=$('zhiRealExecEvents'),events=Array.isArray(d?.events)?d.events:[];if(ev)ev.innerHTML=events.length?events.map(x=>'<div class="proposal-item"><span class="proposal-status '+(x.status==='ready'?'proposal-published':'proposal-rejected')+'">'+esc(x.status)+'</span><div class="proposal-meta">'+esc(x.event_type)+(x.sr_id?' · SR '+esc(x.sr_id):'')+(x.market_id?' · '+esc(x.market_id):'')+'</div><div class="proposal-meta">'+esc(x.created_at)+' · '+esc(x.message||'')+'</div></div>').join(''):'<div class="notice">暂无记录</div>';const box=$('zhiRealExecLog');if(box)box.innerHTML=logs?.length?logs.map(x=>'<div class="proposal-item"><span class="proposal-status '+(x.success?'proposal-published':'proposal-rejected')+'">'+(x.success?'成功':'失败')+'</span><div class="proposal-meta">SR '+esc(x.sr_id)+' · '+esc(x.market_id)+' · '+esc(x.side)+' · '+esc(x.amount)+'</div><div class="proposal-meta">'+esc(x.created_at)+(x.error_message?' · '+esc(x.error_message):'')+'</div></div>').join(''):'<div class="notice">暂无记录</div>'}async function load(){const client=window.zhiSupabase;if(!client?.rpc)return;try{const [d,lg]=await Promise.all([client.rpc('admin_get_execution_chain_dashboard'),client.rpc('admin_get_execution_log',{p_limit:30})]);if(d.error)throw d.error;if(lg.error)throw lg.error;render(d.data,Array.isArray(lg.data)?lg.data:[]);const m=$('zhiRealExecMsg');if(m)m.textContent='链路状态已加载 · '+(d.data?.control?.real_execution_enabled?'REAL_EXECUTION 开启':'REAL_EXECUTION 关闭')}catch(e){const m=$('zhiRealExecMsg');if(m)m.textContent='❌ '+(e?.message||e)}}async function tog(){const b=$('zhiRealExecBadge'),on=b?.textContent==='开启';if(!confirm(on?'确定关闭 REAL_EXECUTION？':'确定开启 REAL_EXECUTION？开启后允许定时执行周期运行。'))return;const client=window.zhiSupabase;if(!client?.rpc)return;const x=$('zhiRealExecToggle');if(x)x.disabled=true;try{const r=await client.rpc('admin_set_real_execution',{p_enabled:!on});if(r.error)throw r.error;await load()}catch(e){const m=$('zhiRealExecMsg');if(m)m.textContent='❌ '+(e?.message||e)}finally{if(x)x.disabled=false}}function boot(){if(!$('zhiRealExecutionDashboard')||!window.zhiSupabase)return false;$('zhiRealExecToggle').onclick=tog;$('zhiRealExecRefresh').onclick=load;load();return true}let n=0;const tt=setInterval(()=>{if(boot()||++n>40)clearInterval(tt)},500)})();</script></main>
 <div id="stakeModal" class="modal"><div class="modalbox">
 <h3>预测 / Prediction</h3><div id="choiceText" class="choice"></div>
 <div id="directionChoice" style="display:none;gap:8px;margin-bottom:10px"><button id="modalYes" class="btn yes">YES / 是</button><button id="modalNo" class="btn no">NO / 否</button></div>

@@ -301,6 +301,7 @@ button,input,select{font:inherit}
   <div class="dash-title">⚙️ REAL_EXECUTION Admin Control <span id="zhiRealExecBadge" class="dash-chip chip-blue">OFF</span></div>
   <div class="dash-sub">Real ZHI wallet execution is controlled here. The switch is OFF by default.</div>
   <div id="zhiRealExecStats" class="finance-grid" style="margin-top:10px"></div>
+  <div class="card" style="margin-top:10px;padding:10px;background:#fafafa"><div style="font-weight:800;font-size:13px">🟢 System Gate</div><div id="zhiRealExecGateStatus" class="proposal-meta" style="margin-top:5px">Checking...</div></div>
   <div class="finance-actions">
     <button id="zhiRealExecToggle" class="btn confirm" type="button">Enable REAL_EXECUTION</button>
     <button id="zhiRealExecRefresh" class="btn" type="button">Refresh</button>
@@ -319,7 +320,9 @@ button,input,select{font:inherit}
     const s=$('zhiRealExecStats');
     if(s)s.innerHTML=stat('Executed 24h',d?.executed_24h??0)+stat('Failed 24h',d?.failed_24h??0)+stat('Open SR positions',d?.open_real_positions??0)+stat('Resolved 24h',d?.resolved_markets_24h??0)+stat('Max/action',c.max_stake_per_action??0)+stat('Min confidence',c.min_confidence??0);
     const box=$('zhiRealExecLog'); if(!box)return;
-    if(!logs?.length){box.innerHTML='<div class="dash-empty">'+('No execution logs yet')+'</div>';return}
+    const gate=$('zhiRealExecGateStatus');
+    if(gate)gate.innerHTML='Last Gate: '+esc(c.last_cycle_at?new Date(c.last_cycle_at).toLocaleString():'--')+' · '+(on?'🟢 REAL_EXECUTION ON':'🔴 REAL_EXECUTION OFF');
+    if(!logs?.length){box.innerHTML='<div class="notice">No real wallet execution yet</div><div class="proposal-meta" style="margin-top:6px">There are currently no actual wallet stake records. The system Gate can run normally, but no real execution log is created while REAL_EXECUTION is OFF.</div>';return}
     box.innerHTML=logs.map(x=>'<div class="proposal-item"><span class="proposal-status '+(x.success?'proposal-published':'proposal-rejected')+'">'+(x.success?'SUCCESS':'FAILED')+'</span><div class="proposal-meta">SR '+esc(x.sr_id)+' · '+esc(x.market_id)+' · '+esc(x.side)+' · '+esc(x.amount)+'</div><div class="proposal-meta">'+esc(x.created_at)+(x.error_message?' · '+esc(x.error_message):'')+'</div></div>').join('');
   }
   async function load(){

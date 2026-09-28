@@ -550,11 +550,15 @@ async function renderMarkets(){
 $('markets').querySelectorAll('[data-confirm]').forEach(b=>b.onclick=()=>stake(b.dataset.confirm));
 $('giftNoticeBtn').onclick=async()=>{if(Number($('giftNoticeCount').textContent)>0)await markGiftNotificationsRead();};
 $('giftSendToggle').onclick=()=>{$('giftSendDetails').classList.toggle('open');$('giftSendArrow').classList.toggle('open')};
+ const isAdmin=user?.app_metadata?.role==='admin';
  const expired=marketsData.filter(m=>m.status==='closed');
  $('expiredPanel').classList.toggle('hidden',!expired.length);
- $('expiredMarkets').innerHTML=expired.map(m=>'<div class="card"><div class="q">'+marketQuestion(m)+'</div><div class="status expired">⏰ 已到期 / Expired · 等待管理员结果 / Awaiting admin result</div></div>').join('');
-
- const isAdmin=user?.app_metadata?.role==='admin';
+ $('expiredMarkets').innerHTML=expired.map(m=>'<div class="card"><div class="q">'+marketQuestion(m)+'</div><div class="status expired">⏰ 已到期 / Expired · '+(isAdmin?'等待管理员确认结果 / Awaiting admin confirmation':'等待管理员结果 / Awaiting admin result')+'</div>'+
+   (isAdmin?'<div class="meta" style="margin-top:8px">市场 ID / Market ID: '+m.id+' · 投注已截止 / Betting closed</div><div class="notice">📜 '+(m.settlement_rule||'Settlement rule not specified')+'</div><div class="pool">YES '+money(m.yes_pool)+' ZHI　 NO '+money(m.no_pool)+' ZHI</div><div class="buttons"><button class="btn yes" data-expired-settle="'+m.id+'" data-result="yes">确认 YES</button><button class="btn no" data-expired-settle="'+m.id+'" data-result="no">确认 NO</button></div>':'')+
+   '</div>').join('');
+ if(isAdmin){
+   $('expiredMarkets').querySelectorAll('[data-expired-settle]').forEach(b=>b.onclick=()=>adminSetResult(b.dataset.expiredSettle,b.dataset.result));
+ }
  $('adminPanel').classList.toggle('hidden',!isAdmin);
  if(isAdmin){
    loadTreasuryFinance();loadSRSummary();loadSRTreasuryGrants();loadTreasuryDailyReport();loadFundsReconciliation();loadAdminFundFlows();

@@ -123,6 +123,8 @@ button,input,select{font:inherit}
 .zhi-datetime input[type=date],.zhi-datetime select{height:40px;padding:8px 10px;border:1px solid #ddd;border-radius:9px;background:#fff;font:inherit}
 .zhi-datetime select{min-width:58px;text-align:center}
 .zhi-datetime .zhi-time-sep{font-weight:900}
+
+.proposal-confirm-ready{border-color:#b9dfc8;background:#f7fff9}.proposal-translation-error{color:#a51f2d;background:#fff0f1;border-radius:10px;padding:9px}
 </style>
 </head>
 <body>
@@ -167,7 +169,16 @@ button,input,select{font:inherit}
     <div class="proposal-form">
       <textarea id="proposalQuestion" placeholder="请输入预测问题 / Enter your prediction question"></textarea>
       <div class="proposal-grid"><div><label class="meta">截至日期 / Closing Date</label><div class="zhi-datetime" data-zdt-for="proposalCloseAt" aria-label="24-hour closing date and time"><input type="date" data-zdt-date><select data-zdt-hour aria-label="Hour"></select><span class="zhi-time-sep">:</span><select data-zdt-minute aria-label="Minute"></select></div><input id="proposalCloseAt" type="hidden"></div><div class="notice" style="margin:0">⚠️ 截至日期必须是未来日期 / The closing date must be in the future.</div></div>
-      <button type="button" id="proposalSubmitBtn" class="btn confirm" onclick="try{if(!window.zhiSubmitProposal){window.zhiSubmitProposal=async function(){const q=(document.getElementById('proposalQuestion')?.value||'').trim(),m=document.getElementById('proposalMsg'),b=document.getElementById('proposalSubmitBtn'),x=document.querySelector('[data-zdt-for=proposalCloseAt]');const d=x?.querySelector('[data-zdt-date]')?.value||'',h=x?.querySelector('[data-zdt-hour]')?.value||'',n=x?.querySelector('[data-zdt-minute]')?.value||'';if(!q||!d||!h||!n){if(m)m.textContent='❌ 请填写预测问题和截至日期 / Please enter the question and closing date';return}const dt=new Date(d+'T'+h+':'+n+':00+08:00');if(!Number.isFinite(dt.getTime())||dt<=new Date()){if(m)m.textContent='❌ 截止时间必须是未来时间 / Closing time must be in the future';return}if(!window.zhiSupabase){if(m)m.textContent='❌ 数据库连接尚未完成 / Database connection is not ready';return}if(b)b.disabled=true;if(m)m.textContent='正在生成另一语言版本…… / Generating translation...';try{const zh=/[\u3400-\u9fff]/.test(q),from=zh?'zh':'en',to=zh?'en':'zh',lp=(from==='zh'?'zh-CN':'en')+'|'+(to==='zh'?'zh-CN':'en'),u='https://api.mymemory.translated.net/get?q='+encodeURIComponent(q)+'&langpair='+encodeURIComponent(lp),r=await fetch(u,{headers:{Accept:'application/json'}});if(!r.ok)throw new Error('translation unavailable');const j=await r.json(),translated=(j?.responseData?.translatedText||'').trim();if(!translated||translated===q)throw new Error('另一语言版本生成失败，请稍后重试 / Translation failed');const {error}=await window.zhiSupabase.rpc('submit_prediction_proposal',{p_question_original:q,p_original_language:from,p_question_zh:zh?q:translated,p_question_en:zh?translated:q,p_requested_close_at:dt.toISOString()});if(error)throw error;if(m)m.textContent='✅ 提案已提交，等待管理员审核 / Submitted for admin review';if(window.zhiLoadMyProposals)await window.zhiLoadMyProposals()}catch(e){if(m)m.textContent='❌ '+(e?.message||'提交失败 / Submission failed')}finally{if(b)b.disabled=false}}}window.zhiSubmitProposal()}catch(e){var m=document.getElementById('proposalMsg');if(m)m.textContent='❌ '+(e.message||'提交失败 / Submit failed');}">🚀 提交预测提案 / Submit Prediction Proposal</button><div id="proposalMsg" class="meta"></div>
+      <button type="button" id="proposalGenerateBtn" class="btn confirm">✨ 生成英文版本 / Generate English Version</button>
+      <div id="proposalTranslationPreview" class="proposal-item hidden" style="margin-top:10px;background:#fff">
+        <div style="font-weight:900">🔎 翻译确认 / Translation Review</div>
+        <div class="proposal-meta">系统生成的另一语言版本，请确认后再提交。/ Review the generated translation before submitting.</div>
+        <label class="meta" style="display:block;margin-top:8px">English Version</label>
+        <textarea id="proposalTranslatedText" rows="3" style="width:100%;padding:11px;border:1px solid #ddd;border-radius:10px;font:inherit"></textarea>
+        <label style="display:flex;align-items:center;gap:8px;margin-top:9px;font-size:12px;font-weight:800"><input id="proposalConfirmTranslation" type="checkbox"> 我已确认另一语言版本 / I confirm the translation</label>
+        <button type="button" id="proposalSubmitBtn" class="btn confirm" style="margin-top:10px" disabled>🚀 确认并提交 / Confirm & Submit</button>
+      </div>
+      <div id="proposalMsg" class="meta"></div>
     </div>
     <div style="margin-top:14px;font-weight:900">🏆 我的贡献 / My Contributions</div><div id="myProposals" class="proposal-list"><div class="notice">加载中 / Loading...</div></div>
   </div>
@@ -976,5 +987,61 @@ const mo=new MutationObserver(()=>initZhiDateTimes()); mo.observe(document.docum
   window.zhiAdminProposalLoader=zhiAdminProposalLoader;
   function boot(){const b=document.getElementById('adminProposalRefresh');if(!b||!window.zhiSupabase)return false;if(!b.dataset.zhiIndependent){b.dataset.zhiIndependent='1';b.onclick=zhiAdminProposalLoader;} zhiAdminProposalLoader();return true;}
   let n=0;const t=setInterval(()=>{if(boot()||++n>40)clearInterval(t);},500);
+})();
+</script><script data-zhi-proposal-two-stage="1">
+(function(){
+  const state={question:'',from:'',to:'',closeAt:'',translated:''};
+  function $(id){return document.getElementById(id)}
+  function detectProposalLang(s){return /[\u3400-\u9fff]/.test(s)?'zh':'en'}
+  function getCloseIso(){
+    const box=document.querySelector('[data-zdt-for="proposalCloseAt"]');
+    const d=box?.querySelector('[data-zdt-date]')?.value||'',h=box?.querySelector('[data-zdt-hour]')?.value||'',m=box?.querySelector('[data-zdt-minute]')?.value||'';
+    if(!d||h===''||m==='')return '';
+    const dt=new Date(d+'T'+h+':'+m+':00+08:00'); return Number.isFinite(dt.getTime())?dt.toISOString():'';
+  }
+  async function generate(){
+    const q=$('proposalQuestion')?.value?.trim()||'',msg=$('proposalMsg'),btn=$('proposalGenerateBtn'),closeAt=getCloseIso();
+    if(!q||!closeAt){if(msg)msg.textContent='❌ 请填写预测问题和未来截至日期 / Please enter the question and a future closing date';return}
+    if(new Date(closeAt)<=new Date()){if(msg)msg.textContent='❌ 截止时间必须是未来时间 / Closing time must be in the future';return}
+    state.question=q;state.from=detectProposalLang(q);state.to=state.from==='zh'?'en':'zh';state.closeAt=closeAt;
+    if(btn)btn.disabled=true;if(msg)msg.textContent=state.to==='en'?'正在生成英文版本…… / Generating English version...':'正在生成中文版本…… / Generating Chinese version...';
+    try{
+      if(typeof translateProposal!=='function')throw new Error('translation service unavailable');
+      const translated=(await translateProposal(q,state.from,state.to)||'').trim();
+      if(!translated||translated===q)throw new Error('翻译没有生成有效结果 / Translation did not produce a valid result');
+      state.translated=translated;
+      const preview=$('proposalTranslationPreview'),text=$('proposalTranslatedText'),confirm=$('proposalConfirmTranslation'),submit=$('proposalSubmitBtn');
+      if(text)text.value=translated;if(confirm)confirm.checked=false;if(submit)submit.disabled=true;
+      if(preview)preview.classList.remove('hidden');
+      if(msg)msg.textContent=state.to==='en'?'✅ 英文版本已生成，请确认后提交 / English version generated. Review and confirm.':'✅ 中文版本已生成，请确认后提交 / Chinese version generated. Review and confirm.';
+      text?.focus();
+    }catch(e){if(msg)msg.innerHTML='<span class="proposal-translation-error">❌ '+String(e?.message||'Translation failed')+'</span>';$('proposalTranslationPreview')?.classList.add('hidden')}
+    finally{if(btn)btn.disabled=false}
+  }
+  async function submit(){
+    const msg=$('proposalMsg'),btn=$('proposalSubmitBtn'),confirm=$('proposalConfirmTranslation'),text=$('proposalTranslatedText'),translated=(text?.value||'').trim();
+    if(!state.question||!state.closeAt||!translated){if(msg)msg.textContent='❌ 请先生成并确认另一语言版本 / Generate and review the translation first';return}
+    if(!confirm?.checked){if(msg)msg.textContent='❌ 请勾选确认翻译 / Please confirm the translation';return}
+    if(new Date(state.closeAt)<=new Date()){if(msg)msg.textContent='❌ 截止时间必须是未来时间 / Closing time must be in the future';return}
+    const client=window.zhiSupabase;if(!client?.rpc){if(msg)msg.textContent='❌ 数据库连接尚未完成 / Database connection is not ready';return}
+    const questionZh=state.from==='zh'?state.question:translated,questionEn=state.from==='en'?state.question:translated;
+    if(btn)btn.disabled=true;if(msg)msg.textContent='正在提交提案…… / Submitting proposal...';
+    try{
+      const {error}=await client.rpc('submit_prediction_proposal',{p_question_original:state.question,p_original_language:state.from,p_question_zh:questionZh,p_question_en:questionEn,p_requested_close_at:state.closeAt});
+      if(error)throw error;
+      if(msg)msg.textContent='✅ 提案已提交，等待管理员审核 / Submitted for admin review';
+      $('proposalQuestion').value='';$('proposalTranslationPreview')?.classList.add('hidden');
+      const d=document.querySelector('[data-zdt-for="proposalCloseAt"] [data-zdt-date]');if(d)d.value='';const hidden=$('proposalCloseAt');if(hidden)hidden.value='';
+      state.question=state.from=state.to=state.closeAt=state.translated='';if(confirm)confirm.checked=false;if(text)text.value='';
+      if(window.zhiLoadMyProposals)await window.zhiLoadMyProposals();
+    }catch(e){if(msg)msg.textContent='❌ '+(e?.message||'提交失败 / Submission failed')}finally{if(btn)btn.disabled=false}
+  }
+  function bind(){
+    const g=$('proposalGenerateBtn'),s=$('proposalSubmitBtn'),c=$('proposalConfirmTranslation'),t=$('proposalTranslatedText');
+    if(g)g.onclick=generate;if(s)s.onclick=submit;
+    if(c)c.onchange=function(){s.disabled=!c.checked||!t?.value.trim()};if(t)t.oninput=function(){if(c)s.disabled=!c.checked||!t.value.trim()};
+    window.zhiGenerateProposal=generate;window.zhiSubmitProposal=submit;
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();setTimeout(bind,500);setTimeout(bind,1500);
 })();
 </script></body></html>

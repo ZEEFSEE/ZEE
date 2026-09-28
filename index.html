@@ -812,7 +812,7 @@ const mo=new MutationObserver(()=>initZhiDateTimes()); mo.observe(document.docum
   function localDateToIso(v){const d=new Date(v);return Number.isNaN(d.getTime())?null:d.toISOString()}
   function setFutureMin(){const el=$('proposalCloseAt');if(!el)return;const now=new Date(Date.now()+60*1000),p=n=>String(n).padStart(2,'0');const sg=new Intl.DateTimeFormat('en-CA',{timeZone:ZHI_TIME_ZONE,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(now).reduce((o,v)=>(o[v.type]=v.value,o),{});const box=el.closest('.zhi-datetime')||document.querySelector('[data-zdt-for="proposalCloseAt"]');if(box){const d=box.querySelector('[data-zdt-date]');if(d)d.min=`${sg.year}-${sg.month}-${sg.day}`;}}
   function detectLang(s){return /[\u3400-\u9fff]/.test(s)?'zh':'en'}
-  async async function translateProposal(text,from,to){
+  async function translateProposal(text,from,to){
     try{
       const client=window.zhiSupabase||sb;
       if(client?.functions?.invoke){

@@ -411,7 +411,7 @@ button,input,select{font:inherit}
 <script src="supabase-client.js?v=20260929-loginfix-v1"></script>
 <script src="settlement.js"></script>
 <script>
-const ZHI_URL='https://bkttvffunyvbswkxpygp.supabase.co';const ZHI_KEY='sb_publishable_NYVMp3Nhk9QDtIxz1MGOEA_Z7RtbMyP';let sb=window.zhiSupabase||null;function ensureZhiClient(){if(window.zhiSupabase?.auth){sb=window.zhiSupabase;return sb;}if(window.supabase?.createClient){sb=window.supabase.createClient(ZHI_URL,ZHI_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});window.zhiSupabase=sb;return sb;}return null;}ensureZhiClient();let user=null,wallet=null,marketsData=[],positions=[],selectedMarket=null,selectedSide=null;
+const ZHI_URL='https://bkttvffunyvbswkxpygp.supabase.co';const ZHI_KEY='sb_publishable_NYVMp3Nhk9QDtIxz1MGOEA_Z7RtbMyP';let sb=window.zhiSupabase||null;function ensureZhiClient(){if(window.zhiSupabase?.auth){sb=window.zhiSupabase;return sb;}if(window.supabase?.createClient){sb=window.supabase.createClient(ZHI_URL,ZHI_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,lock:async (_name,_acquireTimeout,fn)=>await fn()}});window.zhiSupabase=sb;return sb;}return null;}ensureZhiClient();let user=null,wallet=null,marketsData=[],positions=[],selectedMarket=null,selectedSide=null;
 const money=n=>Number(n||0).toLocaleString(),$=id=>document.getElementById(id);
 const ZHI_TIME_ZONE='Asia/Singapore';
 const SR_TIME_LABEL='🇸🇬 新加坡时间';

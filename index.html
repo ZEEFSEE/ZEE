@@ -249,7 +249,50 @@ button,input,select{font:inherit}
   };
 })();
 </script>
-    <div id="adminProposals" class="proposal-list"><div class="notice">加载中 / Loading...</div></div>
+    <div id="adminProposals" class="proposal-list"><div class="notice">加载中 / Loading...</div></div><div class="card" id="zhiPredictionLab" style="margin-top:14px;background:linear-gradient(135deg,#f8fbff,#eef5ff);border-color:#bfd5f5">
+  <div class="gift-toggle" id="zhiLabToggle"><span>🧠 <b>AI Prediction Lab · SR 智能预测实验室</b></span><span class="gift-arrow" id="zhiLabArrow">▼</span></div>
+  <div class="gift-details" id="zhiLabDetails">
+    <div class="meta">SR Research → Evidence → Insight → Candidate。管理员可编辑问题、截止时间和结算规则，再送入正式 Prediction Proposal。</div>
+    <div style="display:flex;gap:8px;margin-top:10px"><button id="zhiLabRefresh" class="btn confirm" style="flex:1">🔄 刷新候选</button><span id="zhiLabCount" class="meta" style="align-self:center"></span></div>
+    <div id="zhiLabQueue" class="proposal-list"><div class="notice">加载中 / Loading...</div></div>
+  </div>
+</div>
+<script>
+(function(){
+  function esc(v){return String(v??'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]))}
+  function localParts(iso){const d=iso?new Date(iso):new Date(Date.now()+7*86400000);const f=n=>String(n).padStart(2,'0');return {date:d.getFullYear()+'-'+f(d.getMonth()+1)+'-'+f(d.getDate()),hour:f(d.getHours()),minute:f(Math.floor(d.getMinutes()/10)*10)}}
+  async function loadLab(){
+    const box=document.getElementById('zhiLabQueue'), count=document.getElementById('zhiLabCount'); if(!box||typeof window.zhiSupabase==='undefined')return;
+    box.innerHTML='<div class="notice">正在读取 SR Research candidates…</div>';
+    try{
+      const r=await window.zhiSupabase.rpc('admin_get_candidate_review_queue',{p_limit:50}); if(r.error)throw r.error;
+      const rows=Array.isArray(r.data)?r.data:[]; count.textContent=rows.length+' candidates';
+      if(!rows.length){box.innerHTML='<div class="notice">暂无可审核候选 / No candidates awaiting review</div>';return;}
+      box.innerHTML=rows.map(c=>{
+        const t=localParts(c.proposed_close_at), ev=Array.isArray(c.evidence)?c.evidence:[], ins=c.insight||'暂无独立洞察 / No insight yet';
+        return '<div class="proposal-item" data-lab-id="'+c.id+'" style="border-color:#cddcf3">'+
+          '<div><span class="proposal-status proposal-pending">'+esc(c.status)+'</span> <b>SR '+esc(c.sr_id)+'</b> · '+esc(c.username||'SR')+'</div>'+
+          '<div class="proposal-question">候选问题 / Candidate</div>'+
+          '<textarea data-lab-qzh rows="3" style="width:100%;margin-top:5px;padding:10px;border:1px solid #ddd;border-radius:9px;font:inherit">'+esc(c.question)+'</textarea>'+
+          '<div class="proposal-grid" style="margin-top:8px"><div><b>Quality</b> '+Number(c.quality_score||0).toFixed(3)+'<br><span class="meta">Research '+Number(c.research_score||0).toFixed(3)+' · Settlement '+Number(c.settlement_score||0).toFixed(3)+'</span></div><div><b>Novelty</b> '+Number(c.novelty_score||0).toFixed(3)+'<br><span class="meta">Duplicate risk '+Number(c.duplicate_risk||0).toFixed(3)+' · Evidence '+(c.evidence_count||0)+'</span></div></div>'+
+          '<div class="proposal-admin"><label>中文 / Chinese</label><textarea data-lab-zh rows="2">'+esc(c.question||'')+'</textarea><label>English</label><textarea data-lab-en rows="2" placeholder="Admin completes English translation">'+esc(c.question_en||'')+'</textarea><label>截止时间 / Close</label><div class="zhi-datetime"><input data-lab-date type="date" value="'+t.date+'"><select data-lab-hour>'+Array.from({length:24},(_,i)=>'<option value="'+String(i).padStart(2,'0')+'" '+(t.hour===String(i).padStart(2,'0')?'selected':'')+'>'+String(i).padStart(2,'0')+'</option>').join('')+'</select><select data-lab-minute>'+[0,10,20,30,40,50].map(i=>'<option value="'+String(i).padStart(2,'0')+'" '+(t.minute===String(i).padStart(2,'0')?'selected':'')+'>'+String(i).padStart(2,'0')+'</option>').join('')+'</select></div><label>结算规则 / Settlement Rule</label><textarea data-lab-rule rows="2" placeholder="例如：按指定时间点的公开数据源判定">'+esc(c.proposed_settlement_rule||'')+'</textarea></div>'+
+          '<div style="margin-top:9px;padding:10px;border-radius:9px;background:#fff"><b>🧠 Research Insight</b><div class="meta" style="margin-top:5px">'+esc(ins)+'</div><div class="meta" style="margin-top:5px">Research method: '+esc(c.research_method||'market_research')+'</div></div>'+
+          '<div class="proposal-actions"><button type="button" class="btn confirm" data-lab-publish>🚀 提交正式 Proposal</button><button type="button" class="btn no" data-lab-reject>❌ 驳回</button></div><div data-lab-msg class="meta"></div></div>';
+      }).join('');
+      box.querySelectorAll('[data-lab-publish]').forEach(btn=>btn.onclick=async()=>{
+        const item=btn.closest('[data-lab-id]'),msg=item.querySelector('[data-lab-msg]'); const date=item.querySelector('[data-lab-date]').value,h=item.querySelector('[data-lab-hour]').value,m=item.querySelector('[data-lab-minute]').value; const close=new Date(date+'T'+h+':'+m+':00+08:00').toISOString();
+        const payload={p_candidate_id:Number(item.dataset.labId),p_question_zh:item.querySelector('[data-lab-zh]').value.trim(),p_question_en:item.querySelector('[data-lab-en]').value.trim(),p_close_at:close,p_settlement_rule:item.querySelector('[data-lab-rule]').value.trim()};
+        if(!payload.p_question_zh||!payload.p_question_en||!payload.p_settlement_rule||new Date(close)<=new Date()){msg.textContent='❌ 请完成中英文、截止时间和结算规则 / Complete all fields';return;}
+        btn.disabled=true;msg.textContent='正在提交正式 Proposal…';
+        try{const r=await window.zhiSupabase.rpc('admin_publish_candidate',payload);if(r.error)throw r.error;msg.textContent='✅ 已进入正式 Proposal #'+(r.data?.proposal_id||'');await loadLab();}catch(e){msg.textContent='❌ '+(e.message||'Publish failed');btn.disabled=false;}
+      });
+      box.querySelectorAll('[data-lab-reject]').forEach(btn=>btn.onclick=async()=>{const item=btn.closest('[data-lab-id]'),msg=item.querySelector('[data-lab-msg]');btn.disabled=true;try{const r=await window.zhiSupabase.rpc('admin_reject_prediction_candidate',{p_candidate_id:Number(item.dataset.labId),p_reason:prompt('驳回原因 / Reason:','')||null});if(r.error)throw r.error;await loadLab();}catch(e){msg.textContent='❌ '+(e.message||'Reject failed');btn.disabled=false;}});
+    }catch(e){box.innerHTML='<div class="notice">❌ '+esc(e.message||e)+'</div>'}
+  }
+  function init(){const t=document.getElementById('zhiLabToggle');if(t&&!t.dataset.bound){t.dataset.bound='1';t.onclick=()=>{document.getElementById('zhiLabDetails').classList.toggle('open');document.getElementById('zhiLabArrow').classList.toggle('open')}}const b=document.getElementById('zhiLabRefresh');if(b&&!b.dataset.bound){b.dataset.bound='1';b.dataset.bound='1';b.onclick=loadLab}if(window.zhiSupabase&&window.user?.app_metadata?.role==='admin')loadLab()}
+  let n=0;const timer=setInterval(()=>{if(++n>30)clearInterval(timer);init()},500);
+})();
+</script>
   </div>
 </div>
 <div id="adminMarkets"></div>

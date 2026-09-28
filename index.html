@@ -1303,6 +1303,7 @@ const mo=new MutationObserver(()=>initZhiDateTimes()); mo.observe(document.docum
           '<div class="proposal-question">中文：'+esc(p.question_zh||'')+'</div>'+
           '<div class="proposal-question">English: '+esc(p.question_en||'')+'</div>'+
           '<div class="proposal-meta">投票：👍 '+Number(p.community_yes_votes||0)+' · 👎 '+Number(p.community_no_votes||0)+' · 共 '+total+' 票（需要至少 5 票）</div>'+
+          '<div class="proposal-meta" data-community-countdown data-expires="'+esc(p.community_expires_at||'')+'">⏳ 剩余时间计算中… / Time remaining…</div>'+
           (isSim?'<div class="notice">SR 账号不能参与社群决策 / SR accounts cannot vote.</div>':
             '<div class="community-proposal-votes"><button type="button" class="btn yes" data-community-vote="yes">👍 赞成 / YES</button><button type="button" class="btn no" data-community-vote="no">👎 反对 / NO</button></div>')+
           '<div class="proposal-meta" data-community-msg></div></div>';
@@ -1326,10 +1327,23 @@ const mo=new MutationObserver(()=>initZhiDateTimes()); mo.observe(document.docum
       box.innerHTML='<div class="notice">❌ 社群提案加载失败 / Failed to load community proposals: '+esc(e.message||e)+'</div>';
     }
   }
+  function updateCountdowns(){
+    const now=Date.now();
+    document.querySelectorAll('[data-community-countdown]').forEach(el=>{
+      const t=Date.parse(el.dataset.expires);
+      if(!Number.isFinite(t))return;
+      const left=Math.max(0,t-now);
+      if(left<=0){el.textContent='⏳ 已到2小时，正在移出社群决策 / 2-hour window ended; removing…';return;}
+      const totalSec=Math.floor(left/1000),h=Math.floor(totalSec/3600),m=Math.floor((totalSec%3600)/60),s=totalSec%60;
+      el.textContent='⏳ 剩余 '+String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')+' / Time remaining';
+    });
+  }
   window.zhiLoadCommunityProposals=loadCommunity;
   function boot(){
     if(!$('communityProposalList'))return;
     loadCommunity();
+    setInterval(updateCountdowns,1000);
+    setInterval(loadCommunity,30000);
     if(window.zhiSupabase?.auth?.onAuthStateChange)window.zhiSupabase.auth.onAuthStateChange(()=>setTimeout(loadCommunity,100));
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();

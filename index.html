@@ -1348,4 +1348,36 @@ const mo=new MutationObserver(()=>initZhiDateTimes()); mo.observe(document.docum
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
-</script></body></html>
+<style>
+#logout{display:block!important;visibility:visible!important;opacity:1!important;margin:18px auto!important;padding:10px 18px!important;border:1px solid #d7dbe2!important;border-radius:10px!important;background:#fff!important;color:#3157b7!important;font-weight:800!important;cursor:pointer!important;min-height:40px}
+#communityProposalToggle{user-select:none}
+</style>
+<script data-zhi-ui-repair="20260928">
+(function(){
+  function bindZhiUserUI(){
+    const logout=document.getElementById('logout');
+    const client=window.zhiSupabase;
+    if(logout && !logout.dataset.zhiLogoutBound){
+      logout.dataset.zhiLogoutBound='1';
+      logout.onclick=async function(){
+        logout.disabled=true;
+        logout.textContent='正在退出… / Signing out…';
+        try{ if(client?.auth) await client.auth.signOut(); }finally{ window.location.reload(); }
+      };
+    }
+    const toggle=document.getElementById('communityProposalToggle');
+    const details=document.getElementById('communityProposalDetails');
+    const arrow=document.getElementById('communityProposalArrow');
+    if(toggle && details && arrow && !toggle.dataset.zhiCommunityBound){
+      toggle.dataset.zhiCommunityBound='1';
+      toggle.onclick=function(){
+        details.classList.toggle('open');
+        arrow.classList.toggle('open');
+      };
+    }
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bindZhiUserUI);else bindZhiUserUI();
+  setTimeout(bindZhiUserUI,300);
+  setTimeout(bindZhiUserUI,1000);
+})();
+</script></script></body></html>

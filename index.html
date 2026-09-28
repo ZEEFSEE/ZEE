@@ -997,45 +997,39 @@ $('authSubmit').onclick=async()=>{
    return;
   }
 
+  // Use the Supabase Auth REST endpoint as the primary login path.
+  // This avoids browser/client auth-lock stalls that can leave the UI on
+  // “Connecting to login service…” indefinitely.
   let data=null,error=null;
   try{
-   const r=await Promise.race([
-    client.auth.signInWithPassword({email,password:p}),
-    new Promise((_,reject)=>setTimeout(()=>reject(new Error('login timeout')),12000))
-   ]);
-   data=r.data;error=r.error;
-  }catch(e){error=e}
-
-  if(error){
-   // Direct REST fallback only repairs transport/client issues; it never changes the account or wallet.
+   const controller=new AbortController();
+   const timer=setTimeout(()=>controller.abort(),8000);
+   let res;
    try{
-    const controller=new AbortController();
-    const fetchTimer=setTimeout(()=>controller.abort(),10000);
-    let res;
-    try{
-     res=await fetch(ZHI_URL+'/auth/v1/token?grant_type=password',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','apikey':ZHI_KEY},
-      body:JSON.stringify({email,password:p}),
-      signal:controller.signal
-     });
-    }catch(fetchError){
-     if(fetchError?.name==='AbortError')throw new Error('login network timeout');
-     throw fetchError;
-    }finally{clearTimeout(fetchTimer)}
-    const raw=await res.text();let j={};try{j=JSON.parse(raw)}catch(_){}
-    if(!res.ok)throw new Error(j.error_description||j.msg||j.message||error.message||'登录失败 / Login failed');
-    if(!j?.access_token||!j?.refresh_token)throw new Error('session missing');
-    const s=await client.auth.setSession({access_token:j.access_token,refresh_token:j.refresh_token});
-    if(s?.error)throw s.error;
-    const session=await verifySession();
-    data={user:session.user};
-   }catch(fallbackError){
-    throw fallbackError;
-   }
-  }else{
+    res=await fetch(ZHI_URL+'/auth/v1/token?grant_type=password',{
+     method:'POST',
+     headers:{'Content-Type':'application/json','apikey':ZHI_KEY},
+     body:JSON.stringify({email,password:p}),
+     signal:controller.signal,
+     cache:'no-store'
+    });
+   }catch(fetchError){
+    if(fetchError?.name==='AbortError')throw new Error('login network timeout');
+    throw fetchError;
+   }finally{clearTimeout(timer)}
+   const raw=await res.text();
+   let j={};try{j=JSON.parse(raw)}catch(_){}
+   if(!res.ok)throw new Error(j.error_description||j.msg||j.message||'login failed');
+   if(!j?.access_token||!j?.refresh_token)throw new Error('session missing');
+   const sessionResult=await Promise.race([
+    client.auth.setSession({access_token:j.access_token,refresh_token:j.refresh_token}),
+    new Promise((_,reject)=>setTimeout(()=>reject(new Error('session timeout')),8000))
+   ]);
+   if(sessionResult?.error)throw sessionResult.error;
    const session=await verifySession();
    data={user:session.user};
+  }catch(e){
+   error=e;
   }
 
   if(!data?.user)throw new Error('session missing');

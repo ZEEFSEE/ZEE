@@ -195,7 +195,49 @@ button,input,select{font:inherit}
   <div class="gift-toggle" id="adminProposalToggle" onclick="document.getElementById('adminProposalDetails').classList.toggle('open');document.getElementById('adminProposalArrow').classList.toggle('open')"><span>📥 <b>用户预测提案 / User Prediction Proposals</b></span><span class="gift-arrow" id="adminProposalArrow">▼</span></div>
   <div class="gift-details" id="adminProposalDetails">
     <div class="meta">管理员审核用户问题、双语内容、截止时间和结算规则。通过后自动创建市场，并从财神爷支付 1,000 ZHI 贡献奖。</div>
-    <button id="adminProposalRefresh" class="btn confirm" style="width:100%;margin-top:8px">🔄 刷新提案 / Refresh Proposals</button>
+    <button id="adminProposalRefresh" class="btn confirm" style="width:100%;margin-top:8px" type="button" onclick="window.zhiAdminProposalLoader&&window.zhiAdminProposalLoader()">🔄 刷新提案 / Refresh Proposals</button><script>
+(function(){
+  window.zhiAdminProposalLoader=async function(){
+    const box=document.getElementById('adminProposals');
+    if(!box)return;
+    if(!window.zhiSupabase){box.innerHTML='<div class="notice">❌ 数据库连接尚未完成 / Database connection not ready</div>';return;}
+    box.innerHTML='<div class="notice">正在读取提案 / Loading proposals...</div>';
+    try{
+      const r=await window.zhiSupabase.rpc('admin_get_prediction_proposals',{p_status:'pending'});
+      if(r.error)throw r.error;
+      let rows=Array.isArray(r.data)?r.data:[];
+      if(!rows.length){box.innerHTML='<div class="dash-empty">目前没有待审核提案 / No pending proposals</div>';return;}
+      const esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+      box.innerHTML=rows.map(p=>{
+        const d=new Date(p.requested_close_at||p.final_close_at);
+        const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Singapore',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(d);
+        const g=t=>(parts.find(x=>x.type===t)||{}).value||'00';
+        return '<div class="proposal-item" data-zhi-admin-proposal="'+p.id+'">'+
+          '<span class="proposal-status proposal-pending">待审核 / Pending</span>'+
+          '<div class="proposal-meta">用户 / User: <b>'+esc(p.username||'--')+'</b> · 提案 #'+p.id+'</div>'+
+          '<label>中文问题 / Chinese Question</label><textarea data-zhi-pzh rows="2">'+esc(p.question_zh)+'</textarea>'+
+          '<label>English Question</label><textarea data-zhi-pen rows="2">'+esc(p.question_en)+'</textarea>'+
+          '<label>最终截止时间 / Final Close Time</label><div style="display:flex;gap:6px"><input data-zhi-date type="date" value="'+g('year')+'-'+g('month')+'-'+g('day')+'"><select data-zhi-hour>'+Array.from({length:24},(_,i)=>'<option value="'+String(i).padStart(2,'0')+'" '+(String(i).padStart(2,'0')===g('hour')?'selected':'')+'>'+String(i).padStart(2,'0')+'</option>').join('')+'</select><span>:</span><select data-zhi-minute>'+Array.from({length:60},(_,i)=>'<option value="'+String(i).padStart(2,'0')+'" '+(String(i).padStart(2,'0')===g('minute')?'selected':'')+'>'+String(i).padStart(2,'0')+'</option>').join('')+'</select></div>'+
+          '<label>结算规则 / Settlement Rule</label><textarea data-zhi-rule rows="3">'+esc(p.settlement_rule)+'</textarea>'+
+          '<div class="proposal-actions"><button type="button" class="btn confirm" data-zhi-approve>✅ 通过并创建市场 / Approve & Publish</button><button type="button" class="btn no" data-zhi-reject>❌ 驳回 / Reject</button></div><div data-zhi-msg class="meta"></div></div>';
+      }).join('');
+      box.querySelectorAll('[data-zhi-approve]').forEach(btn=>btn.onclick=async()=>{
+        const item=btn.closest('[data-zhi-admin-proposal]'),msg=item.querySelector('[data-zhi-msg]');
+        const date=item.querySelector('[data-zhi-date]').value,h=item.querySelector('[data-zhi-hour]').value,m=item.querySelector('[data-zhi-minute]').value;
+        const close=new Date(date+'T'+h+':'+m+':00+08:00').toISOString();
+        const payload={p_proposal_id:Number(item.dataset.zhiAdminProposal),p_question_zh:item.querySelector('[data-zhi-pzh]').value.trim(),p_question_en:item.querySelector('[data-zhi-pen]').value.trim(),p_close_at:close,p_settlement_rule:item.querySelector('[data-zhi-rule]').value.trim()};
+        if(!payload.p_question_zh||!payload.p_question_en||!payload.p_settlement_rule||new Date(close)<=new Date()){msg.textContent='❌ 请填写完整，且截止时间必须是未来时间 / Complete all fields and use a future time';return;}
+        btn.disabled=true;msg.textContent='正在创建市场并发放 1,000 ZHI…… / Publishing...';
+        try{const r=await window.zhiSupabase.rpc('admin_approve_prediction_proposal',payload);if(r.error)throw r.error;msg.textContent='✅ 已发布 '+(r.data?.market_id||'')+'，贡献奖 +1,000 ZHI / Published';await window.zhiAdminProposalLoader();}catch(e){msg.textContent='❌ '+(e.message||'Approval failed');btn.disabled=false;}
+      });
+      box.querySelectorAll('[data-zhi-reject]').forEach(btn=>btn.onclick=async()=>{
+        const item=btn.closest('[data-zhi-admin-proposal]'),msg=item.querySelector('[data-zhi-msg]'),reason=prompt('驳回原因 / Rejection reason (optional):','');
+        btn.disabled=true;try{const r=await window.zhiSupabase.rpc('admin_reject_prediction_proposal',{p_proposal_id:Number(item.dataset.zhiAdminProposal),p_reason:reason||null});if(r.error)throw r.error;await window.zhiAdminProposalLoader();}catch(e){msg.textContent='❌ '+(e.message||'Reject failed');btn.disabled=false;}
+      });
+    }catch(e){box.innerHTML='<div class="notice">❌ 加载提案失败 / Failed to load: '+String(e.message||e)+'</div>';}
+  };
+})();
+</script>
     <div id="adminProposals" class="proposal-list"><div class="notice">加载中 / Loading...</div></div>
   </div>
 </div>

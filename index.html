@@ -118,6 +118,8 @@ button,input,select{font:inherit}
 .proposal-actions{display:flex;gap:8px;margin-top:10px}
 .proposal-actions .btn{flex:1}
 @media(max-width:620px){.proposal-grid{grid-template-columns:1fr}.proposal-actions{flex-direction:column}}
+/* Community Decisions must never appear on the login screen */
+#communityProposalPanel{display:none}
 /* ZHI_CUSTOM_DATETIME */
 .zhi-datetime{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .zhi-datetime input[type=date],.zhi-datetime select{height:40px;padding:8px 10px;border:1px solid #ddd;border-radius:9px;background:#fff;font:inherit}
@@ -1332,7 +1334,23 @@ const mo=new MutationObserver(()=>initZhiDateTimes()); mo.observe(document.docum
     <div id="communityProposalList" class="proposal-list"><div class="notice">加载中 / Loading...</div></div>
   </div>
 </section>
-<script data-zhi-community-proposals="20260928">
+<script data-zhi-community-visibility="20260929">
+(function(){
+  function syncCommunityVisibility(){
+    const panel=document.getElementById('communityProposalPanel');
+    const app=document.getElementById('app');
+    if(!panel||!app)return;
+    panel.style.display=app.classList.contains('hidden')?'none':'block';
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',syncCommunityVisibility);else syncCommunityVisibility();
+  const app=document.getElementById('app');
+  if(app&&window.MutationObserver){
+    new MutationObserver(syncCommunityVisibility).observe(app,{attributes:true,attributeFilter:['class']});
+  }
+  setTimeout(syncCommunityVisibility,300);
+  setTimeout(syncCommunityVisibility,1000);
+})();
+</script><script data-zhi-community-proposals="20260928">
 (function(){
   const $=id=>document.getElementById(id);
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

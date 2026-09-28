@@ -1211,44 +1211,52 @@ const mo=new MutationObserver(()=>initZhiDateTimes()); mo.observe(document.docum
 })();
 </script><script data-zhi-login-emergency="20260928">
 (function(){
+  async function waitClient(){
+    for(let i=0;i<40;i++){
+      if(window.zhiSupabase?.auth)return window.zhiSupabase;
+      await new Promise(r=>setTimeout(r,100));
+    }
+    return null;
+  }
   function bind(){
-    const btn=document.getElementById('authSubmit');
-    const username=document.getElementById('authUsername');
-    const password=document.getElementById('authPassword');
-    const err=document.getElementById('authError');
-    const status=document.getElementById('loginStatus');
+    const btn=document.getElementById('authSubmit'),username=document.getElementById('authUsername'),password=document.getElementById('authPassword');
+    const err=document.getElementById('authError'),status=document.getElementById('loginStatus');
     if(!btn||!username||!password)return false;
-    if(btn.dataset.zhiLoginBound==='1')return true;
-    btn.dataset.zhiLoginBound='1';
+    if(btn.dataset.zhiLoginBound==='2')return true;
+    btn.dataset.zhiLoginBound='2';
     btn.onclick=async function(){
-      const raw=username.value.trim(), p=password.value;
+      const raw=username.value.trim(),p=password.value;
       const show=(msg,ok)=>{
         if(err){err.textContent=msg;err.style.color=ok?'#087443':'#c62828';}
-        if(status&&!ok)status.textContent='登录失败 / Sign in failed';
+        if(status)status.textContent=ok?msg:'登录失败 / Sign in failed';
       };
-      if(!/^[^\s@]{2,64}$/.test(raw))return show('请输入用户名 / Please enter your username',false);
+      if(!/^[a-zA-Z0-9_]{2,24}$/.test(raw))return show('用户名只能用 2-24 位英文字母、数字或下划线',false);
       if(p.length<6)return show('密码至少6位 / Password must be at least 6 characters',false);
-      const client=window.zhiSupabase||null;
-      if(!client?.auth)return show('数据库连接尚未准备好，请刷新页面 / Database connection is not ready',false);
-      btn.disabled=true;show('正在登录…… / Signing in…',true);
+      const client=await waitClient();
+      if(!client)return show('ZHI 数据库连接失败，请稍后再试 / Database connection failed',false);
+      btn.disabled=true;show('正在验证账户…… / Verifying account…',true);
       try{
-        const email=raw.includes('@')?raw.toLowerCase():raw.toLowerCase()+'@zhi-demo.com';
-        const {data,error}=await client.auth.signInWithPassword({email,password:p});
-        if(error)throw error;
-        if(!data?.session?.user)throw new Error('登录成功但会话未建立，请再试一次 / Signed in but session was not established');
+        const email=raw.toLowerCase()+'@zhi-demo.com';
+        const res=await fetch('https://bkttvffunyvbswkxpygp.supabase.co/auth/v1/token?grant_type=password',{
+          method:'POST',headers:{'Content-Type':'application/json','apikey':'sb_publishable_NYVMp3Nhk9QDtIxz1MGOEA_Z7RtbMyP'},body:JSON.stringify({email,password:p})
+        });
+        const data=await res.json().catch(()=>({}));
+        if(!res.ok)throw new Error(data.error_description||data.msg||data.message||'用户名或密码错误 / Incorrect username or password');
+        if(!data.access_token||!data.refresh_token)throw new Error('登录成功但会话数据不完整，请重试 / Session data incomplete');
+        const ss=await client.auth.setSession({access_token:data.access_token,refresh_token:data.refresh_token});
+        if(ss.error)throw ss.error;
+        if(!ss.data?.session?.user)throw new Error('登录成功但会话未建立 / Session was not established');
         show('登录成功，正在进入 ZHI… / Signed in, opening ZHI…',true);
-        window.location.reload();
+        if(typeof load==='function')await load(ss.data.session.user);
+        else window.location.reload();
       }catch(e){
         const m=String(e?.message||e||'Login failed');
-        show(/invalid login credentials/i.test(m)?'用户名或密码错误 / Incorrect username or password':m,false);
+        show(/invalid|credentials|password/i.test(m)?'用户名或密码错误 / Incorrect username or password':m,false);
       }finally{btn.disabled=false}
     };
     return true;
   }
-  function boot(){
-    if(bind())return;
-    setTimeout(bind,300);setTimeout(bind,1000);setTimeout(bind,2000);
-  }
+  function boot(){if(bind())return;setTimeout(bind,300);setTimeout(bind,1000);setTimeout(bind,2000);}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
 </script>

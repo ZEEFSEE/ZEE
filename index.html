@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="zhi-language-version" content="2026-09-28-v2">
+<meta name="zhi-language-version" content="2026-09-29-loginfix-v1">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -405,9 +405,8 @@ button,input,select{font:inherit}
 <div class="modalactions"><button id="modalCancel" class="btn" style="background:#eee">取消 / Cancel</button><button id="modalConfirm" class="btn confirm" style="display:none">确认 / Confirm</button></div>
 </div></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="supabase-client.js?v=20260928-login"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/dist/umd/supabase.js"></script>
+<script src="supabase-client.js?v=20260929-loginfix-v1"></script>
 <script src="settlement.js"></script>
 <script>
 const ZHI_URL='https://bkttvffunyvbswkxpygp.supabase.co';const ZHI_KEY='sb_publishable_NYVMp3Nhk9QDtIxz1MGOEA_Z7RtbMyP';let sb=window.zhiSupabase||null;function ensureZhiClient(){if(window.zhiSupabase?.auth){sb=window.zhiSupabase;return sb;}if(window.supabase?.createClient){sb=window.supabase.createClient(ZHI_URL,ZHI_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});window.zhiSupabase=sb;return sb;}return null;}ensureZhiClient();let user=null,wallet=null,marketsData=[],positions=[],selectedMarket=null,selectedSide=null;

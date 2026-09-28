@@ -438,41 +438,60 @@ async function load(passedUser=null){
    if(r.error)throw r.error;
    user=r.data.session?.user||null;
   }
- }catch(e){
-  user=null;
- }
+ }catch(e){user=null;}
  if(!user){$('authScreen').classList.remove('hidden');$('app').classList.add('hidden');return}
  $('authScreen').classList.add('hidden');$('app').classList.remove('hidden');
- try{if(typeof loadMyProposals==='function')await loadMyProposals()}catch(e){const box=$('myProposals');if(box)box.innerHTML='<div class="notice">加载失败 / Failed: '+String(e?.message||e||'')+'</div>';}
+
+ // Wire the core controls immediately. A slow panel/query must never make ZHI feel frozen.
  try{
+  if($('saveBtn'))$('saveBtn').onclick=saveZhi;
+  if($('withdrawBtn'))$('withdrawBtn').onclick=withdrawZhi;
+  if($('claimBtn'))$('claimBtn').onclick=claimSavings;
+  if($('loanBtn'))$('loanBtn').onclick=takeLoan;
+  if($('repayBtn'))$('repayBtn').onclick=repayLoan;
+  if($('loginStatus'))$('loginStatus').textContent='登录成功，正在加载钱包和预测市场…… / Signed in, loading wallet and markets…';
+ }catch(e){console.warn('[ZHI] core button binding failed',e);}
+
+ // Load the core market data with a hard timeout so one stuck request cannot block the app.
+ try{
+  const corePromise=Promise.all([
+   sb.from('wallets').select('*').eq('user_id',user.id).single(),
+   sb.from('markets').select('*').order('created_at',{ascending:true}),
+   sb.from('positions').select('*').eq('user_id',user.id).eq('status','open'),
+   sb.from('transactions').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(10)
+  ]);
+  const timeoutPromise=new Promise((_,reject)=>setTimeout(()=>reject(new Error('核心资料加载超时 / Core data loading timed out')),8000));
+  const [w,m,p,h]=await Promise.race([corePromise,timeoutPromise]);
+  wallet=w.data;marketsData=m.data||[];positions=p.data||[];
+  $('balance').textContent=money(wallet?.balance||0);
+  renderMarkets();renderHistory(h.data||[]);
   try{
-   const [w,m,p,h]=await Promise.all([
-    sb.from('wallets').select('*').eq('user_id',user.id).single(),
-    sb.from('markets').select('*').order('created_at',{ascending:true}),
-    sb.from('positions').select('*').eq('user_id',user.id).eq('status','open'),
-    sb.from('transactions').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(10)
+   const treasury=await Promise.race([
+    sb.rpc('get_treasury_balance'),
+    new Promise((_,reject)=>setTimeout(()=>reject(new Error('Treasury timeout')),5000))
    ]);
-   wallet=w.data;marketsData=m.data||[];positions=p.data||[];
-   const treasury=await sb.rpc('get_treasury_balance');
+   $('treasuryBalance').textContent=money(treasury.data||0);
+  }catch(e){$('treasuryBalance').textContent='--';}
+  try{
    const {data:profile}=await sb.from('profiles').select('username,z_id').eq('id',user.id).maybeSingle();
    $('topUsername').textContent=profile?.username||user?.user_metadata?.username||user?.email?.split('@')[0]||'--';
    $('topZId').textContent=profile?.z_id?('ID: ZHI-'+String(profile.z_id).padStart(12,'0')):'ID: ZHI-000000000000';
-   $('balance').textContent=money(wallet?.balance||0);$('treasuryBalance').textContent=money(treasury.data||0);
-   renderMarkets();renderHistory(h.data||[]);
-  }catch(e){
-   $('balance').textContent=money(wallet?.balance||0);
-   $('treasuryBalance').textContent='--';
-   const msg=$('loginStatus');
-   if(msg)msg.textContent='资料加载提示：'+(e.message||'部分资料暂时无法加载');
- }
- $('saveBtn').onclick=saveZhi;$('withdrawBtn').onclick=withdrawZhi;$('claimBtn').onclick=claimSavings;$('loanBtn').onclick=takeLoan;$('repayBtn').onclick=repayLoan;
- await Promise.allSettled([loadFinancePanel(),loadGiftNotice(),loadHomeDashboard()]);
+  }catch(e){}
  }catch(e){
-  const msg=$('loginStatus');
-  if(msg)msg.textContent='系统提示：'+(e.message||'部分资料暂时无法加载');
+  console.error('[ZHI] core dashboard load failed',e);
+  if($('balance'))$('balance').textContent=money(wallet?.balance||0);
+  if($('treasuryBalance'))$('treasuryBalance').textContent='--';
+  if($('loginStatus'))$('loginStatus').textContent='已登录，但部分资料加载较慢 / Signed in; some data is loading slowly.';
  }
-}
-function marketQuestion(m){return m?.question_zh||m?.question||'';}
+
+ // Secondary panels are independent and never block the core UI.
+ Promise.allSettled([
+  (typeof loadMyProposals==='function'?loadMyProposals():Promise.resolve()),
+  loadFinancePanel(),
+  loadGiftNotice(),
+  loadHomeDashboard()
+ ]).then(()=>{if($('loginStatus'))$('loginStatus').textContent='ZHI 已就绪 / ZHI is ready';}).catch(e=>console.warn('[ZHI] secondary panels failed',e));
+}function marketQuestion(m){return m?.question_zh||m?.question||'';}
 const uiSide=side=>side==='yes'?'YES / 是':'NO / 否';
 const uiResult=result=>result==='yes'?'YES / 是':result==='no'?'NO / 否':'--';
 const uiTx=x=>{

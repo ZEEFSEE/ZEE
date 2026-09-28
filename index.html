@@ -300,6 +300,7 @@ button,input,select{font:inherit}
   <div class="dash-title">⚙️ REAL_EXECUTION 管理 <span id="zhiRealExecBadge" class="dash-chip chip-blue">关闭</span></div>
   <div class="dash-sub">真实 ZHI 钱包执行总开关；默认关闭。开启后才允许执行周期工作。</div>
   <div id="zhiRealExecStats" class="finance-grid" style="margin-top:10px"></div>
+  <div class="card" style="margin-top:10px;padding:10px;background:#fafafa"><div style="font-weight:800;font-size:13px">🟢 系统 Gate / System Gate</div><div id="zhiRealExecGateStatus" class="proposal-meta" style="margin-top:5px">检查中 / Checking...</div></div>
   <div class="finance-actions">
     <button id="zhiRealExecToggle" class="btn confirm" type="button">开启 REAL_EXECUTION</button>
     <button id="zhiRealExecRefresh" class="btn" type="button">刷新状态</button>
@@ -318,7 +319,9 @@ button,input,select{font:inherit}
     const s=$('zhiRealExecStats');
     if(s)s.innerHTML=stat('24小时成功执行',d?.executed_24h??0)+stat('24小时失败',d?.failed_24h??0)+stat('SR未结仓位',d?.open_real_positions??0)+stat('24小时已结算市场',d?.resolved_markets_24h??0)+stat('单次上限',c.max_stake_per_action??0)+stat('最低置信度',c.min_confidence??0);
     const box=$('zhiRealExecLog'); if(!box)return;
-    if(!logs?.length){box.innerHTML='<div class="dash-empty">'+('暂无执行日志')+'</div>';return}
+    const gate=$('zhiRealExecGateStatus');
+    if(gate)gate.innerHTML='最近 Gate：'+esc(c.last_cycle_at?new Date(c.last_cycle_at).toLocaleString():'--')+' · '+(on?'🟢 REAL_EXECUTION 已开启':'🔴 REAL_EXECUTION 已关闭');
+    if(!logs?.length){box.innerHTML='<div class="notice">暂无真实钱包执行日志 / No real wallet execution yet</div><div class="proposal-meta" style="margin-top:6px">当前没有实际钱包下注记录。系统 Gate 可以正常运行，但 REAL_EXECUTION 关闭时不会产生真实执行日志。</div>';return}
     box.innerHTML=logs.map(x=>'<div class="proposal-item"><span class="proposal-status '+(x.success?'proposal-published':'proposal-rejected')+'">'+(x.success?'成功':'失败')+'</span><div class="proposal-meta">SR '+esc(x.sr_id)+' · '+esc(x.market_id)+' · '+esc(x.side)+' · '+esc(x.amount)+'</div><div class="proposal-meta">'+esc(x.created_at)+(x.error_message?' · '+esc(x.error_message):'')+'</div></div>').join('');
   }
   async function load(){

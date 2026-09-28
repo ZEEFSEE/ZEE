@@ -187,21 +187,6 @@ button,input,select{font:inherit}
 <div id="expiredPanel" class="hidden"><h2>⏰ 已到期 / Expired</h2><div id="expiredMarkets"></div></div>
 <div id="adminPanel" class="hidden"><h2>🛠️ 管理员 / Admin</h2>
 <div class="card" id="treasuryFinancePanel" style="background:linear-gradient(135deg,#fffdf4,#fff8df);border-color:#ead28a"><div class="q">🏦 财神爷财务中心 / Treasury Finance</div><div class="meta">固定总供应量与财神爷资金流向</div><div class="finance-grid"><div class="finance-stat"><span>💰 财神爷总余额</span><b id="tfTotal">--</b></div><div class="finance-stat"><span>🟢 可用余额</span><b id="tfAvailable">--</b></div><div class="finance-stat"><span>🔒 用户存款</span><b id="tfSavings">--</b></div><div class="finance-stat"><span>💳 用户贷款</span><b id="tfLoans">--</b></div><div class="finance-stat"><span>💸 待收贷款利息</span><b id="tfLoanInterest">--</b></div><div class="finance-stat"><span>📉 已付存款利息</span><b id="tfSavingsInterest">--</b></div><div class="finance-stat"><span>🪙 固定总供应量</span><b id="tfSupply">3,000万亿</b></div></div><div id="tfMsg" class="meta" style="margin-top:8px"></div><div class="card" id="fundsReconcilePanel" style="background:linear-gradient(135deg,#f7fff8,#eefaf1);border-color:#b9dfc2"><div class="q">🧾 资金守恒检查 / Funds Reconciliation</div><div class="meta">固定总供应量 = 财神爷 + 真人用户资产 + SR 模拟用户资产。SR 钱包、锁定资金与存款也纳入核算，且不会重复计算。每次刷新自动核对。</div><div class="finance-grid"><div class="finance-stat"><span>🪙 固定总供应量</span><b id="frSupply">--</b></div><div class="finance-stat"><span>🏦 财神爷余额</span><b id="frTreasury">--</b></div><div class="finance-stat"><span>👛 用户钱包</span><b id="frWallets">--</b></div><div class="finance-stat"><span>🔒 锁定下注</span><b id="frLocked">--</b></div><div class="finance-stat"><span>💰 用户存款</span><b id="frSavings">--</b></div><div class="finance-stat"><span>💳 未偿贷款</span><b id="frLoans">--</b></div><div class="finance-stat"><span>🤖 SR 钱包</span><b id="frSRWallets">--</b></div><div class="finance-stat"><span>🔒 SR 锁定</span><b id="frSRLocked">--</b></div><div class="finance-stat"><span>🏦 SR 存款</span><b id="frSRSavings">--</b></div><div class="finance-stat"><span>🧮 已核算总额</span><b id="frAccounted">--</b></div></div><div id="frStatus" class="notice" style="margin-top:10px">检查中 / Checking...</div><div id="frMsg" class="meta" style="margin-top:8px"></div></div><div class="card" id="treasuryDailyPanel" style="background:linear-gradient(135deg,#fff,#f7f1dc);border-color:#e8d7a4"><div class="q">📊 财神爷每日财务报表 / Daily Finance Report</div><div class="meta">每日贷款利息收入、存款利息支出与净收益</div><div class="finance-grid"><div class="finance-stat"><span>📈 今日贷款利息收入</span><b id="tdLoanIncome">--</b></div><div class="finance-stat"><span>📉 今日存款利息支出</span><b id="tdSavingsExpense">--</b></div><div class="finance-stat"><span>💰 今日净收益</span><b id="tdNet">--</b></div></div><div id="tdDays" class="history" style="margin-top:10px"></div><div id="tdMsg" class="meta" style="margin-top:8px"></div></div></div><div class="card" id="srSimulationPanel" style="background:linear-gradient(135deg,#f6f3ff,#fff);border-color:#cfc2f5"><div class="gift-toggle" id="srSimulationToggle"><span>🤖 <b>SR · ZHI 10,000 模拟社区引擎</b></span><span class="gift-arrow" id="srSimulationArrow">▼</span></div><div class="gift-details open" id="srSimulationDetails"><div class="meta">10,000 个 SR 是管理员可识别的模拟用户；账号使用 ZHI 正式 Auth 与正式业务表，行为和资金规则与普通 ZHI 用户一致。</div><div class="finance-grid"><div class="finance-stat"><span>👥 SR 用户</span><b id="srUsers">--</b></div><div class="finance-stat"><span>🟢 活跃</span><b id="srActive">--</b></div><div class="finance-stat"><span>⚡ 今日动作</span><b id="srActions">--</b></div><div class="finance-stat"><span>🔐 今日登录</span><b id="srLogins">--</b></div><div class="finance-stat"><span>🎯 今日预测</span><b id="srPredictions">--</b></div><div class="finance-stat"><span>🏦 今日存储</span><b id="srSaves">--</b></div><div class="finance-stat"><span>💳 今日贷款</span><b id="srLoans">--</b></div><div class="finance-stat"><span>↩️ 今日还款</span><b id="srRepays">--</b></div><div class="finance-stat"><span>👛 SR 钱包</span><b id="srWallet">--</b></div><div class="finance-stat"><span>🏦 SR 存储</span><b id="srSavings">--</b></div><div class="finance-stat"><span>💳 SR 未偿贷款</span><b id="srLoanBalance">--</b></div><div class="finance-stat"><span>🕒 最近动作</span><b id="srLast" style="font-size:12px">--</b></div></div><div class="finance-actions"><button id="srCreateAuthBtn" class="btn confirm" type="button" onclick="window.createSRAuthUsers()">👥 创建/同步真实 ZHI 用户</button><button id="srRunBtn" class="btn confirm">⚡ 立即运行一批</button><button id="srPauseBtn" class="btn">⏸ 暂停 SR</button><button id="srRefreshBtn" class="btn">🔄 刷新</button></div><div class="card" style="margin-top:10px;background:linear-gradient(135deg,#fffdf0,#fff7cf);border-color:#ead28a"><div class="q">🪙 财神爷 → SR 初始资金发放</div><div class="meta">每个 SR 注册时由财神爷发放 1,000 ZHI；这里显示实际记账结果。</div><div class="finance-grid"><div class="finance-stat"><span>👥 已发放账户</span><b id="srGrantCount">--</b></div><div class="finance-stat"><span>🪙 每人发放</span><b id="srGrantEach">--</b></div><div class="finance-stat"><span>💰 累计发放</span><b id="srGrantTotal">--</b></div><div class="finance-stat"><span>🏦 资金来源</span><b id="srGrantSource">--</b></div></div></div><div id="srMsg" class="meta" style="margin-top:8px"></div><div class="sr-live" id="srLivePanel"><div class="sr-live-head" id="srLiveToggle" style="cursor:pointer"><span><span class="sr-live-dot"></span> 实时行为 / Live SR activity</span><span style="display:flex;align-items:center;gap:8px"><span id="srLiveCount" class="meta" style="margin:0">--</span><span id="srLiveArrow" class="gift-arrow">▼</span></span></div><div id="srLiveSummary" class="finance-grid" style="margin-top:10px"></div><div class="gift-details" id="srLiveDetails"><div id="srLiveList" class="sr-live-list"><div class="notice">加载中 / Loading...</div></div></div></div></div></div><div class="card" id="settlementPanel"><div class="q">⏳ 待结算市场 / Settlement</div><div class="meta">投注截止后会自动出现在这里。管理员确认结果后，系统立即自动派奖。</div><div id="settlementMarkets"></div></div>
-<div class="card" id="createMarketPanel">
-  <div class="gift-toggle" id="createMarketToggle">
-    <span>➕ <b>新增市场 / Create Market</b></span>
-    <span class="gift-arrow" id="createMarketArrow">▼</span>
-  </div>
-  <div class="gift-details" id="createMarketDetails">
-    <div class="notice">Market ID will be generated automatically. YES / NO are fixed options.</div>
-    <div class="field"><label>中文问题 / Chinese Question</label><input id="newMarketQuestionZh" placeholder="例如：某事件是否会发生？"></div>
-    <div class="field"><label>英文问题 / English Question</label><input id="newMarketQuestionEn" placeholder="e.g. Will this event happen?"></div>
-    <div class="field"><label>截止时间 / Close Time</label><div class="zhi-datetime" data-zdt-for="newMarketCloseAt" aria-label="24-hour close time"><input type="date" data-zdt-date><select data-zdt-hour aria-label="Hour"></select><span class="zhi-time-sep">:</span><select data-zdt-minute aria-label="Minute"></select></div><input id="newMarketCloseAt" type="hidden"></div>
-    <div class="field"><label>结算规则 / Settlement Rule</label><textarea id="newMarketSettlementRule" rows="3" style="width:100%;padding:11px;border:1px solid #ddd;border-radius:9px" placeholder="例如：以官方来源在指定时间公布的结果为准。 / e.g. Settle according to the official source at the specified time."></textarea></div>
-    <button id="createMarketBtn" class="btn confirm" style="width:100%">创建市场 / Create Market</button>
-    <div id="createMarketError" class="err" style="margin-top:8px"></div>
-  </div>
-</div>
 <div class="card proposal-card" id="adminProposalPanel">
   <div class="gift-toggle" id="adminProposalToggle" onclick="document.getElementById('adminProposalDetails').classList.toggle('open');document.getElementById('adminProposalArrow').classList.toggle('open')"><span>📥 <b>用户预测提案 / User Prediction Proposals</b></span><span class="gift-arrow" id="adminProposalArrow">▼</span></div>
   <div class="gift-details" id="adminProposalDetails">
@@ -249,53 +234,7 @@ button,input,select{font:inherit}
   };
 })();
 </script>
-    <div id="adminProposals" class="proposal-list"><div class="notice">加载中 / Loading...</div></div><div class="card" id="zhiPredictionLab" style="margin-top:14px;background:linear-gradient(135deg,#f8fbff,#eef5ff);border-color:#bfd5f5">
-  <div class="gift-toggle" id="zhiLabToggle"><span>🧠 <b>AI Prediction Lab · SR 智能预测实验室</b></span><span class="gift-arrow" id="zhiLabArrow">▼</span></div>
-  <div class="gift-details" id="zhiLabDetails">
-    <div class="meta">SR Research → Evidence → Insight → Candidate。管理员可编辑问题、截止时间和结算规则，再送入正式 Prediction Proposal。</div>
-    <div style="display:flex;gap:8px;margin-top:10px"><button id="zhiLabRefresh" class="btn confirm" style="flex:1">🔄 刷新候选</button><span id="zhiLabCount" class="meta" style="align-self:center"></span></div>
-    <div id="zhiLabQueue" class="proposal-list"><div class="notice">加载中 / Loading...</div></div>
-  </div>
-</div>
-<script>
-(function(){
-  function esc(v){return String(v??'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]))}
-  function localParts(iso){const d=iso?new Date(iso):new Date(Date.now()+7*86400000);const f=n=>String(n).padStart(2,'0');return {date:d.getFullYear()+'-'+f(d.getMonth()+1)+'-'+f(d.getDate()),hour:f(d.getHours()),minute:f(Math.floor(d.getMinutes()/10)*10)}}
-  async function loadLab(){
-    const box=document.getElementById('zhiLabQueue'), count=document.getElementById('zhiLabCount'); if(!box||typeof window.zhiSupabase==='undefined')return;
-    box.innerHTML='<div class="notice">正在读取 SR Research candidates…</div>';
-    try{
-      const r=await window.zhiSupabase.rpc('admin_get_candidate_review_queue',{p_limit:50}); if(r.error)throw r.error;
-      const rows=Array.isArray(r.data)?r.data:[]; count.textContent=rows.length+' candidates';
-      if(!rows.length){box.innerHTML='<div class="notice">暂无可审核候选 / No candidates awaiting review</div>';return;}
-      box.innerHTML=rows.map(c=>{
-        const t=localParts(c.proposed_close_at), ev=Array.isArray(c.evidence)?c.evidence:[], ins=c.insight||'暂无独立洞察 / No insight yet';
-        return '<div class="proposal-item" data-lab-id="'+c.id+'" style="border-color:#cddcf3">'+
-          '<div><span class="proposal-status proposal-pending">'+esc(c.status)+'</span> <b>SR '+esc(c.sr_id)+'</b> · '+esc(c.username||'SR')+'</div>'+
-          '<div class="proposal-question">候选问题 / Candidate</div>'+
-          '<textarea data-lab-qzh rows="3" style="width:100%;margin-top:5px;padding:10px;border:1px solid #ddd;border-radius:9px;font:inherit">'+esc(c.question)+'</textarea>'+
-          '<div class="proposal-grid" style="margin-top:8px"><div><b>Quality</b> '+Number(c.quality_score||0).toFixed(3)+'<br><span class="meta">Research '+Number(c.research_score||0).toFixed(3)+' · Settlement '+Number(c.settlement_score||0).toFixed(3)+'</span></div><div><b>Novelty</b> '+Number(c.novelty_score||0).toFixed(3)+'<br><span class="meta">Duplicate risk '+Number(c.duplicate_risk||0).toFixed(3)+' · Evidence '+(c.evidence_count||0)+'</span></div></div>'+
-          '<div class="proposal-admin"><label>中文 / Chinese</label><textarea data-lab-zh rows="2">'+esc(c.question||'')+'</textarea><label>English</label><textarea data-lab-en rows="2" placeholder="Admin completes English translation">'+esc(c.question_en||'')+'</textarea><label>截止时间 / Close</label><div class="zhi-datetime"><input data-lab-date type="date" value="'+t.date+'"><select data-lab-hour>'+Array.from({length:24},(_,i)=>'<option value="'+String(i).padStart(2,'0')+'" '+(t.hour===String(i).padStart(2,'0')?'selected':'')+'>'+String(i).padStart(2,'0')+'</option>').join('')+'</select><select data-lab-minute>'+[0,10,20,30,40,50].map(i=>'<option value="'+String(i).padStart(2,'0')+'" '+(t.minute===String(i).padStart(2,'0')?'selected':'')+'>'+String(i).padStart(2,'0')+'</option>').join('')+'</select></div><label>结算规则 / Settlement Rule</label><textarea data-lab-rule rows="2" placeholder="例如：按指定时间点的公开数据源判定">'+esc(c.proposed_settlement_rule||'')+'</textarea></div>'+
-          '<div style="margin-top:9px;padding:10px;border-radius:9px;background:#fff"><b>🧠 Research Insight</b><div class="meta" style="margin-top:5px">'+esc(ins)+'</div><div class="meta" style="margin-top:5px">Research method: '+esc(c.research_method||'market_research')+'</div></div>'+
-          '<div class="proposal-actions"><button type="button" class="btn confirm" data-lab-publish>🚀 提交正式 Proposal</button><button type="button" class="btn no" data-lab-reject>❌ 驳回</button></div><div data-lab-msg class="meta"></div></div>';
-      }).join('');
-      box.querySelectorAll('[data-lab-publish]').forEach(btn=>btn.onclick=async()=>{
-        const item=btn.closest('[data-lab-id]'),msg=item.querySelector('[data-lab-msg]'); const date=item.querySelector('[data-lab-date]').value,h=item.querySelector('[data-lab-hour]').value,m=item.querySelector('[data-lab-minute]').value; const close=new Date(date+'T'+h+':'+m+':00+08:00').toISOString();
-        const payload={p_candidate_id:Number(item.dataset.labId),p_question_zh:item.querySelector('[data-lab-zh]').value.trim(),p_question_en:item.querySelector('[data-lab-en]').value.trim(),p_close_at:close,p_settlement_rule:item.querySelector('[data-lab-rule]').value.trim()};
-        if(!payload.p_question_zh||!payload.p_question_en||!payload.p_settlement_rule||new Date(close)<=new Date()){msg.textContent='❌ 请完成中英文、截止时间和结算规则 / Complete all fields';return;}
-        btn.disabled=true;msg.textContent='正在提交正式 Proposal…';
-        try{const r=await window.zhiSupabase.rpc('admin_publish_candidate',payload);if(r.error)throw r.error;msg.textContent='✅ 已进入正式 Proposal #'+(r.data?.proposal_id||'');await loadLab();}catch(e){msg.textContent='❌ '+(e.message||'Publish failed');btn.disabled=false;}
-      });
-      box.querySelectorAll('[data-lab-reject]').forEach(btn=>btn.onclick=async()=>{const item=btn.closest('[data-lab-id]'),msg=item.querySelector('[data-lab-msg]');btn.disabled=true;try{const r=await window.zhiSupabase.rpc('admin_reject_prediction_candidate',{p_candidate_id:Number(item.dataset.labId),p_reason:prompt('驳回原因 / Reason:','')||null});if(r.error)throw r.error;await loadLab();}catch(e){msg.textContent='❌ '+(e.message||'Reject failed');btn.disabled=false;}});
-    }catch(e){box.innerHTML='<div class="notice">❌ '+esc(e.message||e)+'</div>'}
-  }
-  function init(){const t=document.getElementById('zhiLabToggle');if(t&&!t.dataset.bound){t.dataset.bound='1';t.onclick=()=>{document.getElementById('zhiLabDetails').classList.toggle('open');document.getElementById('zhiLabArrow').classList.toggle('open')}}const b=document.getElementById('zhiLabRefresh');if(b&&!b.dataset.bound){b.dataset.bound='1';b.dataset.bound='1';b.onclick=loadLab}if(window.zhiSupabase&&window.user?.app_metadata?.role==='admin')loadLab()}
-  let n=0;const timer=setInterval(()=>{if(++n>30)clearInterval(timer);init()},500);
-})();
-</script>
-  </div>
-</div>
-<div id="adminMarkets"></div>
+    <div id="adminProposals" class="proposal-list"><div class="notice">加载中 / Loading...</div></div><div id="adminMarkets"></div>
 <div class="card" id="adminUserFunds">
   <div class="gift-toggle" id="adminUserFundsToggle">
     <span>👥 <b>用户资金 / User Funds</b></span>

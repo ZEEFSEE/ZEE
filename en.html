@@ -296,7 +296,55 @@ button,input,select{font:inherit}
 <h2>🧾 我的记录 / My Records</h2><div id="history" class="card history"></div>
 <button id="logout" class="link" style="display:block;margin:18px auto">退出登录 / Sign out</button>
 <footer>🪙 <b style="color:#8a5a00">ZHI</b> · Prediction Platform · Demo</footer>
-</main>
+
+<section class="card" id="zhiRealExecutionDashboard" style="margin-top:12px">
+  <div class="dash-title">⚙️ REAL_EXECUTION Admin Control <span id="zhiRealExecBadge" class="dash-chip chip-blue">OFF</span></div>
+  <div class="dash-sub">Real ZHI wallet execution is controlled here. The switch is OFF by default.</div>
+  <div id="zhiRealExecStats" class="finance-grid" style="margin-top:10px"></div>
+  <div class="finance-actions">
+    <button id="zhiRealExecToggle" class="btn confirm" type="button">Enable REAL_EXECUTION</button>
+    <button id="zhiRealExecRefresh" class="btn" type="button">Refresh</button>
+  </div>
+  <div id="zhiRealExecMsg" class="notice">Loading...</div>
+  <div style="margin-top:12px;font-weight:900;font-size:13px">Recent execution log</div>
+  <div id="zhiRealExecLog" class="proposal-list"><div class="dash-empty">Loading...</div></div>
+</section><script data-zhi-real-execution-ui="20260928">
+(function(){
+  const $=id=>document.getElementById(id), esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  function stat(label,value){return '<div class="finance-stat"><span>'+label+'</span><b>'+value+'</b></div>'}
+  function render(d,logs){
+    const c=d?.control||{}, on=!!c.real_execution_enabled, badge=$('zhiRealExecBadge'), toggle=$('zhiRealExecToggle');
+    if(badge){badge.textContent=on?'ON':'OFF';badge.className='dash-chip '+(on?'chip-green':'chip-blue')}
+    if(toggle)toggle.textContent=on?'Disable REAL_EXECUTION':'Enable REAL_EXECUTION';
+    const s=$('zhiRealExecStats');
+    if(s)s.innerHTML=stat('Executed 24h',d?.executed_24h??0)+stat('Failed 24h',d?.failed_24h??0)+stat('Open SR positions',d?.open_real_positions??0)+stat('Resolved 24h',d?.resolved_markets_24h??0)+stat('Max/action',c.max_stake_per_action??0)+stat('Min confidence',c.min_confidence??0);
+    const box=$('zhiRealExecLog'); if(!box)return;
+    if(!logs?.length){box.innerHTML='<div class="dash-empty">'+('No execution logs yet')+'</div>';return}
+    box.innerHTML=logs.map(x=>'<div class="proposal-item"><span class="proposal-status '+(x.success?'proposal-published':'proposal-rejected')+'">'+(x.success?'SUCCESS':'FAILED')+'</span><div class="proposal-meta">SR '+esc(x.sr_id)+' · '+esc(x.market_id)+' · '+esc(x.side)+' · '+esc(x.amount)+'</div><div class="proposal-meta">'+esc(x.created_at)+(x.error_message?' · '+esc(x.error_message):'')+'</div></div>').join('');
+  }
+  async function load(){
+    const client=window.zhiSupabase; if(!client?.rpc)return;
+    try{
+      const [dash,logs]=await Promise.all([
+        client.rpc('admin_get_execution_dashboard'),
+        client.rpc('admin_get_execution_log',{p_limit:30})
+      ]);
+      if(dash.error)throw dash.error; if(logs.error)throw logs.error;
+      render(dash.data,Array.isArray(logs.data)?logs.data:[]);
+      const m=$('zhiRealExecMsg'); if(m)m.textContent='Status loaded. REAL_EXECUTION is controlled by the admin switch.';
+    }catch(e){const m=$('zhiRealExecMsg');if(m)m.textContent='❌ '+(e?.message||e)}
+  }
+  async function toggle(){
+    const badge=$('zhiRealExecBadge'), on=badge?.textContent===('ON');
+    if(!confirm(on?'Disable REAL_EXECUTION?':'Enable REAL_EXECUTION? This permits the scheduled execution cycle.'))return;
+    const client=window.zhiSupabase;if(!client?.rpc)return;
+    const b=$('zhiRealExecToggle');if(b)b.disabled=true;
+    try{const r=await client.rpc('admin_set_real_execution',{p_enabled:!on});if(r.error)throw r.error;await load()}catch(e){const m=$('zhiRealExecMsg');if(m)m.textContent='❌ '+(e?.message||e)}finally{if(b)b.disabled=false}
+  }
+  function boot(){if(!$('zhiRealExecutionDashboard')||!window.zhiSupabase)return false;$('zhiRealExecToggle').onclick=toggle;$('zhiRealExecRefresh').onclick=load;load();return true}
+  let n=0;const t=setInterval(()=>{if(boot()||++n>40)clearInterval(t)},500);
+})();
+</script></main>
 <div id="stakeModal" class="modal"><div class="modalbox">
 <h3>预测 / Prediction</h3><div id="choiceText" class="choice"></div>
 <div id="directionChoice" style="display:none;gap:8px;margin-bottom:10px"><button id="modalYes" class="btn yes">YES / 是</button><button id="modalNo" class="btn no">NO / 否</button></div>

@@ -165,7 +165,7 @@ button,input,select{font:inherit}
 <div class="card proposal-card" id="userProposalCard">
   <div class="gift-toggle" id="userProposalToggle" onclick="document.getElementById('userProposalDetails').classList.toggle('open');document.getElementById('userProposalArrow').classList.toggle('open')"><span>🔮 <b>我想发起预测 / Suggest a Prediction</b></span><span class="gift-arrow" id="userProposalArrow">▼</span></div>
   <div class="gift-details" id="userProposalDetails">
-    <div class="proposal-note">任何 ZHI 用户都可以提出预测问题。只需填写问题和未来截至日期，交给管理员审核。如果审核通过，财神爷奖励 1000 ZHI。</div>
+    <div class="proposal-note">任何 ZHI 用户都可以提出预测问题。真实用户提案直接进入管理员审核；SR 提案必须先经过真实用户社群投票，达到社群通过条件后才进入管理员审核。通过并发布后，财神爷奖励 1,000 ZHI。</div>
     <div class="proposal-form">
       <textarea id="proposalQuestion" placeholder="请输入预测问题 / Enter your prediction question"></textarea>
       <div class="proposal-grid"><div><label class="meta">截至日期 / Closing Date</label><div class="zhi-datetime" data-zdt-for="proposalCloseAt" aria-label="24-hour closing date and time"><input type="date" data-zdt-date><select data-zdt-hour aria-label="Hour"></select><span class="zhi-time-sep">:</span><select data-zdt-minute aria-label="Minute"></select></div><input id="proposalCloseAt" type="hidden"></div><div class="notice" style="margin:0">⚠️ 截至日期必须是未来日期 / The closing date must be in the future.</div></div>
@@ -1196,12 +1196,12 @@ const mo=new MutationObserver(()=>initZhiDateTimes()); mo.observe(document.docum
     if(btn)btn.disabled=true;if(msg)msg.textContent='正在提交提案…… / Submitting proposal...';
     try{
       const zh=/[\u3400-\u9fff]/.test(q);
-      const {error}=await client.rpc('submit_prediction_proposal',{
+      const {data:proposalData,error}=await client.rpc('submit_prediction_proposal',{
         p_question_original:q,p_original_language:zh?'zh':'en',
         p_question_zh:zh?q:'',p_question_en:zh?'':q,p_requested_close_at:closeAt
       });
       if(error)throw error;
-      if(msg)msg.textContent='✅ 提案已提交，等待管理员补充缺失语言版本并审核 / Submitted. Admin will complete the missing language version and review it.';
+      if(msg)msg.textContent=proposalData?.status==='community_pending'?'✅ SR 提案已进入社群决策：至少 5 名真实用户投票且赞成票过半后，才会进入管理员审核。 / SR proposal is now in community review. It reaches admin review after at least 5 real-user votes with a majority YES.':'✅ 提案已提交，等待管理员审核 / Submitted for admin review.';
       $('proposalQuestion').value='';
       const box=document.querySelector('[data-zdt-for="proposalCloseAt"]'),d=box?.querySelector('[data-zdt-date]');if(d)d.value='';
       const hidden=$('proposalCloseAt');if(hidden)hidden.value='';
@@ -1257,4 +1257,81 @@ const mo=new MutationObserver(()=>initZhiDateTimes()); mo.observe(document.docum
   setTimeout(load,500);setTimeout(load,1500);setTimeout(load,3000);
 })();
 </script>
-</body></html>
+<style>
+.community-proposal-panel{margin-top:12px;border:1px solid #d9e1ef;background:linear-gradient(135deg,#f7faff,#fff)}
+.community-proposal-rule{font-size:11px;color:#64748b;line-height:1.5;margin-top:6px}
+.community-proposal-item{border:1px solid #e4e8ef;border-radius:12px;padding:12px;margin-top:10px;background:#fff}
+.community-proposal-votes{display:flex;gap:8px;margin-top:9px}
+.community-proposal-votes button{flex:1}
+.community-vote-disabled{opacity:.55;cursor:not-allowed}
+</style>
+<section class="card community-proposal-panel" id="communityProposalPanel">
+  <div class="gift-toggle" id="communityProposalToggle">
+    <span>🗳️ <b>社群决策 / Community Decisions</b></span>
+    <span class="gift-arrow" id="communityProposalArrow">▼</span>
+  </div>
+  <div class="gift-details open" id="communityProposalDetails">
+    <div class="community-proposal-rule">SR 提案不会直接进入管理员审核。真实用户社群先投票：至少 5 名真实用户参与，赞成票超过反对票后，提案才进入管理员审核。每位真实用户每个提案只能投票一次。</div>
+    <div id="communityProposalList" class="proposal-list"><div class="notice">加载中 / Loading...</div></div>
+  </div>
+</section>
+<script data-zhi-community-proposals="20260928">
+(function(){
+  const $=id=>document.getElementById(id);
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  let busy=false;
+  async function loadCommunity(){
+    const box=$('communityProposalList'),client=window.zhiSupabase;
+    if(!box||!client?.rpc)return;
+    try{
+      const r=await client.rpc('get_community_prediction_proposals');
+      if(r.error)throw r.error;
+      const rows=Array.isArray(r.data)?r.data:[];
+      if(!rows.length){box.innerHTML='<div class="dash-empty">目前没有待社群决策的 SR 提案 / No SR proposals awaiting community decision</div>';return;}
+      const ss=await client.auth.getSession();
+      const uid=ss?.data?.session?.user?.id||null;
+      let isSim=false;
+      if(uid){
+        const pr=await client.from('profiles').select('is_simulated').eq('id',uid).maybeSingle();
+        isSim=!!pr.data?.is_simulated;
+      }
+      box.innerHTML=rows.map(p=>{
+        const total=Number(p.community_yes_votes||0)+Number(p.community_no_votes||0);
+        return '<div class="community-proposal-item" data-community-proposal="'+p.id+'">'+
+          '<span class="proposal-status proposal-pending">社群投票中 / Community Vote</span>'+
+          '<div class="proposal-meta">SR 提案 #'+p.id+' · '+esc(p.username||'SR')+'</div>'+
+          '<div class="proposal-question">中文：'+esc(p.question_zh||'')+'</div>'+
+          '<div class="proposal-question">English: '+esc(p.question_en||'')+'</div>'+
+          '<div class="proposal-meta">投票：👍 '+Number(p.community_yes_votes||0)+' · 👎 '+Number(p.community_no_votes||0)+' · 共 '+total+' 票（需要至少 5 票）</div>'+
+          (isSim?'<div class="notice">SR 账号不能参与社群决策 / SR accounts cannot vote.</div>':
+            '<div class="community-proposal-votes"><button type="button" class="btn yes" data-community-vote="yes">👍 赞成 / YES</button><button type="button" class="btn no" data-community-vote="no">👎 反对 / NO</button></div>')+
+          '<div class="proposal-meta" data-community-msg></div></div>';
+      }).join('');
+      box.querySelectorAll('[data-community-vote]').forEach(btn=>btn.onclick=async()=>{
+        if(busy)return;
+        const item=btn.closest('[data-community-proposal]'),msg=item.querySelector('[data-community-msg]');
+        const proposalId=Number(item.dataset.communityProposal),vote=btn.dataset.communityVote;
+        busy=true;box.querySelectorAll('[data-community-vote]').forEach(x=>x.disabled=true);
+        if(msg)msg.textContent='正在提交社群投票…… / Recording vote...';
+        try{
+          const r=await client.rpc('vote_prediction_proposal',{p_proposal_id:proposalId,p_vote:vote});
+          if(r.error)throw r.error;
+          const s=r.data?.status;
+          if(msg)msg.textContent=s==='pending'?'✅ 社群通过，已进入管理员审核 / Community approved; now awaiting admin review.':s==='community_rejected'?'❌ 社群未通过 / Community rejected.':'✅ 投票已记录 / Vote recorded.';
+          await loadCommunity();
+        }catch(e){if(msg)msg.textContent='❌ '+(e.message||'投票失败 / Vote failed');}
+        finally{busy=false;}
+      });
+    }catch(e){
+      box.innerHTML='<div class="notice">❌ 社群提案加载失败 / Failed to load community proposals: '+esc(e.message||e)+'</div>';
+    }
+  }
+  window.zhiLoadCommunityProposals=loadCommunity;
+  function boot(){
+    if(!$('communityProposalList'))return;
+    loadCommunity();
+    if(window.zhiSupabase?.auth?.onAuthStateChange)window.zhiSupabase.auth.onAuthStateChange(()=>setTimeout(loadCommunity,100));
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+})();
+</script></body></html>

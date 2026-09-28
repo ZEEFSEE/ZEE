@@ -1027,4 +1027,43 @@ const mo=new MutationObserver(()=>initZhiDateTimes()); mo.observe(document.docum
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
   setTimeout(bind,300);setTimeout(bind,1000);
 })();
+</script><script data-zhi-contribution-loader="20260928">
+(function(){
+  function render(rows){
+    const box=document.getElementById('myProposals'); if(!box)return;
+    const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const money2=v=>Number(v||0).toLocaleString('en-US',{maximumFractionDigits:2});
+    if(!rows.length){box.innerHTML='<div class="dash-empty">还没有预测提案 / No proposals yet</div>';return;}
+    box.innerHTML=rows.map(p=>{
+      const st=p.status==='pending'?'审核中 / Pending':p.status==='rejected'?'已驳回 / Rejected':p.status==='approved'?'已批准 / Approved':'已发布 / Published';
+      const cls=p.status==='pending'?'proposal-pending':p.status==='rejected'?'proposal-rejected':'proposal-published';
+      const reward=p.reward_status==='paid'?'<div class="proposal-meta">🏆 贡献奖 / Contribution Reward: +'+money2(p.reward_amount)+' ZHI</div>':'';
+      const market=p.market_id?'<div class="proposal-meta">Market ID: '+esc(p.market_id)+'</div>':'';
+      const reason=p.rejection_reason?'<div class="proposal-meta">原因 / Reason: '+esc(p.rejection_reason)+'</div>':'';
+      const close=p.final_close_at||p.requested_close_at;
+      return '<div class="proposal-item"><span class="proposal-status '+cls+'">'+st+'</span><div class="proposal-question">中文：'+esc(p.question_zh||'')+'</div><div class="proposal-question">English: '+esc(p.question_en||'')+'</div><div class="proposal-meta">截至 / Close: '+(close?new Date(close).toLocaleString():'--')+'</div>'+market+reward+reason+'</div>';
+    }).join('');
+  }
+  async function load(){
+    const box=document.getElementById('myProposals');
+    if(!box)return;
+    const client=window.zhiSupabase;
+    if(!client){box.innerHTML='<div class="notice">数据库连接准备中 / Database connection starting...</div>';return;}
+    try{
+      let uid=null;
+      const session=await client.auth.getSession();
+      uid=session?.data?.session?.user?.id||null;
+      if(!uid){box.innerHTML='<div class="notice">等待登录 / Waiting for login...</div>';return;}
+      const r=await client.from('prediction_proposals').select('*').eq('user_id',uid).order('created_at',{ascending:false});
+      if(r.error)throw r.error;
+      render(Array.isArray(r.data)?r.data:[]);
+    }catch(e){box.innerHTML='<div class="notice">加载失败 / Failed: '+String(e?.message||e||'Unknown error')+'</div>';}
+  }
+  window.zhiReloadContributions=load;
+  function boot(){if(document.getElementById('myProposals'))load();}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+  const client=window.zhiSupabase;
+  if(client?.auth?.onAuthStateChange)client.auth.onAuthStateChange((_event,session)=>{if(session?.user)setTimeout(load,50);});
+  setTimeout(load,500);setTimeout(load,1500);setTimeout(load,3000);
+})();
 </script></body></html>

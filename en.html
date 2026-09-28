@@ -1035,13 +1035,10 @@ window.zhiSubmitProposal=function(){
     if(!box || !window.zhiSupabase) return;
     box.innerHTML='<div class="notice">Loading...</div>';
     try{
-      const sess=await window.zhiSupabase.auth.getSession();
-      const u=sess?.data?.session?.user;
-      if(!u || u.app_metadata?.role!=='admin'){
-        box.innerHTML='<div class="notice">管理员权限未确认 / Admin role not confirmed</div>';
-        return;
-      }
-      const {data,error}=await window.zhiSupabase.rpc('admin_get_prediction_proposals',{p_status:'pending'});
+      // Use the existing authenticated Supabase client directly; do not block on a second session lookup.
+      const rpcPromise=window.zhiSupabase.rpc('admin_get_prediction_proposals',{p_status:'pending'});
+      const timeoutPromise=new Promise((_,reject)=>setTimeout(()=>reject(new Error('提案加载超时 / Proposal loading timed out')),10000));
+      const {data,error}=await Promise.race([rpcPromise,timeoutPromise]);
       if(error) throw error;
       const rows=Array.isArray(data)?data:[];
       if(!rows.length){box.innerHTML='<div class="dash-empty">目前没有待审核提案 / No pending proposals</div>';return;}

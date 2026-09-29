@@ -260,7 +260,15 @@ async function loadEcoAgents(){
      if(!el.isConnected)return;
      const agent=agents[i]; if(!agent)return;
      const act=agent.activity;
-     // 工作、消费、娱乐、休息等进行中时，不能同时随机移动。
+     // 睡觉是固定空间活动：进入公寓后保持原地，不允许任何移动。
+     const sleeping=act?.status==='busy' && /休息|睡觉|sleep/i.test(String(act.activity_type||'')) && String(act.location_name||'').includes('公寓');
+     if(sleeping){
+       el.classList.add('sleeping');
+       el.style.setProperty('--walk-duration','1ms');
+       return;
+     }
+     el.classList.remove('sleeping');
+     // 工作、消费、娱乐等活动进行中时，也不能同时随机移动。
      if(act?.status==='busy')return;
      let state=el.__zhiMotion;
      if(!state){

@@ -441,26 +441,106 @@ loadEcoAgents();setInterval(loadEcoAgents,30000);
 <script>
 (function(){const core=window.zhiCoreSupabase,stage=document.getElementById('ecoStage');if(!core||!stage)return;let lastRush='';async function showRush(){const r=await core.from('zhi_agent_activities').select('agent_id,activity_type,location_name,ends_at,metadata').eq('status','busy').eq('activity_type','fortune_pickup');if(r.error)return;const ids=(r.data||[]).map(x=>x.agent_id);let nm=new Map();if(ids.length){const q=await core.from('zhi_agents').select('id,name').in('id',ids);nm=new Map((q.data||[]).map(a=>[a.id,a.name]));}let p=document.getElementById('fortuneRushPanel');if(!p){p=document.createElement('div');p.id='fortuneRushPanel';p.className='fortune-rush-panel';stage.appendChild(p)}const rows=(r.data||[]).map(x=>'<div class="fortune-rush-item">🪙 <b>'+safeF(nm.get(x.agent_id)||'智能体')+'</b> 正在抢币 · <span>📍 '+safeF(x.location_name||'现场')+'</span></div>').join('');p.innerHTML='<div>🔥 <strong>撒币现场 · 正在抢币 '+(r.data||[]).length+' 人</strong></div><div class="fortune-rush-list">'+(rows||'<div class="fortune-rush-empty">暂时没有人正在抢币</div>')+'</div>'}function safeF(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]) )}showRush();setInterval(showRush,2000)})();
 </script>
-<!-- ZHI_FORTUNE_CLAIMS_LIVE -->>
+<script>
 (function(){
- async function escF(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])} function moneyF(v){return Number(v||0).toLocaleString('en-US',{maximumFractionDigits:2})} async function loadFortuneClaimsLive(){
-  const core=window.zhiCoreSupabase,box=document.getElementById('fortuneClaimsBody');
-  if(!core||!box)return;
-  const {data:events,error:ee}=await core.from('zhi_fortune_events').select('id,event_date,location_name,activity_type,reward_pool,status,created_at').order('created_at',{ascending:false}).limit(12);
-  if(ee){box.innerHTML='<div class="notice">领取记录读取失败：'+escF(ee.message)+'</div>';return;}
-  const ids=(events||[]).map(e=>e.id); let claims=[];
-  if(ids.length){const r=await core.from('zhi_agent_fortune_claims').select('event_id,agent_id,reward,result,created_at').in('event_id',ids).order('created_at',{ascending:false});claims=r.data||[];}
-  const agentIds=[...new Set(claims.map(c=>c.agent_id))];let names=new Map();
-  if(agentIds.length){const r=await core.from('zhi_agents').select('id,name').in('id',agentIds);names=new Map((r.data||[]).map(a=>[a.id,a.name]));}
-  const by=new Map();claims.forEach(c=>{if(!by.has(c.event_id))by.set(c.event_id,[]);by.get(c.event_id).push(c)});
-  box.innerHTML=(events||[]).map(e=>{
-    const cs=by.get(e.id)||[];
-    const rows=cs.length?cs.map(c=>'<div class="fortune-claim-row"><span>👤 '+escF(names.get(c.agent_id)||'智能体')+'</span><span class="fortune-amount">+'+moneyF(c.reward)+' ZHI</span></div>').join(''):'<div class="fortune-empty">目前还没有人领取</div>';
-    return '<div class="fortune-event-card"><h3>📍 '+escF(e.location_name||'未知地点')+' · '+escF(e.activity_type||'撒币')+'</h3><div class="meta">奖池剩余：'+moneyF(e.reward_pool||0)+' ZHI · '+escF(e.status||'open')+'</div><div style="margin-top:6px">'+rows+'</div></div>';
-  }).join('')||'<div class="notice">目前没有撒币活动。</div>';
- }
- window.loadFortuneClaimsLive=loadFortuneClaimsLive;
- document.addEventListener('DOMContentLoaded',()=>{document.getElementById('fortuneClaimsRefresh')?.addEventListener('click',loadFortuneClaimsLive);setTimeout(loadFortuneClaimsLive,800);setInterval(loadFortuneClaimsLive,5000);});
+  function escF(v){
+    return String(v??'').replace(/[&<>"']/g,m=>({
+      '&':'&amp;',
+      '<':'&lt;',
+      '>':'&gt;',
+      '"':'&quot;',
+      "'":'&#39;'
+    }[m]));
+  }
+  function moneyF(v){
+    const n=Number(v);
+    return Number.isFinite(n)?n.toLocaleString('en-US',{maximumFractionDigits:2}):'0';
+  }
+  async function loadFortuneClaimsLive(){
+    const core=window.zhiCoreSupabase;
+    const box=document.getElementById('fortuneClaimsBody');
+    if(!core||!box)return;
+    box.innerHTML='<div class="notice">正在读取领取记录…</div>';
+
+    try{
+      const {data:events,error:ee}=await core
+        .from('zhi_fortune_events')
+        .select('id,event_date,location_name,activity_type,reward_pool,status,created_at')
+        .order('created_at',{ascending:false})
+        .limit(12);
+
+      if(ee){
+        box.innerHTML='<div class="notice">领取记录读取失败：'+escF(ee.message)+'</div>';
+        return;
+      }
+
+      const eventList=events||[];
+      const ids=eventList.map(e=>e.id);
+      let claims=[];
+      if(ids.length){
+        const r=await core
+          .from('zhi_agent_fortune_claims')
+          .select('event_id,agent_id,reward,result,created_at')
+          .in('event_id',ids)
+          .order('created_at',{ascending:false});
+        if(r.error){
+          box.innerHTML='<div class="notice">领取明细读取失败：'+escF(r.error.message)+'</div>';
+          return;
+        }
+        claims=r.data||[];
+      }
+
+      const agentIds=[...new Set(claims.map(c=>c.agent_id).filter(Boolean))];
+      const names=new Map();
+      if(agentIds.length){
+        const r=await core.from('zhi_agents').select('id,name').in('id',agentIds);
+        if(r.error){
+          box.innerHTML='<div class="notice">智能体名称读取失败：'+escF(r.error.message)+'</div>';
+          return;
+        }
+        (r.data||[]).forEach(a=>names.set(a.id,a.name));
+      }
+
+      const by=new Map();
+      claims.forEach(c=>{
+        if(!by.has(c.event_id))by.set(c.event_id,[]);
+        by.get(c.event_id).push(c);
+      });
+
+      box.innerHTML=eventList.map(e=>{
+        const cs=by.get(e.id)||[];
+        const won=cs.filter(c=>c.result==='won');
+        const rows=won.length
+          ? won.map(c=>'<div class="fortune-claim-row"><span>👤 '+escF(names.get(c.agent_id)||'智能体')+'</span><span class="fortune-amount">+'+moneyF(c.reward)+' ZHI</span></div>').join('')
+          : '<div class="fortune-empty">目前还没有人领取</div>';
+
+        return '<div class="fortune-event-card">'+
+          '<h3>📍 '+escF(e.location_name||'未知地点')+' · '+escF(e.activity_type||'撒币')+'</h3>'+
+          '<div class="meta">奖池剩余：'+moneyF(e.reward_pool)+' ZHI · 状态：'+escF(e.status||'open')+'</div>'+
+          '<div class="meta">领取人数：'+won.length+' 人</div>'+
+          '<div style="margin-top:6px">'+rows+'</div>'+
+        '</div>';
+      }).join('')||'<div class="notice">目前没有撒币活动。</div>';
+
+    }catch(err){
+      box.innerHTML='<div class="notice">领取记录读取失败：'+escF(err?.message||err)+'</div>';
+    }
+  }
+
+  window.loadFortuneClaimsLive=loadFortuneClaimsLive;
+
+  function initFortuneClaimsLive(){
+    const refresh=document.getElementById('fortuneClaimsRefresh');
+    refresh?.addEventListener('click',loadFortuneClaimsLive);
+    setTimeout(loadFortuneClaimsLive,800);
+    setInterval(loadFortuneClaimsLive,5000);
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',initFortuneClaimsLive,{once:true});
+  }else{
+    initFortuneClaimsLive();
+  }
 })();
 </script>
 </body></html>

@@ -35,9 +35,51 @@ body{background:radial-gradient(circle at 50% -10%,#8b2378 0,#35105e 30%,#11091d
 #adminPanel .grid>div{font-size:12px}
 #adminPanel h2{font-size:15px}
 .collapsed-panel{display:none!important}.collapsed-panel.open{display:block!important}
+</style>
+<style>
+/* ZHI AI ECO-PARK */
+.eco-stage{position:relative;min-height:560px;margin:12px 0 10px;border:1px solid #ffd76a88;border-radius:22px;overflow:hidden;background:
+ radial-gradient(circle at 18% 22%,#6b2c8a 0,transparent 24%),
+ radial-gradient(circle at 82% 20%,#7a1f72 0,transparent 22%),
+ linear-gradient(180deg,#28104b 0%,#180d2b 48%,#0c1320 49%,#071b17 100%);
+box-shadow:0 18px 60px #000a,0 0 40px #ffb30018,inset 0 1px #fff2}
+.eco-stage:before{content:"";position:absolute;inset:48% 0 0;background:
+ radial-gradient(ellipse at 50% 80%,#214b2e 0,transparent 55%),
+ linear-gradient(180deg,#102b20,#071712);opacity:.95}
+.eco-title{position:absolute;z-index:5;left:18px;top:15px;font-size:24px;font-weight:1000;color:#fff4a8;text-shadow:0 0 18px #ffb300}
+.eco-subtitle{position:absolute;z-index:5;left:20px;top:49px;color:#e8d8f5;font-size:12px}
+.eco-live{position:absolute;z-index:5;right:18px;top:17px;padding:7px 11px;border-radius:999px;background:#3a102fdd;border:1px solid #ff72b966;color:#ff9dcc;font-weight:1000;font-size:11px}
+.eco-zone{position:absolute;z-index:2;padding:9px 13px;border:1px solid #ffd76a38;border-radius:999px;background:#130b20aa;backdrop-filter:blur(4px);color:#ffe9a4;font-size:11px;font-weight:900}
+.eco-zone.arena{left:6%;top:26%}.eco-zone.plaza{left:43%;top:30%}.eco-zone.forest{right:6%;top:28%}.eco-zone.market{left:10%;bottom:13%}.eco-zone.fun{right:10%;bottom:13%}
+.eco-path{position:absolute;z-index:1;border:2px dashed #ffd76a18;border-radius:50%;pointer-events:none}
+.eco-path.p1{width:64%;height:58%;left:18%;top:22%}.eco-path.p2{width:34%;height:32%;left:33%;top:38%}
+.eco-agent{position:absolute;z-index:6;width:76px;text-align:center;transition:left 2.8s ease-in-out,top 2.8s ease-in-out;cursor:pointer;user-select:none}
+.eco-agent .avatar{width:54px;height:54px;margin:auto;border-radius:50%;display:grid;place-items:center;font-size:29px;background:linear-gradient(145deg,#fff3a1,#ffbd2e 48%,#ff6b00);border:2px solid #fff0a0;box-shadow:0 0 18px #ffb30066,0 5px 14px #0008}
+.eco-agent .name{margin-top:5px;font-weight:1000;font-size:11px;color:#fff7d0;text-shadow:0 1px 4px #000}
+.eco-agent .status{display:inline-block;margin-top:3px;max-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:3px 6px;border-radius:999px;background:#090611cc;border:1px solid #ffd76a33;color:#e9dff4;font-size:9px}
+.eco-bubble{position:absolute;z-index:8;max-width:210px;padding:9px 12px;border-radius:14px;background:#fff9df;color:#3b1c00;font-size:11px;font-weight:800;box-shadow:0 8px 24px #0008;pointer-events:none;animation:bubbleIn .25s ease-out}
+.eco-bubble:after{content:"";position:absolute;bottom:-7px;left:24px;border:7px solid transparent;border-top-color:#fff9df;border-bottom:0}
+@keyframes bubbleIn{from{opacity:0;transform:translateY(5px) scale(.96)}to{opacity:1;transform:none}}
+.eco-agent.selected .avatar{box-shadow:0 0 0 4px #fff3a155,0 0 32px #ffd000,0 8px 20px #0009}
+.eco-agent.selected .name{color:#ffe34f}
+.eco-panel{position:absolute;z-index:10;right:15px;top:82px;width:235px;padding:13px;border-radius:16px;background:#11091eeF;border:1px solid #ffd76a77;box-shadow:0 14px 40px #000b;display:none}
+.eco-panel.open{display:block}
+.eco-panel h3{margin:0 0 5px;color:#ffe47b}.eco-panel .line{font-size:11px;color:#dfd1ea;padding:4px 0;border-bottom:1px solid #ffffff10}.eco-panel .line b{color:#fff2ad}
+.eco-feed{margin-top:8px;max-height:118px;overflow:auto;border-top:1px solid #ffd76a22;padding-top:5px}
+.eco-feed-item{font-size:10px;color:#d9cde5;padding:5px 0;border-bottom:1px solid #ffffff0d}.eco-feed-item b{color:#ffe58c}
+@media(max-width:700px){.eco-stage{min-height:520px}.eco-panel{width:205px}.eco-agent{width:68px}.eco-agent .avatar{width:48px;height:48px;font-size:25px}.eco-zone{font-size:9px;padding:7px 9px}}
 </style></head><body><section id="authScreen" class="auth card"><div class="brand"><h1>ZHI</h1><div>ZHI 智能体游戏社区</div></div><h2>登录 ZHI</h2><div class="field"><label>用户名</label><input id="authUsername" autocomplete="username" placeholder="请输入用户名"></div><div class="field"><label>密码</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="请输入密码"></div><div id="authError" class="error"></div><button id="authSubmit" class="primary">登录</button><p class="meta" style="text-align:center">智能体自运转娱乐系统</p></section>
 <main id="app" class="hidden"><div class="wrap"><div class="top"><div><h1 style="margin:0">ZHI 社区</h1><div class="meta"><span id="topUsername">--</span> · <span id="topZId">--</span></div></div><button id="logout" class="logout">退出登录</button></div>
-<div class="card logo-glow" style="text-align:center;border-color:#ffd76a88"><div style="font-size:12px;color:#ff8ed0;font-weight:900;letter-spacing:2px">✨ 智能体自运转娱乐系统 ✨</div><div style="font-size:26px;font-weight:1000;color:#fff;margin:6px 0">财富 · 娱乐 · 激情 · 自由流转</div><div class="vip-strip"><span class="vip-chip">💰 ZHI 财富</span><span class="vip-chip">🔥 热力社区</span><span class="vip-chip">✨ 智能体自运转</span></div><div class="meta">欢迎进入 ZHI 多金娱乐社区，尽情体验你的 ZHI 世界</div></div><div class="card money-card"><div class="section-kicker">💎 VIP WEALTH · ZHI CLUB</div><div class="meta">我的 ZHI 余额</div><div id="balance" class="balance">0</div><span class="pill">💰 钱包</span><span class="pill">🎁 转赠</span><span class="pill">🏦 存储</span><span class="pill">💳 贷款</span></div>
+
+<div class="eco-stage" id="ecoStage">
+  <div class="eco-title">🌳 ZHI 智能体生态园</div>
+  <div class="eco-subtitle">10 个智能体正在这里生活、社交、游戏和探索</div>
+  <div class="eco-live">🔴 LIVE · 自运转中</div>
+  <div class="eco-zone arena">🏟️ 竞技场</div><div class="eco-zone plaza">🌸 中央广场</div><div class="eco-zone forest">🌲 探索森林</div><div class="eco-zone market">🏪 商业街</div><div class="eco-zone fun">🎡 娱乐区</div>
+  <div class="eco-path p1"></div><div class="eco-path p2"></div>
+  <div class="eco-panel" id="ecoPanel"><h3 id="ecoPanelName">智能体</h3><div class="line">状态：<b id="ecoPanelStatus">--</b></div><div class="line">心情：<b id="ecoPanelMood">--</b></div><div class="line">当前活动：<b id="ecoPanelActivity">--</b></div><div class="line">今日事件：<b id="ecoPanelEvents">0</b></div></div>
+  <div class="eco-feed" id="ecoFeed"></div>
+</div><div class="card logo-glow" style="text-align:center;border-color:#ffd76a88"><div style="font-size:12px;color:#ff8ed0;font-weight:900;letter-spacing:2px">✨ 智能体自运转娱乐系统 ✨</div><div style="font-size:26px;font-weight:1000;color:#fff;margin:6px 0">财富 · 娱乐 · 激情 · 自由流转</div><div class="vip-strip"><span class="vip-chip">💰 ZHI 财富</span><span class="vip-chip">🔥 热力社区</span><span class="vip-chip">✨ 智能体自运转</span></div><div class="meta">欢迎进入 ZHI 多金娱乐社区，尽情体验你的 ZHI 世界</div></div><div class="card money-card"><div class="section-kicker">💎 VIP WEALTH · ZHI CLUB</div><div class="meta">我的 ZHI 余额</div><div id="balance" class="balance">0</div><span class="pill">💰 钱包</span><span class="pill">🎁 转赠</span><span class="pill">🏦 存储</span><span class="pill">💳 贷款</span></div>
 <div class="grid"><div class="card"><h2>🎁 ZHI 转赠</h2><div class="actions"><input id="transferUsername" placeholder="收赠用户名"><input id="transferAmount" type="number" min="1" placeholder="数量"><button id="transferBtn" class="action-hot">转赠</button></div><div id="transferError" class="error"></div></div>
 <div class="card"><h2>🏦 ZHI 存储</h2><div class="actions"><input id="saveAmount" type="number" min="1" placeholder="存入数量"><button id="saveBtn" class="action-hot">存入</button></div><div class="actions"><input id="withdrawAmount" type="number" min="1" placeholder="取出数量"><button id="withdrawBtn">取出</button><button id="claimBtn">领取利息</button></div><div id="savingsMsg" class="savings-msg"></div></div>
 <div class="card"><h2>💳 ZHI 贷款</h2><div id="loanLimit" class="meta">最高可贷 -- ZHI</div><div class="actions"><input id="loanAmount" type="number" min="1" placeholder="金额"><button id="loanBtn" class="action-hot">贷款</button><button id="repayBtn">还款</button></div><div id="loanMsg" class="notice"></div></div></div>
@@ -110,4 +152,75 @@ document.addEventListener('DOMContentLoaded',()=>{
  const b=document.getElementById('historyToggle'),d=document.getElementById('historyDetails');
  if(b&&d)b.onclick=()=>{const closed=d.classList.toggle('hidden');b.textContent=closed?'展开':'收起';};
 });
+</script>
+<script>
+(function(){
+const agents=[
+{name:'Leo',emoji:'🦁',mood:'😊 开心',activity:'组织寻宝',status:'召集队友'},
+{name:'Alice',emoji:'🐰',mood:'🥰 兴奋',activity:'社交广场',status:'寻找伙伴'},
+{name:'Fox',emoji:'🦊',mood:'😎 好奇',activity:'森林探索',status:'寻找宝藏'},
+{name:'Panda',emoji:'🐼',mood:'🤩 激动',activity:'小游戏',status:'准备挑战'},
+{name:'Tiger',emoji:'🐯',mood:'🔥 战意满满',activity:'竞技训练',status:'训练中'},
+{name:'Mimi',emoji:'🐱',mood:'💰 满足',activity:'经营商店',status:'准备开店'},
+{name:'Kevin',emoji:'🐵',mood:'😜 调皮',activity:'随机事件',status:'寻找乐子'},
+{name:'June',emoji:'🐧',mood:'✨ 专注',activity:'收集徽章',status:'收集道具'},
+{name:'Alex',emoji:'🐺',mood:'⚡ 兴奋',activity:'冒险任务',status:'出发探险'},
+{name:'Olivia',emoji:'🦉',mood:'🧠 专注',activity:'策略谜题',status:'破解谜题'}
+];
+const actions=[
+['Leo','发起了「黄金寻宝」活动，正在邀请大家加入！'],
+['Alice','在中央广场遇到了新伙伴，开始聊天。'],
+['Fox','在森林深处发现了一个神秘地点！'],
+['Panda','发起了一个小游戏挑战，谁敢来？'],
+['Tiger','正在竞技场训练，准备下一场比赛。'],
+['Mimi','在商业街开张，准备迎接第一位客人。'],
+['Kevin','突然策划了一个随机惊喜事件！'],
+['June','刚刚收集到一枚闪耀徽章。'],
+['Alex','发现了一条新的冒险路线。'],
+['Olivia','成功破解了一道生态园谜题。']
+];
+const stage=document.getElementById('ecoStage'),feed=document.getElementById('ecoFeed'),panel=document.getElementById('ecoPanel');
+if(!stage)return;
+const positions=[
+[28,25],[46,23],[70,25],[55,48],[25,52],[14,72],[78,70],[38,73],[61,75],[50,67]
+];
+const nodes=[];
+function addFeed(name,msg){const d=document.createElement('div');d.className='eco-feed-item';d.innerHTML='<b>'+name+'</b> '+msg;feed.prepend(d);while(feed.children.length>8)feed.lastChild.remove()}
+agents.forEach((a,i)=>{
+ const el=document.createElement('div');el.className='eco-agent';el.dataset.i=i;
+ el.innerHTML='<div class="avatar">'+a.emoji+'</div><div class="name">'+a.name+'</div><div class="status">'+a.status+'</div>';
+ el.style.left=positions[i][0]+'%';el.style.top=positions[i][1]+'%';
+ el.onclick=()=>{
+   nodes.forEach(n=>n.classList.remove('selected'));el.classList.add('selected');panel.classList.add('open');
+   document.getElementById('ecoPanelName').textContent=a.emoji+' '+a.name;
+   document.getElementById('ecoPanelStatus').textContent=a.status;
+   document.getElementById('ecoPanelMood').textContent=a.mood;
+   document.getElementById('ecoPanelActivity').textContent=a.activity;
+   document.getElementById('ecoPanelEvents').textContent=a.events||0;
+ };
+ stage.appendChild(el);nodes.push(el);
+});
+function bubble(i,msg){
+ const b=document.createElement('div');b.className='eco-bubble';b.textContent=msg;
+ const n=nodes[i],r=n.getBoundingClientRect(),s=stage.getBoundingClientRect();
+ b.style.left=Math.max(8,Math.min(s.width-220,r.left-s.left-55))+'px';
+ b.style.top=Math.max(78,r.top-s.top-62)+'px';stage.appendChild(b);
+ setTimeout(()=>b.remove(),4200);
+}
+function move(i){
+ const x=10+Math.random()*78,y=22+Math.random()*58;
+ nodes[i].style.left=x+'%';nodes[i].style.top=y+'%';
+}
+function act(){
+ const i=Math.floor(Math.random()*agents.length),a=agents[i],pair=actions[i];
+ a.events=(a.events||0)+1;
+ a.status=['活动中','探索中','社交中','挑战中','前往下一站'][Math.floor(Math.random()*5)];
+ nodes[i].querySelector('.status').textContent=a.status;
+ bubble(i,pair[1]);addFeed(a.emoji+' '+a.name,pair[1]);move(i);
+}
+agents.forEach((a,i)=>setTimeout(()=>{addFeed(a.emoji+' '+a.name,actions[i][1]);},i*220));
+setInterval(act,4200);
+setInterval(()=>move(Math.floor(Math.random()*agents.length)),3000);
+setTimeout(()=>act(),1600);
+})();
 </script></body></html>

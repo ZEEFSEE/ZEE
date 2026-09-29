@@ -133,24 +133,30 @@ async function transferZHI(){const u=$('transferUsername')?.value.trim(),a=Math.
 async function releaseFortune(){const a=Math.floor(Number($('fortuneAmount')?.value));const loc=$('fortuneLocation')?.value||'中央广场';const activity=($('fortuneActivity')?.value||'财神爷撒币').trim();const msg=$('fortuneMsg');if(!Number.isFinite(a)||a<1){if(msg)msg.textContent='请输入至少 1 ZHI';return}if(!confirm('确定从你的管理员账户撒出 '+money(a)+' ZHI？'))return;const b=$('fortuneDropBtn');if(b)b.disabled=true;try{const r=await sb.rpc('admin_release_fortune',{p_amount:a,p_location:loc,p_activity:activity});if(r.error)throw r.error;$('fortuneAmount').value='';$('fortuneActivity').value='';if(msg)msg.textContent='🧧 已撒出 '+money(a)+' ZHI 到 '+loc+'，活动：'+activity+'；管理员余额已扣除 '+money(a)+' ZHI';await load();await loadFortuneDrops()}catch(e){if(msg)msg.textContent='撒币失败：'+(e.message||'未知错误')}finally{if(b)b.disabled=false}}
 async function loadAgentFinanceBoard(){
  const core=window.zhiCoreSupabase;if(!core)return;
- const [ar,wr,lr,pool]=await Promise.all([
+ const [ar,wr,lr,pool,mr]=await Promise.all([
   core.from('zhi_agents').select('id,name,gender,personality,life_status,active').order('name'),
   core.from('zhi_agent_wallets').select('agent_id,balance'),
   core.from('zhi_agent_finance_ledger').select('agent_id,entry_type,amount'),
-  core.from('zhi_fortune_events').select('reward_pool').in('status',['open','running'])
+  core.from('zhi_fortune_events').select('reward_pool').in('status',['open','running']),
+  core.from('zhi_agent_marriages').select('male_agent_id,female_agent_id,status').eq('status','married')
  ]);
  if(ar.error||wr.error){console.error('ZHI agent finance load failed',ar.error||wr.error);return}
  const wm=new Map((wr.data||[]).map(x=>[x.agent_id,Number(x.balance||0)]));
  const earned=new Map(),spent=new Map();
  (lr.data||[]).forEach(x=>{const n=Number(x.amount||0),m=x.entry_type==='income'?earned:spent;m.set(x.agent_id,(m.get(x.agent_id)||0)+n)});
- const rows=(ar.data||[]).map(x=>({...x,balance:wm.get(x.id)||0,total_earned:earned.get(x.id)||0,total_spent:spent.get(x.id)||0})).sort((a,b)=>b.balance-a.balance);
+ const agents=ar.data||[], nameMap=new Map(agents.map(x=>[x.id,x.name]));
+ const spouseMap=new Map();
+ (mr.data||[]).forEach(m=>{spouseMap.set(m.male_agent_id,nameMap.get(m.female_agent_id)||'');spouseMap.set(m.female_agent_id,nameMap.get(m.male_agent_id)||'')});
+ const rows=agents.map(x=>({...x,balance:wm.get(x.id)||0,total_earned:earned.get(x.id)||0,total_spent:spent.get(x.id)||0,spouse:spouseMap.get(x.id)||''})).sort((a,b)=>b.balance-a.balance);
  const alive=rows.filter(x=>x.life_status==='alive'),dead=rows.filter(x=>x.life_status==='dead'),total=rows.reduce((s,x)=>s+x.balance,0);
  if($('agentTotalBalance'))$('agentTotalBalance').textContent=money(total)+' ZHI';
  if($('agentAliveCount'))$('agentAliveCount').textContent=alive.length;
  if($('agentDeadCount'))$('agentDeadCount').textContent=dead.length;
  if($('agentPrizePool'))$('agentPrizePool').textContent=money((pool.data||[]).reduce((s,x)=>s+Number(x.reward_pool||0),0))+' ZHI';
  const box=$('agentFinanceRows');if(!box)return;
- box.innerHTML=rows.map((x,i)=>'<div class="row" style="gap:10px;align-items:center;flex-wrap:wrap"><span style="min-width:110px"><b>'+String(i+1)+'. '+String(x.name)+'</b> <span class="meta">'+String(x.personality||'')+'</span></span><span><span class="meta">余额</span> <b>'+money(x.balance)+' ZHI</b></span><span><span class="meta">累计赚取</span> <b>'+money(x.total_earned)+' ZHI</b></span><span><span class="meta">累计消费</span> <b>'+money(x.total_spent)+' ZHI</b></span><span class="pill">'+(x.life_status==='alive'?'🟢 存活':'☠️ 已死亡')+'</span></div>').join('');
+ const genderIcon=x=>String(x.gender||'').includes('女')?'♀️':'♂️';
+ const safeBoard=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+ box.innerHTML=rows.map((x,i)=>'<div class="row" style="gap:10px;align-items:center;flex-wrap:wrap"><span style="min-width:190px"><b>'+String(i+1)+'. '+safeBoard(x.name)+'</b> <span class="meta">'+genderIcon(x)+' '+safeBoard(x.personality||'')+'</span>'+(x.spouse?'<span class="pill" style="margin-left:5px">💍 '+safeBoard(x.spouse)+'</span>':'')+'</span><span><span class="meta">余额</span> <b>'+money(x.balance)+' ZHI</b></span><span><span class="meta">累计赚取</span> <b>'+money(x.total_earned)+' ZHI</b></span><span><span class="meta">累计消费</span> <b>'+money(x.total_spent)+' ZHI</b></span><span class="pill">'+(x.life_status==='alive'?'🟢 存活':'☠️ 已死亡')+'</span></div>').join('');
 }
 async function loadFortuneDrops(){const box=$('fortuneDrops');if(!box)return;const r=await sb.from('zhi_admin_drops').select('amount,location_name,activity_type,status,created_at').order('created_at',{ascending:false}).limit(8);if(r.error){box.innerHTML='';return}box.innerHTML=(r.data||[]).map(x=>'<div class="row"><span>🧧 '+String(x.location_name)+' · '+String(x.activity_type)+' <span class="meta">'+new Date(x.created_at).toLocaleString()+'</span></span><b>'+money(x.amount)+' ZHI</b></div>').join('')}
 async function loadAdminUsers(){

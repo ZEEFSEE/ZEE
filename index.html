@@ -53,7 +53,7 @@ box-shadow:0 18px 60px #000a,0 0 40px #ffb30018,inset 0 1px #fff2}
 .eco-zone.arena{left:6%;top:26%}.eco-zone.plaza{left:43%;top:30%}.eco-zone.forest{right:6%;top:28%}.eco-zone.market{left:10%;bottom:13%}.eco-zone.fun{right:10%;bottom:13%}
 .eco-path{position:absolute;z-index:1;border:2px dashed #ffd76a18;border-radius:50%;pointer-events:none}
 .eco-path.p1{width:64%;height:58%;left:18%;top:22%}.eco-path.p2{width:34%;height:32%;left:33%;top:38%}
-#ecoAgentsLayer{position:absolute;inset:0;z-index:20;pointer-events:none;overflow:hidden;display:grid;grid-template-columns:repeat(10,minmax(0,1fr));grid-auto-rows:78px;align-content:start;padding:82px 14px 12px;gap:8px 4px}.eco-agent{position:relative!important;left:auto!important;top:auto!important;z-index:21;width:100%;min-width:0;text-align:center;text-align:center;transition:left 2.8s ease-in-out,top 2.8s ease-in-out;cursor:pointer;user-select:none}
+#ecoAgentsLayer{position:absolute;inset:0;z-index:20;pointer-events:none;overflow:hidden}.eco-agent{position:absolute!important;z-index:21;width:76px;text-align:center;transition:left 2.8s ease-in-out,top 2.8s ease-in-out;cursor:pointer;user-select:none}
 .eco-agent .avatar{width:54px;height:54px;margin:auto;border-radius:50%;display:grid;place-items:center;font-size:29px;background:linear-gradient(145deg,#fff3a1,#ffbd2e 48%,#ff6b00);border:2px solid #fff0a0;box-shadow:0 0 18px #ffb30066,0 5px 14px #0008}
 .eco-agent .name{margin-top:5px;font-weight:1000;font-size:11px;color:#fff7d0;text-shadow:0 1px 4px #000}
 .eco-agent .status{display:inline-block;margin-top:3px;max-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:3px 6px;border-radius:999px;background:#090611cc;border:1px solid #ffd76a33;color:#e9dff4;font-size:9px}
@@ -211,12 +211,15 @@ async function loadEcoAgents(){
  agents=next;
  nodes.forEach(n=>n.remove());nodes=[];if(agentLayer)agentLayer.innerHTML='';
  const sub=document.querySelector('.eco-subtitle');if(sub)sub.textContent=agents.length+' 个智能体在线 · 钱包与当前活动实时同步';
- const cols=10, rows=Math.ceil(agents.length/cols);
- agents.forEach((a,i)=>{
+ const sceneNames=['竞技场','中央广场','探索森林','商业街','娱乐区'];
+ const homeAgents=agents.filter(a=>!a.activity||a.activity.status!=='busy'||!sceneNames.some(s=>String(a.activity.location_name||'').includes(s)));
+ const displayAgents=homeAgents;
+ displayAgents.forEach((a,i)=>{
    const el=document.createElement('div');el.className='eco-agent';el.dataset.agentId=a.id;
    const act=a.activity;
    el.innerHTML='<div class="avatar">'+a.emoji+'</div><div class="name">'+esc(a.name)+'</div><div class="status">'+(a.life_status==='dead'?'☠️ 已死亡':(act&&act.status==='busy'?'🔴 '+esc(act.activity_type||'活动'):'🟢 空闲'))+'</div>';
-
+   const x=8+((i*37)%84), y=24+((i*53)%62);
+   el.style.left=x+'%';el.style.top=y+'%';
    el.onclick=()=>{
     nodes.forEach(n=>n.classList.remove('selected'));el.classList.add('selected');panel.classList.add('open');
     document.getElementById('ecoPanelName').textContent=a.emoji+' '+a.name;
@@ -226,14 +229,23 @@ async function loadEcoAgents(){
     document.getElementById('ecoPanelEvents').textContent='实时同步';
    };
    agentLayer.appendChild(el);
-   el.style.setProperty('display','block','important');
-   el.style.setProperty('visibility','visible','important');
-   el.style.setProperty('opacity','1','important');
-   el.style.setProperty('pointer-events','auto','important');
+   el.style.setProperty('display','block','important');el.style.setProperty('visibility','visible','important');el.style.setProperty('opacity','1','important');el.style.setProperty('pointer-events','auto','important');
    nodes.push(el);
  });
+ // 生态园里的智能人会自己移动，不再整齐排列
+ function wanderAgents(){
+   nodes.forEach((el,i)=>{
+     if(!el.isConnected)return;
+     const x=5+Math.random()*88, y=25+Math.random()*62;
+     el.style.left=x+'%';el.style.top=y+'%';
+   });
+ }
+ setTimeout(wanderAgents,1500);
+ clearInterval(window.__zhiAgentWanderTimer);
+ window.__zhiAgentWanderTimer=setInterval(wanderAgents,7000);
  agents.slice(0,10).forEach((a,i)=>setTimeout(()=>addFeed(a.emoji+' '+a.name,'已同步 · '+money(a.balance)+' ZHI'),i*40));
-}
+ return;
+ /* old renderer disabled */}
 async function renderScene(id){
  const cfg=sceneMap[id],core=window.zhiCoreSupabase;if(!cfg||!core||!sceneLive)return;
  sceneLive.innerHTML='<div class="scene-card"><h3>🔄 正在读取实时数据…</h3></div>';

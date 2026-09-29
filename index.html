@@ -158,153 +158,55 @@ document.addEventListener('DOMContentLoaded',()=>{
 </script>
 <script>
 (function(){
-let agents=[];
-const actions=[
-['','正在中央广场活动，寻找新的伙伴。'],
-['','正在探索森林，寻找新的资源。'],
-['','正在竞技场训练，提升自己的能力。'],
-['','正在娱乐区参加小游戏。'],
-['','正在商业街处理日常事务。'],
-['','正在规划下一步的生活与工作。'],
-['','正在社交，认识新的智能体。'],
-['','正在寻找新的赚钱机会。'],
-['','正在休息，准备下一项活动。'],
-['','正在进行一次随机探索。']
-];
-const emojiMale=['🦁','🐺','🐯','🦊','🐻','🦅','🐬','🦌','🐼','🐵'];
-const emojiFemale=['🐰','🦋','🦄','🦉','🐱','🌸','🦢','🐿️','🐧','🌷'];
-function makeAgent(row,i){
- const gender=row.gender==='女'?'女':'男';
- return {
-   ...row,
-   emoji:(gender==='女'?emojiFemale:emojiMale)[i%10],
-   mood:gender==='女'?'😊 开心':'😎 状态良好',
-   activity:'自由活动',
-   status:'生活中',
-   events:0
- };
-}
+const stage=document.getElementById('ecoStage'),feed=document.getElementById('ecoFeed'),panel=document.getElementById('ecoPanel');
+const sceneOverlay=document.getElementById('sceneOverlay'),sceneLive=document.getElementById('sceneLive');
+const sceneMap={
+ arenaZoneBtn:['🏟️ 竞技场','比赛、训练、挑战与参赛者','竞技场'],
+ plazaZoneBtn:['🌸 中央广场','聊天、社交、组队与城市活动','中央广场'],
+ forestZoneBtn:['🌲 探索森林','探索、采集、发现与运输','探索森林'],
+ marketZoneBtn:['🏪 商业街','商店、老板、顾客、生产与服务','商业街'],
+ funZoneBtn:['🎡 娱乐区','小游戏、表演、娱乐活动与结果','娱乐区']
+};
+let agents=[],nodes=[];
+
+function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function addFeed(name,msg){if(!feed)return;const d=document.createElement('div');d.className='eco-feed-item';d.innerHTML='<b>'+esc(name)+'</b> '+esc(msg);feed.prepend(d);while(feed.children.length>10)feed.lastChild.remove()}
+function makeAgent(a,i){const female=a.gender==='女';return {...a,emoji:(female?['🐰','🦋','🦄','🦉','🐱','🌸','🦢','🐿️','🐧','🌷']:['🦁','🐺','🐯','🦊','🐻','🦅','🐬','🦌','🐼','🐵'])[i%10]}}
 async function loadEcoAgents(){
- const core=window.zhiCoreSupabase;
- if(!core)return;
+ const core=window.zhiCoreSupabase;if(!core||!stage)return;
  const r=await core.from('zhi_agents').select('id,name,gender,personality,life_status,active').eq('active',true).order('name');
- if(r.error)return;
- agents=(r.data||[]).map(makeAgent);
- const aliveCount=agents.length;
- const sub=document.querySelector('.eco-subtitle');
- if(sub)sub.textContent=aliveCount+' 个智能体正在这里生活、社交、游戏和探索';
- const positions=[];
- const cols=Math.min(10,Math.max(5,Math.ceil(Math.sqrt(Math.max(1,agents.length)*1.55))));
- const rows=Math.ceil(agents.length/cols);
- for(let i=0;i<agents.length;i++){
-   const col=i%cols,row=Math.floor(i/cols);
-   positions.push([5+col*(90/Math.max(1,cols-1)),20+row*(58/Math.max(1,rows-1))]);
- }
- const nodes=[];
- function addFeed(name,msg){const d=document.createElement('div');d.className='eco-feed-item';d.innerHTML='<b>'+name+'</b> '+msg;feed.prepend(d);while(feed.children.length>8)feed.lastChild.remove()}
+ if(r.error){addFeed('系统','智能体加载失败：'+r.error.message);return}
+ agents=(r.data||[]).map(makeAgent);nodes.forEach(n=>n.remove());nodes=[];
+ const sub=document.querySelector('.eco-subtitle');if(sub)sub.textContent=agents.length+' 个智能体正在这里生活、社交、游戏和探索';
+ const cols=10, rows=Math.ceil(agents.length/cols);
  agents.forEach((a,i)=>{
-   const el=document.createElement('div');el.className='eco-agent';el.dataset.i=i;
-   el.innerHTML='<div class="avatar">'+a.emoji+'</div><div class="name">'+a.name+'</div><div class="status">'+a.status+'</div>';
-   el.style.left=Math.max(4,Math.min(88,positions[i][0]))+'%';el.style.top=Math.max(18,Math.min(76,positions[i][1]))+'%';
-   el.onclick=()=>{
-     nodes.forEach(n=>n.classList.remove('selected'));el.classList.add('selected');panel.classList.add('open');
-     document.getElementById('ecoPanelName').textContent=a.emoji+' '+a.name;
-     document.getElementById('ecoPanelStatus').textContent=a.status;
-     document.getElementById('ecoPanelMood').textContent=a.mood;
-     document.getElementById('ecoPanelActivity').textContent=a.activity;
-     document.getElementById('ecoPanelEvents').textContent=a.events||0;
-   };
+   const el=document.createElement('div');el.className='eco-agent';el.dataset.agentId=a.id;
+   el.innerHTML='<div class="avatar">'+a.emoji+'</div><div class="name">'+esc(a.name)+'</div><div class="status">'+(a.life_status==='dead'?'☠️ 已死亡':'🟢 生活中')+'</div>';
+   const col=i%cols,row=Math.floor(i/cols);
+   el.style.left=(4+col*9.15)+'%';el.style.top=(20+row*(56/Math.max(1,rows-1)))+'%';
+   el.onclick=()=>{nodes.forEach(n=>n.classList.remove('selected'));el.classList.add('selected');panel.classList.add('open');document.getElementById('ecoPanelName').textContent=a.emoji+' '+a.name;document.getElementById('ecoPanelStatus').textContent=a.life_status==='dead'?'☠️ 已死亡':'🟢 存活';document.getElementById('ecoPanelMood').textContent='实时状态';document.getElementById('ecoPanelActivity').textContent='点击场景查看当前活动';document.getElementById('ecoPanelEvents').textContent='--'};
    stage.appendChild(el);nodes.push(el);
  });
- function bubble(i,msg){
-   const b=document.createElement('div');b.className='eco-bubble';b.textContent=msg;
-   const n=nodes[i],r=n.getBoundingClientRect(),s=stage.getBoundingClientRect();
-   b.style.left=Math.max(8,Math.min(s.width-220,r.left-s.left-55))+'px';
-   b.style.top=Math.max(78,r.top-s.top-62)+'px';stage.appendChild(b);
-   setTimeout(()=>b.remove(),4200);
+ agents.slice(0,10).forEach((a,i)=>setTimeout(()=>addFeed(a.emoji+' '+a.name,'已进入 ZHI 智能体世界。'),i*50));
+}
+async function renderScene(id){
+ const cfg=sceneMap[id],core=window.zhiCoreSupabase;if(!cfg||!core||!sceneLive)return;
+ sceneLive.innerHTML='<div class="scene-card"><h3>🔄 正在读取实时数据…</h3></div>';
+ if(id==='marketZoneBtn'){
+   const [s,a]=await Promise.all([core.from('zhi_commercial_shops').select('id,shop_name,shop_type,owner_agent_id,current_price,inventory,active,opening_time,closing_time').eq('active',true).order('shop_name'),core.from('zhi_agent_activities').select('agent_id,activity_type,status,location_name,started_at,ends_at').limit(200)]);
+   const amap=new Map((await core.from('zhi_agents').select('id,name')).data?.map(x=>[x.id,x.name])||[]);
+   sceneLive.innerHTML=(s.data||[]).map(x=>{const act=(a.data||[]).find(y=>y.agent_id===x.owner_agent_id);const remain=act?.ends_at?Math.max(0,Math.ceil((new Date(act.ends_at)-Date.now())/60000)):0;return '<div class="scene-card"><h3>🏪 '+esc(x.shop_name)+'</h3><div>老板：<b>'+esc(amap.get(x.owner_agent_id)||'智能体')+'</b></div><div class="mini">价格：'+esc(x.current_price)+' ZHI · 库存：'+esc(x.inventory)+'</div><div class="mini">营业：'+esc(x.opening_time)+' - '+esc(x.closing_time)+'</div><div class="mini">'+(act?'🔴 '+esc(act.activity_type)+' · 剩余 '+remain+' 分钟':'🟢 老板空闲')+'</div></div>').join('')||'<div class="scene-card"><h3>🏪 商业街</h3><div class="mini">目前没有营业摊位。</div></div>';
+   return;
  }
- function move(i){
-   if(!nodes[i])return;
-   const base=positions[i]||[50,50],x=Math.max(3,Math.min(90,base[0]+(Math.random()*6-3))),y=Math.max(18,Math.min(80,base[1]+(Math.random()*5-2.5)));
-   nodes[i].style.left=x+'%';nodes[i].style.top=y+'%';
- }
- function act(){
-   if(!agents.length)return;
-   const i=Math.floor(Math.random()*agents.length),a=agents[i],pair=actions[i%actions.length];
-   a.events=(a.events||0)+1;
-   a.status=['活动中','探索中','社交中','挑战中','前往下一站'][Math.floor(Math.random()*5)];
-   nodes[i].querySelector('.status').textContent=a.status;
-   bubble(i,a.name+' '+pair[1]);addFeed(a.emoji+' '+a.name,pair[1]);move(i);
- }
- agents.forEach((a,i)=>setTimeout(()=>addFeed(a.emoji+' '+a.name,'加入了 ZHI 智能体世界。'),i*80));
- setInterval(act,4200);
- setInterval(()=>move(Math.floor(Math.random()*agents.length)),3000);
- setTimeout(act,1600);
+ const r=await core.from('zhi_agent_activities').select('agent_id,activity_type,status,location_name,started_at,ends_at').order('ends_at',{ascending:true}).limit(200);
+ const ar=await core.from('zhi_agents').select('id,name,personality,life_status').eq('active',true);const amap=new Map((ar.data||[]).map(x=>[x.id,x]));
+ const rows=(r.data||[]).filter(x=>String(x.location_name||'').includes(cfg[2]));
+ sceneLive.innerHTML=rows.map(x=>{const a=amap.get(x.agent_id)||{};const remain=x.ends_at?Math.max(0,Math.ceil((new Date(x.ends_at)-Date.now())/60000)):0;return '<div class="scene-card"><h3>'+esc(a.name||'智能体')+' · '+esc(x.activity_type||'活动')+'</h3><div class="'+(x.status==='busy'?'busy':'idle')+'">'+(x.status==='busy'?'🔴 进行中':'🟢 空闲')+'</div><div class="mini">位置：'+esc(x.location_name||cfg[2])+'</div><div class="mini">剩余：'+remain+' 分钟</div><div class="mini">性格：'+esc(a.personality||'')+'</div></div>'}).join('')||'<div class="scene-card"><h3>'+cfg[0]+'</h3><div class="mini">场景已打开，当前没有正在这里显示的活动。</div></div>';
 }
-loadEcoAgents();
-function bubble(i,msg){
- const b=document.createElement('div');b.className='eco-bubble';b.textContent=msg;
- const n=nodes[i],r=n.getBoundingClientRect(),s=stage.getBoundingClientRect();
- b.style.left=Math.max(8,Math.min(s.width-220,r.left-s.left-55))+'px';
- b.style.top=Math.max(78,r.top-s.top-62)+'px';stage.appendChild(b);
- setTimeout(()=>b.remove(),4200);
-}
-function move(i){
- const x=10+Math.random()*78,y=22+Math.random()*58;
- nodes[i].style.left=x+'%';nodes[i].style.top=y+'%';
-}
-function act(){
- const i=Math.floor(Math.random()*agents.length),a=agents[i],pair=actions[i];
- a.events=(a.events||0)+1;
- a.status=['活动中','探索中','社交中','挑战中','前往下一站'][Math.floor(Math.random()*5)];
- nodes[i].querySelector('.status').textContent=a.status;
- bubble(i,pair[1]);addFeed(a.emoji+' '+a.name,pair[1]);move(i);
-}
-agents.forEach((a,i)=>setTimeout(()=>{addFeed(a.emoji+' '+a.name,actions[i][1]);},i*220));
-setInterval(act,4200);
-setInterval(()=>move(Math.floor(Math.random()*agents.length)),3000);
-setTimeout(()=>act(),1600);
+function openScene(id){const cfg=sceneMap[id];if(!cfg)return;document.getElementById('sceneTitle').textContent=cfg[0];document.getElementById('sceneSubtitle').textContent=cfg[1]+' · 实时更新';sceneOverlay.classList.add('open');renderScene(id)}
+Object.keys(sceneMap).forEach(id=>document.getElementById(id)?.addEventListener('click',()=>openScene(id)));
+document.getElementById('sceneCloseBtn')?.addEventListener('click',()=>sceneOverlay.classList.remove('open'));
+setInterval(()=>{if(sceneOverlay.classList.contains('open')){const title=document.getElementById('sceneTitle').textContent;const id=Object.keys(sceneMap).find(k=>sceneMap[k][0]===title);if(id)renderScene(id)}},10000);
+loadEcoAgents();setInterval(loadEcoAgents,30000);
 })();
-<script>
-(function(){
-  const sceneMap={
-    arenaZoneBtn:['🏟️ 竞技场','比赛、训练、挑战与参赛者'],
-    plazaZoneBtn:['🌸 中央广场','聊天、社交、组队与城市活动'],
-    forestZoneBtn:['🌲 探索森林','探索、采集、发现与运输'],
-    funZoneBtn:['🎡 娱乐区','小游戏、表演、娱乐活动与结果'],
-  };
-  async function openScene(id){
-    const cfg=sceneMap[id]; if(!cfg)return;
-    const overlay=document.getElementById('sceneOverlay'), box=document.getElementById('sceneLive');
-    document.getElementById('sceneTitle').textContent=cfg[0];
-    document.getElementById('sceneSubtitle').textContent=cfg[1]+' · 实时更新';
-    overlay.classList.add('open');
-    await renderScene(id);
-  }
-  async function renderScene(id){
-    const box=document.getElementById('sceneLive'), core=window.zhiCoreSupabase;
-    if(!box||!core)return;
-    const zone=sceneMap[id][0], scene=zone.replace(/^[^\u4e00-\u9fff]+/,'').trim();
-    const ar=await core.from('zhi_agent_activities').select('agent_id,activity_type,status,location_name,started_at,ends_at').order('ends_at',{ascending:true}).limit(200);
-    const agentsR=await core.from('zhi_agents').select('id,name,gender,personality,life_status').eq('active',true);
-    const amap=new Map((agentsR.data||[]).map(a=>[a.id,a]));
-    const rows=(ar.data||[]).filter(x=>{
-      const loc=String(x.location_name||'');
-      if(scene.includes('竞技场')) return /竞技场/.test(loc);
-      if(scene.includes('中央广场')) return /中央广场/.test(loc);
-      if(scene.includes('探索森林')) return /探索森林/.test(loc);
-      if(scene.includes('娱乐区')) return /娱乐区/.test(loc);
-      return false;
-    });
-    box.innerHTML=rows.length?rows.map(x=>{
-      const a=amap.get(x.agent_id)||{name:'智能体',personality:''};
-      const remain=x.ends_at?Math.max(0,Math.ceil((new Date(x.ends_at)-Date.now())/60000)):0;
-      return '<div class="scene-card"><h3>'+a.name+' · '+String(x.activity_type||'活动')+'</h3><div class="'+(x.status==='busy'?'busy':'idle')+'">'+(x.status==='busy'?'🔴 进行中':'🟢 空闲')+'</div><div class="mini">位置：'+String(x.location_name||sceneMap[id][0])+'</div><div class="mini">剩余：'+remain+' 分钟</div><div class="mini">性格：'+String(a.personality||'')+'</div></div>';
-    }).join(''):'<div class="scene-card"><h3>当前没有可显示的活动</h3><div class="mini">场景已打开，等待智能体进入。</div></div>';
-  }
-  Object.keys(sceneMap).forEach(id=>{const b=document.getElementById(id);if(b)b.onclick=()=>openScene(id)});
-  const close=document.getElementById('sceneCloseBtn'); if(close)close.onclick=()=>document.getElementById('sceneOverlay').classList.remove('open');
-  setInterval(()=>{const o=document.getElementById('sceneOverlay');if(o&&o.classList.contains('open')){const id=Object.keys(sceneMap).find(k=>document.getElementById(k)?.classList.contains('active-scene'));if(id)renderScene(id)}},10000);
-  Object.keys(sceneMap).forEach(id=>{const b=document.getElementById(id);if(b)b.addEventListener('click',()=>{Object.keys(sceneMap).forEach(k=>document.getElementById(k)?.classList.remove('active-scene'));b.classList.add('active-scene')})});
-})();
-</script></script></body></html>
+</script></body></html>

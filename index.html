@@ -199,6 +199,8 @@ async function loadEcoAgents(){
   core.from('zhi_agent_wallets').select('agent_id,balance'),
   core.from('zhi_agent_activities').select('agent_id,activity_type,status,location_name,started_at,ends_at')
  ]);
+ console.log('[ZHI] agent query', {agents:ar.data?.length||0,wallets:wr.data?.length||0,activities:ac.data?.length||0,agentError:ar.error?.message||null});
+ if(!agentLayer){console.error('[ZHI] ecoAgentsLayer missing');return;}
  if(ar.error){console.error('ZHI agents load failed',ar.error);addFeed('系统','智能体读取失败：'+ar.error.message);return}
  if(wr.error)console.warn('ZHI wallet read failed',wr.error);
  if(ac.error)console.warn('ZHI activity read failed',ac.error);
@@ -223,7 +225,12 @@ async function loadEcoAgents(){
     document.getElementById('ecoPanelActivity').textContent=act?(act.status==='busy'?'🔴 '+(act.activity_type||'活动')+' · '+(act.location_name||''):'🟢 空闲'):'🟢 空闲';
     document.getElementById('ecoPanelEvents').textContent='实时同步';
    };
-   if(agentLayer)agentLayer.appendChild(el);else stage.appendChild(el);el.style.pointerEvents='auto';nodes.push(el);
+   agentLayer.appendChild(el);
+   el.style.setProperty('display','block','important');
+   el.style.setProperty('visibility','visible','important');
+   el.style.setProperty('opacity','1','important');
+   el.style.setProperty('pointer-events','auto','important');
+   nodes.push(el);
  });
  agents.slice(0,10).forEach((a,i)=>setTimeout(()=>addFeed(a.emoji+' '+a.name,'已同步 · '+money(a.balance)+' ZHI'),i*40));
 }

@@ -256,28 +256,23 @@ async function loadEcoAgents(){
  /* old renderer disabled */}
 async function renderScene(id){
  const cfg=sceneMap[id],core=window.zhiCoreSupabase;if(!cfg||!core||!sceneLive)return;
- if(id==='apartmentZoneBtn'){
-   const [ar,ac,rr]=await Promise.all([
-     core.from('zhi_agents').select('id,name,life_status,active').order('name'),
-     core.from('zhi_agent_activities').select('agent_id,activity_type,status,location_name,started_at,ends_at').limit(200),
-     core.from('zhi_agent_rest_logs').select('agent_id,rest_date,started_at,ended_at,duration_minutes').eq('rest_date',new Date().toISOString().slice(0,10))
-   ]);
-   const acts=new Map((ac.data||[]).map(x=>[x.agent_id,x])), rests=new Map((rr.data||[]).map(x=>[x.agent_id,x]));
-   const rows=(ar.data||[]).map(a=>{const act=acts.get(a.id),rest=rests.get(a.id),sleep=act?.status==='busy'&&String(act.location_name||'').includes('公寓');return '<div class="scene-card"><h3>🏠 '+esc(a.name)+'</h3><div class="'+(sleep?'busy':'idle')+'">'+(sleep?'🛌 正在休息':'🟢 已入住')+'</div><div class="mini">'+(rest?.duration_minutes?'今日休息 '+rest.duration_minutes+' 分钟':'今日休息记录待更新')+'</div><div class="mini">'+(act&&act.status==='busy'?'当前：'+esc(act.activity_type||'活动'):'当前：空闲')+'</div></div>';});
-   sceneLive.innerHTML='<div class="scene-card" style="grid-column:1/-1"><h3>🏢 ZHI 智能体公寓</h3><div class="mini">70间智能体居住房 · 每人每日必须休息6小时 · 每月租金10,000 ZHI</div></div>'+rows.join('');
-   return;
- }
- sceneLive.innerHTML='<div class="scene-card"><h3>🔄 正在读取实时数据…</h3></div>';
- if(id==='marketZoneBtn'){
-   const [s,a]=await Promise.all([core.from('zhi_commercial_shops').select('id,shop_name,shop_type,owner_agent_id,current_price,inventory,active,opening_time,closing_time').eq('active',true).order('shop_name'),core.from('zhi_agent_activities').select('agent_id,activity_type,status,location_name,started_at,ends_at').limit(200)]);
-   const amap=new Map((await core.from('zhi_agents').select('id,name')).data?.map(x=>[x.id,x.name])||[]);
-   sceneLive.innerHTML=(s.data||[]).map(x=>{const act=(a.data||[]).find(y=>y.agent_id===x.owner_agent_id);const remain=act?.ends_at?Math.max(0,Math.ceil((new Date(act.ends_at)-Date.now())/60000)):0;return '<div class="scene-card"><h3>🏪 '+esc(x.shop_name)+'</h3><div>老板：<b>'+esc(amap.get(x.owner_agent_id)||'智能体')+'</b></div><div class="mini">价格：'+esc(x.current_price)+' ZHI · 库存：'+esc(x.inventory)+'</div><div class="mini">营业：'+esc(x.opening_time)+' - '+esc(x.closing_time)+'</div><div class="mini">'+(act?'🔴 '+esc(act.activity_type)+' · 剩余 '+remain+' 分钟':'🟢 老板空闲')+'</div></div>').join('')||'<div class="scene-card"><h3>🏪 商业街</h3><div class="mini">目前没有营业摊位。</div></div>';
-   return;
- }
- const r=await core.from('zhi_agent_activities').select('agent_id,activity_type,status,location_name,started_at,ends_at').order('ends_at',{ascending:true}).limit(200);
- const ar=await core.from('zhi_agents').select('id,name,personality,life_status').eq('active',true);const amap=new Map((ar.data||[]).map(x=>[x.id,x]));
- const rows=(r.data||[]).filter(x=>String(x.location_name||'').includes(cfg[2]));
- sceneLive.innerHTML=rows.map(x=>{const a=amap.get(x.agent_id)||{};const remain=x.ends_at?Math.max(0,Math.ceil((new Date(x.ends_at)-Date.now())/60000)):0;return '<div class="scene-card"><h3>'+esc(a.name||'智能体')+' · '+esc(x.activity_type||'活动')+'</h3><div class="'+(x.status==='busy'?'busy':'idle')+'">'+(x.status==='busy'?'🔴 进行中':'🟢 空闲')+'</div><div class="mini">位置：'+esc(x.location_name||cfg[2])+'</div><div class="mini">剩余：'+remain+' 分钟</div><div class="mini">性格：'+esc(a.personality||'')+'</div></div>'}).join('')||'<div class="scene-card"><h3>'+cfg[0]+'</h3><div class="mini">场景已打开，当前没有正在这里显示的活动。</div></div>';
+ const sceneName=cfg[2];
+ const [pr,ar,ac]=await Promise.all([
+   core.from('zhi_scene_projects').select('project_name,project_type,description,status,owner_agent_id').eq('scene_name',sceneName).eq('active',true).order('project_name'),
+   core.from('zhi_agents').select('id,name,life_status,active').eq('active',true).order('name'),
+   core.from('zhi_agent_activities').select('agent_id,activity_type,status,location_name').eq('status','busy').limit(300)
+ ]);
+ const owners=new Map((ar.data||[]).map(a=>[a.id,a]));
+ const acts=new Map((ac.data||[]).map(a=>[a.agent_id,a]));
+ const projects=(pr.data||[]).map(x=>{
+   const owner=x.owner_agent_id?owners.get(x.owner_agent_id):null;
+   return '<div class="scene-card"><h3>'+esc(x.project_name||'项目')+'</h3><div class="mini">'+esc(x.description||x.project_type||'场景项目')+'</div><div class="mini">状态：'+esc(x.status||'active')+(owner?' · 经营者：'+esc(owner.name):'')+'</div></div>';
+ }).join('');
+ const activeAgents=(ar.data||[]).filter(a=>{const x=acts.get(a.id);return x&&String(x.location_name||'').includes(sceneName);}).map(a=>{const x=acts.get(a.id);return '<div class="scene-card"><h3>👤 '+esc(a.name)+'</h3><div class="mini">🔴 '+esc(x.activity_type||'活动')+'</div></div>';}).join('');
+ sceneLive.innerHTML='<div class="scene-card" style="grid-column:1/-1"><h3>'+esc(cfg[0])+'</h3><div class="mini">'+esc(cfg[1])+' · 场景内可点击查看项目与当前活动</div></div>'+
+   '<div class="scene-card" style="grid-column:1/-1"><h3>📍 场景项目（'+((pr.data||[]).length)+'）</h3></div>'+projects+
+   '<div class="scene-card" style="grid-column:1/-1"><h3>🤖 当前活动智能体（'+(activeAgents?activeAgents.match(/<h3>/g).length:0)+'）</h3></div>'+activeAgents+
+   (!projects&&!activeAgents?'<div class="scene-card" style="grid-column:1/-1"><div class="mini">目前没有正在显示的项目或活动，场景仍可进入。</div></div>':'');
 }
 function openScene(id){const cfg=sceneMap[id];if(!cfg)return;document.getElementById('sceneTitle').textContent=cfg[0];document.getElementById('sceneSubtitle').textContent=cfg[1]+' · 实时更新';sceneOverlay.classList.add('open');renderScene(id)}
 Object.keys(sceneMap).forEach(id=>document.getElementById(id)?.addEventListener('click',()=>openScene(id)));

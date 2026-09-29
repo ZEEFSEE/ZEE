@@ -589,33 +589,8 @@ async function cancelMarket(id){
  await load();
 }
 async function loadTreasuryFinance(){const {data,error}=await sb.rpc('get_treasury_finance');if(error)return;$('tfTotal').textContent=money(data.total_treasury)+' ZHI';$('tfAvailable').textContent=money(data.available_balance)+' ZHI';$('tfSavings').textContent=money(data.user_savings)+' ZHI';$('tfLoans').textContent=money(data.user_loans)+' ZHI';$('tfLoanInterest').textContent=money(data.loan_interest_due)+' ZHI';$('tfSavingsInterest').textContent=money(data.savings_interest_paid)+' ZHI';$('tfSupply').textContent=money(data.fixed_supply)+' ZHI';}
-async function {
- const box=$('srLiveList');if(!box)return;
- const {data,error}=await sb.rpc('admin_get_sr_recent_activity',{p_limit:40});
- if(error){box.innerHTML='<div class="notice">活动加载失败 / Failed: '+String(error.message||'')+'</div>';return}
- const rows=Array.isArray(data)?data:[];
- const core=rows.filter(x=>['predict','save','loan','repay','transfer'].includes(x.action_type));
- const labels={predict:['🎯','预测'],save:['🏦','存储'],loan:['💳','贷款'],repay:['↩️','还款'],transfer:['🔄','转账'],login:['🔐','登录'],logout:['🚪','离开'],view_market:['👀','查看市场'],wallet_check:['👛','查看钱包']};
- const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const since=Date.now()-5*60*1000;
- const recent=rows.filter(x=>new Date(x.created_at).getTime()>=since);
- const counts={predict:0,save:0,loan:0,repay:0,transfer:0};
- recent.forEach(x=>{if(counts[x.action_type]!=null)counts[x.action_type]++});
- const summary=$('srLiveSummary');
- if(summary)summary.innerHTML=[
-  ['🎯 预测',counts.predict],['🏦 存储',counts.save],['💳 贷款',counts.loan],['↩️ 还款',counts.repay],['🔄 转账',counts.transfer]
- ].map(x=>'<div class="finance-stat"><span>'+x[0]+' · 最近5分钟</span><b>'+Number(x[1]).toLocaleString()+' 次</b></div>').join('');
- $('srLiveCount').textContent=core.length+' 条核心行为';
- box.innerHTML=core.slice(0,20).map(x=>{
-   const l=labels[x.action_type]||['⚙️',uiSide(x.action_type)];
-   const amount=x.amount!=null?' · '+money(x.amount)+' ZHI':'';
-   const market=x.market_id?' · 市场 '+esc(x.market_id):'';
-   return '<div class="sr-live-item"><div class="sr-live-icon">'+l[0]+'</div><div class="sr-live-main"><div class="sr-live-user">'+esc(x.username||x.sr_id||'SR')+'</div><div class="sr-live-action">'+l[1]+amount+market+'</div></div><div class="sr-live-time">'+fmtSGTime(x.created_at)+'</div></div>';
- }).join('')||'<div class="notice">最近没有核心经济行为 / No core economic activity yet</div>';
-}
 async function {const {data,error}=await sb.rpc('admin_get_sr_treasury_grants');if(error){$('srGrantCount').textContent='--';$('srGrantEach').textContent='--';$('srGrantTotal').textContent='--';$('srGrantSource').textContent='加载失败';return}$('srGrantCount').textContent=Number(data.grant_count||0).toLocaleString();$('srGrantEach').textContent=money(data.grant_each||0)+' ZHI';$('srGrantTotal').textContent=money(data.grant_total||0)+' ZHI';$('srGrantSource').textContent=data.funding_source==='treasury'?'财神爷 Treasury':'--';}
 async function {const {data,error}=await sb.rpc('admin_get_sr_simulation_summary');if(error){$('srMsg').textContent='SR 状态加载失败：'+error.message;return}$('srUsers').textContent=Number(data.users||0).toLocaleString();$('srActive').textContent=Number(data.active||0).toLocaleString();$('srActions').textContent=Number(data.actions_today||0).toLocaleString();$('srLogins').textContent=Number(data.logins_today||0).toLocaleString();$('srPredictions').textContent=Number(data.predictions_today||0).toLocaleString();$('srSaves').textContent=Number(data.saves_today||0).toLocaleString();$('srLoans').textContent=Number(data.loans_today||0).toLocaleString();$('srRepays').textContent=Number(data.repayments_today||0).toLocaleString();$('srWallet').textContent=money(data.wallet||0)+' ZHI';$('srSavings').textContent=money(data.savings||0)+' ZHI';$('srLoanBalance').textContent=money(data.loans||0)+' ZHI';$('srLast').textContent=data.last_action_at?fmtSG(data.last_action_at)+' · '+SR_TIME_LABEL:'--';$('srMsg').textContent=data.enabled?'🟢 SR 自动运行中 / Running':'⏸ SR 已暂停 / Paused';$('srPauseBtn').textContent=data.enabled?'⏸ 暂停 SR':'▶️ 启动 SR';}
-async function runSRTick(){const b=$('srRunBtn');b.disabled=true;const {data,error}=await sb.rpc('admin_run_sr_tick');if(error){$('srMsg').textContent='运行失败：'+error.message}else{$('srMsg').textContent='已运行一批 SR：'+JSON.stringify(data);await }b.disabled=false;}
 async function {const {data,error}=await sb.rpc('get_treasury_daily_report',{p_days:7});if(error){$('tdMsg').textContent='日报加载失败：'+error.message;return}const t=data?.today||{};$('tdMsg').textContent='✅ 日报已启用 / Daily report active';$('tdLoanIncome').textContent=money(t.loan_interest_income||0)+' ZHI';$('tdSavingsExpense').textContent=money(t.savings_interest_expense||0)+' ZHI';$('tdNet').textContent=money(t.net||0)+' ZHI';$('tdDays').innerHTML=(data.daily||[]).map(x=>'<div class="row"><span>'+x.day+'</span><b>'+((Number(x.loan_interest_income||0)-Number(x.savings_interest_expense||0))>=0?'+':'')+money(Number(x.loan_interest_income||0)-Number(x.savings_interest_expense||0))+' ZHI</b></div>').join('')||'暂无日报数据 / No daily data';}
 async function loadAdminFundFlows(){
  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -842,7 +817,7 @@ const mo=new MutationObserver(()=>initZhiDateTimes()); mo.observe(document.docum
     'Markets Awaiting Settlement':'待结算市场','Markets appear here after betting closes. The administrator confirms the result and the system pays winners immediately.':'投注截止后会自动出现在这里。管理员确认结果后，系统立即自动派奖。',
     'Market ID':'市场 ID','Question':'问题','Close Time':'截止时间','Create Market':'创建市场','Total Inflow':'总流入','Total Outflow':'总流出','Net Flow':'净流量','Show Flows':'显示流水',
     'All':'全部类型','Savings':'存款','Loans':'贷款','Savings Interest':'存款利息','Loan Interest Accrual':'贷款计息','Predict Now':'立即预测','Unread':'未读','Unread Gifts':'未读转赠','Gift History':'转赠记录',
-    'Reward source: Treasury':'奖励来源：财神爷','Funds reconciled':'资金守恒正常','Reconciliation mismatch':'发现对账差异','Checking...':'检查中……'
+    'Reward source: Treasury':'奖励来源：财神爷',
   };
   function cjk(s){return /[\u3400-\u9fff]/.test(s)}
   function tr(s){

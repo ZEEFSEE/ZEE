@@ -211,9 +211,7 @@ async function loadEcoAgents(){
  agents=next;
  nodes.forEach(n=>n.remove());nodes=[];if(agentLayer)agentLayer.innerHTML='';
  const sub=document.querySelector('.eco-subtitle');if(sub)sub.textContent=agents.length+' 个智能体在线 · 钱包与当前活动实时同步';
- const sceneNames=['竞技场','中央广场','探索森林','商业街','娱乐区'];
- const homeAgents=agents.filter(a=>!a.activity||a.activity.status!=='busy'||!sceneNames.some(s=>String(a.activity.location_name||'').includes(s)));
- const displayAgents=homeAgents;
+ const displayAgents=agents;
  displayAgents.forEach((a,i)=>{
    const el=document.createElement('div');el.className='eco-agent';el.dataset.agentId=a.id;
    const act=a.activity;
@@ -222,7 +220,7 @@ async function loadEcoAgents(){
    el.style.left=x+'%';el.style.top=y+'%';
    el.onclick=()=>{
     nodes.forEach(n=>n.classList.remove('selected'));el.classList.add('selected');panel.classList.add('open');
-    document.getElementById('ecoPanelName').textContent=a.emoji+' '+a.name;
+    document.getElementById('ecoPanelName').textContent=a.name;
     document.getElementById('ecoPanelStatus').textContent=a.life_status==='dead'?'☠️ 已死亡':'🟢 存活';
     document.getElementById('ecoPanelMood').textContent='余额 '+money(a.balance)+' ZHI';
     document.getElementById('ecoPanelActivity').textContent=act?(act.status==='busy'?'🔴 '+(act.activity_type||'活动')+' · '+(act.location_name||''):'🟢 空闲'):'🟢 空闲';
@@ -243,7 +241,7 @@ async function loadEcoAgents(){
  setTimeout(wanderAgents,1500);
  clearInterval(window.__zhiAgentWanderTimer);
  window.__zhiAgentWanderTimer=setInterval(wanderAgents,7000);
- agents.slice(0,10).forEach((a,i)=>setTimeout(()=>addFeed(a.emoji+' '+a.name,'已同步 · '+money(a.balance)+' ZHI'),i*40));
+ agents.slice(0,10).forEach((a,i)=>setTimeout(()=>addFeed(a.name,'已同步 · '+money(a.balance)+' ZHI'),i*40));
  return;
  /* old renderer disabled */}
 async function renderScene(id){

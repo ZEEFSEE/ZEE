@@ -387,7 +387,40 @@ loadEcoAgents();setInterval(loadEcoAgents,30000);
 .fortune-claim-row{display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid #ffffff0d;font-size:12px}
 .fortune-claim-row:last-child{border-bottom:0}.fortune-amount{color:#8ff0b0;font-weight:1000}.fortune-empty{color:#aaa;font-size:12px;padding:6px 0}
 </style>
-<script <!-- ZHI_FORTUNE_CLAIMS_LIVE -->>
+<script 
+<style>
+.fortune-scene-toast{position:fixed;right:20px;bottom:20px;z-index:5000;min-width:280px;max-width:380px;padding:14px 16px;border:1px solid #ffd76a99;border-radius:16px;background:linear-gradient(135deg,#2b1249f5,#100817f5);box-shadow:0 14px 45px #000b,0 0 28px #ffd76a22;animation:fortuneToastIn .35s ease-out;color:#fff}.fortune-scene-toast strong{color:#ffe58c}.fortune-scene-toast .amount{color:#8ff0b0;font-size:20px;font-weight:1000}.fortune-scene-toast small{display:block;color:#cdbfda;margin-top:4px}@keyframes fortuneToastIn{from{opacity:0;transform:translateY(20px) scale(.96)}to{opacity:1;transform:none}}
+.fortune-scene-burst{position:absolute;z-index:2000;pointer-events:none;font-weight:1000;color:#fff4a8;text-shadow:0 2px 8px #000,0 0 18px #ffb300;animation:fortuneBurst 1.8s ease-out forwards;white-space:nowrap}.fortune-scene-burst .coins{font-size:22px}.fortune-scene-burst .who{font-size:13px}@keyframes fortuneBurst{0%{opacity:0;transform:translate(-50%,10px) scale(.7)}15%{opacity:1;transform:translate(-50%,0) scale(1.08)}75%{opacity:1;transform:translate(-50%,-55px) scale(1)}100%{opacity:0;transform:translate(-50%,-90px) scale(.95)}}
+.fortune-live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#ff5a7d;box-shadow:0 0 10px #ff5a7d;margin-right:5px;animation:fortunePulse 1s infinite}@keyframes fortunePulse{50%{opacity:.35;transform:scale(.7)}}
+</style>
+<script>
+(function(){
+ const core=window.zhiCoreSupabase; if(!core)return;
+ let seen=new Set(),initial=true;
+ function fmt(v){return Number(v||0).toLocaleString('en-US',{maximumFractionDigits:2})}
+ function safe(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]) )}
+ async function pollFortuneScene(){
+  const {data:claims,error}=await core.from('zhi_agent_fortune_claims').select('id,event_id,agent_id,reward,result,created_at').order('created_at',{ascending:false}).limit(50);
+  if(error)return;
+  const fresh=(claims||[]).filter(c=>c.result==='won');
+  if(initial){fresh.forEach(c=>seen.add(c.id));initial=false;return;}
+  const newClaims=fresh.filter(c=>!seen.has(c.id));fresh.forEach(c=>seen.add(c.id));
+  if(!newClaims.length)return;
+  const ids=[...new Set(newClaims.map(c=>c.agent_id))];const eids=[...new Set(newClaims.map(c=>c.event_id))];
+  const [ar,er]=await Promise.all([core.from('zhi_agents').select('id,name').in('id',ids),core.from('zhi_fortune_events').select('id,location_name,activity_type').in('id',eids)]);
+  const nm=new Map((ar.data||[]).map(a=>[a.id,a.name])),ev=new Map((er.data||[]).map(e=>[e.id,e]));
+  newClaims.slice(0,5).forEach(c=>showFortuneMoment(nm.get(c.agent_id)||'智能体',c.reward,ev.get(c.event_id))); 
+ }
+ function showFortuneMoment(name,reward,event){
+  const stage=document.getElementById('ecoStage');
+  const toast=document.createElement('div');toast.className='fortune-scene-toast';toast.innerHTML='<div><span class="fortune-live-dot"></span><strong>财神爷撒币现场</strong></div><div style="margin-top:5px">👤 <strong>'+safe(name)+'</strong> 刚刚领取了</div><div class="amount">+'+fmt(reward)+' ZHI</div><small>📍 '+safe(event?.location_name||'现场')+' · '+safe(event?.activity_type||'撒币')+'</small>';document.body.appendChild(toast);setTimeout(()=>toast.remove(),5000);
+  if(stage){const b=document.createElement('div');b.className='fortune-scene-burst';b.style.left=(18+Math.random()*64)+'%';b.style.top=(25+Math.random()*55)+'%';b.innerHTML='<div class="coins">🪙 +'+fmt(reward)+' ZHI</div><div class="who">🎉 '+safe(name)+' 领取成功</div>';stage.appendChild(b);setTimeout(()=>b.remove(),1900)}
+  if(window.loadFortuneClaimsLive)window.loadFortuneClaimsLive();
+ }
+ window.pollFortuneScene=pollFortuneScene; setTimeout(pollFortuneScene,1200);setInterval(pollFortuneScene,2500);
+})();
+</script>
+<!-- ZHI_FORTUNE_CLAIMS_LIVE -->>
 (function(){
  async function escF(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])} function moneyF(v){return Number(v||0).toLocaleString('en-US',{maximumFractionDigits:2})} async function loadFortuneClaimsLive(){
   const core=window.zhiCoreSupabase,box=document.getElementById('fortuneClaimsBody');

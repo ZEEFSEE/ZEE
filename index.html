@@ -724,10 +724,6 @@ function renderHistory(list){
 /* ZHI GROWTH ECONOMY: elastic issuance. Preserve original auth errors so login failures are diagnosable. */
 let mode='login';
 $('transferBtn').onclick=transferZHI;
-$('srCreateAuthBtn').onclick=createSRAuthUsers;
-$('srRunBtn').onclick=runSRTick;
-$('srPauseBtn').onclick=toggleSRSummary;
-$('srRefreshBtn').onclick=loadSRSummary;
 $('authSubmit').onclick=async()=>{
  const u=$('authUsername').value.trim(),p=$('authPassword').value;
  if(!/^[a-zA-Z0-9_]{2,24}$/.test(u))return showErr('用户名只能用 2-24 位英文字母、数字或下划线');if(p.length<6)return showErr('密码至少6位');
@@ -837,9 +833,7 @@ const mo=new MutationObserver(()=>initZhiDateTimes()); mo.observe(document.docum
     '⚡ 自动结算':'⚡ 自动结算','🏆 自动派奖':'🏆 自动派奖','🎁 自由转赠':'🎁 自由转赠',
     '⭐ 今日焦点 / Featured Prediction':'⭐ 今日焦点','按当前奖池排序 / By pool':'按当前奖池排序','最近自动派奖记录 / Recent payouts':'最近自动派奖记录',
     '把 ZHI 送给其他用户 / Gift ZHI':'把 ZHI 送给其他用户','按当前 ZHI 余额 / By balance':'按当前 ZHI 余额',
-    '🏦 ZHI Treasury · Total / ZHI 总额':'🏦 财神爷 · ZHI 总额','财神爷余额 / Treasury Remaining:':'财神爷余额：',
-    '📊 财神爷每日财务报表 / Daily Finance Report':'📊 财神爷每日财务报表',
-    '实时行为 / Live SR activity':'实时行为','⏳ 待结算市场 / Settlement':'⏳ 待结算市场','新增市场 / Create Market':'新增市场',
+    '🏦 ZHI Treasury · Total / ZHI 总额':'🏦 财神爷 · ZHI 总额','财神爷余额 / Treasury Remaining:':'财神爷余额：','⏳ 待结算市场 / Settlement':'⏳ 待结算市场','新增市场 / Create Market':'新增市场',
     '用户资金 / User Funds':'用户资金','全部用户资金流水 / All Users Fund Flows':'全部用户资金流水','🧾 我的记录 / My Records':'🧾 我的记录',
     'YES / 是':'是','NO / 否':'否','取消 / Cancel':'取消','确认 / Confirm':'确认',
     '立即预测 / Predict':'立即预测','🎯 立即预测':'🎯 立即预测','📤 分享':'📤 分享',

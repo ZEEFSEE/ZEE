@@ -194,10 +194,11 @@ async function loadEcoAgents(){
  const sub=document.querySelector('.eco-subtitle');
  if(sub)sub.textContent=aliveCount+' 个智能体正在这里生活、社交、游戏和探索';
  const positions=[];
+ const cols=Math.min(10,Math.max(5,Math.ceil(Math.sqrt(Math.max(1,agents.length)*1.55))));
+ const rows=Math.ceil(agents.length/cols);
  for(let i=0;i<agents.length;i++){
-   const angle=(i/Math.max(1,agents.length))*Math.PI*2;
-   const radius=28+(i%4)*7;
-   positions.push([50+Math.cos(angle)*Math.min(38,radius),48+Math.sin(angle)*Math.min(25,radius)]);
+   const col=i%cols,row=Math.floor(i/cols);
+   positions.push([5+col*(90/Math.max(1,cols-1)),20+row*(58/Math.max(1,rows-1))]);
  }
  const nodes=[];
  function addFeed(name,msg){const d=document.createElement('div');d.className='eco-feed-item';d.innerHTML='<b>'+name+'</b> '+msg;feed.prepend(d);while(feed.children.length>8)feed.lastChild.remove()}
@@ -224,7 +225,7 @@ async function loadEcoAgents(){
  }
  function move(i){
    if(!nodes[i])return;
-   const x=6+Math.random()*82,y=22+Math.random()*55;
+   const base=positions[i]||[50,50],x=Math.max(3,Math.min(90,base[0]+(Math.random()*6-3))),y=Math.max(18,Math.min(80,base[1]+(Math.random()*5-2.5)));
    nodes[i].style.left=x+'%';nodes[i].style.top=y+'%';
  }
  function act(){

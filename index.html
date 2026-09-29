@@ -53,8 +53,8 @@ box-shadow:0 18px 60px #000a,0 0 40px #ffb30018,inset 0 1px #fff2}
 .eco-zone.arena{left:6%;top:26%}.eco-zone.plaza{left:43%;top:30%}.eco-zone.forest{right:6%;top:28%}.eco-zone.market{left:10%;bottom:13%}.eco-zone.fun{right:10%;bottom:13%}
 .eco-path{position:absolute;z-index:1;border:2px dashed #ffd76a18;border-radius:50%;pointer-events:none}
 .eco-path.p1{width:64%;height:58%;left:18%;top:22%}.eco-path.p2{width:34%;height:32%;left:33%;top:38%}
-#ecoAgentsLayer{position:absolute;inset:0;z-index:50!important;pointer-events:none;overflow:visible!important;display:block!important}
-#ecoAgentsLayer .eco-agent{position:absolute!important;z-index:51!important;display:block!important;visibility:visible!important;opacity:1!important;width:auto!important;min-width:44px!important;text-align:center;pointer-events:auto!important;cursor:pointer;transform:translate(-50%,-50%);transition:left var(--walk-duration,18s) linear,top var(--walk-duration,18s) linear}
+#ecoAgentsLayer{position:absolute!important;inset:0!important;z-index:999!important;pointer-events:none!important;overflow:visible!important;display:block!important;min-height:100%!important;isolation:isolate!important}
+#ecoAgentsLayer .eco-agent{position:absolute!important;z-index:1000!important;display:block!important;visibility:visible!important;opacity:1!important;width:auto!important;min-width:52px!important;height:auto!important;text-align:center;pointer-events:auto!important;cursor:pointer;transform:translate(-50%,-50%)!important;transition:none!important}
 #ecoAgentsLayer .eco-agent .avatar{display:none!important}
 #ecoAgentsLayer .eco-agent .name{display:block!important;margin:0!important;padding:3px 7px;border-radius:8px;background:#12091dcc;border:1px solid #ffd76a66;color:#fff3a8!important;font-weight:1000!important;font-size:13px!important;line-height:1.2;text-shadow:0 1px 5px #000;white-space:nowrap}
 #ecoAgentsLayer .eco-agent .status{display:none!important}
@@ -251,6 +251,7 @@ async function loadEcoAgents(){
     document.getElementById('ecoPanelEvents').textContent='实时同步';
    };
    agentLayer.appendChild(el);
+   el.classList.remove('eco-agent-fallback');
    el.style.setProperty('display','block','important');el.style.setProperty('visibility','visible','important');el.style.setProperty('opacity','1','important');el.style.setProperty('pointer-events','auto','important');
    nodes.push(el);
  });

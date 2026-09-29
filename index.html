@@ -53,7 +53,16 @@ box-shadow:0 18px 60px #000a,0 0 40px #ffb30018,inset 0 1px #fff2}
 .eco-zone.arena{left:6%;top:26%}.eco-zone.plaza{left:43%;top:30%}.eco-zone.forest{right:6%;top:28%}.eco-zone.market{left:10%;bottom:13%}.eco-zone.fun{right:10%;bottom:13%}
 .eco-path{position:absolute;z-index:1;border:2px dashed #ffd76a18;border-radius:50%;pointer-events:none}
 .eco-path.p1{width:64%;height:58%;left:18%;top:22%}.eco-path.p2{width:34%;height:32%;left:33%;top:38%}
-#ecoAgentsLayer{position:absolute;inset:0;z-index:20;pointer-events:none;overflow:hidden}.eco-agent{position:absolute!important;z-index:21;width:76px;text-align:center;transition:left 2.8s ease-in-out,top 2.8s ease-in-out;cursor:pointer;user-select:none}
+#ecoAgentsLayer{position:absolute;inset:0;z-index:50!important;pointer-events:none;overflow:visible!important;display:block!important}
+#ecoAgentsLayer .eco-agent{position:absolute!important;z-index:51!important;display:block!important;visibility:visible!important;opacity:1!important;width:auto!important;min-width:44px!important;text-align:center;pointer-events:auto!important;cursor:pointer;transform:translate(-50%,-50%);transition:left 2.8s ease-in-out,top 2.8s ease-in-out}
+#ecoAgentsLayer .eco-agent .avatar{display:none!important}
+#ecoAgentsLayer .eco-agent .name{display:block!important;margin:0!important;padding:3px 7px;border-radius:8px;background:#12091dcc;border:1px solid #ffd76a66;color:#fff3a8!important;font-weight:1000!important;font-size:13px!important;line-height:1.2;text-shadow:0 1px 5px #000;white-space:nowrap}
+#ecoAgentsLayer .eco-agent .status{display:none!important}
+#ecoAgentsLayer .eco-agent:nth-child(4n+1){left:8%;top:24%}
+#ecoAgentsLayer .eco-agent:nth-child(4n+2){left:31%;top:35%}
+#ecoAgentsLayer .eco-agent:nth-child(4n+3){left:58%;top:27%}
+#ecoAgentsLayer .eco-agent:nth-child(4n){left:82%;top:42%}
+.eco-agent{position:absolute!important;z-index:21;width:76px;text-align:center;transition:left 2.8s ease-in-out,top 2.8s ease-in-out;cursor:pointer;user-select:none}
 .eco-agent .avatar{display:none}
 .eco-agent .name{margin-top:5px;font-weight:1000;font-size:11px;color:#fff7d0;text-shadow:0 1px 4px #000}
 .eco-agent .status{display:inline-block;margin-top:3px;max-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:3px 6px;border-radius:999px;background:#090611cc;border:1px solid #ffd76a33;color:#e9dff4;font-size:9px}
@@ -216,7 +225,7 @@ async function loadEcoAgents(){
    const el=document.createElement('div');el.className='eco-agent';el.dataset.agentId=a.id;
    const act=a.activity;
    el.innerHTML='<div class="name">'+esc(a.name)+'</div><div class="status">'+(a.life_status==='dead'?'☠️ 已死亡':(act&&act.status==='busy'?'🔴 '+esc(act.activity_type||'活动'):'🟢 空闲'))+'</div>';
-   const x=8+((i*37)%84), y=24+((i*53)%62);
+   const x=7+((i*47)%86), y=23+((i*61)%64);
    el.style.left=x+'%';el.style.top=y+'%';
    el.onclick=()=>{
     nodes.forEach(n=>n.classList.remove('selected'));el.classList.add('selected');panel.classList.add('open');

@@ -221,16 +221,24 @@ async function loadEcoAgents(){
  const next=(ar.data||[]).map((a,i)=>({...makeAgent(a,i),balance:walletMap.get(a.id)||0,activity:activityMap.get(a.id)||null,position:positionMap.get(a.id)||null}));
  if(!next.length){addFeed('系统','数据库返回 0 个智能体，未清空现有画面。');return}
  agents=next;
- nodes.forEach(n=>n.remove());nodes=[];if(agentLayer)agentLayer.innerHTML='';
+ // 数据刷新不能重置智能体的空间位置；正在行走的智能体必须继续从当前屏幕位置走完。
+ const existing=new Map(nodes.filter(n=>n.isConnected).map(n=>[n.dataset.agentId,n]));
+ nodes=nodes.filter(n=>n.isConnected);
+ if(agentLayer){
+   agentLayer.querySelectorAll('.eco-agent').forEach(n=>{if(!existing.has(n.dataset.agentId))n.remove()});
+ }
  const sub=document.querySelector('.eco-subtitle');if(sub)sub.textContent=agents.length+' 个智能体在线 · 钱包与当前活动实时同步';
  const displayAgents=agents;
  displayAgents.forEach((a,i)=>{
-   const el=document.createElement('div');el.className='eco-agent';el.dataset.agentId=a.id;
+   let el=existing.get(a.id);
+   if(!el){el=document.createElement('div');el.className='eco-agent';el.dataset.agentId=a.id;}
    const act=a.activity;
    el.innerHTML='<div class="name">'+esc(a.name)+'</div><div class="status">'+(a.life_status==='dead'?'☠️ 已死亡':(act&&act.status==='busy'?'🔴 '+esc(act.activity_type||'活动'):'🟢 空闲'))+'</div>';
    const pos=a.position;
-   const x=Number.isFinite(Number(pos?.x))?Number(pos.x):(7+((i*47)%86));
-   const y=Number.isFinite(Number(pos?.y))?Number(pos.y):(23+((i*61)%64));
+   let x=Number.isFinite(Number(pos?.x))?Number(pos.x):(7+((i*47)%86));
+   let y=Number.isFinite(Number(pos?.y))?Number(pos.y):(23+((i*61)%64));
+   // 已存在的节点保留当前位置；只有首次创建才采用数据库坐标。
+   if(existing.has(a.id)){ x=parseFloat(el.style.left)||x; y=parseFloat(el.style.top)||y; }
    el.style.left=x+'%';el.style.top=y+'%';
    el.onclick=()=>{
     nodes.forEach(n=>n.classList.remove('selected'));el.classList.add('selected');panel.classList.add('open');
@@ -260,7 +268,11 @@ async function loadEcoAgents(){
      el.style.setProperty('--walk-duration',duration+'ms');
      el.style.left=x+'%';el.style.top=y+'%';
      const agent=agents[i];
-     if(agent?.id&&window.zhiCoreSupabase){ window.zhiCoreSupabase.from('zhi_agent_world_positions').update({x,y,current_scene:'🌸中央广场',walking:true,walk_started_at:new Date().toISOString(),walk_arrive_at:new Date(Date.now()+duration).toISOString(),updated_at:new Date().toISOString()}).eq('agent_id',agent.id).then(()=>{}); }
+     if(agent?.id&&window.zhiCoreSupabase){
+       const started=new Date().toISOString(), arrive=new Date(Date.now()+duration).toISOString();
+       window.zhiCoreSupabase.from('zhi_agent_world_positions').update({x,y,walking:true,walk_started_at:started,walk_arrive_at:arrive,updated_at:started}).eq('agent_id',agent.id).then(()=>{});
+       setTimeout(()=>window.zhiCoreSupabase.from('zhi_agent_world_positions').update({walking:false,walk_started_at:null,walk_arrive_at:null,updated_at:new Date().toISOString()}).eq('agent_id',agent.id),duration+100);
+     }
      maxWalk=Math.max(maxWalk,duration);
    });
    clearTimeout(window.__zhiAgentWanderTimer);

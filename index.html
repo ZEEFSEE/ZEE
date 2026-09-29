@@ -134,7 +134,7 @@ button,input,select{font:inherit}
 <div class="field"><label>密码</label><input id="authPassword" type="password" placeholder="至少 6 位 / Min. 6 characters"></div>
 <div id="authError" class="err"></div><div id="loginStatus" class="err" style="height:auto;min-height:18px;margin-top:6px"></div>
 <button id="authSubmit" class="btn confirm" style="width:100%">登录</button>
-<p style="text-align:center;color:#777;font-size:13px"><span id="switchText">还没有账户？</span> <button id="authSwitchBtn" class="link">立即注册</button></p>
+<p id="externalRegistrationNotice" style="text-align:center;color:#777;font-size:13px">仅限系统创建账户 / Accounts are created by the ZHI system only</p>
 <div class="notice">ZHI 是本网站的预测演示积分。</div>
 </div></section>
 
@@ -759,14 +759,8 @@ $('authSubmit').onclick=async()=>{
   }
  }catch(e){showErr(e.message||'操作失败')}finally{$('authSubmit').disabled=false}
 };
-$('authSwitchBtn').onclick=()=>{
- mode=mode==='login'?'signup':'login';
- $('authSub').textContent=mode==='login'?'登录账户':'创建你的 ZHI 账户 / Create your ZHI account';
- $('authSubmit').textContent=mode==='login'?'登录':'注册';
- $('switchText').textContent=mode==='login'?'还没有账户？':'已有账户？ / Already registered?';
- $('authSwitchBtn').textContent=mode==='login'?'立即注册':'直接登录 / Sign in';
- showErr('');
-};
+/* External self-registration disabled. ZHI accounts are system-created only. */
+
 $('modalYes').onclick=()=>choosePredictionSide('yes');
 $('modalNo').onclick=()=>choosePredictionSide('no');
 $('modalCancel').onclick=()=>{$('stakeModal').classList.remove('show');selectedMarket=null;selectedSide=null;$('directionChoice').style.display='none';$('modalAmount').style.display='none';$('modalConfirm').style.display='none'};

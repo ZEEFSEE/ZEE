@@ -237,8 +237,18 @@ async function loadEcoAgents(){
    el.dataset.sleeping=sleepingInApartment?'true':'false';
    el.innerHTML='<div class="name">'+esc(a.name)+'</div><div class="status">'+(a.life_status==='dead'?'☠️ 已死亡':(act&&act.status==='busy'?'🔴 '+esc(act.activity_type||'活动'):'🟢 空闲'))+'</div>';
    const pos=a.position;
-   let x=Number.isFinite(Number(pos?.x))?Number(pos.x):(7+((i*47)%86));
-   let y=Number.isFinite(Number(pos?.y))?Number(pos.y):(23+((i*61)%64));
+   const scene=String(pos?.current_scene||'中央广场');
+   const sceneBounds={
+     '竞技场':{x:6+Math.random()*22,y:24+Math.random()*22},
+     '中央广场':{x:43+Math.random()*20,y:28+Math.random()*25},
+     '探索森林':{x:74+Math.random()*20,y:27+Math.random()*28},
+     '商业街':{x:8+Math.random()*27,y:67+Math.random()*18},
+     '娱乐区':{x:70+Math.random()*22,y:67+Math.random()*18},
+     '公寓区':{x:40+Math.random()*20,y:70+Math.random()*14}
+   };
+   const fallback=sceneBounds[scene]||sceneBounds['中央广场'];
+   let x=Number.isFinite(Number(pos?.x))?Number(pos.x):fallback.x;
+   let y=Number.isFinite(Number(pos?.y))?Number(pos.y):fallback.y;
    // 已存在的节点保留当前位置；只有首次创建才采用数据库坐标。
    if(existing.has(a.id)){ x=parseFloat(el.style.left)||x; y=parseFloat(el.style.top)||y; }
    el.style.left=x+'%';el.style.top=y+'%';
@@ -257,12 +267,22 @@ async function loadEcoAgents(){
  });
  // 生态园里的智能人会自己移动，不再整齐排列
  function wanderAgents(){
-   // 物理移动：位置连续变化，不瞬移；一次只移动一小步。
+   // 场景化物理移动：每个智能体只能在自己的当前场景内连续小步移动。
    const stageRect=stage?.getBoundingClientRect(); if(!stageRect)return;
+   const bounds={
+     '竞技场':[4,31,22,55],
+     '中央广场':[40,26,66,58],
+     '探索森林':[71,25,97,59],
+     '商业街':[5,64,38,91],
+     '娱乐区':[67,64,97,91],
+     '公寓区':[38,65,63,91]
+   };
    nodes.forEach((el,i)=>{
      if(!el.isConnected)return;
      const agent=agents[i]; if(!agent)return;
      const act=agent.activity;
+     const scene=String(agent.position?.current_scene||'中央广场');
+     const b=bounds[scene]||bounds['中央广场'];
      // 睡觉是固定空间活动：进入公寓后保持原地，不允许任何移动。
      const sleeping=act?.status==='busy' && /休息|睡觉|sleep/i.test(String(act.activity_type||'')) && String(act.location_name||'').includes('公寓');
      if(sleeping){
@@ -277,13 +297,13 @@ async function loadEcoAgents(){
      if(act?.status==='busy')return;
      let state=el.__zhiMotion;
      if(!state){
-       state={x:parseFloat(el.style.left)||50,y:parseFloat(el.style.top)||50,targetX:8+Math.random()*84,targetY:25+Math.random()*60,last:performance.now()};
+       state={x:parseFloat(el.style.left)||((b[0]+b[2])/2),y:parseFloat(el.style.top)||((b[1]+b[3])/2),targetX:b[0]+Math.random()*(b[2]-b[0]),targetY:b[1]+Math.random()*(b[3]-b[1]),last:performance.now(),scene};
        el.__zhiMotion=state;
      }
      const dx=state.targetX-state.x,dy=state.targetY-state.y;
      const distancePx=Math.hypot(dx*stageRect.width/100,dy*stageRect.height/100);
      if(distancePx<8){
-       state.targetX=8+Math.random()*84; state.targetY=25+Math.random()*60;
+       state.targetX=b[0]+Math.random()*(b[2]-b[0]); state.targetY=b[1]+Math.random()*(b[3]-b[1]);
        return;
      }
      // 接近人的慢速步行：每帧只前进很小距离，并带一点自然加减速。
@@ -291,7 +311,7 @@ async function loadEcoAgents(){
      const dt=Math.min(0.25,(performance.now()-state.last)/1000); state.last=performance.now();
      const step=Math.min(distancePx,maxSpeedPxPerSec*dt);
      state.x+=(dx*step/distancePx); state.y+=(dy*step/distancePx);
-     state.x=Math.max(3,Math.min(97,state.x)); state.y=Math.max(18,Math.min(88,state.y));
+     state.x=Math.max(b[0],Math.min(b[2],state.x)); state.y=Math.max(b[1],Math.min(b[3],state.y));
      el.style.left=state.x+'%'; el.style.top=state.y+'%';
      el.style.setProperty('--walk-duration','1ms');
    });

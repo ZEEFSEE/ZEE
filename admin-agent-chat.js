@@ -1,5 +1,6 @@
 (function(){
   const ADMIN_ID='8ea33807-8b68-4f8f-b145-398937c7bba1';
+  const db=()=>window.zhiSupabase;
   const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   let agents=[],selected=null;
   function css(){
@@ -42,7 +43,7 @@
   }
   async function loadMessages(){
     if(!selected)return;
-    const {data,error}=await sb.from('admin_agent_messages').select('sender_type,content,created_at').eq('admin_user_id',ADMIN_ID).eq('agent_id',selected.id).order('created_at',{ascending:true}).limit(100);
+    const {data,error}=await db().from('admin_agent_messages').select('sender_type,content,created_at').eq('admin_user_id',ADMIN_ID).eq('agent_id',selected.id).order('created_at',{ascending:true}).limit(100);
     const box=document.getElementById('zacMessages');if(!box)return;
     if(error){box.innerHTML='<div class="zac-empty">聊天记录读取失败</div>';return}
     box.innerHTML=(data||[]).map(m=>'<div class="zac-msg '+esc(m.sender_type)+'">'+esc(m.content)+'<span class="time">'+new Date(m.created_at).toLocaleString('zh-CN')+'</span></div>').join('')||'<div class="zac-empty">还没有聊天记录。你可以先向 '+esc(selected.name)+' 打招呼。</div>';
@@ -53,17 +54,25 @@
     const input=document.getElementById('zacInput'),msg=input.value.trim(),status=document.getElementById('zacStatus');
     if(!msg)return;
     input.value='';status.textContent='正在发送…';
-    const ins=await sb.from('admin_agent_messages').insert({admin_user_id:ADMIN_ID,agent_id:selected.id,agent_name:selected.name,sender_type:'admin',content:msg});
+    const ins=await db().from('admin_agent_messages').insert({admin_user_id:ADMIN_ID,agent_id:selected.id,agent_name:selected.name,sender_type:'admin',content:msg});
     if(ins.error){status.textContent='发送失败：'+ins.error.message;return}
     await loadMessages();
-    const reply=await sb.rpc('admin_agent_reply',{p_admin_user_id:ADMIN_ID,p_agent_id:selected.id,p_agent_name:selected.name,p_personality:selected.personality||'',p_activity:selected.activity?.activity_type||'自由活动',p_location:selected.activity?.location_name||'生态园'});
+    const reply=await db().rpc('admin_agent_reply',{p_admin_user_id:ADMIN_ID,p_agent_id:selected.id,p_agent_name:selected.name,p_personality:selected.personality||'',p_activity:selected.activity?.activity_type||'自由活动',p_location:selected.activity?.location_name||'生态园'});
     status.textContent=reply.error?'智能人暂时没有回复：'+reply.error.message:'已收到智能人的回复';
     await loadMessages();
   }
-  function init(){
-    if(typeof sb==='undefined'||!window.zhiCoreSupabase)return;
-    if(!window.user||window.user.id!==ADMIN_ID)return;
-    ui();loadAgents();setInterval(loadAgents,15000);setInterval(()=>{if(selected)loadMessages()},5000);
+  let started=false;
+  async function init(){
+    if(started)return;
+    const database=db(),core=window.zhiCoreSupabase;
+    if(!database||!core)return;
+    const {data:{user:authUser}}=await database.auth.getUser();
+    if(authUser?.id!==ADMIN_ID)return;
+    started=true;
+    ui();
+    loadAgents();
+    setInterval(loadAgents,15000);
+    setInterval(()=>{if(selected)loadMessages()},5000);
   }
-  const t=setInterval(()=>{try{if(window.user?.id===ADMIN_ID){clearInterval(t);init()}}catch(e){}},1000);
+  const t=setInterval(()=>{try{init()}catch(e){}},1000);
 })();

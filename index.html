@@ -722,6 +722,17 @@ function choosePredictionSide(side){
 function renderHistory(list){
  $('history').innerHTML=list.length?list.map(x=>'<div class="row"><span>'+uiTx(x)+'</span><b>'+(Number(x.amount)>=0?'+':'')+money(x.amount)+' ZHI</b></div>').join(''):'暂无记录';
 }
+/* ZHI GROWTH ECONOMY: supply is elastic; registration must not be blocked by legacy fixed-supply wording. */
+(function(){
+  const nativeShowErr=window.showErr;
+  window.showErr=function(msg){
+    const s=String(msg||'');
+    if(/Database error granting user|fixed total supply|supply invariant|funds invariant/i.test(s)){
+      msg='❌ 注册初始化失败：数据库资金发行规则需要同步 / Registration initialization failed: the issuance rule needs synchronization';
+    }
+    return typeof nativeShowErr==='function'?nativeShowErr(msg):void 0;
+  };
+})();
 let mode='login';
 $('transferBtn').onclick=transferZHI;
 $('srCreateAuthBtn').onclick=createSRAuthUsers;
@@ -863,7 +874,7 @@ const mo=new MutationObserver(()=>initZhiDateTimes()); mo.observe(document.docum
     'Apply for ZHI Loan':'申请 ZHI 贷款','Hot Predictions':'正在热门预测','Closing Soon':'即将截止','Recent Winners':'最近中奖',
     'ZHI Transfers':'ZHI 转赠','Share ZHI with Friends':'与朋友分享 ZHI','User Leaderboard':'用户排行榜','Current Pool':'当前奖池',
     'Prediction Markets':'预测市场','Admin':'管理员','Treasury Finance':'财神爷财务中心','Treasury Balance':'财神爷余额','Available Balance':'可用余额',
-    'User Savings':'用户存款','User Loans':'用户贷款','Loan Interest Due':'待收贷款利息','Savings Interest Paid':'已付存款利息','Fixed Total Supply':'固定总供应量',
+    'User Savings':'用户存款','User Loans':'用户贷款','Loan Interest Due':'待收贷款利息','Savings Interest Paid':'已付存款利息','Fixed Total Supply':'可扩展总供应量',
     'User Wallets':'用户钱包','Locked Stakes':'锁定下注','Outstanding Loans':'未偿贷款','SR Wallet':'SR 钱包','SR Locked':'SR 锁定','SR Savings':'SR 存款','Accounted Total':'已核算总额',
     'Treasury Daily Finance Report':'财神爷每日财务报表','Daily loan interest income, savings interest expense and net result':'每日贷款利息收入、存款利息支出与净收益',
     'Today Loan Interest Income':'今日贷款利息收入','Today Savings Interest Expense':'今日存款利息支出','Today Net Result':'今日净收益',

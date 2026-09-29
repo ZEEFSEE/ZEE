@@ -345,7 +345,6 @@ async function renderApartmentSleepCount(){
 async function renderScene(id){
  const cfg=sceneMap[id],core=window.zhiCoreSupabase;if(!cfg||!core||!sceneLive)return;
  const sceneName=cfg[2];
- if(sceneName==='公寓区'){ setTimeout(renderApartmentSleepCount,0); }
  const [pr,ar,ac]=await Promise.all([
    core.from('zhi_scene_projects').select('project_name,project_type,description,status,owner_agent_id').eq('scene_name',sceneName).eq('active',true).order('project_name'),
    core.from('zhi_agents').select('id,name,life_status,active').eq('active',true).order('name'),
@@ -362,6 +361,7 @@ async function renderScene(id){
    '<div class="scene-card" style="grid-column:1/-1"><h3>📍 场景项目（'+((pr.data||[]).length)+'）</h3></div>'+projects+
    '<div class="scene-card" style="grid-column:1/-1"><h3>🤖 当前活动智能体（'+(activeAgents?activeAgents.match(/<h3>/g).length:0)+'）</h3></div>'+activeAgents+
    (!projects&&!activeAgents?'<div class="scene-card" style="grid-column:1/-1"><div class="mini">目前没有正在显示的项目或活动，场景仍可进入。</div></div>':'');
+ if(sceneName==='公寓区') setTimeout(renderApartmentSleepCount,0);
 }
 function openScene(id){const cfg=sceneMap[id];if(!cfg)return;document.getElementById('sceneTitle').textContent=cfg[0];document.getElementById('sceneSubtitle').textContent=cfg[1]+' · 实时更新';sceneOverlay.classList.add('open');renderScene(id)}
 Object.keys(sceneMap).forEach(id=>document.getElementById(id)?.addEventListener('click',()=>openScene(id)));

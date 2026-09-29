@@ -334,7 +334,7 @@ async function loadEcoAgents(){
 async function renderApartmentSleepCount(){
  const core=window.zhiCoreSupabase;if(!core||!sceneLive)return;
  const {data:acts}=await core.from('zhi_agent_activities').select('agent_id,activity_type,status,location_name').eq('status','busy');
- const sleeping=(acts||[]).filter(a=>/休息|睡觉|sleep/i.test(String(a.activity_type||'')) && String(a.location_name||'').includes('公寓'));
+ const sleeping=(acts||[]).filter(a=>String(a.status||'')==='busy' && (String(a.location_name||'').includes('公寓') || /休息|睡觉|sleep|^rest$/i.test(String(a.activity_type||''))));
  const ids=sleeping.map(a=>a.agent_id);
  let names=[];
  if(ids.length){const {data}=await core.from('zhi_agents').select('id,name').in('id',ids);names=(data||[]).map(a=>a.name);}

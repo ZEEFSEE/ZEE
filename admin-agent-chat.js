@@ -20,8 +20,8 @@
     document.body.appendChild(b);
     const p=document.createElement('div');p.id='zhiAdminChat';p.innerHTML='<div class="zac-head"><strong>👑 管理员 · 智能人沟通</strong><button class="zac-close" type="button">✕</button></div><div class="zac-body"><div class="zac-list" id="zacList"><div class="zac-empty">读取智能人…</div></div><div class="zac-chat"><div class="zac-messages" id="zacMessages"><div class="zac-empty">请选择一位智能人开始交流</div></div><div class="zac-status" id="zacStatus"></div><div class="zac-compose"><textarea id="zacInput" placeholder="对智能人说点什么…"></textarea><button class="zac-send" id="zacSend">发送</button></div></div></div>';
     document.body.appendChild(p);
-    const hero=document.querySelector('.logo-glow');
-    if(hero&&!document.getElementById('zhiAdminChatHeroBtn')){const hb=document.createElement('button');hb.id='zhiAdminChatHeroBtn';hb.type='button';hb.textContent='💬 与智能人交流';hb.style.cssText='margin-top:12px;padding:10px 18px;border:1px solid #ffe38a;border-radius:999px;background:linear-gradient(135deg,#fff08a,#ffb300 48%,#ff5a00);color:#2b1000;font-weight:1000;cursor:pointer;box-shadow:0 6px 20px #0007';hb.onclick=()=>document.getElementById('zhiAdminChat').classList.add('open');hero.appendChild(hb)}
+    const hb=document.getElementById('zhiAdminChatHeroBtn');
+    if(hb){hb.style.display='inline-flex';hb.onclick=()=>document.getElementById('zhiAdminChat').classList.add('open');}
     p.querySelector('.zac-close').onclick=()=>p.classList.remove('open');
     document.getElementById('zacSend').onclick=send;
     document.getElementById('zacInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});

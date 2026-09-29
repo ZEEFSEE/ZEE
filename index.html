@@ -722,17 +722,7 @@ function choosePredictionSide(side){
 function renderHistory(list){
  $('history').innerHTML=list.length?list.map(x=>'<div class="row"><span>'+uiTx(x)+'</span><b>'+(Number(x.amount)>=0?'+':'')+money(x.amount)+' ZHI</b></div>').join(''):'暂无记录';
 }
-/* ZHI GROWTH ECONOMY: supply is elastic; registration must not be blocked by legacy fixed-supply wording. */
-(function(){
-  const nativeShowErr=window.showErr;
-  window.showErr=function(msg){
-    const s=String(msg||'');
-    if(/Database error granting user|fixed total supply|supply invariant|funds invariant/i.test(s)){
-      msg='❌ 注册初始化失败：数据库资金发行规则需要同步 / Registration initialization failed: the issuance rule needs synchronization';
-    }
-    return typeof nativeShowErr==='function'?nativeShowErr(msg):void 0;
-  };
-})();
+/* ZHI GROWTH ECONOMY: elastic issuance. Preserve original auth errors so login failures are diagnosable. */
 let mode='login';
 $('transferBtn').onclick=transferZHI;
 $('srCreateAuthBtn').onclick=createSRAuthUsers;

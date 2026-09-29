@@ -436,7 +436,21 @@ function openScene(id){const cfg=sceneMap[id];if(!cfg)return;document.getElement
 Object.keys(sceneMap).forEach(id=>document.getElementById(id)?.addEventListener('click',()=>openScene(id)));
 document.getElementById('sceneCloseBtn')?.addEventListener('click',()=>sceneOverlay.classList.remove('open'));
 setInterval(()=>{if(sceneOverlay.classList.contains('open')){const title=document.getElementById('sceneTitle').textContent;const id=Object.keys(sceneMap).find(k=>sceneMap[k][0]===title);if(id)renderScene(id)}},10000);
-loadEcoAgents();setInterval(loadEcoAgents,30000);
+loadEcoAgents();
+setInterval(loadEcoAgents,30000);
+if(!window.__zhiAgentRealtimeBound){
+  window.__zhiAgentRealtimeBound=true;
+  const bindAgentRealtime=()=>{
+    const core=window.zhiCoreSupabase;
+    if(!core)return;
+    window.__zhiAgentRealtimeChannel=core.channel('zhi-agent-world-live')
+      .on('postgres_changes',{event:'*',schema:'public',table:'zhi_agent_world_positions'},()=>loadEcoAgents())
+      .on('postgres_changes',{event:'*',schema:'public',table:'zhi_agent_activities'},()=>loadEcoAgents())
+      .subscribe();
+  };
+  if(window.zhiCoreSupabase) bindAgentRealtime();
+  else setTimeout(bindAgentRealtime,1500);
+}
 })();
 </script>
 <div id="fortuneClaimsLive" class="card" style="margin-top:10px">

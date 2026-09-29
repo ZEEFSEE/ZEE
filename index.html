@@ -54,7 +54,7 @@ box-shadow:0 18px 60px #000a,0 0 40px #ffb30018,inset 0 1px #fff2}
 .eco-path{position:absolute;z-index:1;border:2px dashed #ffd76a18;border-radius:50%;pointer-events:none}
 .eco-path.p1{width:64%;height:58%;left:18%;top:22%}.eco-path.p2{width:34%;height:32%;left:33%;top:38%}
 #ecoAgentsLayer{position:absolute;inset:0;z-index:50!important;pointer-events:none;overflow:visible!important;display:block!important}
-#ecoAgentsLayer .eco-agent{position:absolute!important;z-index:51!important;display:block!important;visibility:visible!important;opacity:1!important;width:auto!important;min-width:44px!important;text-align:center;pointer-events:auto!important;cursor:pointer;transform:translate(-50%,-50%);transition:left 2.8s ease-in-out,top 2.8s ease-in-out}
+#ecoAgentsLayer .eco-agent{position:absolute!important;z-index:51!important;display:block!important;visibility:visible!important;opacity:1!important;width:auto!important;min-width:44px!important;text-align:center;pointer-events:auto!important;cursor:pointer;transform:translate(-50%,-50%);transition:left var(--walk-duration,18s) linear,top var(--walk-duration,18s) linear}
 #ecoAgentsLayer .eco-agent .avatar{display:none!important}
 #ecoAgentsLayer .eco-agent .name{display:block!important;margin:0!important;padding:3px 7px;border-radius:8px;background:#12091dcc;border:1px solid #ffd76a66;color:#fff3a8!important;font-weight:1000!important;font-size:13px!important;line-height:1.2;text-shadow:0 1px 5px #000;white-space:nowrap}
 #ecoAgentsLayer .eco-agent .status{display:none!important}
@@ -242,15 +242,27 @@ async function loadEcoAgents(){
  });
  // 生态园里的智能人会自己移动，不再整齐排列
  function wanderAgents(){
+   const stageRect=stage?.getBoundingClientRect();
+   if(!stageRect)return;
+   let maxWalk=12000;
    nodes.forEach((el,i)=>{
      if(!el.isConnected)return;
-     const x=5+Math.random()*88, y=25+Math.random()*62;
+     const oldX=parseFloat(el.style.left)||50, oldY=parseFloat(el.style.top)||50;
+     const x=8+Math.random()*84, y=25+Math.random()*60;
+     const dx=(x-oldX)*stageRect.width/100, dy=(y-oldY)*stageRect.height/100;
+     const distance=Math.sqrt(dx*dx+dy*dy);
+     // 人类步行式屏幕速度：距离越远走得越久，避免瞬移感。
+     const duration=Math.max(9000,Math.min(42000,Math.round(7000+distance*38)));
+     el.style.setProperty('--walk-duration',duration+'ms');
      el.style.left=x+'%';el.style.top=y+'%';
+     maxWalk=Math.max(maxWalk,duration);
    });
+   clearTimeout(window.__zhiAgentWanderTimer);
+   window.__zhiAgentWanderTimer=setTimeout(wanderAgents,Math.min(45000,maxWalk+2500));
  }
- setTimeout(wanderAgents,1500);
- clearInterval(window.__zhiAgentWanderTimer);
- window.__zhiAgentWanderTimer=setInterval(wanderAgents,7000);
+ setTimeout(wanderAgents,2500);
+ clearTimeout(window.__zhiAgentWanderTimer);
+ window.__zhiAgentWanderTimer=setTimeout(wanderAgents,2500);
  agents.slice(0,10).forEach((a,i)=>setTimeout(()=>addFeed(a.name,'已同步 · '+money(a.balance)+' ZHI'),i*40));
  return;
  /* old renderer disabled */}

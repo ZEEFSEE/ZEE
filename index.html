@@ -251,7 +251,7 @@ async function loadEcoAgents(){
     document.getElementById('ecoPanelEvents').textContent='实时同步';
    };
    agentLayer.appendChild(el);
-   el.style.setProperty('display',sleepingInApartment?'none':'block','important');el.style.setProperty('visibility','visible','important');el.style.setProperty('opacity','1','important');el.style.setProperty('pointer-events','auto','important');
+   el.style.setProperty('display','block','important');el.style.setProperty('visibility','visible','important');el.style.setProperty('opacity','1','important');el.style.setProperty('pointer-events','auto','important');
    nodes.push(el);
  });
  // 生态园里的智能人会自己移动，不再整齐排列
@@ -266,12 +266,12 @@ async function loadEcoAgents(){
      const sleeping=act?.status==='busy' && /休息|睡觉|sleep/i.test(String(act.activity_type||'')) && String(act.location_name||'').includes('公寓');
      if(sleeping){
        el.classList.add('sleeping');
-       el.style.setProperty('display','none','important');
+       el.style.setProperty('display','block','important');
        el.style.setProperty('--walk-duration','1ms');
        return;
      }
      el.classList.remove('sleeping');
-     if(el.dataset.sleeping!=='true') el.style.setProperty('display','block','important');
+     el.style.setProperty('display','block','important');
      // 工作、消费、娱乐等活动进行中时，也不能同时随机移动。
      if(act?.status==='busy')return;
      let state=el.__zhiMotion;

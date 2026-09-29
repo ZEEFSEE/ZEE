@@ -615,19 +615,6 @@ async function {
 }
 async function {const {data,error}=await sb.rpc('admin_get_sr_treasury_grants');if(error){$('srGrantCount').textContent='--';$('srGrantEach').textContent='--';$('srGrantTotal').textContent='--';$('srGrantSource').textContent='加载失败';return}$('srGrantCount').textContent=Number(data.grant_count||0).toLocaleString();$('srGrantEach').textContent=money(data.grant_each||0)+' ZHI';$('srGrantTotal').textContent=money(data.grant_total||0)+' ZHI';$('srGrantSource').textContent=data.funding_source==='treasury'?'财神爷 Treasury':'--';}
 async function {const {data,error}=await sb.rpc('admin_get_sr_simulation_summary');if(error){$('srMsg').textContent='SR 状态加载失败：'+error.message;return}$('srUsers').textContent=Number(data.users||0).toLocaleString();$('srActive').textContent=Number(data.active||0).toLocaleString();$('srActions').textContent=Number(data.actions_today||0).toLocaleString();$('srLogins').textContent=Number(data.logins_today||0).toLocaleString();$('srPredictions').textContent=Number(data.predictions_today||0).toLocaleString();$('srSaves').textContent=Number(data.saves_today||0).toLocaleString();$('srLoans').textContent=Number(data.loans_today||0).toLocaleString();$('srRepays').textContent=Number(data.repayments_today||0).toLocaleString();$('srWallet').textContent=money(data.wallet||0)+' ZHI';$('srSavings').textContent=money(data.savings||0)+' ZHI';$('srLoanBalance').textContent=money(data.loans||0)+' ZHI';$('srLast').textContent=data.last_action_at?fmtSG(data.last_action_at)+' · '+SR_TIME_LABEL:'--';$('srMsg').textContent=data.enabled?'🟢 SR 自动运行中 / Running':'⏸ SR 已暂停 / Paused';$('srPauseBtn').textContent=data.enabled?'⏸ 暂停 SR':'▶️ 启动 SR';}
-async function toggleSRSummary(){const {data,error}=await sb.rpc('admin_get_sr_simulation_summary');if(error)return alert(error.message);const {error:e}=await sb.rpc('admin_set_sr_simulation',{p_enabled:!data.enabled});if(e)return alert(e.message);await }
-async function createSRAuthUsers(){
- const b=$('srCreateAuthBtn'); if(!b)return;
- if(!confirm('将按每批最多 100 个，把 SR 创建为真正的 ZHI Auth 用户。继续？'))return;
- b.disabled=true;
- try{
-  const {data,error}=await sb.functions.invoke('sr-create-auth-users',{body:{limit:100}});
-  if(error)throw error;
-  $('srMsg').textContent='✅ 本批创建 '+Number(data?.created||0)+' 个真实 ZHI 用户，失败 '+Number(data?.failed||0)+' 个';
-  await 
- }catch(e){$('srMsg').textContent='创建失败：'+(e.message||String(e))}
- finally{b.disabled=false}
-}
 async function runSRTick(){const b=$('srRunBtn');b.disabled=true;const {data,error}=await sb.rpc('admin_run_sr_tick');if(error){$('srMsg').textContent='运行失败：'+error.message}else{$('srMsg').textContent='已运行一批 SR：'+JSON.stringify(data);await }b.disabled=false;}
 async function {const {data,error}=await sb.rpc('get_treasury_daily_report',{p_days:7});if(error){$('tdMsg').textContent='日报加载失败：'+error.message;return}const t=data?.today||{};$('tdMsg').textContent='✅ 日报已启用 / Daily report active';$('tdLoanIncome').textContent=money(t.loan_interest_income||0)+' ZHI';$('tdSavingsExpense').textContent=money(t.savings_interest_expense||0)+' ZHI';$('tdNet').textContent=money(t.net||0)+' ZHI';$('tdDays').innerHTML=(data.daily||[]).map(x=>'<div class="row"><span>'+x.day+'</span><b>'+((Number(x.loan_interest_income||0)-Number(x.savings_interest_expense||0))>=0?'+':'')+money(Number(x.loan_interest_income||0)-Number(x.savings_interest_expense||0))+' ZHI</b></div>').join('')||'暂无日报数据 / No daily data';}
 async function loadAdminFundFlows(){
@@ -847,15 +834,14 @@ const mo=new MutationObserver(()=>initZhiDateTimes()); mo.observe(document.docum
     'ZHI Transfers':'ZHI 转赠','Share ZHI with Friends':'与朋友分享 ZHI','User Leaderboard':'用户排行榜','Current Pool':'当前奖池',
     'Prediction Markets':'预测市场','Admin':'管理员','Treasury Finance':'财神爷财务中心','Treasury Balance':'财神爷余额','Available Balance':'可用余额',
     'User Savings':'用户存款','User Loans':'用户贷款','Loan Interest Due':'待收贷款利息','Savings Interest Paid':'已付存款利息','Fixed Total Supply':'可扩展总供应量',
-    'User Wallets':'用户钱包','Locked Stakes':'锁定下注','Outstanding Loans':'未偿贷款','SR Wallet':'SR 钱包','SR Locked':'SR 锁定','SR Savings':'SR 存款','Accounted Total':'已核算总额',
-    'Treasury Daily Finance Report':'财神爷每日财务报表','Daily loan interest income, savings interest expense and net result':'每日贷款利息收入、存款利息支出与净收益',
-    'Today Loan Interest Income':'今日贷款利息收入','Today Savings Interest Expense':'今日存款利息支出','Today Net Result':'今日净收益',
-    'SR Users':'SR 用户','Active':'活跃','Actions Today':'今日动作','Logins Today':'今日登录','Predictions Today':'今日预测','Savings Today':'今日存储','Loans Today':'今日贷款','Repayments Today':'今日还款',
-    'Last Action':'最近动作','Create / Sync Real ZHI Users':'创建/同步真实 ZHI 用户','Run Batch Now':'立即运行一批','Pause SR':'暂停 SR',
-    'Treasury → SR Initial Funding':'财神爷 → SR 初始资金发放','Funded Accounts':'已发放账户','Per Account':'每人发放','Total Funded':'累计发放','Funding Source':'资金来源',
+    'User Wallets':'用户钱包','Locked Stakes':'锁定下注','Outstanding Loans':'未偿贷款',
+    
+    
+    
+    
     'Markets Awaiting Settlement':'待结算市场','Markets appear here after betting closes. The administrator confirms the result and the system pays winners immediately.':'投注截止后会自动出现在这里。管理员确认结果后，系统立即自动派奖。',
     'Market ID':'市场 ID','Question':'问题','Close Time':'截止时间','Create Market':'创建市场','Total Inflow':'总流入','Total Outflow':'总流出','Net Flow':'净流量','Show Flows':'显示流水',
-    'All':'全部类型','Savings':'存款','Loans':'贷款','Savings Interest':'存款利息','Loan Interest Accrual':'贷款计息','SR Flow':'SR 模拟流水','Predict Now':'立即预测','Unread':'未读','Unread Gifts':'未读转赠','Gift History':'转赠记录',
+    'All':'全部类型','Savings':'存款','Loans':'贷款','Savings Interest':'存款利息','Loan Interest Accrual':'贷款计息','Predict Now':'立即预测','Unread':'未读','Unread Gifts':'未读转赠','Gift History':'转赠记录',
     'Reward source: Treasury':'奖励来源：财神爷','Funds reconciled':'资金守恒正常','Reconciliation mismatch':'发现对账差异','Checking...':'检查中……'
   };
   function cjk(s){return /[\u3400-\u9fff]/.test(s)}

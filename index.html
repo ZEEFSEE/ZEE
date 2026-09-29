@@ -298,9 +298,21 @@ async function loadEcoAgents(){
  agents.slice(0,10).forEach((a,i)=>setTimeout(()=>addFeed(a.name,'已同步 · '+money(a.balance)+' ZHI'),i*40));
  return;
  /* old renderer disabled */}
+async function renderApartmentSleepCount(){
+ const core=window.zhiCoreSupabase;if(!core||!sceneLive)return;
+ const {data:acts}=await core.from('zhi_agent_activities').select('agent_id,activity_type,status,location_name').eq('status','busy');
+ const sleeping=(acts||[]).filter(a=>/休息|睡觉|sleep/i.test(String(a.activity_type||'')) && String(a.location_name||'').includes('公寓'));
+ const ids=sleeping.map(a=>a.agent_id);
+ let names=[];
+ if(ids.length){const {data}=await core.from('zhi_agents').select('id,name').in('id',ids);names=(data||[]).map(a=>a.name);}
+ const d=document.createElement('div');d.className='scene-card';d.style.gridColumn='1/-1';
+ d.innerHTML='<h3>🛏️ 当前睡觉：'+sleeping.length+' 人</h3><div class="mini">'+(names.length?names.join('、'):'目前没有智能体睡觉')+'</div>';
+ sceneLive.prepend(d);
+}
 async function renderScene(id){
  const cfg=sceneMap[id],core=window.zhiCoreSupabase;if(!cfg||!core||!sceneLive)return;
  const sceneName=cfg[2];
+ if(sceneName==='公寓区'){ setTimeout(renderApartmentSleepCount,0); }
  const [pr,ar,ac]=await Promise.all([
    core.from('zhi_scene_projects').select('project_name,project_type,description,status,owner_agent_id').eq('scene_name',sceneName).eq('active',true).order('project_name'),
    core.from('zhi_agents').select('id,name,life_status,active').eq('active',true).order('name'),

@@ -299,6 +299,14 @@ async function loadEcoAgents(){
      if(!state){
        state={x:parseFloat(el.style.left)||((b[0]+b[2])/2),y:parseFloat(el.style.top)||((b[1]+b[3])/2),targetX:b[0]+Math.random()*(b[2]-b[0]),targetY:b[1]+Math.random()*(b[3]-b[1]),last:performance.now(),scene};
        el.__zhiMotion=state;
+     } else if(state.scene!==scene){
+       // 活动切换场景：从新场景的数据库位置重新开始，不瞬移到旧场景。
+       state.scene=scene;
+       state.x=Number.isFinite(Number(agent.position?.x))?Number(agent.position.x):(b[0]+b[2])/2;
+       state.y=Number.isFinite(Number(agent.position?.y))?Number(agent.position.y):(b[1]+b[3])/2;
+       state.targetX=b[0]+Math.random()*(b[2]-b[0]);
+       state.targetY=b[1]+Math.random()*(b[3]-b[1]);
+       el.style.left=state.x+'%'; el.style.top=state.y+'%';
      }
      const dx=state.targetX-state.x,dy=state.targetY-state.y;
      const distancePx=Math.hypot(dx*stageRect.width/100,dy*stageRect.height/100);

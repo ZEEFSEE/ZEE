@@ -333,13 +333,18 @@ async function loadEcoAgents(){
  /* old renderer disabled */}
 async function renderApartmentSleepCount(){
  const core=window.zhiCoreSupabase;if(!core||!sceneLive)return;
- const {data:acts}=await core.from('zhi_agent_activities').select('agent_id,activity_type,status,location_name').eq('status','busy');
- const sleeping=(acts||[]).filter(a=>String(a.status||'')==='busy' && (String(a.location_name||'').includes('公寓') || /休息|睡觉|sleep|^rest$/i.test(String(a.activity_type||''))));
- const ids=sleeping.map(a=>a.agent_id);
+ const {data:acts}=await core.from('zhi_agent_activities').select('agent_id,activity_type,status,location_name,started_at,ends_at').eq('status','busy');
+ const apartment=(acts||[]).filter(a=>String(a.location_name||'').includes('公寓'));
+ const sleeping=apartment.filter(a=>/^sleep$/i.test(String(a.activity_type||'')));
+ const resting=apartment.filter(a=>/^rest$/i.test(String(a.activity_type||'')));
+ const ids=apartment.map(a=>a.agent_id);
  let names=[];
- if(ids.length){const {data}=await core.from('zhi_agents').select('id,name').in('id',ids);names=(data||[]).map(a=>a.name);}
+ if(ids.length){const {data}=await core.from('zhi_agents').select('id,name').in('id',ids);const nm=new Map((data||[]).map(a=>[a.id,a.name]));names=apartment.map(a=>({type:a.activity_type,name:nm.get(a.agent_id)||'智能体'}));}
+ const fmt=a=>a.ends_at?Math.max(0,Math.ceil((new Date(a.ends_at)-Date.now())/60000))+'分钟':'进行中';
+ const sleepNames=names.filter(x=>/^sleep$/i.test(x.type)).map(x=>x.name);
+ const restNames=names.filter(x=>/^rest$/i.test(x.type)).map(x=>x.name);
  const d=document.createElement('div');d.className='scene-card';d.style.gridColumn='1/-1';
- d.innerHTML='<h3>🛏️ 当前睡觉：'+sleeping.length+' 人</h3><div class="mini">'+(names.length?names.join('、'):'目前没有智能体睡觉')+'</div>';
+ d.innerHTML='<h3>🏢 公寓当前状态</h3><div class="mini">🛏️ 当前睡觉：'+sleeping.length+' 人 · 连续6小时</div><div class="mini">'+(sleepNames.length?sleepNames.join('、'):'目前没有人在睡觉')+'</div><div class="mini">🧘 当前休息：'+resting.length+' 人 · 时长不限</div><div class="mini">'+(restNames.length?restNames.join('、'):'目前没有人在休息')+'</div>';
  sceneLive.prepend(d);
 }
 async function renderScene(id){

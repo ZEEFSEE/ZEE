@@ -56,65 +56,14 @@ $('logout').onclick=async()=>{await sb.auth.signOut();location.reload()};
 if($('saveBtn'))$('saveBtn').onclick=saveZhi;if($('claimBtn'))$('claimBtn').onclick=claimSavings;if($('withdrawBtn'))$('withdrawBtn').onclick=withdrawZhi;if($('loanBtn'))$('loanBtn').onclick=takeLoan;if($('repayBtn'))$('repayBtn').onclick=repayLoan;if($('giftNoticeBtn'))$('giftNoticeBtn').onclick=markGiftNotificationsRead;if($('adminFundFlowsToggle'))$('adminFundFlowsToggle').onclick=()=>{$('adminFundFlowsDetails')?.classList.toggle('open');$('adminFundFlowsArrow')?.classList.toggle('open')};if($('adminUserFundsToggle'))$('adminUserFundsToggle').onclick=()=>{$('adminUserFundsDetails')?.classList.toggle('open');$('adminUserFundsArrow')?.classList.toggle('open')};if($('afRefresh'))$('afRefresh').onclick=loadAdminFundFlows;if($('afFilter'))$('afFilter').onchange=loadAdminFundFlows;
 load();</script><script>
 (function(){
-  const LANG='zh';
-  const map={
-    '登录账户':'登录账户','ZHI 是本网站的预测演示积分。':'ZHI 是本网站的预测演示积分。',
-    '选择 YES / NO，下注 ZHI。市场截止后进入结算，管理员确认结果后自动派奖。':'选择 YES 或 NO，下注 ZHI。市场截止后进入结算，管理员确认结果后系统自动派奖。',
-    '⚡ 自动结算':'⚡ 自动结算','🏆 自动派奖':'🏆 自动派奖','🎁 自由转赠':'🎁 自由转赠',
-    '⭐ 今日焦点 / Featured Prediction':'⭐ 今日焦点','按当前奖池排序 / By pool':'按当前奖池排序','最近自动派奖记录 / Recent payouts':'最近自动派奖记录',
-    '把 ZHI 送给其他用户 / Gift ZHI':'把 ZHI 送给其他用户','按当前 ZHI 余额 / By balance':'按当前 ZHI 余额',
-    '🏦 ZHI Treasury · Total / ZHI 总额':'🏦 财神爷 · ZHI 总额','财神爷余额 / Treasury Remaining:':'财神爷余额：','⏳ 待结算市场 / Settlement':'⏳ 待结算市场','新增市场 / Create Market':'新增市场',
-    '用户资金 / User Funds':'用户资金','全部用户资金流水 / All Users Fund Flows':'全部用户资金流水','🧾 我的记录 / My Records':'🧾 我的记录',
-    'YES / 是':'是','NO / 否':'否','取消 / Cancel':'取消','确认 / Confirm':'确认',
-    '立即预测 / Predict':'立即预测','🎯 立即预测':'🎯 立即预测','📤 分享':'📤 分享',
-    '暂无热门市场 / No hot markets':'暂无热门市场','暂无即将截止市场 / None':'暂无即将截止市场','暂无排行榜 / No ranking yet':'暂无排行榜',
-    '暂无焦点预测 / No featured prediction':'暂无焦点预测','No active markets.':'目前没有进行中的市场。','No winners yet':'还没有中奖记录',
-    'No core economic activity yet':'最近没有核心经济行为','Loading...':'加载中……','Refresh':'刷新','Sign out':'退出登录',
-    'Username':'用户名','Password':'密码','Sign in':'登录','No account?':'还没有账户？','Register':'立即注册','User:':'用户：','Balance':'余额',
-    '5% / year':'5% / 年','Deposit to Treasury':'存入财神爷','Claim Interest':'领取利息','Withdraw':'取款','Treasury Finance Center':'财神爷金融中心',
-    'Wallet Balance':'钱包余额','Savings Principal':'存款本金','Current Loan':'当前贷款','Maximum Loan':'最高可贷','Loan Interest':'贷款利息','Annual Loan Rate':'贷款年利率',
-    'Apply for ZHI Loan':'申请 ZHI 贷款','Hot Predictions':'正在热门预测','Closing Soon':'即将截止','Recent Winners':'最近中奖',
-    'ZHI Transfers':'ZHI 转赠','Share ZHI with Friends':'与朋友分享 ZHI','User Leaderboard':'用户排行榜','Current Pool':'当前奖池',
-    'ZHI Community':'ZHI 社区','Admin':'管理员','Treasury Finance':'财神爷财务中心','Treasury Balance':'财神爷余额','Available Balance':'可用余额',
-    'User Savings':'用户存款','User Loans':'用户贷款','Loan Interest Due':'待收贷款利息','Savings Interest Paid':'已付存款利息','Fixed Total Supply':'可扩展总供应量',
-    'User Wallets':'用户钱包','Locked Stakes':'锁定下注','Outstanding Loans':'未偿贷款',
-    
-    
-    
-    
-    'Markets Awaiting Settlement':'待结算市场','Markets appear here after betting closes. The administrator confirms the result and the system pays winners immediately.':'投注截止后会自动出现在这里。管理员确认结果后，系统立即自动派奖。',
-    'Market ID':'市场 ID','Question':'问题','Close Time':'截止时间','Create Market':'创建市场','Total Inflow':'总流入','Total Outflow':'总流出','Net Flow':'净流量','Show Flows':'显示流水',
-    'All':'全部类型','Savings':'存款','Loans':'贷款','Savings Interest':'存款利息','Loan Interest Accrual':'贷款计息','Predict Now':'立即预测','Unread':'未读','Unread Gifts':'未读转赠','Gift History':'转赠记录',
-    'Reward source: Treasury':'奖励来源：财神爷',
-  };
-  function cjk(s){return /[\u3400-\u9fff]/.test(s)}
-  function tr(s){
-    if(!s)return s;
-    let o=s;
-    Object.keys(map).sort((a,b)=>b.length-a.length).forEach(k=>o=o.split(k).join(map[k]));
-    o=o.replace(/([^\n\/]{1,90})\s\/\s([^\n\/]{1,120})/g,(m,a,b)=>{
-      if(cjk(a)&&!cjk(b))return a.trim();
-      if(!cjk(a)&&cjk(b))return b.trim();
-      return m;
-    });
-    return o;
-  }
-  function walk(root){
-    const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);const ns=[];let n;
-    while(n=w.nextNode())ns.push(n);
-    ns.forEach(x=>{if(x.parentElement&&['SCRIPT','STYLE'].includes(x.parentElement.tagName))return;const v=x.nodeValue,nv=tr(v);if(v!==nv)x.nodeValue=nv});
-    root.querySelectorAll?.('input[placeholder],input[title],button[title],*[aria-label]').forEach(el=>['placeholder','title','aria-label'].forEach(a=>{if(el.hasAttribute(a)){const v=el.getAttribute(a),nv=tr(v);if(v!==nv)el.setAttribute(a,nv)}}));
-  }
-  function switcher(){
+  function init(){
     if(document.getElementById('zhiLangSwitch'))return;
     const b=document.createElement('div');b.id='zhiLangSwitch';
     b.style.cssText='position:fixed;top:10px;right:10px;z-index:9999;display:flex;gap:5px;background:rgba(255,255,255,.96);border:1px solid #ead28a;border-radius:999px;padding:4px;box-shadow:0 5px 18px rgba(0,0,0,.12)';
     b.innerHTML='<a href="index.html" style="padding:5px 9px;border-radius:999px;text-decoration:none;font-size:11px;font-weight:900;color:#fff;background:#8a5a00">中文</a><a href="en.html" style="padding:5px 9px;border-radius:999px;text-decoration:none;font-size:11px;font-weight:900;color:#3157b7">English</a>';
     document.body.appendChild(b);
   }
-  function run(){switcher();walk(document.body)}
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run);else run();
-  new MutationObserver(ms=>ms.forEach(m=>m.addedNodes.forEach(n=>{if(n.nodeType===1)walk(n);else if(n.nodeType===3){const v=n.nodeValue,nv=tr(v);if(v!==nv)n.nodeValue=nv}})).observe(document.body,{childList:true,subtree:true});
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
 </script><script data-zhi-24h="1">
 (function(){

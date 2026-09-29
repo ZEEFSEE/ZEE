@@ -73,7 +73,7 @@ box-shadow:0 18px 60px #000a,0 0 40px #ffb30018,inset 0 1px #fff2}
 
 <div class="eco-stage" id="ecoStage">
   <div class="eco-title">🌳 ZHI 智能体生态园</div>
-  <div class="eco-subtitle">10 个智能体正在这里生活、社交、游戏和探索</div>
+  <div class="eco-subtitle">20 个智能体正在这里生活、社交、游戏和探索</div>
   <div class="eco-live">🔴 LIVE · 自运转中</div>
   <div class="eco-zone arena">🏟️ 竞技场</div><div class="eco-zone plaza">🌸 中央广场</div><div class="eco-zone forest">🌲 探索森林</div><div class="eco-zone market">🏪 商业街</div><div class="eco-zone fun">🎡 娱乐区</div>
   <div class="eco-path p1"></div><div class="eco-path p2"></div>
@@ -156,16 +156,26 @@ document.addEventListener('DOMContentLoaded',()=>{
 <script>
 (function(){
 const agents=[
-{name:'Leo',emoji:'🦁',mood:'😊 开心',activity:'组织寻宝',status:'召集队友'},
-{name:'Alice',emoji:'🐰',mood:'🥰 兴奋',activity:'社交广场',status:'寻找伙伴'},
-{name:'Fox',emoji:'🦊',mood:'😎 好奇',activity:'森林探索',status:'寻找宝藏'},
-{name:'Panda',emoji:'🐼',mood:'🤩 激动',activity:'小游戏',status:'准备挑战'},
-{name:'Tiger',emoji:'🐯',mood:'🔥 战意满满',activity:'竞技训练',status:'训练中'},
-{name:'Mimi',emoji:'🐱',mood:'💰 满足',activity:'经营商店',status:'准备开店'},
-{name:'Kevin',emoji:'🐵',mood:'😜 调皮',activity:'随机事件',status:'寻找乐子'},
-{name:'June',emoji:'🐧',mood:'✨ 专注',activity:'收集徽章',status:'收集道具'},
-{name:'Alex',emoji:'🐺',mood:'⚡ 兴奋',activity:'冒险任务',status:'出发探险'},
-{name:'Olivia',emoji:'🦉',mood:'🧠 专注',activity:'策略谜题',status:'破解谜题'}
+{name:'Leo',gender:'男',emoji:'🦁',mood:'😊 开心',activity:'组织寻宝',status:'召集队友'},
+{name:'Kevin',gender:'男',emoji:'🐵',mood:'😜 调皮',activity:'随机事件',status:'寻找乐子'},
+{name:'Alex',gender:'男',emoji:'🐺',mood:'⚡ 兴奋',activity:'冒险任务',status:'出发探险'},
+{name:'Ethan',gender:'男',emoji:'🐯',mood:'🔥 战意满满',activity:'竞技训练',status:'训练中'},
+{name:'Ryan',gender:'男',emoji:'🦊',mood:'😎 好奇',activity:'森林探索',status:'寻找宝藏'},
+{name:'Jason',gender:'男',emoji:'🐻',mood:'😄 轻松',activity:'社交广场',status:'寻找伙伴'},
+{name:'Daniel',gender:'男',emoji:'🦅',mood:'🧠 专注',activity:'策略谜题',status:'破解谜题'},
+{name:'Lucas',gender:'男',emoji:'🐬',mood:'🤩 兴奋',activity:'水上挑战',status:'准备挑战'},
+{name:'Aaron',gender:'男',emoji:'🦌',mood:'✨ 平静',activity:'探索森林',status:'寻找道具'},
+{name:'Noah',gender:'男',emoji:'🐼',mood:'😎 满足',activity:'小游戏',status:'等待挑战'},
+{name:'Alice',gender:'女',emoji:'🐰',mood:'🥰 兴奋',activity:'社交广场',status:'寻找伙伴'},
+{name:'Mia',gender:'女',emoji:'🦋',mood:'😊 开心',activity:'花园探索',status:'收集花朵'},
+{name:'Emma',gender:'女',emoji:'🦄',mood:'✨ 梦幻',activity:'娱乐活动',status:'准备出发'},
+{name:'Sophia',gender:'女',emoji:'🦉',mood:'🧠 专注',activity:'策略谜题',status:'思考中'},
+{name:'Olivia',gender:'女',emoji:'🐱',mood:'💰 满足',activity:'经营商店',status:'准备开店'},
+{name:'Chloe',gender:'女',emoji:'🦊',mood:'😎 好奇',activity:'森林探索',status:'寻找宝藏'},
+{name:'Grace',gender:'女',emoji:'🦢',mood:'🥰 愉快',activity:'社交活动',status:'邀请伙伴'},
+{name:'Ella',gender:'女',emoji:'🐿️',mood:'🤩 激动',activity:'收集徽章',status:'发现新徽章'},
+{name:'Lily',gender:'女',emoji:'🌸',mood:'🌷 开心',activity:'花园活动',status:'照顾花园'},
+{name:'Zoe',gender:'女',emoji:'🐧',mood:'⚡ 活力满满',activity:'小游戏',status:'发起挑战'}
 ];
 const actions=[
 ['Leo','发起了「黄金寻宝」活动，正在邀请大家加入！'],
@@ -181,9 +191,7 @@ const actions=[
 ];
 const stage=document.getElementById('ecoStage'),feed=document.getElementById('ecoFeed'),panel=document.getElementById('ecoPanel');
 if(!stage)return;
-const positions=[
-[28,25],[46,23],[70,25],[55,48],[25,52],[14,72],[78,70],[38,73],[61,75],[50,67]
-];
+const positions=[[28,25],[46,23],[70,25],[55,48],[25,52],[14,72],[78,70],[38,73],[61,75],[50,67],[36,28],[58,27],[78,38],[43,42],[68,47],[20,43],[30,68],[52,72],[70,65],[84,53]];
 const nodes=[];
 function addFeed(name,msg){const d=document.createElement('div');d.className='eco-feed-item';d.innerHTML='<b>'+name+'</b> '+msg;feed.prepend(d);while(feed.children.length>8)feed.lastChild.remove()}
 agents.forEach((a,i)=>{

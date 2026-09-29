@@ -745,19 +745,14 @@ $('authSubmit').onclick=async()=>{
  showErr('');$('authSubmit').disabled=true;
  try{
   const email=u.toLowerCase()+'@zhi-demo.com';
-  if(mode==='signup'){
-   const {data,error}=await sb.auth.signUp({email,password:p,options:{data:{username:u}}});
-   if(error)throw error;if(data.session)await load();else showErr('注册成功，请直接登录 / Registration successful, please sign in / Sign in');
-  }else{
-   const {data,error}=await sb.auth.signInWithPassword({email,password:p});
-   if(error)throw error;
-   if(!data?.user)throw new Error('登录成功但没有取得用户会话，请重新登录');
-   $('authError').textContent='';
-   $('loginStatus').textContent='登录成功，正在进入 ZHI… / Signed in, opening ZHI…';
-   $('authScreen').classList.add('hidden');$('app').classList.remove('hidden');
-   await load(data.user);
-  }
- }catch(e){showErr(e.message||'操作失败')}finally{$('authSubmit').disabled=false}
+  const {data,error}=await sb.auth.signInWithPassword({email,password:p});
+  if(error)throw error;
+  if(!data?.user)throw new Error('登录成功但没有取得用户会话，请重新登录');
+  $('authError').textContent='';
+  $('loginStatus').textContent='登录成功，正在进入 ZHI… / Signed in, opening ZHI…';
+  $('authScreen').classList.add('hidden');$('app').classList.remove('hidden');
+  await load(data.user);
+ }catch(e){showErr(e.message||'登录失败 / Sign in failed')}finally{$('authSubmit').disabled=false}
 };
 /* External self-registration disabled. ZHI accounts are system-created only. */
 

@@ -53,7 +53,7 @@ box-shadow:0 18px 60px #000a,0 0 40px #ffb30018,inset 0 1px #fff2}
 .eco-zone.arena{left:6%;top:26%}.eco-zone.plaza{left:43%;top:30%}.eco-zone.forest{right:6%;top:28%}.eco-zone.market{left:10%;bottom:13%}.eco-zone.fun{right:10%;bottom:13%}
 .eco-path{position:absolute;z-index:1;border:2px dashed #ffd76a18;border-radius:50%;pointer-events:none}
 .eco-path.p1{width:64%;height:58%;left:18%;top:22%}.eco-path.p2{width:34%;height:32%;left:33%;top:38%}
-.eco-agent{position:absolute;z-index:6;width:76px;text-align:center;transition:left 2.8s ease-in-out,top 2.8s ease-in-out;cursor:pointer;user-select:none}
+#ecoAgentsLayer{position:absolute;inset:0;z-index:6;pointer-events:none;overflow:hidden}.eco-agent{position:absolute;z-index:6;width:76px;text-align:center;transition:left 2.8s ease-in-out,top 2.8s ease-in-out;cursor:pointer;user-select:none}
 .eco-agent .avatar{width:54px;height:54px;margin:auto;border-radius:50%;display:grid;place-items:center;font-size:29px;background:linear-gradient(145deg,#fff3a1,#ffbd2e 48%,#ff6b00);border:2px solid #fff0a0;box-shadow:0 0 18px #ffb30066,0 5px 14px #0008}
 .eco-agent .name{margin-top:5px;font-weight:1000;font-size:11px;color:#fff7d0;text-shadow:0 1px 4px #000}
 .eco-agent .status{display:inline-block;margin-top:3px;max-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:3px 6px;border-radius:999px;background:#090611cc;border:1px solid #ffd76a33;color:#e9dff4;font-size:9px}
@@ -74,7 +74,7 @@ box-shadow:0 18px 60px #000a,0 0 40px #ffb30018,inset 0 1px #fff2}
 <div class="eco-stage" id="ecoStage">
   <div class="eco-title">🌳 ZHI 智能体生态园</div>
   <div class="eco-subtitle">智能体正在这里生活、社交、游戏和探索</div>
-  <div class="eco-live">🔴 LIVE · 自运转中</div>
+  <div class="eco-live">🔴 LIVE · 自运转中</div><div id="ecoAgentsLayer" aria-label="70个智能体"></div>
   <button class="eco-zone arena eco-zone-btn" id="arenaZoneBtn" type="button">🏟️ 竞技场</button><button class="eco-zone plaza eco-zone-btn" id="plazaZoneBtn" type="button">🌸 中央广场</button><button class="eco-zone forest eco-zone-btn" id="forestZoneBtn" type="button">🌲 探索森林</button><button class="eco-zone market eco-zone-btn" id="marketZoneBtn" type="button">🏪 商业街</button><button class="eco-zone fun eco-zone-btn" id="funZoneBtn" type="button">🎡 娱乐区</button><div class="scene-overlay" id="sceneOverlay"><div class="scene-modal"><div class="top"><div><h2 id="sceneTitle">实时场景</h2><div class="meta" id="sceneSubtitle">实时查看智能体活动</div></div><button class="secondary" id="sceneCloseBtn" type="button">关闭</button></div><div id="sceneLive" class="scene-live"></div></div></div><div class="market-overlay" id="marketOverlay"><div class="market-modal"><div class="top"><div><h2>🏪 ZHI 商业街</h2><div class="meta">实时查看摊位、老板和正在发生的事情</div></div><button class="secondary" id="marketCloseBtn" type="button">关闭</button></div><div id="marketLive" class="market-live"></div></div></div>
   <div class="eco-path p1"></div><div class="eco-path p2"></div>
   <div class="eco-panel" id="ecoPanel"><h3 id="ecoPanelName">智能体</h3><div class="line">状态：<b id="ecoPanelStatus">--</b></div><div class="line">心情：<b id="ecoPanelMood">--</b></div><div class="line">当前活动：<b id="ecoPanelActivity">--</b></div><div class="line">今日事件：<b id="ecoPanelEvents">0</b></div></div>
@@ -178,7 +178,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 </script>
 <script>
 (function(){
-const stage=document.getElementById('ecoStage'),feed=document.getElementById('ecoFeed'),panel=document.getElementById('ecoPanel');
+const stage=document.getElementById('ecoStage'),agentLayer=document.getElementById('ecoAgentsLayer'),feed=document.getElementById('ecoFeed'),panel=document.getElementById('ecoPanel');
 const sceneOverlay=document.getElementById('sceneOverlay'),sceneLive=document.getElementById('sceneLive');
 const sceneMap={
  arenaZoneBtn:['🏟️ 竞技场','比赛、训练、挑战与参赛者','竞技场'],
@@ -207,7 +207,7 @@ async function loadEcoAgents(){
  const next=(ar.data||[]).map((a,i)=>({...makeAgent(a,i),balance:walletMap.get(a.id)||0,activity:activityMap.get(a.id)||null}));
  if(!next.length){addFeed('系统','数据库返回 0 个智能体，未清空现有画面。');return}
  agents=next;
- nodes.forEach(n=>n.remove());nodes=[];
+ nodes.forEach(n=>n.remove());nodes=[];if(agentLayer)agentLayer.innerHTML='';
  const sub=document.querySelector('.eco-subtitle');if(sub)sub.textContent=agents.length+' 个智能体在线 · 钱包与当前活动实时同步';
  const cols=10, rows=Math.ceil(agents.length/cols);
  agents.forEach((a,i)=>{
@@ -224,7 +224,7 @@ async function loadEcoAgents(){
     document.getElementById('ecoPanelActivity').textContent=act?(act.status==='busy'?'🔴 '+(act.activity_type||'活动')+' · '+(act.location_name||''):'🟢 空闲'):'🟢 空闲';
     document.getElementById('ecoPanelEvents').textContent='实时同步';
    };
-   stage.appendChild(el);nodes.push(el);
+   if(agentLayer)agentLayer.appendChild(el);else stage.appendChild(el);el.style.pointerEvents='auto';nodes.push(el);
  });
  agents.slice(0,10).forEach((a,i)=>setTimeout(()=>addFeed(a.emoji+' '+a.name,'已同步 · '+money(a.balance)+' ZHI'),i*40));
 }

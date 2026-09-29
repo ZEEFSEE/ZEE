@@ -60,8 +60,9 @@
     const ins=await db().from('admin_agent_messages').insert({admin_user_id:ADMIN_ID,agent_id:selected.id,agent_name:selected.name,sender_type:'admin',content:msg});
     if(ins.error){status.textContent='发送失败：'+ins.error.message;return}
     await loadMessages();
-    const reply=await db().rpc('admin_agent_reply',{p_admin_user_id:ADMIN_ID,p_agent_id:selected.id,p_agent_name:selected.name,p_personality:selected.personality||'',p_activity:selected.activity?.activity_type||'自由活动',p_location:selected.activity?.location_name||'生态园'});
-    status.textContent=reply.error?'智能人暂时没有回复：'+reply.error.message:'已收到智能人的回复';
+    const reply=await db().functions.invoke('zhi-agent-brain',{body:{agent_id:selected.id,message:msg}});
+    const brainError=reply.error?.message||reply.data?.error;
+    status.textContent=brainError?'智能人大脑暂时不可用：'+brainError:'已收到智能人的回复'+(reply.data?.provider?' · '+reply.data.provider:'');
     await loadMessages();
   }
   let started=false;

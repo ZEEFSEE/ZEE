@@ -410,7 +410,7 @@ function updatePlayer(dt){
   const px=km?.userData.worldX??kx, pz=km?.userData.worldY??kz;
   camera.position.x=px-1000;camera.position.z=pz-1000;camera.position.y=6.1;
   camera.rotation.order='YXZ';camera.rotation.y=yaw;camera.rotation.x=pitch;
-  if(moved) window.__zhiKingLastManualAt=Date.now();
+  if(moved){ window.__zhiKingLastManualAt=Date.now(); if(km)km.rotation.y=yaw; }
 }
 function updateKingFollowCamera(){
   if(controlMode||!king)return;
@@ -708,11 +708,22 @@ function updateAgentVisuals(dt){
 }
 
 async function worldTick(){
-  try{await core().rpc('zhi_world_tick')}catch(e){console.warn('[ZHI world tick]',e)}
+  try{
+    if(!controlMode) await core().rpc('zhi_world_tick');
+    const km=king&&agentMeshes.get(king.id);
+    if(controlMode&&km){
+      const x=Math.max(0,Math.min(WORLD,Number(km.userData.worldX??1000)));
+      const y=Math.max(0,Math.min(WORLD,Number(km.userData.worldY??1000)));
+      await core().from('zhi_agent_world_positions').update({
+        x,y,walking:true,destination_scene:null,destination_x:null,destination_y:null,
+        walk_started_at:null,walk_arrive_at:null,updated_at:new Date().toISOString()
+      }).eq('agent_id',king.id);
+    }
+  }catch(e){console.warn('[ZHI world tick]',e)}
 }
 setInterval(worldTick,2000);
 let controlMode=false;
-function animate(){requestAnimationFrame(animate);const now=performance.now(),dt=Math.min(.05,(now-last)/1000);last=now;updateAgentVisuals(dt);if(!$('start').classList.contains('hidden')||!controlMode){renderer.render(scene,camera);return}if(!overviewMode)updatePlayer(dt);renderer.render(scene,camera)}
+function animate(){requestAnimationFrame(animate);const now=performance.now(),dt=Math.min(.05,(now-last)/1000);last=now;updateAgentVisuals(dt);updateKingFollowCamera();if(!$('start').classList.contains('hidden')||!controlMode){renderer.render(scene,camera);return}if(!overviewMode)updatePlayer(dt);renderer.render(scene,camera)}
 window.zhiEnterControlMode=function(){
   controlMode=true;
   $('start').classList.add('hidden');

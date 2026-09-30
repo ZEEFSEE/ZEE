@@ -10,6 +10,7 @@ echo.
 set "BRIDGE_URL=http://127.0.0.1:11435"
 set "OLLAMA_URL=http://127.0.0.1:11434"
 set "BRIDGE_HEALTH=%BRIDGE_URL%/health"
+set "BRIDGE_READY=%BRIDGE_URL%/ready"
 set "OLLAMA_TAGS=%OLLAMA_URL%/api/tags"
 
 where node >nul 2>nul
@@ -54,17 +55,20 @@ echo Ollama: OK
 echo.
 
 echo [2/3] Checking ZHI Brain Bridge...
-curl --max-time 3 -s "%BRIDGE_HEALTH%" >nul 2>nul
+curl --max-time 3 -s "%BRIDGE_READY%" >nul 2>nul
 if not errorlevel 1 (
-  echo ZHI Brain Bridge is already running on 127.0.0.1:11435.
+  echo ZHI Brain Bridge and model are already READY.
   echo No second instance will be started.
   echo.
-  curl --max-time 3 -s "%BRIDGE_HEALTH%"
+  curl --max-time 3 -s "%BRIDGE_READY%"
   echo.
-  echo [3/3] Bridge ready.
+  echo [3/3] Ollama - llama3.1:8b - Brain Bridge - READY.
   pause
   exit /b 0
 )
+
+curl --max-time 3 -s "%BRIDGE_HEALTH%" >nul 2>nul
+if not errorlevel 1 echo Bridge is running but model is not READY. Reusing existing Bridge.
 
 echo Starting ZHI Brain Bridge...
 start "ZHI Brain Bridge" cmd /c "node ""%~dp0zhi-ollama-bridge.js"""
@@ -74,7 +78,7 @@ set /a BRIDGE_TRIES=0
 :WAIT_BRIDGE
 timeout /t 1 /nobreak >nul
 set /a BRIDGE_TRIES+=1
-curl --max-time 2 -s "%BRIDGE_HEALTH%" >nul 2>nul
+curl --max-time 2 -s "%BRIDGE_READY%" >nul 2>nul
 if not errorlevel 1 goto BRIDGE_READY
 if %BRIDGE_TRIES% GEQ 10 (
   echo [ERROR] ZHI Brain Bridge did not become ready within 10 seconds.

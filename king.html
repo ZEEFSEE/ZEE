@@ -46,6 +46,7 @@ window.zhiForceEnterKing=function(){
 <div id="chat" class="hidden"><div class="chathead"><b id="chatTitle">智能人</b><button class="close" id="closeChat">✕</button></div><div id="messages"><div class="sub">开始聊天。</div></div><div class="compose"><textarea id="input" placeholder="对这位智能人说点什么…"></textarea><button class="send" id="send">发送</button></div></div>
 <div id="toast"></div>
 </div>
+<script>window.addEventListener('error',function(e){window.__zhiErr=(e.message||'')+' @'+String(e.filename||'').split('/').pop()+':'+e.lineno;});</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-client.js?v=20260930-05"></script>
 <script>
@@ -64,7 +65,7 @@ document.getElementById('enter').addEventListener('click',function(){
   },100);
 });
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r160/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script>
 window.__zhiThreeReady=(async()=>{
   if(window.THREE) return window.THREE;

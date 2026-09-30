@@ -1,5 +1,5 @@
 @echo off
-setlocal EnableExtensions
+setlocal EnableExtensions EnableDelayedExpansion
 title ZHI Brain Bridge
 
 echo ==========================================
@@ -39,7 +39,7 @@ if errorlevel 1 (
   set /a OLLAMA_TRIES+=1
   curl --max-time 2 -s "%OLLAMA_TAGS%" >nul 2>nul
   if not errorlevel 1 goto OLLAMA_READY
-  if %OLLAMA_TRIES% GEQ 15 (
+  if !OLLAMA_TRIES! GEQ 15 (
     echo [ERROR] Ollama did not become ready within 15 seconds.
     pause
     exit /b 1

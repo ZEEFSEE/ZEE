@@ -3,6 +3,7 @@
   const db=()=>window.zhiSupabase;
   const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   let agents=[],selected=null;
+  const BRAIN_BRIDGE='http://127.0.0.1:11435';
   function css(){
     if(document.getElementById('zhiAdminChatStyle'))return;
     const s=document.createElement('style');s.id='zhiAdminChatStyle';s.textContent=
@@ -16,6 +17,24 @@
     '.zac-head{padding:13px 15px;border-bottom:1px solid #ffd76a33;display:flex;justify-content:space-between;align-items:center}.zac-head strong{color:#ffe58c}.zac-close{border:0;background:#ffffff14;color:#fff;padding:5px 9px;border-radius:8px;cursor:pointer}'+
     '.zac-body{display:grid;grid-template-columns:130px 1fr;min-height:0;flex:1}.zac-list{overflow:auto;border-right:1px solid #ffffff12;padding:7px}.zac-agent{padding:9px 7px;border-radius:10px;cursor:pointer;margin-bottom:4px}.zac-agent:hover,.zac-agent.active{background:#ffd76a16;border:1px solid #ffd76a44}.zac-agent b{display:block;color:#fff0a5}.zac-agent span{font-size:10px;color:#bfb1d0}.zac-chat{display:flex;flex-direction:column;min-width:0}.zac-messages{flex:1;overflow:auto;padding:12px}.zac-empty{color:#a99bb7;font-size:12px;text-align:center;padding:30px 10px}.zac-msg{max-width:86%;padding:8px 10px;border-radius:12px;margin:6px 0;font-size:12px;line-height:1.45}.zac-msg.admin{margin-left:auto;background:#5a2c86;color:#fff}.zac-msg.agent{margin-right:auto;background:#fff7d9;color:#321900}.zac-msg .time{display:block;font-size:9px;opacity:.6;margin-top:3px}.zac-compose{padding:9px;border-top:1px solid #ffffff12;display:flex;gap:6px}.zac-compose textarea{flex:1;resize:none;min-height:42px;max-height:100px;padding:9px;color:#fff;background:#08050f;border:1px solid #ffd76a44;border-radius:10px}.zac-send{border:1px solid #ffe38a;border-radius:10px;background:#ffb300;color:#2b1000;font-weight:1000;padding:8px 11px}.zac-status{padding:5px 12px;font-size:10px;color:#cdbfda;min-height:18px}';
     document.head.appendChild(s);
+  }
+  async function checkBrainBridge(showStatus=true){
+    const status=document.getElementById('zacStatus');
+    try{
+      const h=await fetch(BRAIN_BRIDGE+'/health',{cache:'no-store'});
+      const ht=await h.text(); if(!h.ok) throw new Error('HTTP '+h.status+' · '+ht);
+      const t=await fetch(BRAIN_BRIDGE+'/api/tags',{cache:'no-store'});
+      const tt=await t.text(); if(!t.ok) throw new Error('Ollama HTTP '+t.status+' · '+tt);
+      let j={}; try{j=JSON.parse(tt)}catch(_){ }
+      const models=(j.models||[]).map(x=>x.name).filter(Boolean);
+      if(showStatus) status.textContent='🟢 Brain Bridge + Ollama 正常 · '+(models.join(', ')||'未发现模型');
+      return {ok:true,models};
+    }catch(e){
+      const detail=e?.message||String(e);
+      if(showStatus) status.textContent='❌ Brain Bridge 不可用 · '+detail+' · 请运行 start-zhi-brain.bat';
+      console.error('[ZHI Brain Bridge]',e);
+      return {ok:false,models:[]};
+    }
   }
   function ui(){
     css();
@@ -105,10 +124,13 @@
     }
 
     const model=brain.data.model||'llama3.1:8b';
+    const bridge=await checkBrainBridge(true);
+    if(!bridge.ok)return;
+    if(bridge.models.length && !bridge.models.some(x=>x===model || x.startsWith(model+':'))){status.textContent='❌ 找不到模型 '+model+' · 已安装：'+bridge.models.join(', ');return;}
     status.textContent='🧠 '+selected.name+' 正在根据自己的资料思考…';
     let ollama;
     try{
-      const ollamaUrl='http://localhost:11434/api/chat';
+      const ollamaUrl=BRAIN_BRIDGE+'/api/chat';
       const controller=new AbortController();
       const timeoutId=setTimeout(()=>controller.abort(),120000);
       const startedAt=performance.now();
@@ -155,8 +177,7 @@
       const name=e?.name||'Error';
       let diagnosis='';
       if(name==='AbortError') diagnosis='请求超过 120 秒，已自动终止';
-      else if(location.protocol==='https:' && /fetch|network|failed|cors/i.test(detail)) diagnosis='当前 ZHI 页面是 HTTPS，浏览器可能拦截 HTTPS → HTTP localhost（Mixed Content/CORS）';
-      else diagnosis='浏览器没有拿到 Ollama 的 HTTP 响应，可能是 Ollama 未运行、localhost 连接失败或浏览器安全策略拦截';
+      else diagnosis='Brain Bridge 没有返回 Ollama 响应，请检查本机 Bridge/Ollama';
       status.textContent='❌ Ollama 请求异常 · '+name+' · '+detail+' · '+diagnosis;
       console.error('[ZHI Ollama]',{error:e,name,message:detail,page_protocol:location.protocol,ollama_url:'http://localhost:11434/api/chat',diagnosis});
       return;
@@ -185,7 +206,9 @@
     started=true;
     ui();
     loadAgents();
+    checkBrainBridge(true);
     setInterval(loadAgents,15000);
+    setInterval(()=>checkBrainBridge(false),30000);
     setInterval(()=>{if(selected)loadMessages()},5000);
   }
   const t=setInterval(()=>{try{init()}catch(e){}},1000);

@@ -53,14 +53,14 @@ window.__zhiKingBooted=false;
 document.getElementById('enter').addEventListener('click',function(){
   document.getElementById('loginmsg').textContent='正在进入 ZHI 虚拟世界…';
   setTimeout(function(){
-    if(window.__zhiKingStart) window.__zhiKingStart();
-    else if(!window.THREE){
-      document.getElementById('login').classList.remove('hidden');
-      document.getElementById('game').classList.add('hidden');
-      document.getElementById('loginmsg').textContent='3D 引擎加载失败，请刷新后重试。';
-      document.getElementById('enter').disabled=false;
-      document.getElementById('enter').textContent='重新进入虚拟世界';
-    }
+    if(window.__zhiKingStart){ window.__zhiKingStart(); return; }
+    document.getElementById('login').classList.remove('hidden');
+    document.getElementById('game').classList.add('hidden');
+    document.getElementById('loginmsg').textContent=window.THREE
+      ? 'KING 主程序没有成功加载：请检查 king.html JavaScript。'
+      : '3D 引擎没有成功加载。';
+    document.getElementById('enter').disabled=false;
+    document.getElementById('enter').textContent='重新进入虚拟世界';
   },100);
 });
 </script>

@@ -334,13 +334,70 @@ function palaceFurniture(){
   const flowerMat=new THREE.MeshStandardMaterial({color:0xffc7df,emissive:0x321225,emissiveIntensity:.25});
   for(let i=0;i<10;i++){const f=new THREE.Mesh(new THREE.SphereGeometry(1.5,10,8),flowerMat);f.position.set(-35+i*7,.9,-625+(i%2)*8);scene.add(f);}
 }
+function buildRoyalBedroomLuxury(){
+  // 👑 KING 专属夫妻寝宫：真正的室内豪华卧室
+  const cx=125,cz=-760,w=72,d=70,h=12;
+  const gold=new THREE.MeshStandardMaterial({color:0xd4ad52,metalness:.62,roughness:.25});
+  const ivory=new THREE.MeshStandardMaterial({color:0xf4ead8,roughness:.78});
+  const velvet=new THREE.MeshStandardMaterial({color:0x681d39,roughness:.48});
+  const wood=new THREE.MeshStandardMaterial({color:0x4a2b20,roughness:.68});
+  const dark=new THREE.MeshStandardMaterial({color:0x24151b,roughness:.55});
+  // 地毯与中心地台
+  const rug=new THREE.Mesh(new THREE.BoxGeometry(58,.10,52),new THREE.MeshStandardMaterial({color:0x542039,roughness:.62}));
+  rug.position.set(cx,.42,cz);rug.receiveShadow=true;scene.add(rug);
+  const innerRug=new THREE.Mesh(new THREE.BoxGeometry(42,.08,34),new THREE.MeshStandardMaterial({color:0x7f2948,roughness:.58}));
+  innerRug.position.set(cx,.49,cz);scene.add(innerRug);
+  // 豪华四柱夫妻大床
+  const base=new THREE.Mesh(new THREE.BoxGeometry(26,2.0,17),velvet);base.position.set(cx,1.55,cz+7);base.castShadow=true;scene.add(base);
+  const mattress=new THREE.Mesh(new THREE.BoxGeometry(23.5,2.0,14.5),ivory);mattress.position.set(cx,3.0,cz+7);mattress.castShadow=true;scene.add(mattress);
+  const head=new THREE.Mesh(new THREE.BoxGeometry(26,8,1.3),velvet);head.position.set(cx,5.1,cz+15);head.castShadow=true;scene.add(head);
+  const posts=[];
+  for(const sx of [-1,1])for(const sz of [-1,1]){
+    const px=cx+sx*11,pz=cz+7+sz*6.8;
+    const p=new THREE.Mesh(new THREE.CylinderGeometry(.58,.78,11.5,16),gold);p.position.set(px,5.75,pz);p.castShadow=true;scene.add(p);posts.push(p);
+    const cap=new THREE.Mesh(new THREE.SphereGeometry(1.0,12,10),gold);cap.position.set(px,11.6,pz);scene.add(cap);
+  }
+  // 床幔顶部与帷幔
+  const canopy=new THREE.Mesh(new THREE.BoxGeometry(24,.55,16),gold);canopy.position.set(cx,11.2,cz+7);scene.add(canopy);
+  for(const sx of [-1,1]){const curtain=new THREE.Mesh(new THREE.BoxGeometry(.18,8,14),new THREE.MeshStandardMaterial({color:0x8d294c,transparent:true,opacity:.62,roughness:.5}));curtain.position.set(cx+sx*11,7,cz+7);scene.add(curtain);}
+  // 枕头
+  for(const x of [cx-7,cx,cx+7]){const pillow=new THREE.Mesh(new THREE.BoxGeometry(6,1.2,4),ivory);pillow.position.set(x,4.25,cz+11.5);pillow.rotation.x=-.08;pillow.castShadow=true;scene.add(pillow);}
+  // 两侧床头柜 + 金色灯
+  for(const x of [cx-17,cx+17]){
+    const table=new THREE.Mesh(new THREE.BoxGeometry(5,3.8,5),wood);table.position.set(x,2,cz+7);table.castShadow=true;scene.add(table);
+    const lampBase=new THREE.Mesh(new THREE.CylinderGeometry(.65,.8,.4,16),gold);lampBase.position.set(x,4.1,cz+7);scene.add(lampBase);
+    const lamp=new THREE.Mesh(new THREE.SphereGeometry(1.15,14,12),new THREE.MeshStandardMaterial({color:0xffe9ad,emissive:0xffc44d,emissiveIntensity:1.7}));lamp.position.set(x,5.2,cz+7);scene.add(lamp);
+  }
+  // 皇家壁炉
+  const fireplace=new THREE.Mesh(new THREE.BoxGeometry(12,9,2),dark);fireplace.position.set(cx,4.5,cz-d/2+.9);scene.add(fireplace);
+  const fire=new THREE.Mesh(new THREE.SphereGeometry(2.0,16,12),new THREE.MeshStandardMaterial({color:0xff8b35,emissive:0xff5a16,emissiveIntensity:2.5}));fire.position.set(cx,2.8,cz-d/2+2.2);scene.add(fire);
+  const mantle=new THREE.Mesh(new THREE.BoxGeometry(15,1,3),gold);mantle.position.set(cx,9.2,cz-d/2+1.0);scene.add(mantle);
+  // 梳妆台、镜子、衣柜与贵妃沙发
+  const vanity=new THREE.Mesh(new THREE.BoxGeometry(11,3.5,4),wood);vanity.position.set(cx-22,2,cz-8);scene.add(vanity);
+  const mirror=new THREE.Mesh(new THREE.BoxGeometry(9,9,.35),new THREE.MeshStandardMaterial({color:0x9bc5d8,metalness:.8,roughness:.12}));mirror.position.set(cx-22,7,cz-10.2);scene.add(mirror);
+  const wardrobe=new THREE.Mesh(new THREE.BoxGeometry(12,9,5),wood);wardrobe.position.set(cx+23,4.5,cz-12);wardrobe.castShadow=true;scene.add(wardrobe);
+  const sofa=new THREE.Mesh(new THREE.BoxGeometry(15,3.5,5),velvet);sofa.position.set(cx-18,2.0,cz+24);sofa.castShadow=true;scene.add(sofa);
+  // 皇家徽章
+  const crest=new THREE.Mesh(new THREE.CylinderGeometry(4,4,.35,32),gold);crest.rotation.x=Math.PI/2;crest.position.set(cx,7.0,cz-d/2+.65);scene.add(crest);
+  // 水晶吊灯
+  const chain=new THREE.Mesh(new THREE.CylinderGeometry(.25,.25,3,10),gold);chain.position.set(cx,10.2,cz-2);scene.add(chain);
+  const chandelier=new THREE.Mesh(new THREE.SphereGeometry(3.0,16,12),new THREE.MeshStandardMaterial({color:0xfff1c1,emissive:0xffd76a,emissiveIntensity:1.4,metalness:.25,roughness:.18}));chandelier.position.set(cx,8.3,cz-2);scene.add(chandelier);
+  for(let i=0;i<8;i++){const a=i*Math.PI/4;const arm=new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,7,8),gold);arm.position.set(cx+Math.cos(a)*3.8,7.8,cz-2+Math.sin(a)*3.8);arm.rotation.z=Math.PI/2;scene.add(arm);}
+  // 窗户与金色窗帘
+  for(const x of [cx-27,cx+27]){
+    const win=new THREE.Mesh(new THREE.BoxGeometry(10,9,.3),new THREE.MeshStandardMaterial({color:0x7bb7d8,metalness:.25,roughness:.18,emissive:0x10283a,emissiveIntensity:.35}));win.position.set(x,6,cz-d/2+.55);scene.add(win);
+    for(const sx of [-1,1]){const drape=new THREE.Mesh(new THREE.BoxGeometry(2,10,.5),new THREE.MeshStandardMaterial({color:0x7b1f42,roughness:.5}));drape.position.set(x+sx*6,6,cz-d/2+1);scene.add(drape);}
+  }
+  const plaque=makeLabel('👑 KING · 皇家夫妻寝宫',true);plaque.scale.set(8,2,1);plaque.position.set(cx,15,cz-d/2+.8);scene.add(plaque);
+}
 function buildPalaceInteriors(){
   palaceRoom(0,-790,150,80,16,'👑 王座大厅');
   palaceRoom(0,-705,190,62,14,'🍽️ 宴会厅');
-  palaceRoom(125,-760,72,70,12,'🛏️ 王室寝宫');
+  palaceRoom(125,-760,72,70,12,'🛏️ 皇家卧室');
   palaceRoom(-125,-650,58,55,12,'💰 ZHI 宝库');
   palaceRoom(0,-640,150,55,14,'💒 婚礼大厅');
   palaceFurniture();
+  buildRoyalBedroomLuxury();
 }
 buildPalaceInteriors();
 

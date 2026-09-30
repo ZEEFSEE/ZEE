@@ -74,41 +74,9 @@
     }
     let brainError=reply.error?.message||reply.data?.error;
     if(brainError||!reply.data?.reply){
-      const fallback=await db().rpc('admin_agent_reply',{p_admin_user_id:ADMIN_ID,p_agent_id:selected.id,p_agent_name:selected.name,p_personality:selected.personality||'',p_activity:selected.activity?.activity_type||'自由活动',p_location:selected.activity?.location_name||'生态园'});
-      if(!fallback.error){
-        brainError='';
-        reply={data:{reply:'fallback',model_context:reply.data?.model_context}};
-        status.textContent='正在连接本机免费模型…';
-      }else{
-        status.textContent='智能人暂时没有回复：'+(brainError||fallback.error.message);
-      }
-    }
-    if(reply.data?.provider==='fallback' && reply.data?.model_context){
-      status.textContent='正在连接本机免费模型 · Ollama…';
-      try{
-        const ctx=reply.data.model_context;
-        const r=await fetch('http://localhost:11434/api/chat',{
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({
-            model:ctx.model||'llama3.1:8b',
-            stream:false,
-            messages:[{role:'system',content:ctx.system},{role:'user',content:ctx.user}],
-            options:{temperature:0.8,num_ctx:8192}
-          })
-        });
-        if(!r.ok)throw new Error('Ollama HTTP '+r.status);
-        const j=await r.json();
-        const text=j?.message?.content?.trim();
-        if(!text)throw new Error('本机模型没有返回内容');
-        const save=await db().from('admin_agent_messages').insert({admin_user_id:ADMIN_ID,agent_id:selected.id,agent_name:selected.name,sender_type:'agent',content:text});
-        if(save.error)throw save.error;
-        status.textContent='已收到真正模型回复 · Ollama';
-      }catch(e){
-        status.textContent='本机 Ollama 未连接，保留 ZHI 备用回复';
-      }
-    }else if(!brainError){
-      status.textContent='已收到智能人的回复'+(reply.data?.provider?' · '+reply.data.provider:'');
+      status.textContent='真正模型暂时没有响应：'+(brainError||'未知错误');
+    }else{
+      status.textContent='已收到真正模型回复'+(reply.data?.provider?' · '+reply.data.provider:'');
     }
     await loadMessages();
   }

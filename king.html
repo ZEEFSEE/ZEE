@@ -413,7 +413,7 @@ function updatePlayer(dt){
   if(moved){ window.__zhiKingLastManualAt=Date.now(); if(km)km.rotation.y=yaw; }
 }
 function updateKingFollowCamera(){
-  if(controlMode||!king)return;
+  if(!king)return;
   const km=agentMeshes.get(king.id);if(!km)return;
   const x=Number(km.userData.worldX),z=Number(km.userData.worldY);
   if(!Number.isFinite(x)||!Number.isFinite(z))return;
@@ -723,7 +723,15 @@ async function worldTick(){
 }
 setInterval(worldTick,2000);
 let controlMode=false;
-function animate(){requestAnimationFrame(animate);const now=performance.now(),dt=Math.min(.05,(now-last)/1000);last=now;updateAgentVisuals(dt);updateKingFollowCamera();if(!$('start').classList.contains('hidden')||!controlMode){renderer.render(scene,camera);return}if(!overviewMode)updatePlayer(dt);renderer.render(scene,camera)}
+function animate(){
+  requestAnimationFrame(animate);
+  const now=performance.now(),dt=Math.min(.05,(now-last)/1000);last=now;
+  updateAgentVisuals(dt);
+  updateKingFollowCamera();
+  if(!$('start').classList.contains('hidden')||!controlMode){renderer.render(scene,camera);return}
+  if(!overviewMode)updatePlayer(dt);
+  renderer.render(scene,camera)
+}
 window.zhiEnterControlMode=function(){
   controlMode=true;
   $('start').classList.add('hidden');

@@ -267,6 +267,42 @@ function car(x,z,rot=0){
  g.position.set(x,.1,z);g.rotation.y=rot;scene.add(g);
 }
 for(const p of [[-120,22,0],[160,-22,Math.PI],[560,22,0],[-560,-22,Math.PI]])car(p[0],p[1],p[2]);
+const enterables=[];
+function makeDoor(x,z,w=6){
+  const door=new THREE.Mesh(new THREE.BoxGeometry(w,6,.35),new THREE.MeshStandardMaterial({color:0x2b1d16,roughness:.7}));
+  door.position.set(x,3,z);scene.add(door);enterables.push({x,z,door});
+}
+makeDoor(-430,-362,6);makeDoor(-300,-362,7);makeDoor(330,-378,6);makeDoor(450,-378,7);
+makeDoor(-430,328,6);makeDoor(-300,328,7);makeDoor(320,330,6);makeDoor(460,330,7);
+makeDoor(-420,498,5);makeDoor(450,498,5);
+
+let interior=null,insideName='';
+function enterBuilding(e){
+  if(interior||!e)return;
+  interior=new THREE.Group();interior.name='interior';
+  const floor=new THREE.Mesh(new THREE.BoxGeometry(28,.3,22),new THREE.MeshStandardMaterial({color:0x6f675f,roughness:.9}));floor.position.y=0;interior.add(floor);
+  const wallMat=new THREE.MeshStandardMaterial({color:0x8b8175,roughness:.85});
+  for(const q of [[0,6,-11],[0,6,11],[-14,6,0],[14,6,0]]){const wall=new THREE.Mesh(new THREE.BoxGeometry(q[0]===0?28:.4,12,q[0]===0?.4:22),wallMat);wall.position.set(q[0],6,q[2]);interior.add(wall)}
+  const table=new THREE.Mesh(new THREE.BoxGeometry(6,.5,3),new THREE.MeshStandardMaterial({color:0x69452e}));table.position.y=2;interior.add(table);
+  for(const q of [[-10,-7],[10,-7],[-10,7],[10,7]]){const lamp=new THREE.Mesh(new THREE.SphereGeometry(.45,10,8),new THREE.MeshStandardMaterial({color:0xffd98a,emissive:0xffa52f,emissiveIntensity:1.5}));lamp.position.set(q[0],7,q[1]);interior.add(lamp)}
+  interior.position.set(camera.position.x,0,camera.position.z-5);scene.add(interior);insideName=e.door.parent?.userData?.sceneName||'建筑内部';
+  camera.position.set(interior.position.x,5,interior.position.z+7);
+  $('state').textContent='🚪 '+insideName+' · 室内';
+  toast('🚪 已进入建筑 · 按 E 离开');
+}
+function exitBuilding(){
+  if(!interior)return;
+  const p=interior.position;scene.remove(interior);interior=null;
+  camera.position.set(p.x,6,p.z+16);$('state').textContent='🌆 建筑外 · 已离开';toast('↩ 已离开建筑');
+}
+function checkDoor(){
+  if(interior)return;
+  let best=null,bd=10;
+  for(const e of enterables){const d=Math.hypot(camera.position.x-e.x,camera.position.z-e.z);if(d<bd){bd=d;best=e}}
+  if(best)enterBuilding(best);
+}
+addEventListener('keydown',e=>{if(e.code==='KeyE'){if(interior)exitBuilding();else checkDoor()}});
+
 
 function park(x,z,w,d){
  const g=new THREE.Group();
@@ -316,10 +352,15 @@ function updateAgentVisuals(dt){
       o.userData.worldX=(o.userData.worldX??Number(p.x||0))+(dx/dist)*step;
       o.userData.worldY=(o.userData.worldY??Number(p.y||0))+(dz/dist)*step;
       o.position.set(o.userData.worldX-1000,0,o.userData.worldY-1000);
-      o.rotation.y=Math.atan2(dx,dz);
+      o.rotation.y=Math.atan2(dx,dz);o.position.y=Math.sin(performance.now()*.008+o.userData.agent.id.charCodeAt(0))*.12;
     }
   }
 }
+
+async function worldTick(){
+  try{await core().rpc('zhi_world_tick')}catch(e){console.warn('[ZHI world tick]',e)}
+}
+setInterval(worldTick,2000);
 function animate(){requestAnimationFrame(animate);const now=performance.now(),dt=Math.min(.05,(now-last)/1000);last=now;updateAgentVisuals(dt);if(!$('start').classList.contains('hidden')||document.pointerLockElement!==renderer.domElement){renderer.render(scene,camera);return}updatePlayer(dt);renderer.render(scene,camera)}
 $('play').onclick=()=>{$('start').classList.add('hidden');renderer.domElement.requestPointerLock?.()};$('closeInfo').onclick=()=>$('info').classList.add('hidden');$('closeChat').onclick=()=>$('chat').classList.add('hidden');$('back').onclick=()=>location.href='index.html';$('infoChat').onclick=()=>{if(selected){$('chatTitle').textContent='💬 '+selected.name;$('chat').classList.remove('hidden');$('info').classList.add('hidden');$('messages').innerHTML='<div class="sub">你正在与 '+esc(selected.name)+' 交流。</div>'}};
 $('send').onclick=send;$('input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});

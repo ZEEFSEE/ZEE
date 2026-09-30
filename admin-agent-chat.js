@@ -103,6 +103,47 @@
     status.textContent='🟢 Brain '+BRAIN_UI_VERSION+' · Bridge /health + /bridge-test 正常 · '+elapsed+'ms';
     return true;
   }
+  async function fastFactReply(agent,msg){
+    const core=window.zhiCoreSupabase;
+    if(!core||!agent)return null;
+    const q=String(msg||'').toLowerCase();
+    try{
+      if(/多少|余额|钱|zhi|财富|资产|存款|贷款|收入|赚钱/.test(q)){
+        const {data,error}=await core.from('zhi_agent_wallets').select('balance').eq('agent_id',agent.id).maybeSingle();
+        if(error)return null;
+        return agent.name+'目前的钱包余额是 '+Number(data?.balance??0).toLocaleString('en-US')+' ZHI。';
+      }
+      if(/在哪|哪里|位置|地点|去哪里|到了吗/.test(q)){
+        const [p,a]=await Promise.all([
+          core.from('zhi_agent_world_positions').select('current_scene,walking,destination_scene').eq('agent_id',agent.id).maybeSingle(),
+          core.from('zhi_agent_activities').select('activity_type,status,location_name').eq('agent_id',agent.id).maybeSingle()
+        ]);
+        if(p.error||a.error)return null;
+        const pos=p.data,act=a.data;
+        if(pos?.walking&&pos.destination_scene)return agent.name+'正在从 '+(pos.current_scene||'当前位置')+' 前往 '+pos.destination_scene+'，还在路上。';
+        return agent.name+'现在在 '+(pos?.current_scene||act?.location_name||'未知地点')+'。';
+      }
+      if(/做什么|干什么|活动|正在|现在/.test(q)){
+        const [a,p]=await Promise.all([
+          core.from('zhi_agent_activities').select('activity_type,status,location_name').eq('agent_id',agent.id).maybeSingle(),
+          core.from('zhi_agent_world_positions').select('current_scene,walking,destination_scene').eq('agent_id',agent.id).maybeSingle()
+        ]);
+        if(a.error||p.error)return null;
+        const x=a.data,pos=p.data;
+        if(pos?.walking&&pos.destination_scene)return agent.name+'正在前往 '+pos.destination_scene+'，目前还在移动。';
+        return agent.name+'现在正在 '+(x?.location_name||pos?.current_scene||'世界中')+' '+(x?.activity_type||'活动')+'。';
+      }
+      if(/结婚|老婆|老公|配偶|婚姻/.test(q)){
+        const {data,error}=await core.from('zhi_agent_marriages').select('male_agent_id,female_agent_id,married_at,status').or('male_agent_id.eq.'+agent.id+',female_agent_id.eq.'+agent.id).order('married_at',{ascending:false}).limit(1).maybeSingle();
+        if(error)return null;
+        if(!data||!['married','active',null].includes(data.status))return agent.name+'目前没有婚姻记录。';
+        const sid=data.male_agent_id===agent.id?data.female_agent_id:data.male_agent_id;
+        const s=await core.from('zhi_agents').select('name').eq('id',sid).maybeSingle();
+        return agent.name+'已经结婚，配偶是 '+(s.data?.name||'已登记的配偶')+'。';
+      }
+    }catch(e){console.warn('[ZHI fast fact]',e)}
+    return null;
+  }
   async function send(){
     if(!selected||chatBusy)return;
     const input=document.getElementById('zacInput'),msg=input.value.trim(),status=document.getElementById('zacStatus');

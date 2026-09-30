@@ -193,31 +193,86 @@ async function markGiftNotificationsRead(){const r=await sb.rpc('mark_transfer_n
 async function transferZHI(){const u=$('transferUsername')?.value.trim(),a=Math.floor(Number($('transferAmount')?.value));if(!u)return $('transferError').textContent='请输入收赠用户名';if(!Number.isFinite(a)||a<1)return $('transferError').textContent='请输入有效数量';if(a>Number(wallet?.balance||0))return $('transferError').textContent='余额不足';if(!confirm('确定转赠 '+money(a)+' ZHI 给 '+u+'？'))return;$('transferBtn').disabled=true;try{const core=window.zhiCoreSupabase;let virtual=null;if(core){const qr=await core.from('zhi_agents').select('id,name,active,life_status').ilike('name',u).limit(10);if(qr.error)throw qr.error;const matches=(qr.data||[]).filter(x=>x.active===true&&String(x.life_status||'').toLowerCase()==='alive');if(matches.length>1)throw new Error('虚拟人名字重复，请联系管理员');if(matches.length===1)virtual=matches[0]}if(virtual){const sr=await sb.auth.getSession();const token=sr.data?.session?.access_token;if(!token)throw new Error('登录状态已失效，请重新登录');const r=await fetch('https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-admin-sponsor',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token,'apikey':window.zhiSupabase.rest.headers.apikey},body:JSON.stringify({agent_id:virtual.id,amount:a,note:'管理员通过转赠功能转赠给虚拟人 '+virtual.name})});const data=await r.json().catch(()=>({}));if(!r.ok||data.ok===false)throw new Error(data.error||data.message||'虚拟人转赠失败');}else{const r=await sb.rpc('transfer_zhi',{p_to_username:u,p_amount:a});if(r.error)throw r.error}$('transferUsername').value='';$('transferAmount').value='';alert('转赠成功 / Transfer sent');await load()}catch(e){$('transferError').textContent=e.message||'转赠失败'}finally{$('transferBtn').disabled=false}}
 async function releaseFortune(){const a=Math.floor(Number($('fortuneAmount')?.value));const loc=$('fortuneLocation')?.value||'中央广场';const activity=($('fortuneActivity')?.value||'财神爷撒币').trim();const msg=$('fortuneMsg');if(!Number.isFinite(a)||a<1){if(msg)msg.textContent='请输入至少 1 ZHI';return}if(!confirm('确定从你的管理员账户撒出 '+money(a)+' ZHI？'))return;const b=$('fortuneDropBtn');if(b)b.disabled=true;try{const r=await sb.rpc('admin_release_fortune',{p_amount:a,p_location:loc,p_activity:activity});if(r.error)throw r.error;$('fortuneAmount').value='';$('fortuneActivity').value='';if(msg)msg.textContent='🧧 已撒出 '+money(a)+' ZHI 到 '+loc+'，活动：'+activity+'；管理员余额已扣除 '+money(a)+' ZHI';await load();await loadFortuneDrops()}catch(e){if(msg)msg.textContent='撒币失败：'+(e.message||'未知错误')}finally{if(b)b.disabled=false}}
 async function loadAgentFinanceBoard(){
- const core=window.zhiCoreSupabase,finance=window.zhiSupabase;if(!core||!finance)return;
+ const core=window.zhiCoreSupabase,finance=window.zhiSupabase;
+ if(!core||!finance)return;
+ const box=$('agentFinanceRows');
+ const setMsg=(msg)=>{if(box)box.innerHTML='<div class="notice">'+msg+'</div>'};
  try{
-  const sr=await finance.auth.getSession(),token=sr.data?.session?.access_token;
-  if(!token){console.warn('ZHI agent finance board: no finance session');return}
-  const rr=await fetch('https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-agent-finance-board',{headers:{Authorization:'Bearer '+token,apikey:'sb_publishable_MOVcpW2XoLdHbUVp6f-nrw_e_HY1Bav'}});
+  const sr=await finance.auth.getSession();
+  const session=sr?.data?.session;
+  const token=session?.access_token;
+  if(!token){setMsg('请先登录管理员账号后查看智能体财务 / Please sign in as admin');return}
+
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),10000);
+  let rr;
+  try{
+   rr=await fetch('https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-agent-finance-board',{
+    method:'GET',
+    headers:{
+      Authorization:'Bearer '+token,
+      apikey:window.zhiCoreSupabase.rest.headers.apikey
+    },
+    signal:controller.signal
+   });
+  }finally{clearTimeout(timer)}
+
   const payload=await rr.json().catch(()=>({}));
   if(!rr.ok||payload.error)throw new Error(payload.error||('HTTP '+rr.status));
-  const rows=(payload.rows||[]).map(x=>({...x,balance:Number(x.balance||0),total_earned:Number(x.total_earned||0),total_spent:Number(x.total_spent||0),fortune_earned:Number(x.fortune_earned||0)}));
-  const pool={data:[{reward_pool:Number(payload.prize_pool||0)}]};
+
+  const rows=(payload.rows||[]).map(x=>({
+    ...x,
+    balance:Number(x.balance||0),
+    total_earned:Number(x.total_earned||0),
+    total_spent:Number(x.total_spent||0),
+    fortune_earned:Number(x.fortune_earned||0)
+  }));
+
   const [mr,ar]=await Promise.all([
    core.from('zhi_agent_marriages').select('male_agent_id,female_agent_id,status').eq('status','married'),
    core.from('zhi_agents').select('id,name')
   ]);
- const nameMap=new Map((ar.data||[]).map(x=>[x.id,x.name])),spouseMap=new Map();
- (mr.data||[]).forEach(m=>{spouseMap.set(m.male_agent_id,nameMap.get(m.female_agent_id)||'');spouseMap.set(m.female_agent_id,nameMap.get(m.male_agent_id)||'')});
- rows.forEach(x=>x.spouse=spouseMap.get(x.id)||''); rows.sort((a,b)=>b.balance-a.balance);
- const alive=rows.filter(x=>x.life_status==='alive'),dead=rows.filter(x=>x.life_status==='dead'),total=rows.reduce((s,x)=>s+x.balance,0);
- if($('agentTotalBalance'))$('agentTotalBalance').textContent=money(total)+' ZHI';
- if($('agentAliveCount'))$('agentAliveCount').textContent=alive.length;
- if($('agentDeadCount'))$('agentDeadCount').textContent=dead.length;
- if($('agentPrizePool'))$('agentPrizePool').textContent=money((pool.data||[]).reduce((s,x)=>s+Number(x.reward_pool||0),0))+' ZHI';
- const box=$('agentFinanceRows');if(!box)return;
- const safe=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
- const gi=x=>String(x.gender||'').includes('女')?'♀️':'♂️';
- box.innerHTML=rows.map((x,i)=>'<div class="row agent-finance-row" style="gap:10px;align-items:center;flex-wrap:wrap"><span class="agent-finance-name"><b>'+String(i+1)+'. '+safe(x.name)+'</b> <span class="meta">'+gi(x)+' '+safe(x.personality||'')+'</span>'+(x.spouse?'<span class="agent-spouse">💍 '+safe(x.spouse)+'</span>':'')+'</span><span><span class="meta">余额</span> <b>'+money(x.balance)+' ZHI</b></span><span><span class="meta">累计赚取</span> <b>'+money(x.total_earned)+' ZHI</b></span><span class="fortune-income"><span class="meta">🎁 撒币获得</span> <b>'+money(x.fortune_earned)+' ZHI</b></span><span><span class="meta">累计消费</span> <b>'+money(x.total_spent)+' ZHI</b></span><span class="pill">'+(x.life_status==='alive'?'🟢 存活':'☠️ 已死亡')+'</span></div>').join('');
+  if(mr.error)console.warn('[ZHI finance] marriage read failed',mr.error);
+  if(ar.error)console.warn('[ZHI finance] agent name read failed',ar.error);
+
+  const nameMap=new Map((ar.data||[]).map(x=>[x.id,x.name]));
+  const spouseMap=new Map();
+  (mr.data||[]).forEach(m=>{
+   spouseMap.set(m.male_agent_id,nameMap.get(m.female_agent_id)||'');
+   spouseMap.set(m.female_agent_id,nameMap.get(m.male_agent_id)||'');
+  });
+  rows.forEach(x=>x.spouse=spouseMap.get(x.id)||'');
+  rows.sort((a,b)=>b.balance-a.balance);
+
+  const alive=rows.filter(x=>x.life_status==='alive');
+  const dead=rows.filter(x=>x.life_status==='dead');
+  const total=rows.reduce((s,x)=>s+x.balance,0);
+
+  if($('agentTotalBalance'))$('agentTotalBalance').textContent=money(total)+' ZHI';
+  if($('agentAliveCount'))$('agentAliveCount').textContent=alive.length;
+  if($('agentDeadCount'))$('agentDeadCount').textContent=dead.length;
+  if($('agentPrizePool'))$('agentPrizePool').textContent=money(Number(payload.prize_pool||0))+' ZHI';
+  if(!box)return;
+
+  const safe=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const gi=x=>String(x.gender||'').includes('女')?'♀️':'♂️';
+  box.innerHTML=rows.length?rows.map((x,i)=>
+   '<div class="row agent-finance-row" style="gap:10px;align-items:center;flex-wrap:wrap">'+
+    '<span class="agent-finance-name"><b>'+String(i+1)+'. '+safe(x.name)+'</b> <span class="meta">'+gi(x)+' '+safe(x.personality||'')+'</span>'+
+    (x.spouse?'<span class="agent-spouse">💍 '+safe(x.spouse)+'</span>':'')+
+    '</span>'+
+    '<span><span class="meta">余额</span> <b>'+money(x.balance)+' ZHI</b></span>'+
+    '<span><span class="meta">累计赚取</span> <b>'+money(x.total_earned)+' ZHI</b></span>'+
+    '<span class="fortune-income"><span class="meta">🎁 撒币获得</span> <b>'+money(x.fortune_earned)+' ZHI</b></span>'+
+    '<span><span class="meta">累计消费</span> <b>'+money(x.total_spent)+' ZHI</b></span>'+
+    '<span class="pill">'+(x.life_status==='alive'?'🟢 存活':'☠️ 已死亡')+'</span>'+
+   '</div>'
+  ).join(''):'<div class="notice">暂无智能体财务数据 / No agent finance data</div>';
+ }catch(e){
+  console.error('[ZHI agent finance board]',e);
+  const msg=e?.name==='AbortError'?'财务 Board 读取超时，请稍后刷新':'财务 Board 读取失败：'+(e?.message||'未知错误');
+  setMsg(msg);
+ }
 }
 async function loadAdminUsers(){
  const box=$('adminUsers');if(!box)return;box.innerHTML='<div class="notice">加载中 / Loading...</div>';const r=await sb.rpc('admin_get_user_overview');if(r.error){box.innerHTML='<div class="notice">加载失败 / Failed: '+r.error.message+'</div>';return}
@@ -238,14 +293,14 @@ async function load(passedUser=null){
  const [w,t,profile]=await Promise.all([sb.from('wallets').select('*').eq('user_id',user.id).single(),sb.from('transactions').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(30),sb.from('profiles').select('username,z_id').eq('id',user.id).maybeSingle()]);
  wallet=w.data;if($('balance'))$('balance').textContent=money(wallet?.balance||0);if($('topUsername'))$('topUsername').textContent=profile.data?.username||user.user_metadata?.username||user.email?.split('@')[0]||'--';if($('topZId'))$('topZId').textContent=profile.data?.z_id?'ID: ZHI-'+String(profile.data.z_id).padStart(12,'0'):'ID: ZHI-000000000000';renderHistory(t.data||[]);
  await loadGiftNotice();await loadFinancePanel();await loadLoanLimit();
- const admin=user.app_metadata?.role==='admin';if($('adminPanel'))$('adminPanel').classList.toggle('hidden',!admin);if(admin){await loadAdminUsers();await loadAdminFundFlows();await loadTreasuryFinance();await loadFortuneDrops()}if($('fortuneAdminCard'))$('fortuneAdminCard').classList.toggle('hidden',!admin);
+ const admin=user.app_metadata?.role==='admin';if($('adminPanel'))$('adminPanel').classList.toggle('hidden',!admin);if(admin)loadAgentFinanceBoard();if(admin){await loadAdminUsers();await loadAdminFundFlows();await loadTreasuryFinance();await loadFortuneDrops()}if($('fortuneAdminCard'))$('fortuneAdminCard').classList.toggle('hidden',!admin);
 }
 async function loadTreasuryFinance(){const r=await sb.rpc('get_treasury_finance');if(r.error)return;const d=r.data||{};[['tfTotal',d.total_treasury],['tfAvailable',d.available_balance],['tfSavings',d.user_savings],['tfLoans',d.user_loans],['tfLoanInterest',d.loan_interest_due],['tfSavingsInterest',d.savings_interest_paid]].forEach(([id,v])=>{if($(id))$(id).textContent=money(v||0)+' ZHI'});if($('tfSupply'))$('tfSupply').textContent='弹性发行'}
 $('transferBtn').onclick=transferZHI;
 if(!window.__zhiLoginBound)$('authSubmit').onclick=async()=>{const u=$('authUsername').value.trim(),p=$('authPassword').value;if(!/^[a-zA-Z0-9_]{2,24}$/.test(u))return showErr('用户名只能用 2-24 位英文字母、数字或下划线');if(p.length<6)return showErr('密码至少6位');showErr('');$('authSubmit').disabled=true;try{const {data,error}=await sb.auth.signInWithPassword({email:u.toLowerCase()+'@zhi-demo.com',password:p});if(error)throw error;if(!data?.user)throw new Error('登录成功但没有取得用户会话');$('authScreen').classList.add('hidden');$('app').classList.remove('hidden');await load(data.user)}catch(e){showErr(e.message||'登录失败')}finally{$('authSubmit').disabled=false}};
 $('logout').onclick=async()=>{await sb.auth.signOut();location.reload()};
 if($('saveBtn'))$('saveBtn').onclick=saveZhi;if($('claimBtn'))$('claimBtn').onclick=claimSavings;if($('withdrawBtn'))$('withdrawBtn').onclick=withdrawZhi;if($('loanBtn'))$('loanBtn').onclick=takeLoan;if($('repayBtn'))$('repayBtn').onclick=repayLoan;if($('giftNoticeBtn'))$('giftNoticeBtn').onclick=markGiftNotificationsRead;if($('adminFundFlowsToggle'))$('adminFundFlowsToggle').onclick=()=>{const d=$('adminFundFlowsDetails'),b=$('adminFundFlowsToggle');const open=d?.classList.toggle('open');if(b)b.textContent=open?'收起':'展开'};if($('adminUserFundsToggle'))$('adminUserFundsToggle').onclick=()=>{const d=$('adminUserFundsDetails'),b=$('adminUserFundsToggle');const open=d?.classList.toggle('open');if(b)b.textContent=open?'收起':'展开'};if($('afRefresh'))$('afRefresh').onclick=loadAdminFundFlows;if($('fortuneDropBtn'))$('fortuneDropBtn').onclick=releaseFortune;if($('afFilter'))$('afFilter').onchange=loadAdminFundFlows;
-load();loadAgentFinanceBoard();setInterval(loadAgentFinanceBoard,5000);const agentFinanceToggle=$('agentFinanceToggle'),agentFinanceDetails=$('agentFinanceDetails');if(agentFinanceToggle&&agentFinanceDetails){agentFinanceToggle.onclick=()=>{const open=!agentFinanceDetails.classList.contains('hidden');agentFinanceDetails.classList.toggle('hidden',open);agentFinanceToggle.textContent=open?'展开':'收起'}}</script><script>
+load();setInterval(()=>{if(!document.getElementById('app')?.classList.contains('hidden'))loadAgentFinanceBoard()},5000);const agentFinanceToggle=$('agentFinanceToggle'),agentFinanceDetails=$('agentFinanceDetails');if(agentFinanceToggle&&agentFinanceDetails){agentFinanceToggle.onclick=()=>{const open=!agentFinanceDetails.classList.contains('hidden');agentFinanceDetails.classList.toggle('hidden',open);agentFinanceToggle.textContent=open?'展开':'收起'}}</script><script>
 document.addEventListener('DOMContentLoaded',()=>{
  const b=document.getElementById('historyToggle'),d=document.getElementById('historyDetails');
  if(b&&d)b.onclick=()=>{const closed=d.classList.toggle('hidden');b.textContent=closed?'展开':'收起';};

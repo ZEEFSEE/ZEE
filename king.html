@@ -404,17 +404,24 @@ function startAgentChatApproach(){
   if(!selected)return;
   const o=agentMeshes.get(selected.id);
   if(!o)return;
-  const px=camera.position.x+1000,pz=camera.position.z+1000;
+  // 以 King 当前第一视角坐标作为真实会合定位；DB 使用 0..2000m，Three.js 使用 -1000..1000。
+  const targetWorldX=Math.max(0,Math.min(WORLD,camera.position.x+1000));
+  const targetWorldY=Math.max(0,Math.min(WORLD,camera.position.z+1000));
+  const currentWorldX=Number(o.userData.worldX??o.userData.pos?.x??0);
+  const currentWorldY=Number(o.userData.worldY??o.userData.pos?.y??0);
+  const distance=Math.hypot(targetWorldX-currentWorldX,targetWorldY-currentWorldY);
   o.userData.talking=false;
   o.userData.departurePending=false;
   o.userData.conversationApproach=true;
-  o.userData.approachTarget={x:px,y:pz};
+  o.userData.approachTarget={x:targetWorldX,y:targetWorldY};
+  o.userData.approachStartedFrom={x:currentWorldX,y:currentWorldY};
+  o.userData.approachDistance=distance;
   zhiConversationApproach=true;
   zhiConversationApproachStartedAt=performance.now();
   $('infoChat').disabled=true;
   $('infoChat').textContent='🚶 TA 正在走过来…';
-  $('infoBody').insertAdjacentHTML('beforeend','<div class="sub" id="approachStatus" style="margin-top:8px">对方愿意交流，正在走过来。</div>');
-  toast('🚶 '+esc(selected.name)+' 愿意聊天，正在向你走来');
+  $('infoBody').insertAdjacentHTML('beforeend','<div class="sub" id="approachStatus" style="margin-top:8px">对方愿意交流，正在根据双方定位走向你。</div>');
+  toast('🚶 '+esc(selected.name)+' 愿意聊天，正在根据定位走向你');
 }
 function openAgentConversation(){
   if(!selected)return;
@@ -463,17 +470,26 @@ function updateAgentVisuals(dt){
     const p=o.userData.pos||{};const t=o.userData.target||p;
     const speed=Math.min(Number(p.speed_mps)||1.2,MAX_AGENT_SPEED_MPS);
     if(o.userData.conversationApproach){
-      const tx=camera.position.x+1000,tz=camera.position.z+1000;
-      const fx=tx-(o.userData.worldX??Number(p.x||0)),fz=tz-(o.userData.worldY??Number(p.y||0));
-      const distToPlayer=Math.hypot(fx,fz);
-      if(distToPlayer>0.01)o.rotation.y=Math.atan2(fx,fz);
-      if(distToPlayer<=ZHI_CHAT_APPROACH_DISTANCE || performance.now()-zhiConversationApproachStartedAt>20000){
+      const at=o.userData.approachTarget||{x:camera.position.x+1000,y:camera.position.z+1000};
+      const wx=o.userData.worldX??Number(p.x||0),wy=o.userData.worldY??Number(p.y||0);
+      const fx=at.x-wx,fz=at.y-wy;
+      const distToTarget=Math.hypot(fx,fz);
+      if(distToTarget>0.01)o.rotation.y=Math.atan2(fx,fz);
+      if(distToTarget<=ZHI_CHAT_APPROACH_DISTANCE){
+        o.userData.worldX=at.x;o.userData.worldY=at.y;
+        o.position.set(at.x-1000,0,at.y-1000);
         o.userData.conversationApproach=false;
         openAgentConversation();
+      }else if(performance.now()-zhiConversationApproachStartedAt>120000){
+        o.userData.conversationApproach=false;
+        zhiConversationApproach=false;
+        $('infoChat').disabled=false;
+        $('infoChat').textContent='🚶 邀请 TA 过来聊天';
+        toast('⚠️ '+esc(o.userData.agent?.name||'智能人')+' 暂时无法到达你的定位');
       }else{
-        const step=Math.min(distToPlayer,speed*dt);
-        o.userData.worldX=(o.userData.worldX??Number(p.x||0))+(fx/distToPlayer)*step;
-        o.userData.worldY=(o.userData.worldY??Number(p.y||0))+(fz/distToPlayer)*step;
+        const step=Math.min(distToTarget,speed*dt);
+        o.userData.worldX=wx+(fx/distToTarget)*step;
+        o.userData.worldY=wy+(fz/distToTarget)*step;
         o.position.set(o.userData.worldX-1000,0,o.userData.worldY-1000);
         const pt=o.userData.parts;if(pt){const w=Math.sin(performance.now()*.006)*.6;pt.legL.rotation.x=w;pt.legR.rotation.x=-w;pt.armL.rotation.x=-w;pt.armR.rotation.x=w}
         continue;

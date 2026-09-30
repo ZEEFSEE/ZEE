@@ -132,9 +132,9 @@
     try{
       const ollamaUrl=BRAIN_BRIDGE+'/api/chat';
       const controller=new AbortController();
-      const timeoutId=setTimeout(()=>controller.abort(),120000);
+      const timeoutId=setTimeout(()=>controller.abort(),180000);
       const startedAt=performance.now();
-      status.textContent='🧠 '+selected.name+' 正在调用本机 Ollama · 最多等待 120 秒…';
+      status.textContent='🧠 '+selected.name+' 正在连接本机 Ollama…';
       let r;
       try{
         r=await fetch(ollamaUrl,{
@@ -142,7 +142,7 @@
           headers:{'Content-Type':'application/json'},
           body:JSON.stringify({
             model,
-            stream:false,
+            stream:true,
             messages:[
               {role:'system',content:brain.data.system},
               {role:'user',content:brain.data.prompt}
@@ -152,38 +152,69 @@
           signal:controller.signal
         });
       }finally{clearTimeout(timeoutId)}
-      status.textContent='🧠 Ollama 已建立 HTTP 连接，正在读取响应…';
-      const responseText=await r.text();
-      const elapsed=Math.round(performance.now()-startedAt);
-      let responseDetail=responseText||'(空响应)';
-      let parsed=null;
-      try{parsed=JSON.parse(responseText);}catch(_){}
-      if(parsed?.error) responseDetail=String(parsed.error);
       if(!r.ok){
-        status.textContent='❌ Ollama HTTP '+r.status+' '+(r.statusText||'')+' · '+responseDetail;
-        console.error('[ZHI Ollama]',{url:ollamaUrl,status:r.status,statusText:r.statusText,body:responseText,elapsed_ms:elapsed});
+        const errorText=await r.text();
+        status.textContent='❌ Ollama HTTP '+r.status+' · '+(errorText||r.statusText||'请求失败');
+        console.error('[ZHI Ollama]',{url:ollamaUrl,status:r.status,body:errorText});
         return;
       }
-      ollama=parsed?.message?.content?.trim();
+      status.textContent='🟢 Ollama HTTP '+r.status+' · '+model+' · 已开始生成…';
+      if(!r.body) throw new Error('浏览器未收到 Ollama 流式响应体');
+
+      const reader=r.body.getReader();
+      const decoder=new TextDecoder();
+      let buffer='',full='',chunks=0;
+      while(true){
+        const {value,done}=await reader.read();
+        if(done)break;
+        buffer+=decoder.decode(value,{stream:true});
+        const lines=buffer.split('\n');
+        buffer=lines.pop()||'';
+        for(const line of lines){
+          const s=line.trim();
+          if(!s)continue;
+          let item;
+          try{item=JSON.parse(s)}catch(_){continue}
+          if(item.error){
+            throw new Error(String(item.error));
+          }
+          const piece=item?.message?.content||'';
+          if(piece){
+            full+=piece;
+            chunks++;
+            status.textContent='🧠 '+selected.name+' 正在思考并生成回答… 已生成 '+full.length+' 字';
+          }
+          if(item.done) break;
+        }
+      }
+      const tail=buffer.trim();
+      if(tail){
+        try{
+          const item=JSON.parse(tail);
+          if(item.error) throw new Error(String(item.error));
+          full+=(item?.message?.content||'');
+        }catch(_){}
+      }
+      ollama=full.trim();
+      const elapsed=Math.round(performance.now()-startedAt);
       if(!ollama){
-        status.textContent='❌ Ollama HTTP '+r.status+' · 返回内容为空 · '+responseDetail;
-        console.error('[ZHI Ollama]',{url:ollamaUrl,status:r.status,statusText:r.statusText,body:responseText,elapsed_ms:elapsed});
+        status.textContent='❌ Ollama 已连接但没有生成文字';
+        console.error('[ZHI Ollama]',{url:ollamaUrl,status:r.status,elapsed_ms:elapsed,chunks});
         return;
       }
-      status.textContent='🟢 '+selected.name+' 的模型回复已返回 · HTTP '+r.status+' · '+model+' · '+elapsed+'ms';
-      console.info('[ZHI Ollama]',{url:ollamaUrl,status:r.status,statusText:r.statusText,body:responseText,elapsed_ms:elapsed});
+      status.textContent='🟢 '+selected.name+' 回复完成 · '+model+' · '+elapsed+'ms · '+ollama.length+'字';
+      console.info('[ZHI Ollama]',{url:ollamaUrl,status:r.status,elapsed_ms:elapsed,chunks,chars:ollama.length});
     }catch(e){
       const detail=e?.message||String(e);
       const name=e?.name||'Error';
-      let diagnosis='';
-      if(name==='AbortError') diagnosis='请求超过 120 秒，已自动终止';
-      else diagnosis='Brain Bridge 没有返回 Ollama 响应，请检查本机 Bridge/Ollama';
+      const diagnosis=name==='AbortError'
+        ?'请求超过 180 秒，已自动终止'
+        :'Brain Bridge 没有完成 Ollama 流式响应，请检查 Bridge 窗口日志';
       status.textContent='❌ Ollama 请求异常 · '+name+' · '+detail+' · '+diagnosis;
-      console.error('[ZHI Ollama]',{error:e,name,message:detail,page_protocol:location.protocol,ollama_url:'http://localhost:11434/api/chat',diagnosis});
+      console.error('[ZHI Ollama]',{error:e,name,message:detail,page_protocol:location.protocol,diagnosis});
       return;
     }
 
-    status.textContent='💾 '+selected.name+' 已回答 · 正在写入记忆…';
     const saved=await core.functions.invoke('zhi-agent-brain',{
       body:{mode:'save_reply',agent_id:selected.id,message:msg,reply:ollama},
       headers:{Authorization:`Bearer ${session.access_token}`}

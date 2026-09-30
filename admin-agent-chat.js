@@ -60,24 +60,69 @@
     if(!selected)return;
     const input=document.getElementById('zacInput'),msg=input.value.trim(),status=document.getElementById('zacStatus');
     if(!msg)return;
-    input.value='';status.textContent='正在发送…';
+    input.value='';status.textContent='正在读取智能人的自身信息…';
     const ins=await db().from('admin_agent_messages').insert({admin_user_id:ADMIN_ID,agent_id:selected.id,agent_name:selected.name,sender_type:'admin',content:msg});
     if(ins.error){status.textContent='发送失败：'+ins.error.message;return}
     await loadMessages();
+
     const core=window.zhiCoreSupabase;
     const {data:{session}}=await db().auth.getSession();
-    let reply;
-    if(session?.access_token){
-      reply=await core.functions.invoke('zhi-agent-brain',{body:{agent_id:selected.id,message:msg},headers:{Authorization:`Bearer ${session.access_token}`}});
-    }else{
-      reply={error:{message:'登录会话已失效，请重新登录'}};
+    if(!session?.access_token||!core){
+      status.textContent='登录会话已失效，请重新登录';
+      return;
     }
-    let brainError=reply.error?.message||reply.data?.error;
-    if(brainError||!reply.data?.reply){
-      status.textContent='真正模型暂时没有响应：'+(brainError||'未知错误');
-    }else{
-      status.textContent='已收到真正模型回复'+(reply.data?.provider?' · '+reply.data.provider:'');
+
+    const brain=await core.functions.invoke('zhi-agent-brain',{
+      body:{mode:'prepare',agent_id:selected.id,message:msg},
+      headers:{Authorization:`Bearer ${session.access_token}`}
+    });
+    const brainError=brain.error?.message||brain.data?.error;
+    if(brainError||!brain.data?.system||!brain.data?.prompt){
+      status.textContent='智能人信息读取失败：'+(brainError||'未知错误');
+      return;
     }
+
+    const model=brain.data.model||'llama3.1:8b';
+    status.textContent='🧠 '+selected.name+' 正在根据自己的资料思考…';
+    let ollama;
+    try{
+      const r=await fetch('http://localhost:11434/api/chat',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          model,
+          stream:false,
+          messages:[
+            {role:'system',content:brain.data.system},
+            {role:'user',content:brain.data.prompt}
+          ],
+          options:{temperature:0.75}
+        })
+      });
+      const j=await r.json();
+      if(!r.ok)throw new Error(j?.error||('HTTP '+r.status));
+      ollama=j?.message?.content?.trim();
+    }catch(e){
+      status.textContent='❌ Ollama 未连接：'+(e?.message||e);
+      return;
+    }
+
+    if(!ollama){
+      status.textContent='❌ Ollama 没有返回模型内容';
+      return;
+    }
+
+    const saved=await core.functions.invoke('zhi-agent-brain',{
+      body:{mode:'save_reply',agent_id:selected.id,message:msg,reply:ollama},
+      headers:{Authorization:`Bearer ${session.access_token}`}
+    });
+    const saveError=saved.error?.message||saved.data?.error;
+    if(saveError){
+      status.textContent='模型已回答，但保存智能人记忆失败：'+saveError;
+      return;
+    }
+
+    status.textContent='🟢 已收到真正模型回复 · '+model+' · 已写入智能人记忆';
     await loadMessages();
   }
   let started=false;

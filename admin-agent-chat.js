@@ -76,9 +76,31 @@
       body:{mode:'prepare',agent_id:selected.id,message:msg},
       headers:{Authorization:`Bearer ${session.access_token}`}
     });
-    const brainError=brain.error?.message||brain.data?.error;
+
+    // 不再吞掉 FunctionsHttpError：把 Edge Function 的真实 HTTP 状态和响应体显示出来。
+    let brainError='';
+    if(brain.error){
+      const e=brain.error;
+      brainError=e.message||String(e);
+      try{
+        const ctx=e.context;
+        if(ctx){
+          const statusCode=ctx.status;
+          const bodyText=await ctx.clone().text();
+          let bodyDetail=bodyText;
+          try{
+            const parsed=JSON.parse(bodyText);
+            bodyDetail=parsed?.error||parsed?.message||bodyText;
+          }catch(_){}
+          brainError=(statusCode?`HTTP ${statusCode} · `:'')+bodyDetail;
+        }
+      }catch(_){}
+    }
+    if(brain.data?.error) brainError=String(brain.data.error);
     if(brainError||!brain.data?.system||!brain.data?.prompt){
-      status.textContent='智能人信息读取失败：'+(brainError||'未知错误');
+      const detail=brainError||'HTTP 200，但响应缺少 system/prompt';
+      status.textContent='❌ Core Brain 错误：'+detail;
+      console.error('[ZHI Core Brain]',{error:brain.error,data:brain.data});
       return;
     }
 

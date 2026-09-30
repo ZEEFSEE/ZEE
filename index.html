@@ -269,7 +269,8 @@ async function loadEcoAgents(){
    el.dataset.sleeping=sleepingInApartment?'true':'false';
    el.innerHTML='<div class="name">'+esc(a.name)+'</div><div class="status">'+(a.life_status==='dead'?'☠️ 已死亡':(act&&act.status==='busy'?'🔴 '+esc(act.activity_type||'活动'):'🟢 空闲'))+'</div>';
    const pos=a.position;
-   const scene=String(pos?.current_scene||'中央广场');
+   const rawScene=String(pos?.current_scene||'中央广场');
+   const scene=rawScene.replace(/^[^\u4e00-\u9fffA-Za-z]*/,'').trim();
    const sceneBounds={
      '竞技场':{x:6+Math.random()*22,y:24+Math.random()*22},
      '中央广场':{x:43+Math.random()*20,y:28+Math.random()*25},
@@ -389,11 +390,18 @@ async function loadEcoAgents(){
      }
      el.classList.remove('sleeping');
      // 任务进行中时不做额外随机走动；只有数据库明确 walking=true 才显示跨场景移动。
-     if(act?.status==='busy')return;
+     if(act?.status==='busy'){
+       // 有任务也必须保持生态园可见活动；仅睡觉中的智能体暂停移动。
+       const busyScene=scene;
+       if(!el.__zhiMotion || el.__zhiMotion.scene!==busyScene){
+         el.__zhiMotion={mode:'local',x:worldToStagePercent(pos.x)??((b[0]+b[2])/2),y:worldToStagePercent(pos.y)??((b[1]+b[3])/2),targetX:b[0]+Math.random()*(b[2]-b[0]),targetY:b[1]+Math.random()*(b[3]-b[1]),last:performance.now(),scene:busyScene};
+       }
+       el.querySelector('.status')?.replaceChildren(document.createTextNode('🔴 '+String(act.activity_type||'活动')));
+     }
 
      let state=el.__zhiMotion;
      if(!state || state.mode==='walking' || state.scene!==scene){
-       state={mode:'local',x:Number(pos.x)||parseFloat(el.style.left)||((b[0]+b[2])/2),y:Number(pos.y)||parseFloat(el.style.top)||((b[1]+b[3])/2),targetX:b[0]+Math.random()*(b[2]-b[0]),targetY:b[1]+Math.random()*(b[3]-b[1]),last:performance.now(),scene};
+       state={mode:'local',x:worldToStagePercent(pos.x)??parseFloat(el.style.left)??((b[0]+b[2])/2),y:worldToStagePercent(pos.y)??parseFloat(el.style.top)??((b[1]+b[3])/2),targetX:b[0]+Math.random()*(b[2]-b[0]),targetY:b[1]+Math.random()*(b[3]-b[1]),last:performance.now(),scene};
        el.__zhiMotion=state;
      }
      const dx=state.targetX-state.x,dy=state.targetY-state.y;

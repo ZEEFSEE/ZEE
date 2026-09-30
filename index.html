@@ -164,15 +164,19 @@ async function markGiftNotificationsRead(){const r=await sb.rpc('mark_transfer_n
 async function transferZHI(){const u=$('transferUsername')?.value.trim(),a=Math.floor(Number($('transferAmount')?.value));if(!u)return $('transferError').textContent='请输入收赠用户名';if(!Number.isFinite(a)||a<1)return $('transferError').textContent='请输入有效数量';if(a>Number(wallet?.balance||0))return $('transferError').textContent='余额不足';if(!confirm('确定转赠 '+money(a)+' ZHI 给 '+u+'？'))return;$('transferBtn').disabled=true;try{const core=window.zhiCoreSupabase;let virtual=null;if(core){const qr=await core.from('zhi_agents').select('id,name,active,life_status').ilike('name',u).limit(10);if(qr.error)throw qr.error;const matches=(qr.data||[]).filter(x=>x.active===true&&String(x.life_status||'').toLowerCase()==='alive');if(matches.length>1)throw new Error('虚拟人名字重复，请联系管理员');if(matches.length===1)virtual=matches[0]}if(virtual){const sr=await sb.auth.getSession();const token=sr.data?.session?.access_token;if(!token)throw new Error('登录状态已失效，请重新登录');const r=await fetch('https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-admin-sponsor',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token,'apikey':window.zhiSupabase.rest.headers.apikey},body:JSON.stringify({agent_id:virtual.id,amount:a,note:'管理员通过转赠功能转赠给虚拟人 '+virtual.name})});const data=await r.json().catch(()=>({}));if(!r.ok||data.ok===false)throw new Error(data.error||data.message||'虚拟人转赠失败');}else{const r=await sb.rpc('transfer_zhi',{p_to_username:u,p_amount:a});if(r.error)throw r.error}$('transferUsername').value='';$('transferAmount').value='';alert('转赠成功 / Transfer sent');await load()}catch(e){$('transferError').textContent=e.message||'转赠失败'}finally{$('transferBtn').disabled=false}}
 async function releaseFortune(){const a=Math.floor(Number($('fortuneAmount')?.value));const loc=$('fortuneLocation')?.value||'中央广场';const activity=($('fortuneActivity')?.value||'财神爷撒币').trim();const msg=$('fortuneMsg');if(!Number.isFinite(a)||a<1){if(msg)msg.textContent='请输入至少 1 ZHI';return}if(!confirm('确定从你的管理员账户撒出 '+money(a)+' ZHI？'))return;const b=$('fortuneDropBtn');if(b)b.disabled=true;try{const r=await sb.rpc('admin_release_fortune',{p_amount:a,p_location:loc,p_activity:activity});if(r.error)throw r.error;$('fortuneAmount').value='';$('fortuneActivity').value='';if(msg)msg.textContent='🧧 已撒出 '+money(a)+' ZHI 到 '+loc+'，活动：'+activity+'；管理员余额已扣除 '+money(a)+' ZHI';await load();await loadFortuneDrops()}catch(e){if(msg)msg.textContent='撒币失败：'+(e.message||'未知错误')}finally{if(b)b.disabled=false}}
 async function loadAgentFinanceBoard(){
- const core=window.zhiCoreSupabase;if(!core)return;
- const [fr,pool,mr,ar]=await Promise.all([
-  core.rpc('zhi_agent_finance_overview'),
-  core.from('zhi_fortune_events').select('reward_pool').in('status',['open','running']),
-  core.from('zhi_agent_marriages').select('male_agent_id,female_agent_id,status').eq('status','married'),
-  core.from('zhi_agents').select('id,name')
- ]);
- if(fr.error){console.error('ZHI agent finance overview failed',fr.error);return}
- const rows=(fr.data||[]).map(x=>({...x,balance:Number(x.balance||0),total_earned:Number(x.total_earned||0),total_spent:Number(x.total_spent||0),fortune_earned:Number(x.fortune_earned||0)}));
+ const core=window.zhiCoreSupabase,finance=window.zhiSupabase;if(!core||!finance)return;
+ try{
+  const sr=await finance.auth.getSession(),token=sr.data?.session?.access_token;
+  if(!token){console.warn('ZHI agent finance board: no finance session');return}
+  const rr=await fetch(ZHI_CORE_URL+'/functions/v1/zhi-agent-finance-board',{headers:{Authorization:'Bearer '+token,apikey:ZHI_CORE_PUBLISHABLE_KEY}});
+  const payload=await rr.json().catch(()=>({}));
+  if(!rr.ok||payload.error)throw new Error(payload.error||('HTTP '+rr.status));
+  const rows=(payload.rows||[]).map(x=>({...x,balance:Number(x.balance||0),total_earned:Number(x.total_earned||0),total_spent:Number(x.total_spent||0),fortune_earned:Number(x.fortune_earned||0)}));
+  const pool={data:[{reward_pool:Number(payload.prize_pool||0)}]};
+  const [mr,ar]=await Promise.all([
+   core.from('zhi_agent_marriages').select('male_agent_id,female_agent_id,status').eq('status','married'),
+   core.from('zhi_agents').select('id,name')
+  ]);
  const nameMap=new Map((ar.data||[]).map(x=>[x.id,x.name])),spouseMap=new Map();
  (mr.data||[]).forEach(m=>{spouseMap.set(m.male_agent_id,nameMap.get(m.female_agent_id)||'');spouseMap.set(m.female_agent_id,nameMap.get(m.male_agent_id)||'')});
  rows.forEach(x=>x.spouse=spouseMap.get(x.id)||''); rows.sort((a,b)=>b.balance-a.balance);

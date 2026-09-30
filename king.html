@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ZHI · King Virtual World · FPS v20260930-08</title>
+<title>ZHI · King Virtual World · FPS v20260930-22</title>
 <style>
 :root{--gold:#ffd76a;--panel:#100a18eF;--line:#ffd76a66;--text:#fff5cf}
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#05070a;color:#fff;font:14px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
@@ -715,22 +715,10 @@ function updateAgentVisuals(dt){
   }
 }
 
-async function worldTick(){
-  try{
-    if(!controlMode){
-      await core().rpc('zhi_world_tick');
-      await core().rpc('zhi_king_autonomy_tick');
-    }
-    const km=king&&agentMeshes.get(king.id);
-    if(controlMode&&km){
-      const x=Math.max(0,Math.min(WORLD,Number(km.userData.worldX??1000)));
-      const y=Math.max(0,Math.min(WORLD,Number(km.userData.worldY??1000)));
-      await core().from('zhi_agent_world_positions').update({
-        x,y,walking:true,destination_scene:null,destination_x:null,destination_y:null,
-        walk_started_at:null,walk_arrive_at:null,updated_at:new Date().toISOString()
-      }).eq('agent_id',king.id);
-    }
-  }catch(e){console.warn('[ZHI world tick]',e)}
+function worldTick(){
+  if(!controlMode){
+    Promise.all([core().rpc('zhi_world_tick'),core().rpc('zhi_king_autonomy_tick')]).catch(e=>console.warn('[ZHI world tick]',e));
+  }
 }
 setInterval(worldTick,2000);
 let controlMode=false;
@@ -743,7 +731,9 @@ function animate(){
   if(!overviewMode)updatePlayer(dt);
   renderer.render(scene,camera)
 }
-// KING 世界为纯观察模式：管理员永远不能驾驶、转向或接管 KING。\ncontrolMode=false;\n$('closeInfo').onclick=()=>{if(zhiConversationApproach){const o=selected?agentMeshes.get(selected.id):null;if(o)o.userData.conversationApproach=false;zhiConversationApproach=false;$('infoChat').disabled=false;$('infoChat').textContent='🚶 邀请 TA 过来聊天'}$('info').classList.add('hidden')};$('closeChat').onclick=()=>{if(zhiConversationActive){$('messages').insertAdjacentHTML('beforeend','<div class="msg agentmsg">我有事情要离开了。</div>');finishAgentConversation()}$('chat').classList.add('hidden')};$('back').onclick=()=>location.href='index.html';$('infoChat').onclick=()=>{if(selected&&!zhiConversationApproach&&!zhiConversationActive){startAgentChatApproach()}};
+// KING 世界为纯观察模式：管理员永远不能驾驶、转向或接管 KING。
+controlMode=false;
+$('closeInfo').onclick=()=>{if(zhiConversationApproach){const o=selected?agentMeshes.get(selected.id):null;if(o)o.userData.conversationApproach=false;zhiConversationApproach=false;$('infoChat').disabled=false;$('infoChat').textContent='🚶 邀请 TA 过来聊天'}$('info').classList.add('hidden')};$('closeChat').onclick=()=>{if(zhiConversationActive){$('messages').insertAdjacentHTML('beforeend','<div class="msg agentmsg">我有事情要离开了。</div>');finishAgentConversation()}$('chat').classList.add('hidden')};$('back').onclick=()=>location.href='index.html';$('infoChat').onclick=()=>{if(selected&&!zhiConversationApproach&&!zhiConversationActive){startAgentChatApproach()}};
 $('send').onclick=send;$('input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});
 async function send(){if(!selected||busy)return;const msg=$('input').value.trim();if(!msg)return;busy=true;$('input').value='';$('messages').insertAdjacentHTML('beforeend','<div class="msg me">'+esc(msg)+'</div>');try{const {data:{session}}=await finance().auth.getSession();if(!session)throw Error('AUTH');const brain=await core().functions.invoke('zhi-agent-brain',{body:{mode:'prepare',agent_id:selected.id,message:msg},headers:{Authorization:'Bearer '+session.access_token}});if(brain.error||!brain.data?.system)throw Error('BRAIN');const r=await fetch('http://127.0.0.1:11435/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:brain.data.model||'llama3.1:8b',stream:false,keep_alive:'15m',messages:[{role:'system',content:brain.data.system},{role:'user',content:brain.data.prompt}],options:{temperature:.35,num_ctx:1536,num_predict:96}})});const j=await r.json();const reply=String(j?.message?.content||'').trim();if(!reply)throw Error('EMPTY');$('messages').insertAdjacentHTML('beforeend','<div class="msg agentmsg">'+esc(reply)+'</div>');await core().functions.invoke('zhi-agent-brain',{body:{mode:'save_reply',agent_id:selected.id,message:msg,reply},headers:{Authorization:'Bearer '+session.access_token}})}catch(e){$('messages').insertAdjacentHTML('beforeend','<div class="sub">Brain Bridge 暂时无法连接。</div>')}busy=false}
 window.__zhiKingStart=async()=>{try{await init()}catch(e){console.error('[ZHI KING]',e);$('loginmsg').textContent='启动失败：'+(e?.message||e);$('login').classList.remove('hidden');$('game').classList.add('hidden');$('enter').disabled=false;$('enter').textContent='重新进入虚拟世界'}};

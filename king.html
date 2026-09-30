@@ -733,9 +733,11 @@ function updateAgentVisuals(dt){
 }
 
 function worldTick(){
-  if(!controlMode){
-    Promise.all([core().rpc('zhi_world_tick'),core().rpc('zhi_king_autonomy_tick')]).catch(e=>console.warn('[ZHI world tick]',e));
-  }
+  if(controlMode)return;
+  core().rpc('zhi_king_autonomy_tick')
+    .then(()=>core().rpc('zhi_world_tick'))
+    .then(()=>refresh())
+    .catch(e=>console.warn('[ZHI world tick]',e));
 }
 setInterval(worldTick,2000);
 let controlMode=false;
@@ -743,6 +745,7 @@ function animate(){
   requestAnimationFrame(animate);
   const now=performance.now(),dt=Math.min(.05,(now-last)/1000);last=now;
   updateAgentVisuals(dt);
+  syncKingCameraFromDB();
   updateKingFollowCamera();
   if(!$('start').classList.contains('hidden')||!controlMode){renderer.render(scene,camera);return}
   if(!overviewMode)updatePlayer(dt);

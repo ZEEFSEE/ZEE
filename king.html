@@ -53,7 +53,12 @@ document.getElementById('enter').addEventListener('click',function(){
   },100);
 });
 </script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r180/three.min.js"></script>
+<script>
+if(!window.THREE){
+  document.write('<script src="https://unpkg.com/three@0.180.0/build/three.min.js"><\\/script>');
+}
+</script>
 <script>
 (function(){
 let GLTFLoader=null;
@@ -69,7 +74,7 @@ function loadAsset(key){
   if(assetCache.has(key))return Promise.resolve(assetCache.get(key));
   if(assetLoading.has(key))return assetLoading.get(key);
   const entry=ASSETS[key];
-  const p=(async()=>{try{if(!GLTFLoader){GLTFLoader=(await import("https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/GLTFLoader.js")).GLTFLoader}const loader=new GLTFLoader();return await loader.loadAsync(entry.url)}catch(e){console.warn('[ZHI CDN asset]',key,e);return null}})().then(gltf=>{
+  const p=(async()=>{try{if(!GLTFLoader){GLTFLoader=(await import("https://unpkg.com/three@0.180.0/examples/jsm/loaders/GLTFLoader.js")).GLTFLoader}const loader=new GLTFLoader();return await loader.loadAsync(entry.url)}catch(e){console.warn('[ZHI CDN asset]',key,e);return null}})().then(gltf=>{
     const root=gltf.scene;
     root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
     assetCache.set(key,root);
@@ -106,7 +111,7 @@ let king=null,selected=null,busy=false,agents=[],positions=[],lastSync=0;
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function toast(s){$('toast').textContent=s;$('toast').style.display='block';setTimeout(()=>$('toast').style.display='none',2200)}
 function sceneCenter(scene){const map={'🏟️竞技场':[-650,350],'🌸中央广场':[0,0],'🌲探索森林':[650,350],'🏪商业街':[-520,-500],'🎡娱乐区':[520,-500],'🏠公寓区':[0,-620]};return map[scene]||[0,0]}
-if(!window.THREE){throw new Error('THREE_LOAD_FAILED')}
+if(!window.THREE){throw new Error('THREE_LOAD_FAILED: CDN blocked')}
 const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;$('game').prepend(renderer.domElement);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x07111b);scene.fog=new THREE.Fog(0x07111b,120,950);
 const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.1,2500);camera.position.set(0,6,40);

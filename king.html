@@ -155,9 +155,22 @@ if(!window.THREE){
     ctx.strokeStyle='#fff';ctx.beginPath();ctx.moveTo(w/2-8,h/2);ctx.lineTo(w/2+8,h/2);ctx.moveTo(w/2,h/2-8);ctx.lineTo(w/2,h/2+8);ctx.stroke();
     requestAnimationFrame(fallbackDraw);
   }
-  $('loginmsg').textContent='已进入 ZHI 世界（内置 FPS 引擎）';
-  $('login').classList.add('hidden');$('game').classList.remove('hidden');
-  fallbackDraw();
+  window.__zhiKingStart=async()=>{
+    $('login').classList.add('hidden');$('game').classList.remove('hidden');
+    $('loginmsg').textContent='已进入 ZHI 世界（内置 FPS 引擎）';
+    try{
+      const sb=window.zhiSupabase;
+      const sess=await sb.auth.getSession();
+      if(!sess.data?.session){$('loginmsg').textContent='请先登录 admin';return}
+      const cr=window.zhiCoreSupabase;
+      const ar=await cr.from('zhi_agents').select('id,name,active').eq('active',true).order('name');
+      agents=ar.data||[];
+      const pr=await cr.from('zhi_agent_world_positions').select('agent_id,x,y');
+      positions=pr.data||[];
+      $('worldCount').textContent='🌍 智能人：'+agents.length;
+    }catch(e){console.warn('[ZHI fallback data]',e)}
+    if(!window.__zhiFallbackRunning){window.__zhiFallbackRunning=true;fallbackDraw()}
+  };
 } else {
 const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;$('game').prepend(renderer.domElement);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x07111b);scene.fog=new THREE.Fog(0x07111b,120,950);

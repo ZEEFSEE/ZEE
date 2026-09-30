@@ -35,10 +35,10 @@ window.zhiForceEnterKing=function(){
     if(canvas&&canvas.requestPointerLock) canvas.requestPointerLock();
   }catch(e){}
   var st=document.getElementById('state');
-  if(st)st.textContent='👑 KING 行走模式 · WASD 移动 · 鼠标控制视角 · Esc 释放鼠标 · E 拾取金币';
+  if(st)st.textContent='👑 KING 自主第一视角 · 你只能观察，不能驾驶或干涉';
 };
 </script>
-<div id="start"><div class="startbox card"><h1>🌍 ZHI Virtual World</h1><p>2,000 m × 2,000 m 第一视角世界</p><p class="sub">鼠标控制视角 / 转向　W 前进　S 后退　A/D 左右移动　行走最高 2 m/s　Esc 释放鼠标</p><button id="play" type="button" onclick="window.zhiForceEnterKing()">🖱️ 点击进入驾驶 / 行走模式</button></div></div>
+<div id="start"><div class="startbox card"><h1>🌍 ZHI Virtual World</h1><p>2,000 m × 2,000 m 第一视角世界</p><p class="sub">视野完全由 KING 自主控制 · 你只能观察，不能驾驶、转向或干涉</p><div class="sub" style="margin-top:16px">👁️ 自动进入 KING 视野</div></div></div>
 <div class="hud top"><div><div class="brand">👑 KING MODE</div><div class="sub">ZHI Virtual World · 2 km × 2 km · First Person · 公共 3D Asset CDN</div></div><div style="display:flex;gap:8px;align-items:center"><div class="pill" id="worldCount">🌍 智能人：--</div><div class="pill" id="balance">💰 -- ZHI</div><button class="pill" id="back" style="pointer-events:auto">← 返回管理员</button></div></div>
 <div id="crosshair" class="hud"></div>
 <div class="hud bottom card"><h3>👑 King</h3><div id="state">正在读取世界…</div><div class="stats"><div class="stat"><small>心情</small><b id="mood">--</b></div><div class="stat"><small>精力</small><b id="energy">--</b></div><div class="stat"><small>好奇心</small><b id="curiosity">--</b></div><div class="stat"><small>目标</small><b id="goal">--</b></div></div><div class="controls">W/S 前进后退 · A/D 横移 · 鼠标左/右转向与上下看 · 最高 2 m/s · 走到金币旁按 E 拾取 · 点击智能人查看资料</div></div>
@@ -288,10 +288,10 @@ park(650,0,260,220);park(-650,0,260,220);park(0,700,300,180);
 
 
 const keys=new Set();const WALK_SPEED_MPS=MAX_PLAYER_SPEED_MPS;let yaw=0,pitch=0,velocity=0,last=performance.now(),overviewMode=false,overviewHeight=520;
-addEventListener('keydown',e=>{if(['INPUT','TEXTAREA'].includes(e.target.tagName))return;keys.add(e.code);if(e.code==='Escape')document.exitPointerLock?.()});
+
 addEventListener('keyup',e=>keys.delete(e.code));
 addEventListener('wheel',e=>{if(e.target.closest?.('#chat,#info'))return;e.preventDefault();overviewHeight=Math.max(180,Math.min(1400,overviewHeight+(e.deltaY>0?70:-70)));if(overviewMode)updateOverviewCamera();},{passive:false});
-addEventListener('keydown',e=>{if(e.code==='KeyM'){overviewMode=!overviewMode;updateOverviewCamera();$('state').textContent=overviewMode?'🗺️ 世界全景模式 · 滚轮缩放 · M 返回第一视角':'👑 KING 第一视角 · WASD 移动 · 鼠标控制视角';}});
+
 let savedFirstPersonPosition=null;
 function updateOverviewCamera(){
   if(overviewMode){
@@ -386,8 +386,8 @@ function renderFortuneDrops(events){
   for(const e of active){let g=fortuneMeshes.get(e.id);if(!g){g=makeFortuneDrop(e);scene.add(g);fortuneMeshes.set(e.id,g)}}
 }
 
-renderer.domElement.addEventListener('click',()=>{if(!$('start').classList.contains('hidden'))return;renderer.domElement.requestPointerLock?.()});
-document.addEventListener('mousemove',e=>{if(document.pointerLockElement!==renderer.domElement)return;yaw-=e.movementX*.0022;pitch-=e.movementY*.0018;pitch=Math.max(-1.25,Math.min(1.25,pitch))});
+
+
 function updatePlayer(dt){
   const speed=Math.min(WALK_SPEED_MPS,MAX_PLAYER_SPEED_MPS);if(!king)return;
   const dir=new THREE.Vector3();
@@ -584,7 +584,7 @@ async function init(){
   // 浏览器的 Pointer Lock 仍只能由用户手势触发，因此首次需要鼠标控制时点击画面即可。
   controlMode=false;
   $('start').classList.add('hidden');
-  $('state').textContent='👑 KING 自主行走视野 · 自动移动 · 点击画面可接管控制';
+  $('state').textContent='👁️ KING 自主第一视角 · 自动生活 · 纯观察模式';
   loadPublicAssets().catch(e=>console.warn('[ZHI CDN]',e));
   setInterval(refresh,5000);animate()
 }
@@ -745,28 +745,7 @@ function animate(){
   if(!overviewMode)updatePlayer(dt);
   renderer.render(scene,camera)
 }
-window.zhiEnterControlMode=function(){
-  controlMode=true;
-  $('start').classList.add('hidden');
-  try{
-    const p=renderer.domElement.requestPointerLock?.();
-    if(p&&typeof p.catch==='function')p.catch(e=>console.warn('[ZHI] PointerLock denied',e));
-  }catch(e){console.warn('[ZHI] PointerLock error',e)}
-  $('state').textContent='👑 KING 行走模式 · WASD 移动 · 鼠标控制视角 · Esc 释放鼠标';
-}
-const enterControlMode=()=>window.zhiEnterControlMode();
-$('play').addEventListener('click',function(e){e.preventDefault();e.stopPropagation();enterControlMode();});
-$('start').addEventListener('click',function(e){if(e.target===this)enterControlMode();});
-document.addEventListener('keydown',function(e){if(e.code==='KeyE'&&!e.repeat&&!e.ctrlKey&&!e.altKey&&!e.metaKey){e.preventDefault();pickupNearestFortune();return;}if(!$('start').classList.contains('hidden')&&(e.code==='Enter'||e.code==='Space')){e.preventDefault();enterControlMode();}});
-renderer.domElement.addEventListener('click',()=>{
-  if(!$('start').classList.contains('hidden') && document.pointerLockElement!==renderer.domElement) enterControlMode();
-});
-document.addEventListener('pointerlockchange',()=>{
-  if(document.pointerLockElement===renderer.domElement){
-    $('start').classList.add('hidden');
-    $('state').textContent='👑 KING 行走模式 · WASD 移动 · 鼠标控制视角 · Esc 释放鼠标';
-  }
-});$('closeInfo').onclick=()=>{if(zhiConversationApproach){const o=selected?agentMeshes.get(selected.id):null;if(o)o.userData.conversationApproach=false;zhiConversationApproach=false;$('infoChat').disabled=false;$('infoChat').textContent='🚶 邀请 TA 过来聊天'}$('info').classList.add('hidden')};$('closeChat').onclick=()=>{if(zhiConversationActive){$('messages').insertAdjacentHTML('beforeend','<div class="msg agentmsg">我有事情要离开了。</div>');finishAgentConversation()}$('chat').classList.add('hidden')};$('back').onclick=()=>location.href='index.html';$('infoChat').onclick=()=>{if(selected&&!zhiConversationApproach&&!zhiConversationActive){startAgentChatApproach()}};
+// KING 世界为纯观察模式：管理员永远不能驾驶、转向或接管 KING。\ncontrolMode=false;\n$('closeInfo').onclick=()=>{if(zhiConversationApproach){const o=selected?agentMeshes.get(selected.id):null;if(o)o.userData.conversationApproach=false;zhiConversationApproach=false;$('infoChat').disabled=false;$('infoChat').textContent='🚶 邀请 TA 过来聊天'}$('info').classList.add('hidden')};$('closeChat').onclick=()=>{if(zhiConversationActive){$('messages').insertAdjacentHTML('beforeend','<div class="msg agentmsg">我有事情要离开了。</div>');finishAgentConversation()}$('chat').classList.add('hidden')};$('back').onclick=()=>location.href='index.html';$('infoChat').onclick=()=>{if(selected&&!zhiConversationApproach&&!zhiConversationActive){startAgentChatApproach()}};
 $('send').onclick=send;$('input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});
 async function send(){if(!selected||busy)return;const msg=$('input').value.trim();if(!msg)return;busy=true;$('input').value='';$('messages').insertAdjacentHTML('beforeend','<div class="msg me">'+esc(msg)+'</div>');try{const {data:{session}}=await finance().auth.getSession();if(!session)throw Error('AUTH');const brain=await core().functions.invoke('zhi-agent-brain',{body:{mode:'prepare',agent_id:selected.id,message:msg},headers:{Authorization:'Bearer '+session.access_token}});if(brain.error||!brain.data?.system)throw Error('BRAIN');const r=await fetch('http://127.0.0.1:11435/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:brain.data.model||'llama3.1:8b',stream:false,keep_alive:'15m',messages:[{role:'system',content:brain.data.system},{role:'user',content:brain.data.prompt}],options:{temperature:.35,num_ctx:1536,num_predict:96}})});const j=await r.json();const reply=String(j?.message?.content||'').trim();if(!reply)throw Error('EMPTY');$('messages').insertAdjacentHTML('beforeend','<div class="msg agentmsg">'+esc(reply)+'</div>');await core().functions.invoke('zhi-agent-brain',{body:{mode:'save_reply',agent_id:selected.id,message:msg,reply},headers:{Authorization:'Bearer '+session.access_token}})}catch(e){$('messages').insertAdjacentHTML('beforeend','<div class="sub">Brain Bridge 暂时无法连接。</div>')}busy=false}
 window.__zhiKingStart=async()=>{try{await init()}catch(e){console.error('[ZHI KING]',e);$('loginmsg').textContent='启动失败：'+(e?.message||e);$('login').classList.remove('hidden');$('game').classList.add('hidden');$('enter').disabled=false;$('enter').textContent='重新进入虚拟世界'}};

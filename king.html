@@ -297,6 +297,54 @@ function buildPalace(){
 }
 buildPalace();
 
+function palaceRoom(x,z,w,d,h,label,accent=0x8b6a2d){
+  const g=new THREE.Group();
+  const floor=new THREE.Mesh(new THREE.BoxGeometry(w,.35,d),new THREE.MeshStandardMaterial({color:0x9d7a55,roughness:.8}));
+  floor.position.y=.18;floor.receiveShadow=true;g.add(floor);
+  const wallMat=new THREE.MeshStandardMaterial({color:0xd8c7a4,roughness:.78});
+  const trimMat=new THREE.MeshStandardMaterial({color:accent,metalness:.35,roughness:.42});
+  const wallH=h;
+  const parts=[
+    [0,wallH/2,-d/2,w,wallH,.55],
+    [-w/2+0.28,wallH/2,0,.55,wallH,d],
+    [w/2-0.28,wallH/2,0,.55,wallH,d]
+  ];
+  for(const q of parts){const m=new THREE.Mesh(new THREE.BoxGeometry(q[3],q[4],q[5]),wallMat);m.position.set(q[0],q[1],q[2]);m.castShadow=true;m.receiveShadow=true;g.add(m);}
+  const frieze=new THREE.Mesh(new THREE.BoxGeometry(w+.5,.7,.8),trimMat);frieze.position.set(0,wallH-.6,-d/2+.2);g.add(frieze);
+  const plaque=makeLabel(label,true);plaque.scale.set(7,1.75,1);plaque.position.set(0,wallH+3,-d/2+.5);g.add(plaque);
+  g.position.set(x,0,z);g.userData={sceneName:label};scene.add(g);return g;
+}
+function palaceFurniture(){
+  // 王座大厅
+  const throneMat=new THREE.MeshStandardMaterial({color:0x7d2035,roughness:.55,metalness:.15});
+  const gold=new THREE.MeshStandardMaterial({color:0xffd76a,metalness:.65,roughness:.25});
+  const throne=new THREE.Mesh(new THREE.BoxGeometry(7,7,5),throneMat);throne.position.set(0,3.5,-790);throne.castShadow=true;scene.add(throne);
+  const throneTop=new THREE.Mesh(new THREE.BoxGeometry(9,1,6),gold);throneTop.position.set(0,7.2,-790);scene.add(throneTop);
+  // 宴会长桌
+  const table=new THREE.Mesh(new THREE.BoxGeometry(150,3,12),new THREE.MeshStandardMaterial({color:0x5d3825,roughness:.7}));table.position.set(0,1.7,-705);table.castShadow=true;scene.add(table);
+  for(let x=-60;x<=60;x+=30)for(const z of [-720,-690]){
+    const chair=new THREE.Mesh(new THREE.BoxGeometry(7,4,7),throneMat);chair.position.set(x,2,z);scene.add(chair);
+  }
+  // 宝库金库与金币
+  const vault=new THREE.Mesh(new THREE.BoxGeometry(46,20,38),new THREE.MeshStandardMaterial({color:0x4a3b2a,metalness:.55,roughness:.35}));vault.position.set(-125,10,-650);vault.castShadow=true;scene.add(vault);
+  for(let i=0;i<28;i++){const coin=new THREE.Mesh(new THREE.CylinderGeometry(.8,.8,.22,16),gold);coin.position.set(-140+(i%7)*5,.6,-665+Math.floor(i/7)*5);coin.rotation.x=Math.PI/2;scene.add(coin);}
+  // 婚礼大厅中央礼台
+  const altar=new THREE.Mesh(new THREE.CylinderGeometry(18,18,2,32),gold);altar.position.set(0,1,-640);altar.castShadow=true;scene.add(altar);
+  for(const x of [-24,24]){const col=new THREE.Mesh(new THREE.CylinderGeometry(2,2,16,16),gold);col.position.set(x,8,-640);scene.add(col);}
+  const flowerMat=new THREE.MeshStandardMaterial({color:0xffc7df,emissive:0x321225,emissiveIntensity:.25});
+  for(let i=0;i<10;i++){const f=new THREE.Mesh(new THREE.SphereGeometry(1.5,10,8),flowerMat);f.position.set(-35+i*7,.9,-625+(i%2)*8);scene.add(f);}
+}
+function buildPalaceInteriors(){
+  palaceRoom(0,-790,150,80,16,'👑 王座大厅');
+  palaceRoom(0,-705,190,62,14,'🍽️ 宴会厅');
+  palaceRoom(125,-760,72,70,12,'🛏️ 王室寝宫');
+  palaceRoom(-125,-650,58,55,12,'💰 ZHI 宝库');
+  palaceRoom(0,-640,150,55,14,'💒 婚礼大厅');
+  palaceFurniture();
+}
+buildPalaceInteriors();
+
+
 for(let x=-900;x<=900;x+=90){tree(x,-850,.8+((x+900)%180)/450);tree(x,850,.7+((x+90)%180)/500);}
 for(let z=-800;z<=800;z+=100){tree(-900,z,.7);tree(900,z,.75);}
 function roadMarkings(x,z,w,d){

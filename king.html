@@ -292,7 +292,28 @@ addEventListener('keydown',e=>{if(['INPUT','TEXTAREA'].includes(e.target.tagName
 addEventListener('keyup',e=>keys.delete(e.code));
 addEventListener('wheel',e=>{if(e.target.closest?.('#chat,#info'))return;e.preventDefault();overviewHeight=Math.max(180,Math.min(1400,overviewHeight+(e.deltaY>0?70:-70)));if(overviewMode)updateOverviewCamera();},{passive:false});
 addEventListener('keydown',e=>{if(e.code==='KeyM'){overviewMode=!overviewMode;updateOverviewCamera();$('state').textContent=overviewMode?'🗺️ 世界全景模式 · 滚轮缩放 · M 返回第一视角':'👑 KING 第一视角 · WASD 移动 · 鼠标控制视角';}});
-function updateOverviewCamera(){if(overviewMode){camera.position.set(0,overviewHeight,0);camera.rotation.set(-Math.PI/2,0,0);$('crosshair').style.display='none';}else{$('crosshair').style.display='block';camera.position.y=6;camera.rotation.order='YXZ';camera.rotation.y=yaw;camera.rotation.x=pitch;}}
+let savedFirstPersonPosition=null;
+function updateOverviewCamera(){
+  if(overviewMode){
+    savedFirstPersonPosition={x:camera.position.x,y:camera.position.y,z:camera.position.z,yaw,pitch};
+    camera.position.set(0,overviewHeight,0);
+    camera.rotation.set(-Math.PI/2,0,0);
+    $('crosshair').style.display='none';
+  }else{
+    $('crosshair').style.display='block';
+    if(savedFirstPersonPosition){
+      camera.position.set(savedFirstPersonPosition.x,savedFirstPersonPosition.y,savedFirstPersonPosition.z);
+      yaw=savedFirstPersonPosition.yaw;
+      pitch=savedFirstPersonPosition.pitch;
+      savedFirstPersonPosition=null;
+    }else{
+      camera.position.y=6;
+    }
+    camera.rotation.order='YXZ';
+    camera.rotation.y=yaw;
+    camera.rotation.x=pitch;
+  }
+}
 function drawOverview(){const cv=$('overviewCanvas'),ctx=cv.getContext('2d');if(!ctx)return;ctx.clearRect(0,0,cv.width,cv.height);ctx.fillStyle='#102019';ctx.fillRect(0,0,cv.width,cv.height);ctx.strokeStyle='#42584a';ctx.strokeRect(8,8,204,204);const scale=204/WORLD;for(const p of positions){const x=8+Number(p.x||0)*scale,y=8+Number(p.y||0)*scale;ctx.fillStyle=p.agent_id===king?.id?'#ffb300':'#ffe890';ctx.beginPath();ctx.arc(x,y,p.agent_id===king?.id?4:2.5,0,Math.PI*2);ctx.fill();}ctx.fillStyle='#fff';ctx.font='10px system-ui';ctx.fillText('0m',9,216);ctx.fillText('2000m',174,216);}
 
 renderer.domElement.addEventListener('click',()=>{if(!$('start').classList.contains('hidden'))return;renderer.domElement.requestPointerLock?.()});

@@ -292,6 +292,7 @@ const dx=tx-(o.userData.worldX??tx),dz=tz-(o.userData.worldY??tz);
 if(Math.hypot(dx,dz)>0.1){o.userData.worldX=o.userData.worldX??tx;o.userData.worldY=o.userData.worldY??tz;}
 o.position.set((o.userData.worldX??tx)-1000,0,(o.userData.worldY??tz)-1000);
 }
+}
 function nearestAgent(){let best=null,dist=Infinity;for(const o of agentMeshes.values()){if(o.userData.agent.id===king?.id)continue;const d=o.position.distanceTo(camera.position);if(d<dist){dist=d;best=o}}return best}
 const raycaster=new THREE.Raycaster(),mouse=new THREE.Vector2();
 renderer.domElement.addEventListener('click',e=>{if(document.pointerLockElement!==renderer.domElement)return;mouse.x=0;mouse.y=0;raycaster.setFromCamera(mouse,camera);const hits=raycaster.intersectObjects([...agentMeshes.values()].flatMap(o=>o.children),true);if(hits.length){let o=hits[0].object;while(o&&!o.userData.agent)o=o.parent;if(o?.userData.agent)selectAgent(o.userData.agent.id)}});

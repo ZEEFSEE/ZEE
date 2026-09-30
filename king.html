@@ -35,13 +35,13 @@ window.zhiForceEnterKing=function(){
     if(canvas&&canvas.requestPointerLock) canvas.requestPointerLock();
   }catch(e){}
   var st=document.getElementById('state');
-  if(st)st.textContent='👑 KING 行走模式 · WASD 移动 · 鼠标控制视角 · Esc 释放鼠标';
+  if(st)st.textContent='👑 KING 行走模式 · WASD 移动 · 鼠标控制视角 · Esc 释放鼠标 · E 拾取金币';
 };
 </script>
 <div id="start"><div class="startbox card"><h1>🌍 ZHI Virtual World</h1><p>2,000 m × 2,000 m 第一视角世界</p><p class="sub">鼠标控制视角 / 转向　W 前进　S 后退　A/D 左右移动　行走最高 2 m/s　Esc 释放鼠标</p><button id="play" type="button" onclick="window.zhiForceEnterKing()">🖱️ 点击进入驾驶 / 行走模式</button></div></div>
 <div class="hud top"><div><div class="brand">👑 KING MODE</div><div class="sub">ZHI Virtual World · 2 km × 2 km · First Person · 公共 3D Asset CDN</div></div><div style="display:flex;gap:8px;align-items:center"><div class="pill" id="worldCount">🌍 智能人：--</div><div class="pill" id="balance">💰 -- ZHI</div><button class="pill" id="back" style="pointer-events:auto">← 返回管理员</button></div></div>
 <div id="crosshair" class="hud"></div>
-<div class="hud bottom card"><h3>👑 King</h3><div id="state">正在读取世界…</div><div class="stats"><div class="stat"><small>心情</small><b id="mood">--</b></div><div class="stat"><small>精力</small><b id="energy">--</b></div><div class="stat"><small>好奇心</small><b id="curiosity">--</b></div><div class="stat"><small>目标</small><b id="goal">--</b></div></div><div class="controls">W/S 前进后退 · A/D 横移 · 鼠标左/右转向与上下看 · 最高 2 m/s · 点击智能人查看资料</div></div>
+<div class="hud bottom card"><h3>👑 King</h3><div id="state">正在读取世界…</div><div class="stats"><div class="stat"><small>心情</small><b id="mood">--</b></div><div class="stat"><small>精力</small><b id="energy">--</b></div><div class="stat"><small>好奇心</small><b id="curiosity">--</b></div><div class="stat"><small>目标</small><b id="goal">--</b></div></div><div class="controls">W/S 前进后退 · A/D 横移 · 鼠标左/右转向与上下看 · 最高 2 m/s · 走到金币旁按 E 拾取 · 点击智能人查看资料</div></div>
 <div id="info" class="hidden"><div class="head"><b id="infoTitle">智能人</b><button class="close" id="closeInfo">✕</button></div><div id="infoBody"></div><button id="infoChat" class="send" style="width:100%;margin-top:6px">🚶 邀请 TA 过来聊天</button></div>
 <div id="chat" class="hidden"><div class="chathead"><b id="chatTitle">智能人</b><button class="close" id="closeChat">✕</button></div><div id="messages"><div class="sub">开始聊天。</div></div><div class="compose"><textarea id="input" placeholder="对这位智能人说点什么…"></textarea><button class="send" id="send">发送</button></div></div>
 <div id="overview"><div class="overviewTitle">🗺️ ZHI 世界 · 智能人位置</div><canvas id="overviewCanvas" class="overviewCanvas" width="220" height="220"></canvas><div class="overviewHint">滚轮缩放视野 · M 切换全景</div></div><div id="toast"></div>
@@ -341,6 +341,43 @@ function makeFortuneDrop(e){
   x.fillStyle='rgba(45,25,0,.88)';x.fillRect(4,4,412,62);x.fillStyle='#ffe58a';x.font='bold 28px system-ui,"Microsoft YaHei",sans-serif';x.textAlign='center';x.fillText('🪙 '+(Number.isFinite(pool)?pool.toLocaleString():'0')+' ZHI',210,45);
   const tex=new THREE.CanvasTexture(label);const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false}));sp.scale.set(12,2,1);sp.position.y=7;g.add(sp);
   const sc=fortuneSceneMap[e.location_code]||'🌸中央广场',pos=sceneCenter(sc);g.position.set(pos[0],0,pos[1]);g.userData.event=e;return g;
+}
+async function pickupNearestFortune(){
+  if(!king)return;
+  let best=null,bestDist=Infinity;
+  for(const [id,obj] of fortuneMeshes){
+    const d=obj.position.distanceTo(camera.position);
+    if(d<bestDist){bestDist=d;best={id,obj,event:obj.userData.event};}
+  }
+  if(!best||bestDist>7){
+    toast('🪙 请走近金币堆，在 7 米内按 E 拾取');
+    return;
+  }
+  if(best.obj.userData.picking)return;
+  best.obj.userData.picking=true;
+  try{
+    const {data:{session}}=await finance().auth.getSession();
+    if(!session)throw new Error('AUTH');
+    const r=await core().functions.invoke('zhi-fortune-pickup',{
+      body:{event_id:best.id},
+      headers:{Authorization:'Bearer '+session.access_token}
+    });
+    if(r.error)throw r.error;
+    const result=r.data?.result||r.data;
+    if(result?.success){
+      toast('🪙 拾取成功 +'+Number(result.amount||0).toLocaleString()+' ZHI');
+      scene.remove(best.obj);fortuneMeshes.delete(best.id);
+      setTimeout(refresh,250);
+    }else{
+      toast('🪙 '+String(result?.message||'暂时无法拾取'));
+      setTimeout(refresh,250);
+    }
+  }catch(e){
+    console.warn('[ZHI fortune pickup]',e);
+    toast('⚠️ 拾币失败，请稍后再试');
+  }finally{
+    best.obj.userData.picking=false;
+  }
 }
 function renderFortuneDrops(events){
   const active=(events||[]).filter(e=>['open','running'].includes(String(e.status||'').toLowerCase()));
@@ -673,7 +710,7 @@ window.zhiEnterControlMode=function(){
 const enterControlMode=()=>window.zhiEnterControlMode();
 $('play').addEventListener('click',function(e){e.preventDefault();e.stopPropagation();enterControlMode();});
 $('start').addEventListener('click',function(e){if(e.target===this)enterControlMode();});
-document.addEventListener('keydown',function(e){if(!$('start').classList.contains('hidden')&&(e.code==='Enter'||e.code==='Space')){e.preventDefault();enterControlMode();}});
+document.addEventListener('keydown',function(e){if(e.code==='KeyE'&&!e.repeat&&!e.ctrlKey&&!e.altKey&&!e.metaKey){e.preventDefault();pickupNearestFortune();return;}if(!$('start').classList.contains('hidden')&&(e.code==='Enter'||e.code==='Space')){e.preventDefault();enterControlMode();}});
 renderer.domElement.addEventListener('click',()=>{
   if(!$('start').classList.contains('hidden') && document.pointerLockElement!==renderer.domElement) enterControlMode();
 });

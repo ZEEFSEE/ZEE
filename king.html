@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ZHI · King Virtual World</title>
+<title>ZHI · King Virtual World · v20260930-02</title>
 <style>
 :root{--gold:#ffd76a;--deep:#090611;--panel:#12091df2;--line:#ffd76a55;--text:#fff5cf}
 *{box-sizing:border-box}body{margin:0;background:#07040d;color:#fff;font:14px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:hidden}
@@ -53,6 +53,20 @@ function toast(s){$('toast').textContent=s;$('toast').style.display='block';setT
 function pos(scene,x,y){return {x:Math.max(3,Math.min(97,Number(x))),y:Math.max(8,Math.min(92,Number(y)))}}
 async function init(){
  const sb=finance();
+ // Supabase 会自动恢复本地会话；同时监听恢复/刷新事件，避免从 ZHI 首页进入时误判为未登录。
+ let authSession=null;
+ try{
+   const r=await sb.auth.getSession();
+   authSession=r.data?.session||null;
+ }catch(e){}
+ if(authSession?.user?.id===ADMIN_ID){} else {
+   await new Promise(resolve=>setTimeout(resolve,1200));
+   try{
+     const r=await sb.auth.getSession();
+     authSession=r.data?.session||null;
+   }catch(e){}
+ }
+
  let session=null,sessionError=null;
  try{
    const r=await sb.auth.getSession();
@@ -67,7 +81,7 @@ async function init(){
      session=r.data?.session||null; sessionError=r.error||null;
    }catch(e){sessionError=e}
  }
- const user=session?.user;
+ const user=(session?.user||authSession?.user);
  if(sessionError){$('loginmsg').textContent='登录状态读取失败，请返回 ZHI 后重新进入 KING。';return}
  if(!user||user.id!==ADMIN_ID){
    $('loginmsg').textContent='当前不是管理员登录状态。King 与管理员使用同一个 ZHI 账号，不需要第二个账号。';

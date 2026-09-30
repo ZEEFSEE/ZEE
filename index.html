@@ -152,8 +152,8 @@ box-shadow:0 18px 60px #000a,0 0 40px #ffb30018,inset 0 1px #fff2}
         if(!data?.user)throw new Error('登录成功但没有取得用户会话');
         document.getElementById('authScreen')?.classList.add('hidden');
         document.getElementById('app')?.classList.remove('hidden');
-        if(typeof window.zhiLoadAfterLogin==='function')await window.zhiLoadAfterLogin(data.user);
-        else location.reload();
+        if(typeof window.loadZHIAfterLogin==='function')await window.loadZHIAfterLogin(data.user);
+        else if(typeof window.load==='function')await window.load(data.user);
       }catch(e){show(e?.message||'登录失败')}
       finally{btn.disabled=false}
     },{capture:true});

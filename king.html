@@ -338,7 +338,7 @@ function makeFortuneDrop(e){
   const ring=new THREE.Mesh(new THREE.TorusGeometry(5.5,.08,8,40),new THREE.MeshBasicMaterial({color:0xffd76a,transparent:true,opacity:.8}));
   ring.rotation.x=Math.PI/2;ring.position.y=.12;g.add(ring);
   const label=document.createElement('canvas');label.width=420;label.height=70;const x=label.getContext('2d');
-  x.fillStyle='rgba(45,25,0,.88)';x.fillRect(4,4,412,62);x.fillStyle='#ffe58a';x.font='bold 28px system-ui,"Microsoft YaHei",sans-serif';x.textAlign='center';x.fillText('🪙 '+Number.isFinite(pool)?pool.toLocaleString():'0'+' ZHI',210,45);
+  x.fillStyle='rgba(45,25,0,.88)';x.fillRect(4,4,412,62);x.fillStyle='#ffe58a';x.font='bold 28px system-ui,"Microsoft YaHei",sans-serif';x.textAlign='center';x.fillText('🪙 '+(Number.isFinite(pool)?pool.toLocaleString():'0')+' ZHI',210,45);
   const tex=new THREE.CanvasTexture(label);const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false}));sp.scale.set(12,2,1);sp.position.y=7;g.add(sp);
   const sc=fortuneSceneMap[e.location_code]||'🌸中央广场',pos=sceneCenter(sc);g.position.set(pos[0],0,pos[1]);g.userData.event=e;return g;
 }

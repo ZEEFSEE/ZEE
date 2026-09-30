@@ -132,7 +132,36 @@ box-shadow:0 18px 60px #000a,0 0 40px #ffb30018,inset 0 1px #fff2}
 </div>
 <div id="adminPanel" class="hidden"><div class="card"><h2>🏦 财神爷金融中心</h2><div class="grid"><div>财神爷总余额<br><b id="tfTotal">0 ZHI</b></div><div>可用余额<br><b id="tfAvailable">0 ZHI</b></div><div>用户存储<br><b id="tfSavings">0 ZHI</b></div><div>用户贷款<br><b id="tfLoans">0 ZHI</b></div><div>待收贷款利息<br><b id="tfLoanInterest">0 ZHI</b></div><div>已付存储利息<br><b id="tfSavingsInterest">0 ZHI</b></div><div>发行模式<br><b id="tfSupply">弹性发行</b></div></div></div>
 <div class="card"><div class="top"><h2>👥 用户资金</h2><button id="adminUserFundsToggle" class="secondary" type="button">展开</button></div><div id="adminUserFundsDetails" class="collapsed-panel"><div id="adminUsers"></div></div></div>
-<div class="card"><div class="top"><h2>📒 资金流水</h2><button id="adminFundFlowsToggle" class="secondary" type="button">展开</button></div><div id="adminFundFlowsDetails" class="collapsed-panel"><div class="actions"><input id="afUser" placeholder="用户名筛选"><select id="afFilter"><option value="all">全部</option><option value="credit">收入</option><option value="debit">支出</option></select><button id="afRefresh">刷新</button></div><div class="grid"><div>总流入<br><b id="afIn">0 ZHI</b></div><div>总流出<br><b id="afOut">0 ZHI</b></div><div>净额<br><b id="afNet">0 ZHI</b></div></div><div id="afList"></div></div></div></div></main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-client.js?v=20260930-05"></script><script>const sb=window.zhiSupabase;let user=null,wallet=null;
+<div class="card"><div class="top"><h2>📒 资金流水</h2><button id="adminFundFlowsToggle" class="secondary" type="button">展开</button></div><div id="adminFundFlowsDetails" class="collapsed-panel"><div class="actions"><input id="afUser" placeholder="用户名筛选"><select id="afFilter"><option value="all">全部</option><option value="credit">收入</option><option value="debit">支出</option></select><button id="afRefresh">刷新</button></div><div class="grid"><div>总流入<br><b id="afIn">0 ZHI</b></div><div>总流出<br><b id="afOut">0 ZHI</b></div><div>净额<br><b id="afNet">0 ZHI</b></div></div><div id="afList"></div></div></div></div></main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-client.js?v=20260930-05"></script><script>
+(function(){
+  function bindZHIAdminLogin(){
+    if(window.__zhiLoginBound)return true;
+    const btn=document.getElementById('authSubmit'),u=document.getElementById('authUsername'),p=document.getElementById('authPassword'),err=document.getElementById('authError');
+    if(!btn||!u||!p||!window.zhiSupabase)return false;
+    window.__zhiLoginBound=true;
+    const show=s=>{if(err)err.textContent=s||''};
+    btn.addEventListener('click',async function(e){
+      e.preventDefault(); if(btn.disabled)return;
+      const username=u.value.trim(),password=p.value;
+      if(!/^[a-zA-Z0-9_]{2,24}$/.test(username))return show('用户名只能用 2-24 位英文字母、数字或下划线');
+      if(password.length<6)return show('密码至少6位');
+      btn.disabled=true;show('');
+      try{
+        const {data,error}=await window.zhiSupabase.auth.signInWithPassword({email:username.toLowerCase()+'@zhi-demo.com',password});
+        if(error)throw error;
+        if(!data?.user)throw new Error('登录成功但没有取得用户会话');
+        document.getElementById('authScreen')?.classList.add('hidden');
+        document.getElementById('app')?.classList.remove('hidden');
+        if(typeof window.zhiLoadAfterLogin==='function')await window.zhiLoadAfterLogin(data.user);
+        else location.reload();
+      }catch(e){show(e?.message||'登录失败')}
+      finally{btn.disabled=false}
+    },{capture:true});
+    return true;
+  }
+  if(!bindZHIAdminLogin())document.addEventListener('DOMContentLoaded',bindZHIAdminLogin,{once:true});
+})();
+</script><script>const sb=window.zhiSupabase;let user=null,wallet=null;
 const money=n=>Number(n||0).toLocaleString(),$=id=>document.getElementById(id);
 function showErr(s){const e=$('authError');if(e)e.textContent=s||''}
 function showSavingsMsg(text,type='success'){const e=$('savingsMsg');if(!e)return;e.textContent=text;e.className='savings-msg show '+type;clearTimeout(window.__savingsMsgTimer);window.__savingsMsgTimer=setTimeout(()=>e.classList.remove('show'),5000)}

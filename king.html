@@ -125,7 +125,22 @@ let king=null,selected=null,busy=false,agents=[],positions=[],lastSync=0;
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function toast(s){$('toast').textContent=s;$('toast').style.display='block';setTimeout(()=>$('toast').style.display='none',2200)}
 function sceneCenter(scene){const map={'🏟️竞技场':[-650,350],'🌸中央广场':[0,0],'🌲探索森林':[650,350],'🏪商业街':[-520,-500],'🎡娱乐区':[520,-500],'🏠公寓区':[0,-620]};return map[scene]||[0,0]}
-if(!window.THREE){throw new Error('THREE.js 未加载：CDN 不可用');} if(!window.WebGLRenderingContext){throw new Error('浏览器不支持 WebGL');} const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;$('game').prepend(renderer.domElement);
+if(!window.THREE){throw new Error('THREE.js 未加载：CDN 不可用');}
+let renderer;
+try{
+  renderer=new THREE.WebGLRenderer({antialias:false,alpha:false,powerPreference:'high-performance',preserveDrawingBuffer:false});
+}catch(firstError){
+  console.warn('[ZHI KING] WebGLRenderer first attempt failed',firstError);
+  try{
+    const canvas=document.createElement('canvas');
+    const gl=canvas.getContext('webgl2',{antialias:false,alpha:false})||canvas.getContext('webgl',{antialias:false,alpha:false});
+    if(!gl)throw firstError;
+    renderer=new THREE.WebGLRenderer({canvas,context:gl,antialias:false,alpha:false});
+  }catch(secondError){
+    throw new Error('WebGL 初始化失败：'+(secondError?.message||firstError?.message||'无法创建 3D 渲染器'));
+  }
+}
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;$('game').prepend(renderer.domElement);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x07111b);scene.fog=new THREE.Fog(0x07111b,120,950);
 const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.1,2500);camera.position.set(0,6,40);
 const hemi=new THREE.HemisphereLight(0x8fc7ff,0x18321e,1.7);scene.add(hemi);const sun=new THREE.DirectionalLight(0xffe5b0,2.1);sun.position.set(-300,500,200);sun.castShadow=true;scene.add(sun);

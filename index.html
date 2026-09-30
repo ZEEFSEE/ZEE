@@ -165,31 +165,25 @@ async function transferZHI(){const u=$('transferUsername')?.value.trim(),a=Math.
 async function releaseFortune(){const a=Math.floor(Number($('fortuneAmount')?.value));const loc=$('fortuneLocation')?.value||'中央广场';const activity=($('fortuneActivity')?.value||'财神爷撒币').trim();const msg=$('fortuneMsg');if(!Number.isFinite(a)||a<1){if(msg)msg.textContent='请输入至少 1 ZHI';return}if(!confirm('确定从你的管理员账户撒出 '+money(a)+' ZHI？'))return;const b=$('fortuneDropBtn');if(b)b.disabled=true;try{const r=await sb.rpc('admin_release_fortune',{p_amount:a,p_location:loc,p_activity:activity});if(r.error)throw r.error;$('fortuneAmount').value='';$('fortuneActivity').value='';if(msg)msg.textContent='🧧 已撒出 '+money(a)+' ZHI 到 '+loc+'，活动：'+activity+'；管理员余额已扣除 '+money(a)+' ZHI';await load();await loadFortuneDrops()}catch(e){if(msg)msg.textContent='撒币失败：'+(e.message||'未知错误')}finally{if(b)b.disabled=false}}
 async function loadAgentFinanceBoard(){
  const core=window.zhiCoreSupabase;if(!core)return;
- const [ar,wr,links,uw,lr,pool,mr]=await Promise.all([
-  core.from('zhi_agents').select('id,name,gender,personality,life_status,active').order('name'),
-  core.from('zhi_agent_wallets').select('agent_id,balance'),
-  core.from('zhi_agent_user_links').select('agent_id,user_id'),
-  core.from('zhi_wallets').select('user_id,balance'),
-  core.from('zhi_agent_finance_ledger').select('agent_id,entry_type,amount,category,description,created_at').order('created_at',{ascending:false}),
+ const [fr,pool,mr,ar]=await Promise.all([
+  core.rpc('zhi_agent_finance_overview'),
   core.from('zhi_fortune_events').select('reward_pool').in('status',['open','running']),
-  core.from('zhi_agent_marriages').select('male_agent_id,female_agent_id,status').eq('status','married')
+  core.from('zhi_agent_marriages').select('male_agent_id,female_agent_id,status').eq('status','married'),
+  core.from('zhi_agents').select('id,name')
  ]);
- if(ar.error){console.error('ZHI agent finance load failed',ar.error);return}
- if(wr.error)console.warn('ZHI legacy agent wallet read failed',wr.error);
- if(links.error)console.warn('ZHI agent economic link read failed',links.error);
- if(uw.error)console.warn('ZHI canonical wallet read failed',uw.error);
- const legacyMap=new Map((wr.data||[]).map(x=>[x.agent_id,Number(x.balance||0)]));
- const linkMap=new Map((links.data||[]).map(x=>[x.agent_id,x.user_id]));
- const userWalletMap=new Map((uw.data||[]).map(x=>[x.user_id,Number(x.balance||0)]));
- const wm=new Map();legacyMap.forEach((v,id)=>wm.set(id,v));linkMap.forEach((uid,id)=>{if(userWalletMap.has(uid))wm.set(id,userWalletMap.get(uid));});
- const earned=new Map(),spent=new Map(),fortune=new Map();
- (lr.data||[]).forEach(x=>{const n=Number(x.amount||0),id=x.agent_id,isFortune=String(x.category||'').toLowerCase()==='fortune'||/撒币|财神爷|fortune/i.test(String(x.description||''));if(x.entry_type==='income'){earned.set(id,(earned.get(id)||0)+n);if(isFortune)fortune.set(id,(fortune.get(id)||0)+n)}else spent.set(id,(spent.get(id)||0)+n)});
- const agents=ar.data||[],nameMap=new Map(agents.map(x=>[x.id,x.name])),spouseMap=new Map();
+ if(fr.error){console.error('ZHI agent finance overview failed',fr.error);return}
+ const rows=(fr.data||[]).map(x=>({...x,balance:Number(x.balance||0),total_earned:Number(x.total_earned||0),total_spent:Number(x.total_spent||0),fortune_earned:Number(x.fortune_earned||0)}));
+ const nameMap=new Map((ar.data||[]).map(x=>[x.id,x.name])),spouseMap=new Map();
  (mr.data||[]).forEach(m=>{spouseMap.set(m.male_agent_id,nameMap.get(m.female_agent_id)||'');spouseMap.set(m.female_agent_id,nameMap.get(m.male_agent_id)||'')});
- const rows=agents.map(x=>({...x,balance:wm.get(x.id)||0,total_earned:earned.get(x.id)||0,total_spent:spent.get(x.id)||0,fortune_earned:fortune.get(x.id)||0,spouse:spouseMap.get(x.id)||''})).sort((a,b)=>b.balance-a.balance);
+ rows.forEach(x=>x.spouse=spouseMap.get(x.id)||''); rows.sort((a,b)=>b.balance-a.balance);
  const alive=rows.filter(x=>x.life_status==='alive'),dead=rows.filter(x=>x.life_status==='dead'),total=rows.reduce((s,x)=>s+x.balance,0);
- if($('agentTotalBalance'))$('agentTotalBalance').textContent=money(total)+' ZHI';if($('agentAliveCount'))$('agentAliveCount').textContent=alive.length;if($('agentDeadCount'))$('agentDeadCount').textContent=dead.length;if($('agentPrizePool'))$('agentPrizePool').textContent=money((pool.data||[]).reduce((s,x)=>s+Number(x.reward_pool||0),0))+' ZHI';
- const box=$('agentFinanceRows');if(!box)return;const safe=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));const gi=x=>String(x.gender||'').includes('女')?'♀️':'♂️';
+ if($('agentTotalBalance'))$('agentTotalBalance').textContent=money(total)+' ZHI';
+ if($('agentAliveCount'))$('agentAliveCount').textContent=alive.length;
+ if($('agentDeadCount'))$('agentDeadCount').textContent=dead.length;
+ if($('agentPrizePool'))$('agentPrizePool').textContent=money((pool.data||[]).reduce((s,x)=>s+Number(x.reward_pool||0),0))+' ZHI';
+ const box=$('agentFinanceRows');if(!box)return;
+ const safe=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+ const gi=x=>String(x.gender||'').includes('女')?'♀️':'♂️';
  box.innerHTML=rows.map((x,i)=>'<div class="row agent-finance-row" style="gap:10px;align-items:center;flex-wrap:wrap"><span class="agent-finance-name"><b>'+String(i+1)+'. '+safe(x.name)+'</b> <span class="meta">'+gi(x)+' '+safe(x.personality||'')+'</span>'+(x.spouse?'<span class="agent-spouse">💍 '+safe(x.spouse)+'</span>':'')+'</span><span><span class="meta">余额</span> <b>'+money(x.balance)+' ZHI</b></span><span><span class="meta">累计赚取</span> <b>'+money(x.total_earned)+' ZHI</b></span><span class="fortune-income"><span class="meta">🎁 撒币获得</span> <b>'+money(x.fortune_earned)+' ZHI</b></span><span><span class="meta">累计消费</span> <b>'+money(x.total_spent)+' ZHI</b></span><span class="pill">'+(x.life_status==='alive'?'🟢 存活':'☠️ 已死亡')+'</span></div>').join('');
 }
 async function loadAdminUsers(){

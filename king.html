@@ -53,38 +53,38 @@ function toast(s){$('toast').textContent=s;$('toast').style.display='block';setT
 function pos(scene,x,y){return {x:Math.max(3,Math.min(97,Number(x))),y:Math.max(8,Math.min(92,Number(y)))}}
 async function init(){
  const sb=finance();
- // Supabase 会自动恢复本地会话；同时监听恢复/刷新事件，避免从 ZHI 首页进入时误判为未登录。
- let authSession=null;
- try{
-   const r=await sb.auth.getSession();
-   authSession=r.data?.session||null;
- }catch(e){}
- if(authSession?.user?.id===ADMIN_ID){} else {
-   await new Promise(resolve=>setTimeout(resolve,1200));
-   try{
-     const r=await sb.auth.getSession();
-     authSession=r.data?.session||null;
-   }catch(e){}
- }
-
  let session=null,sessionError=null;
- try{
-   const r=await sb.auth.getSession();
-   session=r.data?.session||null; sessionError=r.error||null;
- }catch(e){sessionError=e}
- // KING 与管理员是同一个真实账号：优先读取 ZHI 当前登录会话。
- if(!session?.user && window.localStorage){
-   // 给同源 Supabase 会话一点时间完成恢复，避免从 index.html 点击进入时出现假性“未登录”。
-   await new Promise(resolve=>setTimeout(resolve,800));
+ const read=async()=>{
    try{
      const r=await sb.auth.getSession();
-     session=r.data?.session||null; sessionError=r.error||null;
+     if(r.error) sessionError=r.error;
+     if(r.data?.session) session=r.data.session;
    }catch(e){sessionError=e}
+ };
+ // 首页 -> KING 导航后，Supabase 可能仍在异步恢复本地 Auth session。
+ await read();
+ if(!session?.user){
+   await new Promise(resolve=>{
+     let done=false;
+     const finish=()=>{if(done)return;done=true;try{sub?.unsubscribe()}catch(e){};resolve()};
+     const timer=setTimeout(finish,8000);
+     let sub=null;
+     try{
+       const r=sb.auth.onAuthStateChange((event,s)=>{
+         if(s?.user){session=s;clearTimeout(timer);finish()}
+       });
+       sub=r.data?.subscription;
+     }catch(e){}
+   });
+   await read();
  }
- const user=(session?.user||authSession?.user);
- if(sessionError){$('loginmsg').textContent='登录状态读取失败，请返回 ZHI 后重新进入 KING。';return}
+ const user=session?.user;
+ if(sessionError&&!user){
+   $('loginmsg').textContent='登录状态读取失败，请返回 ZHI 后重新进入 KING。';
+   return;
+ }
  if(!user||user.id!==ADMIN_ID){
-   $('loginmsg').textContent='当前不是管理员登录状态。King 与管理员使用同一个 ZHI 账号，不需要第二个账号。';
+   $('loginmsg').textContent='未检测到当前 ZHI 管理员会话。请先在 ZHI 首页登录 admin，再点击「👑 KING 虚拟世界」进入。';
    $('enter').textContent='返回 ZHI';
    $('enter').onclick=()=>location.href='index.html';
    return;

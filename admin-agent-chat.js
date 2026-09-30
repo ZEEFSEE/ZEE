@@ -6,7 +6,7 @@
   let chatBusy=false;
   let brainModels=[];
   const BRAIN_BRIDGE='http://127.0.0.1:11435';
-  const BRAIN_UI_VERSION='brainstable1';
+  const BRAIN_UI_VERSION='brainstable2';
   function css(){
     if(document.getElementById('zhiAdminChatStyle'))return;
     const s=document.createElement('style');s.id='zhiAdminChatStyle';s.textContent=
@@ -217,18 +217,18 @@
       const elapsed=Math.round(performance.now()-startedAt);
         if(!ollama){
         status.textContent='❌ Ollama 已连接但没有生成文字';
-        console.error('[ZHI Ollama]',{url:ollamaUrl,status:r.status,elapsed_ms:elapsed,chunks});
+        console.error('[ZHI Ollama]',{url:ollamaUrl,status:r.status,elapsed_ms:elapsed,response_type:'json'});
         chatBusy=false;
         return;
       }
       status.textContent='🟢 '+selected.name+' 回复完成 · '+model+' · '+elapsed+'ms · '+ollama.length+'字';
-      console.info('[ZHI Ollama]',{url:ollamaUrl,status:r.status,elapsed_ms:elapsed,chunks,chars:ollama.length,original_context_chars:originalSystemChars+originalPromptChars,sent_context_chars:totalChars,compressed:compact.compressed});
+      console.info('[ZHI Ollama]',{url:ollamaUrl,status:r.status,elapsed_ms:elapsed,response_type:'json',chars:ollama.length,original_context_chars:originalSystemChars+originalPromptChars,sent_context_chars:totalChars,compressed:compact.compressed});
     }catch(e){
       const detail=e?.message||String(e);
       const name=e?.name||'Error';
       const diagnosis=name==='AbortError'
         ?'请求超过 180 秒，已自动终止'
-        :'Brain Bridge 没有完成 Ollama 流式响应，请检查 Bridge 窗口日志';
+        :'请检查本机 Ollama / Brain Bridge 连接';
       status.textContent='❌ Ollama 请求异常 · '+name+' · '+detail+' · '+diagnosis;
       chatBusy=false;
       console.error('[ZHI Ollama]',{error:e,name,message:detail,page_protocol:location.protocol,diagnosis});

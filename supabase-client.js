@@ -5,5 +5,13 @@ const ZHI_FINANCE_PUBLISHABLE_KEY = 'sb_publishable_NYVMp3Nhk9QDtIxz1MGOEA_Z7Rtb
 // Core：用户核心资料/钱包镜像，后续用于逐步迁移核心数据。
 const ZHI_CORE_URL = 'https://jozrslgdjreepxplicen.supabase.co';
 const ZHI_CORE_PUBLISHABLE_KEY = 'sb_publishable_MOVcpW2XoLdHbUVp6f-nrw_e_HY1Bav';
-window.zhiSupabase = window.supabase.createClient(ZHI_FINANCE_URL, ZHI_FINANCE_PUBLISHABLE_KEY);
+const ZHI_AUTH_OPTIONS = {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storageKey: 'zhi-finance-auth'
+  }
+};
+window.zhiSupabase = window.supabase.createClient(ZHI_FINANCE_URL, ZHI_FINANCE_PUBLISHABLE_KEY, ZHI_AUTH_OPTIONS);
 window.zhiCoreSupabase = window.supabase.createClient(ZHI_CORE_URL, ZHI_CORE_PUBLISHABLE_KEY);

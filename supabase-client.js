@@ -10,7 +10,7 @@ const ZHI_AUTH_OPTIONS = {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    storageKey: 'zhi-finance-auth'
+    storageKey: 'sb-bkttvffunyvbswkxpygp-auth-token'
   }
 };
 window.zhiSupabase = window.supabase.createClient(ZHI_FINANCE_URL, ZHI_FINANCE_PUBLISHABLE_KEY, ZHI_AUTH_OPTIONS);

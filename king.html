@@ -218,6 +218,85 @@ for(const b of [
  [-420,470,70,55,35,0x665744,'🏠 住宅'],[-300,470,65,50,32,0x725f4b,'🏠 住宅'],
  [330,470,70,55,36,0x625447,'🏠 住宅'],[450,470,65,50,30,0x705b49,'🏠 住宅']
 ]) building(...b);
+
+function palaceBuilding(x,z,w,d,h){
+  const g=new THREE.Group();
+  const stone=new THREE.MeshStandardMaterial({color:0xd8c7a4,roughness:.72,metalness:.08});
+  const trim=new THREE.MeshStandardMaterial({color:0xb8893f,roughness:.45,metalness:.35});
+  const roofMat=new THREE.MeshStandardMaterial({color:0x6d2635,roughness:.7});
+  const body=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),stone);
+  body.position.y=h/2;body.castShadow=true;body.receiveShadow=true;g.add(body);
+  const roof=new THREE.Mesh(new THREE.ConeGeometry(Math.max(w,d)*.62,10,4),roofMat);
+  roof.position.y=h+5;roof.rotation.y=Math.PI/4;roof.castShadow=true;g.add(roof);
+  const cornice=new THREE.Mesh(new THREE.BoxGeometry(w+3,.8,d+3),trim);
+  cornice.position.y=h-.5;g.add(cornice);
+  const cols=Math.max(3,Math.floor(w/10));
+  for(let q=0;q<cols;q++){
+    const win=new THREE.Mesh(new THREE.BoxGeometry(2.5,4,.25),new THREE.MeshStandardMaterial({color:0xffe6a0,emissive:0x4a3008,emissiveIntensity:.45}));
+    win.position.set(-w/2+6+q*((w-12)/Math.max(1,cols-1)),h*.55,d/2+.14);g.add(win);
+    const win2=win.clone();win2.position.z=-d/2-.14;g.add(win2);
+  }
+  g.position.set(x,0,z);g.userData={sceneName:'🏰 皇宫'};scene.add(g);
+}
+function palaceTower(x,z){
+  const g=new THREE.Group();
+  const stone=new THREE.MeshStandardMaterial({color:0xe1cfaa,roughness:.7});
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(12,14,62,12),stone);
+  body.position.y=31;body.castShadow=true;body.receiveShadow=true;g.add(body);
+  const roof=new THREE.Mesh(new THREE.ConeGeometry(17,25,12),new THREE.MeshStandardMaterial({color:0x7b2638,roughness:.65}));
+  roof.position.y=74;roof.castShadow=true;g.add(roof);
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(13,.9,8,24),new THREE.MeshStandardMaterial({color:0xc99a43,metalness:.5,roughness:.4}));
+  ring.rotation.x=Math.PI/2;ring.position.y=57;g.add(ring);
+  for(let i=0;i<8;i++){
+    const a=i*Math.PI/4;
+    const win=new THREE.Mesh(new THREE.BoxGeometry(2,5,.3),new THREE.MeshStandardMaterial({color:0xffe6a0,emissive:0x4a3008,emissiveIntensity:.5}));
+    win.position.set(Math.cos(a)*12,38,Math.sin(a)*12);win.lookAt(g.position.x,38,g.position.z);g.add(win);
+  }
+  g.position.set(x,0,z);g.userData={sceneName:'🏰 皇宫塔楼'};scene.add(g);
+}
+function palaceWall(x,z,w,d,gate=false){
+  const mat=new THREE.MeshStandardMaterial({color:0xcbb58a,roughness:.78});
+  const wall=new THREE.Mesh(new THREE.BoxGeometry(w,14,d),mat);wall.position.set(x,7,z);wall.castShadow=true;wall.receiveShadow=true;scene.add(wall);
+  if(gate){
+    const archMat=new THREE.MeshStandardMaterial({color:0x8b6430,metalness:.25,roughness:.5});
+    const left=new THREE.Mesh(new THREE.BoxGeometry(8,22,8),archMat);left.position.set(x-w/2+8,11,z);scene.add(left);
+    const right=left.clone();right.position.x=x+w/2-8;scene.add(right);
+    const top=new THREE.Mesh(new THREE.BoxGeometry(w-16,7,8),archMat);top.position.set(x,20,z);scene.add(top);
+    const crown=new THREE.Mesh(new THREE.ConeGeometry(8,18,4),new THREE.MeshStandardMaterial({color:0x7b2638,roughness:.65}));
+    crown.position.set(x,32,z);crown.rotation.y=Math.PI/4;scene.add(crown);
+    const gate=new THREE.Mesh(new THREE.BoxGeometry(24,13,1.1),new THREE.MeshStandardMaterial({color:0x3a2418,metalness:.25,roughness:.5}));
+    gate.position.set(x,6.5,z-.3);scene.add(gate);
+  }
+}
+function palacePath(){
+  const mat=new THREE.MeshStandardMaterial({color:0xc8b28d,roughness:.92});
+  const path=new THREE.Mesh(new THREE.BoxGeometry(36,.18,230),mat);path.position.set(0,.08,-585);scene.add(path);
+  for(let z=-610;z>=-790;z-=30){
+    const step=new THREE.Mesh(new THREE.BoxGeometry(48,.7,16),new THREE.MeshStandardMaterial({color:0xe1d1b0,roughness:.8}));
+    step.position.set(0,.35,z);scene.add(step);
+  }
+}
+function buildPalace(){
+  // 皇宫位于 ZHI 世界的皇宫区域：世界坐标约 (1000,300)，对应场景坐标 (0,-700)。
+  palaceWall(0,-835,650,12);
+  palaceWall(0,-565,650,12,true);
+  palaceWall(-325,-700,12,530);
+  palaceWall(325,-700,12,530);
+  palaceTower(-325,-835);palaceTower(325,-835);palaceTower(-325,-565);palaceTower(325,-565);
+  palaceBuilding(0,-755,250,105,58);
+  palaceBuilding(0,-665,410,100,46);
+  palaceBuilding(-125,-620,95,75,34);palaceBuilding(125,-620,95,75,34);
+  palacePath();
+  const dome=new THREE.Mesh(new THREE.SphereGeometry(54,24,12,0,Math.PI*2,0,Math.PI/2),new THREE.MeshStandardMaterial({color:0x8b6a2d,metalness:.45,roughness:.35}));
+  dome.scale.y=.7;dome.position.set(0,103,-665);dome.castShadow=true;scene.add(dome);
+  const spire=new THREE.Mesh(new THREE.ConeGeometry(4,28,10),new THREE.MeshStandardMaterial({color:0xffd76a,metalness:.65,roughness:.25}));
+  spire.position.set(0,135,-665);spire.castShadow=true;scene.add(spire);
+  const flag=new THREE.Mesh(new THREE.BoxGeometry(18,10,.3),new THREE.MeshStandardMaterial({color:0xffd76a,roughness:.6}));
+  flag.position.set(0,137,-665);scene.add(flag);
+  const label=makeLabel('🏰 皇宫',true);label.position.set(0,155,-665);scene.add(label);
+}
+buildPalace();
+
 for(let x=-900;x<=900;x+=90){tree(x,-850,.8+((x+900)%180)/450);tree(x,850,.7+((x+90)%180)/500);}
 for(let z=-800;z<=800;z+=100){tree(-900,z,.7);tree(900,z,.75);}
 function roadMarkings(x,z,w,d){

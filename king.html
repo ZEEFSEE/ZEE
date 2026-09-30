@@ -310,8 +310,10 @@ async function worldTick(){
   try{await core().rpc('zhi_world_tick')}catch(e){console.warn('[ZHI world tick]',e)}
 }
 setInterval(worldTick,2000);
-function animate(){requestAnimationFrame(animate);const now=performance.now(),dt=Math.min(.05,(now-last)/1000);last=now;updateAgentVisuals(dt);if(!$('start').classList.contains('hidden')||document.pointerLockElement!==renderer.domElement){renderer.render(scene,camera);return}updatePlayer(dt);renderer.render(scene,camera)}
+let controlMode=false;
+function animate(){requestAnimationFrame(animate);const now=performance.now(),dt=Math.min(.05,(now-last)/1000);last=now;updateAgentVisuals(dt);if(!$('start').classList.contains('hidden')||!controlMode){renderer.render(scene,camera);return}updatePlayer(dt);renderer.render(scene,camera)}
 function enterControlMode(){
+  controlMode=true;
   $('start').classList.add('hidden');
   try{
     const p=renderer.domElement.requestPointerLock?.();
@@ -319,7 +321,9 @@ function enterControlMode(){
   }catch(e){console.warn('[ZHI] PointerLock error',e)}
   $('state').textContent='👑 KING 行走模式 · WASD 移动 · 鼠标控制视角 · Esc 释放鼠标';
 }
-$('play').addEventListener('click',enterControlMode);
+$('play').addEventListener('click',function(e){e.preventDefault();e.stopPropagation();enterControlMode();});
+$('start').addEventListener('click',function(e){if(e.target===this)enterControlMode();});
+document.addEventListener('keydown',function(e){if(!$('start').classList.contains('hidden')&&(e.code==='Enter'||e.code==='Space')){e.preventDefault();enterControlMode();}});
 renderer.domElement.addEventListener('click',()=>{
   if(!$('start').classList.contains('hidden') && document.pointerLockElement!==renderer.domElement) enterControlMode();
 });

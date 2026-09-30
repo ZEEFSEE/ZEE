@@ -6,7 +6,7 @@
   let chatBusy=false;
   let brainModels=[];
   const BRAIN_BRIDGE='http://127.0.0.1:11435';
-  const BRAIN_UI_VERSION='brainstable2';
+  const BRAIN_UI_VERSION='brainfast1';
   function css(){
     if(document.getElementById('zhiAdminChatStyle'))return;
     const s=document.createElement('style');s.id='zhiAdminChatStyle';s.textContent=
@@ -121,7 +121,6 @@
     if(!msg)return;
     chatBusy=true;
     input.value='';
-    if(!(await selfCheck()))return;
     status.textContent='正在读取智能人的自身信息…';
     const ins=await db().from('admin_agent_messages').insert({admin_user_id:ADMIN_ID,agent_id:selected.id,agent_name:selected.name,sender_type:'admin',content:msg});
     if(ins.error){status.textContent='发送失败：'+ins.error.message;return}
@@ -167,7 +166,7 @@
     }
 
     const model=brain.data.model||'llama3.1:8b';
-    const compact=compactBrainContext(brain.data.system,brain.data.prompt,6000);
+    const compact=compactBrainContext(brain.data.system,brain.data.prompt,2200);
     if(brainModels.length && !brainModels.some(x=>x===model || x.startsWith(model+':'))){status.textContent='❌ 找不到模型 '+model+' · 已安装：'+brainModels.join(', ');return;}
     status.textContent='🧠 '+selected.name+' 正在根据自己的资料思考…';
     let ollama;
@@ -186,7 +185,7 @@
         const sec=Math.round((performance.now()-startedAt)/1000);
         status.textContent='🟠 Ollama 尚未返回首个 HTTP 响应 · 已等待 '+sec+' 秒 · 上下文 '+totalChars.toLocaleString()+' 字';
         console.warn('[ZHI Ollama waiting]',{model,system_chars:systemChars,prompt_chars:promptChars,total_chars:totalChars,wait_seconds:sec});
-      },5000);
+      },2000);
       let r;
       try{
         r=await fetch(ollamaUrl,{
@@ -199,7 +198,7 @@
               {role:'system',content:compact.system},
               {role:'user',content:compact.prompt}
             ],
-            options:{temperature:0.75}
+            options:{temperature:0.6,num_ctx:4096}
           }),
           signal:controller.signal
         });

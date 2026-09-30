@@ -43,10 +43,71 @@ document.getElementById('enter').addEventListener('click',function(){
   document.getElementById('loginmsg').textContent='正在进入 ZHI 虚拟世界…';
   setTimeout(function(){
     if(window.__zhiKingStart) window.__zhiKingStart();
-    else else {
-if(!window.THREE){throw new Error('THREE.js 未加载：CDN 不可用');}
-if(!window.WebGLRenderingContext){throw new Error('浏览器不支持 WebGL');}
-const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;$('game').prepend(renderer.domElement);
+    else if(!window.THREE){
+      document.getElementById('login').classList.remove('hidden');
+      document.getElementById('game').classList.add('hidden');
+      document.getElementById('loginmsg').textContent='3D 引擎加载失败，请刷新后重试。';
+      document.getElementById('enter').disabled=false;
+      document.getElementById('enter').textContent='重新进入虚拟世界';
+    }
+  },100);
+});
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r180/three.min.js"></script>
+<script>
+(function(){
+let GLTFLoader=null;
+const ADMIN_ID='8ea33807-8b68-4f8f-b145-398937c7bba1', core=()=>window.zhiCoreSupabase, finance=()=>window.zhiSupabase, WORLD=2000;
+const MAX_AGENT_SPEED_MPS=2, MAX_PLAYER_SPEED_MPS=2;
+const ASSETS={
+  boulder:{url:'https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/boulder_01/boulder_01_1k.gltf',license:'CC0 / Poly Haven'},
+  woodenStool:{url:'https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/wooden_stool_01/wooden_stool_01_1k.gltf',license:'CC0 / Poly Haven'}
+};
+const assetCache=new Map(), assetLoading=new Map();
+let assetRoot=null;
+function loadAsset(key){
+  if(assetCache.has(key))return Promise.resolve(assetCache.get(key));
+  if(assetLoading.has(key))return assetLoading.get(key);
+  const entry=ASSETS[key];
+  const p=(async()=>{try{if(!GLTFLoader){GLTFLoader=(await import("https://unpkg.com/three@0.180.0/examples/jsm/loaders/GLTFLoader.js")).GLTFLoader}const loader=new GLTFLoader();return await loader.loadAsync(entry.url)}catch(e){console.warn('[ZHI CDN asset]',key,e);return null}})().then(gltf=>{
+    const root=gltf.scene;
+    root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
+    assetCache.set(key,root);
+    return root;
+  }).catch(err=>{console.warn('[ZHI 3D Asset fallback]',key,err);return null;});
+  assetLoading.set(key,p);
+  return p;
+}
+function placeAsset(key,x,z,scale=1,rotation=0){
+  const template=assetCache.get(key);
+  if(!template)return;
+  const obj=template.clone(true);
+  obj.position.set(x,0,z);obj.rotation.y=rotation;obj.scale.setScalar(scale);
+  assetRoot.add(obj);
+}
+async function loadPublicAssets(){
+  assetRoot=new THREE.Group();
+  assetRoot.name='public-cdn-assets';
+  scene.add(assetRoot);
+  await Promise.all(Object.keys(ASSETS).map(loadAsset));
+  const b=assetCache.get('boulder'),s=assetCache.get('woodenStool');
+  if(!b&&!s){toast('公共 3D Asset CDN 暂不可用，已启用程序化场景');return;}
+  if(b)for(let i=0;i<18;i++){
+    const a=i/18*Math.PI*2,r=330+Math.random()*260;
+    placeAsset('boulder',650+Math.cos(a)*r,-350+Math.sin(a)*r,.45+Math.random()*.35,Math.random()*Math.PI*2);
+  }
+  if(s)for(let i=0;i<10;i++){
+    const a=i/10*Math.PI*2,r=70+Math.random()*90;
+    placeAsset('woodenStool',Math.cos(a)*r,Math.sin(a)*r,1.8,Math.random()*Math.PI*2);
+  }
+  toast('🌐 公共 3D Asset CDN 已加载 · Poly Haven CC0');
+}
+let king=null,selected=null,busy=false,agents=[],positions=[],lastSync=0;
+const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+function toast(s){$('toast').textContent=s;$('toast').style.display='block';setTimeout(()=>$('toast').style.display='none',2200)}
+function sceneCenter(scene){const map={'🏟️竞技场':[-650,350],'🌸中央广场':[0,0],'🌲探索森林':[650,350],'🏪商业街':[-520,-500],'🎡娱乐区':[520,-500],'🏠公寓区':[0,-620]};return map[scene]||[0,0]}
+else {
+if(!window.THREE){throw new Error('THREE.js 未加载：CDN 不可用');} if(!window.WebGLRenderingContext){throw new Error('浏览器不支持 WebGL');} const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;$('game').prepend(renderer.domElement);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x07111b);scene.fog=new THREE.Fog(0x07111b,120,950);
 const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.1,2500);camera.position.set(0,6,40);
 const hemi=new THREE.HemisphereLight(0x8fc7ff,0x18321e,1.7);scene.add(hemi);const sun=new THREE.DirectionalLight(0xffe5b0,2.1);sun.position.set(-300,500,200);sun.castShadow=true;scene.add(sun);

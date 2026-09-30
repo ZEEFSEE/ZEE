@@ -6,7 +6,7 @@
   let chatBusy=false;
   let brainModels=[];
   const BRAIN_BRIDGE='http://127.0.0.1:11435';
-  const BRAIN_UI_VERSION='braindiag3';
+  const BRAIN_UI_VERSION='brainstable1';
   function css(){
     if(document.getElementById('zhiAdminChatStyle'))return;
     const s=document.createElement('style');s.id='zhiAdminChatStyle';s.textContent=
@@ -117,9 +117,9 @@
   }
   async function send(){
     if(!selected||chatBusy)return;
-    chatBusy=true;
     const input=document.getElementById('zacInput'),msg=input.value.trim(),status=document.getElementById('zacStatus');
     if(!msg)return;
+    chatBusy=true;
     input.value='';
     if(!(await selfCheck()))return;
     status.textContent='正在读取智能人的自身信息…';
@@ -194,7 +194,7 @@
           headers:{'Content-Type':'application/json'},
           body:JSON.stringify({
             model,
-            stream:true,
+            stream:false,
             messages:[
               {role:'system',content:compact.system},
               {role:'user',content:compact.prompt}
@@ -210,44 +210,10 @@
         console.error('[ZHI Ollama]',{url:ollamaUrl,status:r.status,body:errorText});
         return;
       }
-      status.textContent='🟢 Ollama HTTP '+r.status+' · '+model+' · 已开始生成…';
-      if(!r.body) throw new Error('浏览器未收到 Ollama 流式响应体');
-
-      const reader=r.body.getReader();
-      const decoder=new TextDecoder();
-      let buffer='',full='',chunks=0;
-      while(true){
-        const {value,done}=await reader.read();
-        if(done)break;
-        buffer+=decoder.decode(value,{stream:true});
-        const lines=buffer.split('\n');
-        buffer=lines.pop()||'';
-        for(const line of lines){
-          const s=line.trim();
-          if(!s)continue;
-          let item;
-          try{item=JSON.parse(s)}catch(_){continue}
-          if(item.error){
-            throw new Error(String(item.error));
-          }
-          const piece=item?.message?.content||'';
-          if(piece){
-            full+=piece;
-            chunks++;
-            status.textContent='🧠 '+selected.name+' 正在思考并生成回答… 已生成 '+full.length+' 字';
-          }
-          if(item.done) break;
-        }
-      }
-      const tail=buffer.trim();
-      if(tail){
-        try{
-          const item=JSON.parse(tail);
-          if(item.error) throw new Error(String(item.error));
-          full+=(item?.message?.content||'');
-        }catch(_){}
-      }
-      ollama=full.trim();
+      status.textContent='🟢 Ollama HTTP '+r.status+' · '+model+' · 已收到模型响应…';
+      const item=await r.json();
+      if(item?.error) throw new Error(String(item.error));
+      ollama=String(item?.message?.content||'').trim();
       const elapsed=Math.round(performance.now()-startedAt);
         if(!ollama){
         status.textContent='❌ Ollama 已连接但没有生成文字';

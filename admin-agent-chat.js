@@ -108,6 +108,7 @@
     status.textContent='🧠 '+selected.name+' 正在根据自己的资料思考…';
     let ollama;
     try{
+      const startedAt=performance.now();
       const r=await fetch('http://localhost:11434/api/chat',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
@@ -121,16 +122,29 @@
           options:{temperature:0.75}
         })
       });
-      const j=await r.json();
-      if(!r.ok)throw new Error(j?.error||('HTTP '+r.status));
-      ollama=j?.message?.content?.trim();
+      const responseText=await r.text();
+      const elapsed=Math.round(performance.now()-startedAt);
+      let responseDetail=responseText||'(空响应)';
+      let parsed=null;
+      try{parsed=JSON.parse(responseText);}catch(_){}
+      if(parsed?.error) responseDetail=String(parsed.error);
+      if(!r.ok){
+        status.textContent='❌ Ollama HTTP '+r.status+' '+(r.statusText||'')+' · '+responseDetail;
+        console.error('[ZHI Ollama]',{status:r.status,statusText:r.statusText,body:responseText,elapsed_ms:elapsed});
+        return;
+      }
+      ollama=parsed?.message?.content?.trim();
+      if(!ollama){
+        status.textContent='❌ Ollama HTTP '+r.status+' · 返回内容为空 · '+responseDetail;
+        console.error('[ZHI Ollama]',{status:r.status,statusText:r.statusText,body:responseText,elapsed_ms:elapsed});
+        return;
+      }
+      status.textContent='🟢 Ollama HTTP '+r.status+' · '+model+' · '+elapsed+'ms';
+      console.info('[ZHI Ollama]',{status:r.status,statusText:r.statusText,body:responseText,elapsed_ms:elapsed});
     }catch(e){
-      status.textContent='❌ Ollama 未连接：'+(e?.message||e);
-      return;
-    }
-
-    if(!ollama){
-      status.textContent='❌ Ollama 没有返回模型内容';
+      const detail=e?.message||String(e);
+      status.textContent='❌ Ollama 请求异常：'+detail+' · 真实 HTTP 响应：无（请求未拿到 HTTP 响应）';
+      console.error('[ZHI Ollama]',e);
       return;
     }
 

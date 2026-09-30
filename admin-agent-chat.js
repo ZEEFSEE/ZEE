@@ -4,6 +4,7 @@
   const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   let agents=[],selected=null;
   const BRAIN_BRIDGE='http://127.0.0.1:11435';
+  const BRAIN_UI_VERSION='braindiag3';
   function css(){
     if(document.getElementById('zhiAdminChatStyle'))return;
     const s=document.createElement('style');s.id='zhiAdminChatStyle';s.textContent=
@@ -46,6 +47,7 @@
     const hb=document.getElementById('zhiAdminChatHeroBtn');
     if(hb){hb.style.display='inline-flex';hb.onclick=()=>document.getElementById('zhiAdminChat').classList.add('open');}
     p.querySelector('.zac-close').onclick=()=>p.classList.remove('open');
+    const status=document.getElementById('zacStatus'); if(status) status.textContent='🧪 ZHI Brain '+BRAIN_UI_VERSION+' 已加载';
     document.getElementById('zacSend').onclick=send;
     document.getElementById('zacInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});
   }
@@ -75,11 +77,37 @@
     box.innerHTML=(data||[]).map(m=>'<div class="zac-msg '+esc(m.sender_type)+'">'+esc(m.content)+'<span class="time">'+new Date(m.created_at).toLocaleString('zh-CN')+'</span></div>').join('')||'<div class="zac-empty">还没有聊天记录。你可以先向 '+esc(selected.name)+' 打招呼。</div>';
     box.scrollTop=box.scrollHeight;
   }
+  async function selfCheck(){
+    const status=document.getElementById('zacStatus');
+    if(!status)return;
+    const started=performance.now();
+    status.textContent='🧪 Brain 版本自检 '+BRAIN_UI_VERSION+'…';
+    const results=[];
+    for(const path of ['/health','/bridge-test']){
+      const t0=performance.now();
+      try{
+        const r=await fetch(BRAIN_BRIDGE+path,{cache:'no-store'});
+        const body=await r.text();
+        results.push(path+' '+r.status+' '+Math.round(performance.now()-t0)+'ms');
+        console.info('[ZHI Brain SelfCheck]',path,{status:r.status,body});
+        if(!r.ok)throw new Error(path+' HTTP '+r.status+' · '+body);
+      }catch(e){
+        status.textContent='❌ Brain 链路自检失败 · '+path+' · '+(e?.message||e);
+        console.error('[ZHI Brain SelfCheck]',e);
+        return false;
+      }
+    }
+    const elapsed=Math.round(performance.now()-started);
+    status.textContent='🟢 Brain '+BRAIN_UI_VERSION+' · Bridge /health + /bridge-test 正常 · '+elapsed+'ms';
+    return true;
+  }
   async function send(){
     if(!selected)return;
     const input=document.getElementById('zacInput'),msg=input.value.trim(),status=document.getElementById('zacStatus');
     if(!msg)return;
-    input.value='';status.textContent='正在读取智能人的自身信息…';
+    input.value='';
+    if(!(await selfCheck()))return;
+    status.textContent='正在读取智能人的自身信息…';
     const ins=await db().from('admin_agent_messages').insert({admin_user_id:ADMIN_ID,agent_id:selected.id,agent_name:selected.name,sender_type:'admin',content:msg});
     if(ins.error){status.textContent='发送失败：'+ins.error.message;return}
     await loadMessages();

@@ -95,7 +95,7 @@ http.createServer((req,res) => {
     });
   }
 
-  if(req.method === 'GET' && path === '/bridge-test') {
+  if((req.method === 'GET' || req.method === 'HEAD') && path === '/bridge-test') {
     return json(res,200,{
       ok:true,
       service:'zhi-brain-bridge',

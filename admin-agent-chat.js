@@ -6,7 +6,7 @@
   let chatBusy=false;
   let brainModels=[];
   const BRAIN_BRIDGE='http://127.0.0.1:11435';
-  const BRAIN_UI_VERSION='brainv3';
+  const BRAIN_UI_VERSION='brainv4';
   function css(){
     if(document.getElementById('zhiAdminChatStyle'))return;
     const s=document.createElement('style');s.id='zhiAdminChatStyle';s.textContent=
@@ -173,7 +173,7 @@
         const sec=Math.round((performance.now()-startedAt)/1000);
         status.textContent='🟠 Ollama 尚未返回首个 HTTP 响应 · 已等待 '+sec+' 秒 · 上下文 '+totalChars.toLocaleString()+' 字';
         console.warn('[ZHI Ollama waiting]',{model,system_chars:systemChars,prompt_chars:promptChars,total_chars:totalChars,wait_seconds:sec});
-      },1200);
+      },3000);
       let r;
       try{
         r=await fetch(ollamaUrl,{
@@ -186,7 +186,7 @@
               {role:'system',content:compact.system},
               {role:'user',content:compact.prompt}
             ],
-            options:{temperature:0.45,num_ctx:2048,num_predict:180}
+            keep_alive:'15m',options:{temperature:0.35,num_ctx:1536,num_predict:96}
           }),
           signal:controller.signal
         });

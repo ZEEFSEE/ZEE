@@ -111,7 +111,54 @@ let king=null,selected=null,busy=false,agents=[],positions=[],lastSync=0;
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function toast(s){$('toast').textContent=s;$('toast').style.display='block';setTimeout(()=>$('toast').style.display='none',2200)}
 function sceneCenter(scene){const map={'🏟️竞技场':[-650,350],'🌸中央广场':[0,0],'🌲探索森林':[650,350],'🏪商业街':[-520,-500],'🎡娱乐区':[520,-500],'🏠公寓区':[0,-620]};return map[scene]||[0,0]}
-if(!window.THREE){throw new Error('THREE_LOAD_FAILED: CDN blocked')}
+if(!window.THREE){
+  const fallback=document.createElement('canvas');
+  fallback.id='zhiFallback3D';
+  fallback.style.cssText='position:absolute;inset:0;width:100%;height:100%;background:#08131b;z-index:1';
+  $('game').prepend(fallback);
+  const ctx=fallback.getContext('2d');
+  let fx=1000,fy=1000,fa=0,fp=false; const fk=new Set();
+  const resizeF=()=>{fallback.width=innerWidth*devicePixelRatio;fallback.height=innerHeight*devicePixelRatio;ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0)};
+  addEventListener('resize',resizeF);resizeF();
+  addEventListener('keydown',e=>fk.add(e.code));addEventListener('keyup',e=>fk.delete(e.code));
+  fallback.addEventListener('click',()=>{fallback.requestPointerLock?.()});
+  document.addEventListener('mousemove',e=>{if(document.pointerLockElement===fallback)fa+=e.movementX*.003});
+  let faLast=performance.now();
+  function fallbackDraw(){
+    const now=performance.now(),dt=Math.min(.05,(now-faLast)/1000);faLast=now;
+    const sp=2, c=Math.cos(fa),s=Math.sin(fa);
+    if(fk.has('KeyA')){fx-=c*sp*dt;fy+=s*sp*dt} if(fk.has('KeyD')){fx+=c*sp*dt;fy-=s*sp*dt}
+    if(fk.has('KeyW')){fx+=s*sp*dt;fy+=c*sp*dt} if(fk.has('KeyS')){fx-=s*sp*dt;fy-=c*sp*dt}
+    fx=Math.max(10,Math.min(1990,fx));fy=Math.max(10,Math.min(1990,fy));
+    const w=innerWidth,h=innerHeight;ctx.clearRect(0,0,w,h);ctx.fillStyle='#08131b';ctx.fillRect(0,0,w,h);
+    ctx.fillStyle='#18331f';ctx.fillRect(0,h*.48,w,h*.52);
+    ctx.fillStyle='#5d8bb5';ctx.fillRect(0,0,w,h*.48);
+    ctx.strokeStyle='rgba(255,255,255,.12)';ctx.lineWidth=1;
+    for(let i=1;i<14;i++){const y=h*.48+Math.pow(i/14,1.7)*h*.52;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}
+    ctx.strokeStyle='rgba(255,255,255,.1)';
+    for(let i=-12;i<=12;i++){const x=w/2+i*w/12;ctx.beginPath();ctx.moveTo(w/2,h*.48);ctx.lineTo(x,h);ctx.stroke()}
+    ctx.fillStyle='#fff';ctx.font='700 18px system-ui';ctx.fillText('ZHI · KING 虚拟世界',20,34);
+    ctx.font='14px system-ui';ctx.fillText('3D CDN 暂不可用 · 已自动启用内置 FPS 渲染器',20,58);
+    ctx.fillText('WASD 移动 · 鼠标转向 · 点击锁定鼠标',20,80);
+    const list=agents||[];
+    for(const a of list.slice(0,80)){
+      const p=(positions||[]).find(q=>q.agent_id===a.id); if(!p)continue;
+      const dx=Number(p.x)-fx,dy=Number(p.y)-fy;
+      const rx=dx*c-dy*s, rz=dx*s+dy*c;
+      if(rz<=2)continue;
+      const sx=w/2+rx/rz*500, sy=h*.48-Math.min(220,900/rz);
+      if(sx<-40||sx>w+40)continue;
+      const size=Math.max(6,Math.min(38,900/rz));
+      ctx.fillStyle=a.name==='King'?'#ffb300':'#ffd76a';ctx.beginPath();ctx.arc(sx,sy,size*.45,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#fff';ctx.font=Math.max(10,Math.min(15,size*.5))+'px system-ui';ctx.fillText(a.name,sx-size,sy-size);
+    }
+    ctx.strokeStyle='#fff';ctx.beginPath();ctx.moveTo(w/2-8,h/2);ctx.lineTo(w/2+8,h/2);ctx.moveTo(w/2,h/2-8);ctx.lineTo(w/2,h/2+8);ctx.stroke();
+    requestAnimationFrame(fallbackDraw);
+  }
+  $('loginmsg').textContent='已进入 ZHI 世界（内置 FPS 引擎）';
+  $('login').classList.add('hidden');$('game').classList.remove('hidden');
+  fallbackDraw();
+} else {
 const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;$('game').prepend(renderer.domElement);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x07111b);scene.fog=new THREE.Fog(0x07111b,120,950);
 const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.1,2500);camera.position.set(0,6,40);
@@ -164,6 +211,7 @@ $('play').onclick=()=>{$('start').classList.add('hidden');renderer.domElement.re
 $('send').onclick=send;$('input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});
 async function send(){if(!selected||busy)return;const msg=$('input').value.trim();if(!msg)return;busy=true;$('input').value='';$('messages').insertAdjacentHTML('beforeend','<div class="msg me">'+esc(msg)+'</div>');try{const {data:{session}}=await finance().auth.getSession();if(!session)throw Error('AUTH');const brain=await core().functions.invoke('zhi-agent-brain',{body:{mode:'prepare',agent_id:selected.id,message:msg},headers:{Authorization:'Bearer '+session.access_token}});if(brain.error||!brain.data?.system)throw Error('BRAIN');const r=await fetch('http://127.0.0.1:11435/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:brain.data.model||'llama3.1:8b',stream:false,keep_alive:'15m',messages:[{role:'system',content:brain.data.system},{role:'user',content:brain.data.prompt}],options:{temperature:.35,num_ctx:1536,num_predict:96}})});const j=await r.json();const reply=String(j?.message?.content||'').trim();if(!reply)throw Error('EMPTY');$('messages').insertAdjacentHTML('beforeend','<div class="msg agentmsg">'+esc(reply)+'</div>');await core().functions.invoke('zhi-agent-brain',{body:{mode:'save_reply',agent_id:selected.id,message:msg,reply},headers:{Authorization:'Bearer '+session.access_token}})}catch(e){$('messages').insertAdjacentHTML('beforeend','<div class="sub">Brain Bridge 暂时无法连接。</div>')}busy=false}
 window.__zhiKingStart=async()=>{try{await init()}catch(e){console.error('[ZHI KING]',e);$('loginmsg').textContent='启动失败：'+(e?.message||e);$('login').classList.remove('hidden');$('game').classList.add('hidden');$('enter').disabled=false;$('enter').textContent='重新进入虚拟世界'}};
+}
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)})
 })();
 </script>

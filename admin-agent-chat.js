@@ -6,7 +6,7 @@
   let chatBusy=false;
   let brainModels=[];
   const BRAIN_BRIDGE='http://127.0.0.1:11435';
-  const BRAIN_UI_VERSION='brainfast1';
+  const BRAIN_UI_VERSION='brainfast2';
   function css(){
     if(document.getElementById('zhiAdminChatStyle'))return;
     const s=document.createElement('style');s.id='zhiAdminChatStyle';s.textContent=
@@ -39,10 +39,10 @@
       return {ok:false,models:[]};
     }
   }
-  function compactBrainContext(system,prompt,maxTotal=6000){
+  function compactBrainContext(system,prompt,maxTotal=1600){
     const s=String(system||''), u=String(prompt||'');
     if(s.length+u.length<=maxTotal) return {system:s,prompt:u,chars:s.length+u.length,compressed:false};
-    const systemBudget=Math.min(3800,Math.max(2600,Math.floor(maxTotal*0.62)));
+    const systemBudget=Math.min(1050,Math.max(850,Math.floor(maxTotal*0.58)));
     const promptBudget=maxTotal-systemBudget;
     const trim=(text,budget)=>{
       if(text.length<=budget)return text;
@@ -185,7 +185,7 @@
         const sec=Math.round((performance.now()-startedAt)/1000);
         status.textContent='🟠 Ollama 尚未返回首个 HTTP 响应 · 已等待 '+sec+' 秒 · 上下文 '+totalChars.toLocaleString()+' 字';
         console.warn('[ZHI Ollama waiting]',{model,system_chars:systemChars,prompt_chars:promptChars,total_chars:totalChars,wait_seconds:sec});
-      },2000);
+      },1200);
       let r;
       try{
         r=await fetch(ollamaUrl,{

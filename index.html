@@ -257,7 +257,8 @@ async function loadEcoAgents(){
  if(wr.error)console.warn('ZHI wallet read failed',wr.error);
  if(ac.error)console.warn('ZHI activity read failed',ac.error);
  const legacyWalletMap=new Map((wr.data||[]).map(x=>[x.agent_id,Number(x.balance||0)]));
- const linkMap=new Map((await core.from('zhi_agent_user_links').select('agent_id,user_id')).data||[].map(x=>[x.agent_id,x.user_id]));
+ const linkRows=(await core.from('zhi_agent_user_links').select('agent_id,user_id')).data||[];
+ const linkMap=new Map(linkRows.map(x=>[x.agent_id,x.user_id]));
  const canonicalRows=(await core.from('zhi_wallets').select('user_id,balance')).data||[];
  const canonicalWalletMap=new Map(canonicalRows.map(x=>[x.user_id,Number(x.balance||0)]));
  const walletMap=new Map(legacyWalletMap);

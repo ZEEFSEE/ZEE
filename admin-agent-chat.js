@@ -6,7 +6,7 @@
   let chatBusy=false;
   let brainModels=[];
   const BRAIN_BRIDGE='http://127.0.0.1:11435';
-  const BRAIN_UI_VERSION='brainv4';
+  const BRAIN_UI_VERSION='brainv5';
   function css(){
     if(document.getElementById('zhiAdminChatStyle'))return;
     const s=document.createElement('style');s.id='zhiAdminChatStyle';s.textContent=
@@ -113,6 +113,7 @@
         if(error)return null;
         return agent.name+'目前的钱包余额是 '+Number(data?.balance??0).toLocaleString('en-US')+' ZHI。';
       }
+      if(/为什么|为何|怎么会|原因|动机/.test(q)){return null;}
       if(/在哪|哪里|位置|地点|去哪里|到了吗/.test(q)){
         const [p,a]=await Promise.all([
           core.from('zhi_agent_world_positions').select('current_scene,walking,destination_scene').eq('agent_id',agent.id).maybeSingle(),

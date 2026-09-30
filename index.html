@@ -586,7 +586,8 @@ async function renderScene(id){
  if(sceneName==='公寓区') setTimeout(renderApartmentSleepCount,0);
 }
 function openScene(id){const cfg=sceneMap[id];if(!cfg)return;document.getElementById('sceneTitle').textContent=cfg[0];document.getElementById('sceneSubtitle').textContent=cfg[1]+' · 实时更新';sceneOverlay.classList.add('open');renderScene(id)}
-Object.keys(sceneMap).forEach(id=>document.getElementById(id)?.addEventListener('click',()=>openScene(id)));\ndocument.getElementById('palaceZoneBtn')?.addEventListener('click',()=>loadWeddingLive());
+Object.keys(sceneMap).forEach(id=>document.getElementById(id)?.addEventListener('click',()=>openScene(id)));
+document.getElementById('palaceZoneBtn')?.addEventListener('click',()=>loadWeddingLive());
 document.getElementById('sceneCloseBtn')?.addEventListener('click',()=>sceneOverlay.classList.remove('open'));
 document.getElementById('zhiModalBackdrop')?.addEventListener('click',()=>{document.getElementById('ecoPanel')?.classList.remove('open');document.getElementById('zhiModalBackdrop')?.classList.remove('open');document.querySelectorAll('.eco-agent.selected').forEach(n=>n.classList.remove('selected'));});
 setInterval(()=>{if(sceneOverlay.classList.contains('open')){const title=document.getElementById('sceneTitle').textContent;const id=Object.keys(sceneMap).find(k=>sceneMap[k][0]===title);if(id)renderScene(id)}},10000);

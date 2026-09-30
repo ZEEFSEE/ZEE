@@ -108,20 +108,29 @@
     status.textContent='🧠 '+selected.name+' 正在根据自己的资料思考…';
     let ollama;
     try{
+      const ollamaUrl='http://localhost:11434/api/chat';
+      const controller=new AbortController();
+      const timeoutId=setTimeout(()=>controller.abort(),120000);
       const startedAt=performance.now();
-      const r=await fetch('http://localhost:11434/api/chat',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          model,
-          stream:false,
-          messages:[
-            {role:'system',content:brain.data.system},
-            {role:'user',content:brain.data.prompt}
-          ],
-          options:{temperature:0.75}
-        })
-      });
+      status.textContent='🧠 '+selected.name+' 正在连接本机 Ollama…';
+      let r;
+      try{
+        r=await fetch(ollamaUrl,{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            model,
+            stream:false,
+            messages:[
+              {role:'system',content:brain.data.system},
+              {role:'user',content:brain.data.prompt}
+            ],
+            options:{temperature:0.75}
+          }),
+          signal:controller.signal
+        });
+      }finally{clearTimeout(timeoutId)}
+      status.textContent='🧠 Ollama 已建立 HTTP 连接，正在读取响应…';
       const responseText=await r.text();
       const elapsed=Math.round(performance.now()-startedAt);
       let responseDetail=responseText||'(空响应)';
@@ -130,21 +139,26 @@
       if(parsed?.error) responseDetail=String(parsed.error);
       if(!r.ok){
         status.textContent='❌ Ollama HTTP '+r.status+' '+(r.statusText||'')+' · '+responseDetail;
-        console.error('[ZHI Ollama]',{status:r.status,statusText:r.statusText,body:responseText,elapsed_ms:elapsed});
+        console.error('[ZHI Ollama]',{url:ollamaUrl,status:r.status,statusText:r.statusText,body:responseText,elapsed_ms:elapsed});
         return;
       }
       ollama=parsed?.message?.content?.trim();
       if(!ollama){
         status.textContent='❌ Ollama HTTP '+r.status+' · 返回内容为空 · '+responseDetail;
-        console.error('[ZHI Ollama]',{status:r.status,statusText:r.statusText,body:responseText,elapsed_ms:elapsed});
+        console.error('[ZHI Ollama]',{url:ollamaUrl,status:r.status,statusText:r.statusText,body:responseText,elapsed_ms:elapsed});
         return;
       }
       status.textContent='🟢 Ollama HTTP '+r.status+' · '+model+' · '+elapsed+'ms';
-      console.info('[ZHI Ollama]',{status:r.status,statusText:r.statusText,body:responseText,elapsed_ms:elapsed});
+      console.info('[ZHI Ollama]',{url:ollamaUrl,status:r.status,statusText:r.statusText,body:responseText,elapsed_ms:elapsed});
     }catch(e){
       const detail=e?.message||String(e);
-      status.textContent='❌ Ollama 请求异常：'+detail+' · 真实 HTTP 响应：无（请求未拿到 HTTP 响应）';
-      console.error('[ZHI Ollama]',e);
+      const name=e?.name||'Error';
+      let diagnosis='';
+      if(name==='AbortError') diagnosis='请求超过 120 秒，已自动终止';
+      else if(location.protocol==='https:' && /fetch|network|failed|cors/i.test(detail)) diagnosis='当前 ZHI 页面是 HTTPS，浏览器可能拦截 HTTPS → HTTP localhost（Mixed Content/CORS）';
+      else diagnosis='浏览器没有拿到 Ollama 的 HTTP 响应，可能是 Ollama 未运行、localhost 连接失败或浏览器安全策略拦截';
+      status.textContent='❌ Ollama 请求异常 · '+name+' · '+detail+' · '+diagnosis;
+      console.error('[ZHI Ollama]',{error:e,name,message:detail,page_protocol:location.protocol,ollama_url:'http://localhost:11434/api/chat',diagnosis});
       return;
     }
 

@@ -452,6 +452,8 @@ function makeAgentMesh(a){
 
   const label=makeLabel((female?'♀ ':'♂ ')+(a.name||'智能人'),isKing);
   label.position.set(0,headY+(isKing?4.6:3.5),0);grp.add(label);
+  // 统一为接近真实人的比例：King 视线高度约 6m 时，智能人的眼睛处于平视范围，避免聊天时仰视。
+  grp.scale.setScalar(0.5);
   grp.userData.parts={legL,legR,armL,armR};
   return grp;
 }

@@ -20,7 +20,14 @@ button{font:inherit;cursor:pointer}.hidden{display:none!important}
 #chat{right:18px;bottom:18px;width:min(390px,calc(100vw - 36px));height:min(500px,62vh);display:flex;flex-direction:column}.chathead{padding:12px 14px;border-bottom:1px solid #ffffff15;display:flex;justify-content:space-between}.chathead b{color:#ffe890}#messages{flex:1;overflow:auto;padding:12px}.msg{max-width:88%;padding:9px 11px;border-radius:12px;margin:7px 0;line-height:1.45}.me{margin-left:auto;background:#5b2b86}.agentmsg{background:#fff7d9;color:#351900}.compose{display:flex;gap:6px;padding:9px;border-top:1px solid #ffffff15}.compose textarea{flex:1;min-height:42px;resize:none;color:#fff;background:#08050f;border:1px solid var(--line);border-radius:10px;padding:9px}.send{background:#ffb300;border:1px solid #fff0a0;border-radius:10px;padding:8px 12px;font-weight:1000}
 #overview{position:absolute;z-index:65;right:18px;top:100px;width:220px;height:220px;background:#080b0ed9;border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 50px #000b;overflow:hidden}.overviewTitle{position:absolute;z-index:2;left:9px;top:7px;color:#ffe890;font-weight:900;font-size:12px}.overviewCanvas{width:100%;height:100%;display:block}.overviewHint{position:absolute;bottom:7px;left:9px;color:#d8cce0;font-size:10px}#toast{position:absolute;z-index:80;top:80px;left:50%;transform:translateX(-50%);padding:8px 13px;border-radius:999px;background:#12091df5;border:1px solid var(--line);color:#ffe9a4;display:none}
 @media(max-width:700px){.brand{font-size:19px}.bottom{bottom:10px;left:10px}.top{left:10px;right:10px;top:10px}.controls{display:none}}
-.kingThought{margin-top:10px;padding:10px 12px;border-radius:12px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.08);font-size:13px;line-height:1.5;color:#e9f3ff}.kingThought::first-letter{font-size:16px}</style>
+.kingThought{margin-top:10px;padding:10px 12px;border-radius:12px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.08);font-size:13px;line-height:1.5;color:#e9f3ff}.kingThought::first-letter{font-size:16px}
+.kingBoard{pointer-events:auto;overflow:hidden;transition:transform .2s ease}
+.kingBoardToggle{width:100%;display:flex;justify-content:space-between;align-items:center;background:transparent;border:0;color:#fff;padding:2px 0 0;font:700 15px system-ui,"Microsoft YaHei",sans-serif;cursor:pointer;text-align:left}
+.kingBoardToggle span:last-child{font-size:13px;transition:transform .2s ease}
+.kingBoard.collapsed .kingBoardBody{display:none}
+.kingBoard.collapsed .kingBoardToggle span:last-child{transform:rotate(180deg)}
+.kingBoardBody{padding-top:8px}
+</style>
 </head>
 <body>
 <div id="login"><div class="loginbox"><h1>👑 ZHI · KING MODE</h1><p>进入 2 km × 2 km 的 ZHI 第一视角虚拟世界。</p><p class="sub">King 与管理员账号统一身份。</p><button id="enter">进入虚拟世界</button><div id="loginmsg" class="sub" style="margin-top:10px"></div></div></div>
@@ -37,7 +44,7 @@ window.zhiForceEnterKing=function(){
 <div id="start"><div class="startbox card"><h1>🌍 ZHI Virtual World</h1><p>2,000 m × 2,000 m 第一视角世界</p><p class="sub">视野完全由 KING 自主控制 · 你只能观察，不能驾驶、转向或干涉</p><div class="sub" style="margin-top:16px">👁️ KING 已自动接管视野 · 纯观察</div></div></div>
 <div class="hud top"><div><div class="brand">👑 KING MODE</div><div class="sub">ZHI Virtual World · 2 km × 2 km · First Person · 公共 3D Asset CDN</div></div><div style="display:flex;gap:8px;align-items:center"><div class="pill" id="worldCount">🌍 智能人：--</div><div class="pill" id="balance">💰 -- ZHI</div><button class="pill" id="back" style="pointer-events:auto">← 返回管理员</button></div></div>
 <div id="crosshair" class="hud"></div>
-<div class="hud bottom card"><h3>👑 King</h3><div id="state">正在读取世界…</div><div class="stats"><div class="stat"><small>心情</small><b id="mood">--</b></div><div class="stat"><small>精力</small><b id="energy">--</b></div><div class="stat"><small>好奇心</small><b id="curiosity">--</b></div><div class="stat"><small>目标</small><b id="goal">--</b></div><div class="stat"><small>压力</small><b id="stress">--</b></div><div class="stat"><small>信心</small><b id="confidence">--</b></div></div><div class="kingThought" id="thought">正在形成下一步想法…</div><div class="controls">👁️ 纯观察模式 · KING 自主移动与转向 · 你的视野完全同步 KING · 你不能驾驶、移动或转向</div></div>
+<div class="hud bottom card kingBoard collapsed" id="kingBoard"><button class="kingBoardToggle" id="kingBoardToggle" type="button" aria-expanded="false"><span>👑 KING 信息</span><span id="kingBoardChevron">⌃</span></button><div class="kingBoardBody"><h3>👑 King</h3><div id="state">正在读取世界…</div><div class="stats"><div class="stat"><small>心情</small><b id="mood">--</b></div><div class="stat"><small>精力</small><b id="energy">--</b></div><div class="stat"><small>好奇心</small><b id="curiosity">--</b></div><div class="stat"><small>目标</small><b id="goal">--</b></div><div class="stat"><small>压力</small><b id="stress">--</b></div><div class="stat"><small>信心</small><b id="confidence">--</b></div></div><div class="kingThought" id="thought">正在形成下一步想法…</div><div class="controls">👁️ 纯观察模式 · KING 自主移动与转向 · 你的视野完全同步 KING · 你不能驾驶、移动或转向</div></div></div>
 <div id="info" class="hidden"><div class="head"><b id="infoTitle">智能人</b><button class="close" id="closeInfo">✕</button></div><div id="infoBody"></div><button id="infoChat" class="send" style="width:100%;margin-top:6px">🚶 邀请 TA 过来聊天</button></div>
 <div id="chat" class="hidden"><div class="chathead"><b id="chatTitle">智能人</b><button class="close" id="closeChat">✕</button></div><div id="messages"><div class="sub">开始聊天。</div></div><div class="compose"><textarea id="input" placeholder="对这位智能人说点什么…"></textarea><button class="send" id="send">发送</button></div></div>
 <div id="overview"><div class="overviewTitle">🗺️ ZHI 世界 · 智能人位置</div><canvas id="overviewCanvas" class="overviewCanvas" width="220" height="220"></canvas><div class="overviewHint">滚轮缩放视野 · M 切换全景</div></div><div id="toast"></div>
@@ -47,6 +54,18 @@ window.zhiForceEnterKing=function(){
 <script src="supabase-client.js?v=20260930-05"></script>
 <script>
 window.__zhiKingBooted=false;
+(function(){
+  const board=document.getElementById('kingBoard');
+  const toggle=document.getElementById('kingBoardToggle');
+  const chevron=document.getElementById('kingBoardChevron');
+  if(board&&toggle){
+    toggle.addEventListener('click',function(){
+      const collapsed=board.classList.toggle('collapsed');
+      toggle.setAttribute('aria-expanded',String(!collapsed));
+      if(chevron)chevron.textContent=collapsed?'⌃':'⌄';
+    });
+  }
+})();
 document.getElementById('enter').addEventListener('click',function(){
   document.getElementById('loginmsg').textContent='正在进入 ZHI 虚拟世界…';
   setTimeout(function(){

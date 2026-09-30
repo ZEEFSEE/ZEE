@@ -322,7 +322,19 @@ function updatePlayer(dt){
   const speed=Math.min(WALK_SPEED_MPS,MAX_PLAYER_SPEED_MPS);if(!king)return;
   const dir=new THREE.Vector3();
   if(keys.has('KeyW'))dir.z-=1;if(keys.has('KeyS'))dir.z+=1;if(keys.has('KeyA'))dir.x-=1;if(keys.has('KeyD'))dir.x+=1;
-  if(dir.lengthSq()){dir.normalize();const c=Math.cos(yaw),s=Math.sin(yaw);const dx=dir.x*c-dir.z*s,dz=dir.x*s+dir.z*c;camera.position.x+=dx*speed*dt;camera.position.z+=dz*speed*dt;camera.position.x=Math.max(-990,Math.min(990,camera.position.x));camera.position.z=Math.max(-990,Math.min(990,camera.position.z));}
+  if(dir.lengthSq()){
+    dir.normalize();
+    // 严格以当前视线方向作为“前”：W 向镜头正前方，S 后退，A 左，D 右。
+    const sy=Math.sin(yaw),cy=Math.cos(yaw);
+    const forwardX=-sy,forwardZ=-cy;
+    const rightX=cy,rightZ=-sy;
+    const dx=forwardX*(-dir.z)+rightX*dir.x;
+    const dz=forwardZ*(-dir.z)+rightZ*dir.x;
+    camera.position.x+=dx*speed*dt;
+    camera.position.z+=dz*speed*dt;
+    camera.position.x=Math.max(-990,Math.min(990,camera.position.x));
+    camera.position.z=Math.max(-990,Math.min(990,camera.position.z));
+  }
   camera.position.y=6;camera.rotation.order='YXZ';camera.rotation.y=yaw;camera.rotation.x=pitch;
 }
 function makeLabel(text,isKing){

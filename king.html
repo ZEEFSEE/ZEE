@@ -53,7 +53,7 @@ document.getElementById('enter').addEventListener('click',function(){
   },100);
 });
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r180/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r160/three.min.js"></script>
 <script>
 (function(){
 let GLTFLoader=null;
@@ -69,7 +69,7 @@ function loadAsset(key){
   if(assetCache.has(key))return Promise.resolve(assetCache.get(key));
   if(assetLoading.has(key))return assetLoading.get(key);
   const entry=ASSETS[key];
-  const p=(async()=>{try{if(!GLTFLoader){GLTFLoader=(await import("https://unpkg.com/three@0.180.0/examples/jsm/loaders/GLTFLoader.js")).GLTFLoader}const loader=new GLTFLoader();return await loader.loadAsync(entry.url)}catch(e){console.warn('[ZHI CDN asset]',key,e);return null}})().then(gltf=>{
+  const p=(async()=>{try{if(!GLTFLoader){GLTFLoader=(await import("https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js")).GLTFLoader}const loader=new GLTFLoader();return await loader.loadAsync(entry.url)}catch(e){console.warn('[ZHI CDN asset]',key,e);return null}})().then(gltf=>{
     const root=gltf.scene;
     root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
     assetCache.set(key,root);

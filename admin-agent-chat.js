@@ -315,8 +315,10 @@
     if(started)return;
     const database=db(),core=window.zhiCoreSupabase;
     if(!database||!core)return;
-    const {data:{user:authUser}}=await database.auth.getUser();
-    if(authUser?.id!==ADMIN_ID)return;
+    // IMPORTANT: this page may use a Supabase client configured with an accessToken callback.
+    // getUser() is not supported on that client; use verified JWT claims instead.
+    const {data:{claims},error:claimsError}=await database.auth.getClaims();
+    if(claimsError||claims?.sub!==ADMIN_ID)return;
     started=true;
     ui();
     loadAgents();

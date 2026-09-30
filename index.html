@@ -168,7 +168,7 @@ async function loadAgentFinanceBoard(){
  try{
   const sr=await finance.auth.getSession(),token=sr.data?.session?.access_token;
   if(!token){console.warn('ZHI agent finance board: no finance session');return}
-  const rr=await fetch(ZHI_CORE_URL+'/functions/v1/zhi-agent-finance-board',{headers:{Authorization:'Bearer '+token,apikey:ZHI_CORE_PUBLISHABLE_KEY}});
+  const rr=await fetch('https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-agent-finance-board',{headers:{Authorization:'Bearer '+token,apikey:'sb_publishable_MOVcpW2XoLdHbUVp6f-nrw_e_HY1Bav'}});
   const payload=await rr.json().catch(()=>({}));
   if(!rr.ok||payload.error)throw new Error(payload.error||('HTTP '+rr.status));
   const rows=(payload.rows||[]).map(x=>({...x,balance:Number(x.balance||0),total_earned:Number(x.total_earned||0),total_spent:Number(x.total_spent||0),fortune_earned:Number(x.fortune_earned||0)}));

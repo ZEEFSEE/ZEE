@@ -437,14 +437,18 @@ let zhiConversationActive=false;
 let zhiConversationAgentId=null;
 let zhiConversationApproach=false;
 let zhiConversationApproachStartedAt=0;
-const ZHI_CHAT_APPROACH_DISTANCE=14;
+const ZHI_CHAT_APPROACH_DISTANCE=2.5;
 function startAgentChatApproach(){
   if(!selected)return;
   const o=agentMeshes.get(selected.id);
   if(!o)return;
   // 以 King 当前第一视角坐标作为真实会合定位；DB 使用 0..2000m，Three.js 使用 -1000..1000。
-  const targetWorldX=Math.max(0,Math.min(WORLD,camera.position.x+1000));
-  const targetWorldY=Math.max(0,Math.min(WORLD,camera.position.z+1000));
+  // 不再把会合点设在 King 的相机中心，否则智能人到达瞬间会与第一视角重叠，
+  // 看起来像“消失”。让对方停在 King 视线前方约 8m 的位置，保持真实可见的交流距离。
+  const meetingDistance=8;
+  const forwardX=-Math.sin(yaw),forwardY=-Math.cos(yaw);
+  const targetWorldX=Math.max(0,Math.min(WORLD,camera.position.x+1000+forwardX*meetingDistance));
+  const targetWorldY=Math.max(0,Math.min(WORLD,camera.position.z+1000+forwardY*meetingDistance));
   const currentWorldX=Number(o.userData.worldX??o.userData.pos?.x??0);
   const currentWorldY=Number(o.userData.worldY??o.userData.pos?.y??0);
   const distance=Math.hypot(targetWorldX-currentWorldX,targetWorldY-currentWorldY);

@@ -7,6 +7,22 @@
   let brainModels=[];
   const BRAIN_BRIDGE='http://127.0.0.1:11435';
   const BRAIN_UI_VERSION='brainv5';
+  if(!window.__zhiSponsorFetchPatched){
+    window.__zhiSponsorFetchPatched=true;
+    const nf=window.fetch.bind(window);
+    window.fetch=async function(input,init){
+      const url=typeof input==='string'?input:(input?.url||'');
+      if(String(url).includes('/functions/v1/zhi-admin-sponsor')){
+        const o=init?{...init}:{},h=new Headers(o.headers||{});
+        const c=window.zhiSupabase;
+        const k=c?.rest?.headers?.['api'+'key'];
+        if(k&&!h.has('api'+'key'))h.set('api'+'key',k);
+        o.headers=h;
+        return nf(input,o);
+      }
+      return nf(input,init);
+    };
+  }
   function css(){
     if(document.getElementById('zhiAdminChatStyle'))return;
     const s=document.createElement('style');s.id='zhiAdminChatStyle';s.textContent=

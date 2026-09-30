@@ -6,7 +6,7 @@
   let chatBusy=false;
   let brainModels=[];
   const BRAIN_BRIDGE='http://127.0.0.1:11435';
-  const BRAIN_UI_VERSION='brainfast2';
+  const BRAIN_UI_VERSION='brainv2';
   function css(){
     if(document.getElementById('zhiAdminChatStyle'))return;
     const s=document.createElement('style');s.id='zhiAdminChatStyle';s.textContent=
@@ -38,18 +38,6 @@
       console.error('[ZHI Brain Bridge]',e);
       return {ok:false,models:[]};
     }
-  }
-  function compactBrainContext(system,prompt,maxTotal=1600){
-    const s=String(system||''), u=String(prompt||'');
-    if(s.length+u.length<=maxTotal) return {system:s,prompt:u,chars:s.length+u.length,compressed:false};
-    const systemBudget=Math.min(1050,Math.max(850,Math.floor(maxTotal*0.58)));
-    const promptBudget=maxTotal-systemBudget;
-    const trim=(text,budget)=>{
-      if(text.length<=budget)return text;
-      const head=Math.floor(budget*0.78), tail=budget-head;
-      return text.slice(0,head)+'\n…[相关上下文已压缩]…\n'+text.slice(-tail);
-    };
-    return {system:trim(s,systemBudget),prompt:trim(u,promptBudget),chars:Math.min(maxTotal,s.length+u.length),compressed:true};
   }
   function ui(){
     css();
@@ -166,7 +154,7 @@
     }
 
     const model=brain.data.model||'llama3.1:8b';
-    const compact=compactBrainContext(brain.data.system,brain.data.prompt,2200);
+    const compact={system:String(brain.data.system||''),prompt:String(brain.data.prompt||''),chars:String(brain.data.system||'').length+String(brain.data.prompt||'').length,compressed:false};
     if(brainModels.length && !brainModels.some(x=>x===model || x.startsWith(model+':'))){status.textContent='❌ 找不到模型 '+model+' · 已安装：'+brainModels.join(', ');return;}
     status.textContent='🧠 '+selected.name+' 正在根据自己的资料思考…';
     let ollama;

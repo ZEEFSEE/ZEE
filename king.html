@@ -544,9 +544,9 @@ const active=agents.filter(a=>a.active);$('worldCount').textContent='🌍 智能
 const tx=Number(p.x),tz=Number(p.y);
 o.userData.target={x:tx,y:tz};o.userData.pos=p;o.userData.agent=a;
 if(a.id===king?.id){const h=Number(p.heading_rad);if(Number.isFinite(h))o.rotation.y=h;else if(p.destination_x!=null&&p.destination_y!=null)o.rotation.y=Math.atan2(Number(p.destination_x)-tx,Number(p.destination_y)-tz);}
-const dx=tx-(o.userData.worldX??tx),dz=tz-(o.userData.worldY??tz);
-if(Math.hypot(dx,dz)>0.1){o.userData.worldX=o.userData.worldX??tx;o.userData.worldY=o.userData.worldY??tz;}
-o.position.set((o.userData.worldX??tx)-1000,0,(o.userData.worldY??tz)-1000);
+if(!Number.isFinite(Number(o.userData.worldX)))o.userData.worldX=tx;
+if(!Number.isFinite(Number(o.userData.worldY)))o.userData.worldY=tz;
+o.position.set(o.userData.worldX-1000,0,o.userData.worldY-1000);
 }
 }
 function nearestAgent(){let best=null,dist=Infinity;for(const o of agentMeshes.values()){if(o.userData.agent.id===king?.id)continue;const d=o.position.distanceTo(camera.position);if(d<dist){dist=d;best=o}}return best}

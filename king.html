@@ -25,7 +25,20 @@ button{font:inherit;cursor:pointer}.hidden{display:none!important}
 <body>
 <div id="login"><div class="loginbox"><h1>👑 ZHI · KING MODE</h1><p>进入 2 km × 2 km 的 ZHI 第一视角虚拟世界。</p><p class="sub">King 与管理员账号统一身份。</p><button id="enter">进入虚拟世界</button><div id="loginmsg" class="sub" style="margin-top:10px"></div></div></div>
 <div id="game" class="hidden">
-<div id="start"><div class="startbox card"><h1>🌍 ZHI Virtual World</h1><p>2,000 m × 2,000 m 第一视角世界</p><p class="sub">鼠标控制视角 / 转向　W 前进　S 后退　A/D 左右移动　行走最高 2 m/s　Esc 释放鼠标</p><button id="play" type="button" onclick="window.zhiEnterControlMode&&window.zhiEnterControlMode()">🖱️ 点击进入驾驶 / 行走模式</button></div></div>
+<script>
+window.zhiForceEnterKing=function(){
+  var s=document.getElementById('start');
+  if(s)s.classList.add('hidden');
+  document.body.classList.add('zhi-playing');
+  try{
+    var canvas=document.querySelector('#game canvas');
+    if(canvas&&canvas.requestPointerLock) canvas.requestPointerLock();
+  }catch(e){}
+  var st=document.getElementById('state');
+  if(st)st.textContent='👑 KING 行走模式 · WASD 移动 · 鼠标控制视角 · Esc 释放鼠标';
+};
+</script>
+<div id="start"><div class="startbox card"><h1>🌍 ZHI Virtual World</h1><p>2,000 m × 2,000 m 第一视角世界</p><p class="sub">鼠标控制视角 / 转向　W 前进　S 后退　A/D 左右移动　行走最高 2 m/s　Esc 释放鼠标</p><button id="play" type="button" onclick="window.zhiForceEnterKing()">🖱️ 点击进入驾驶 / 行走模式</button></div></div>
 <div class="hud top"><div><div class="brand">👑 KING MODE</div><div class="sub">ZHI Virtual World · 2 km × 2 km · First Person · 公共 3D Asset CDN</div></div><div style="display:flex;gap:8px;align-items:center"><div class="pill" id="worldCount">🌍 智能人：--</div><div class="pill" id="balance">💰 -- ZHI</div><button class="pill" id="back" style="pointer-events:auto">← 返回管理员</button></div></div>
 <div id="crosshair" class="hud"></div>
 <div class="hud bottom card"><h3>👑 King</h3><div id="state">正在读取世界…</div><div class="stats"><div class="stat"><small>心情</small><b id="mood">--</b></div><div class="stat"><small>精力</small><b id="energy">--</b></div><div class="stat"><small>好奇心</small><b id="curiosity">--</b></div><div class="stat"><small>目标</small><b id="goal">--</b></div></div><div class="controls">W/S 前进后退 · A/D 横移 · 鼠标左/右转向与上下看 · 最高 2 m/s · 点击智能人查看资料</div></div>

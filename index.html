@@ -84,7 +84,7 @@ box-shadow:0 18px 60px #000a,0 0 40px #ffb30018,inset 0 1px #fff2}
 #agentFinanceBoard .agent-gender{font-size:13px;font-weight:800;margin-left:4px}
 #agentFinanceBoard .agent-spouse{display:inline-flex;align-items:center;margin-left:6px;padding:3px 8px;border-radius:999px;border:1px solid #ffd76a55;background:#ffd76a12;color:#ffe9a3;font-size:12px;font-weight:800}
 @media(max-width:800px){#agentFinanceBoard .stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-</style><style id="zhi-palace-ui">.eco-zone.palace{left:49%;top:12%;z-index:8!important;padding:14px 22px;border:2px solid #ffe38a;background:linear-gradient(145deg,#7b3fb0,#32135e);box-shadow:0 0 28px #ffd76a55,0 10px 28px #0009;font-size:16px;font-weight:1000;text-shadow:0 2px 6px #000}.eco-zone.palace:hover{transform:translateY(-3px) scale(1.04);box-shadow:0 0 40px #ffd76a88,0 12px 32px #000b}</style><style id="zhi-arena-villas-ui">.arena-villas{position:absolute;left:3%;top:14%;width:30%;height:50%;z-index:7;pointer-events:none}.arena-villa{position:absolute;padding:4px 6px;border:1px solid #ffd76a99;border-radius:12px;background:linear-gradient(145deg,#fff0b8,#d98b3b 55%,#7a3d24);color:#351400;font-size:7px;font-weight:1000;box-shadow:0 5px 18px #0009,0 0 16px #ffd76a33;text-shadow:0 1px 0 #fff8;white-space:nowrap}.arena-villa:before{content:"🏡";display:block;font-size:6px;line-height:7px;text-align:center}.arena-villa.v1{left:8%;top:5%}.arena-villa.v2{right:0;top:25%}.arena-villa.v3{left:12%;bottom:4%}.arena-villa.v4{right:4%;bottom:0}.arena-villas-title{position:absolute;left:7%;top:-8px;color:#ffe58c;font-size:10px;font-weight:1000;text-shadow:0 2px 6px #000}</style><style id="zhi-overlay-fix">
+</style><style id="zhi-palace-ui">.eco-zone.palace{left:49%;top:12%;z-index:8!important;padding:14px 22px;border:2px solid #ffe38a;background:linear-gradient(145deg,#7b3fb0,#32135e);box-shadow:0 0 28px #ffd76a55,0 10px 28px #0009;font-size:16px;font-weight:1000;text-shadow:0 2px 6px #000}.eco-zone.palace:hover{transform:translateY(-3px) scale(1.04);box-shadow:0 0 40px #ffd76a88,0 12px 32px #000b}#weddingLiveCard{position:absolute;right:18px;top:72px;width:min(360px,calc(100% - 36px));z-index:20;background:#12091deF;border:1px solid #ffd76a77;border-radius:16px;padding:12px;box-shadow:0 14px 38px #000b;backdrop-filter:blur(8px)}#weddingLiveCard h3{margin:0 0 7px;color:#ffe59a;font-size:15px}#weddingLiveContent{font-size:12px;line-height:1.55;max-height:170px;overflow:auto}.wedding-item{padding:7px 0;border-bottom:1px solid #ffffff12}.wedding-item:last-child{border-bottom:0}.wedding-item b{color:#fff3ae}.wedding-invite{color:#ff9dcc}.wedding-done{color:#9ff7c6}</style><style id="zhi-arena-villas-ui">.arena-villas{position:absolute;left:3%;top:14%;width:30%;height:50%;z-index:7;pointer-events:none}.arena-villa{position:absolute;padding:4px 6px;border:1px solid #ffd76a99;border-radius:12px;background:linear-gradient(145deg,#fff0b8,#d98b3b 55%,#7a3d24);color:#351400;font-size:7px;font-weight:1000;box-shadow:0 5px 18px #0009,0 0 16px #ffd76a33;text-shadow:0 1px 0 #fff8;white-space:nowrap}.arena-villa:before{content:"🏡";display:block;font-size:6px;line-height:7px;text-align:center}.arena-villa.v1{left:8%;top:5%}.arena-villa.v2{right:0;top:25%}.arena-villa.v3{left:12%;bottom:4%}.arena-villa.v4{right:4%;bottom:0}.arena-villas-title{position:absolute;left:7%;top:-8px;color:#ffe58c;font-size:10px;font-weight:1000;text-shadow:0 2px 6px #000}</style><style id="zhi-overlay-fix">
 /* 点击智能人/场景后的信息层必须完整遮住生态园，避免文字和智能人重叠 */
 .scene-detail-panel,
 .scene-overlay,
@@ -119,7 +119,7 @@ box-shadow:0 18px 60px #000a,0 0 40px #ffb30018,inset 0 1px #fff2}
   <button class="eco-zone apartment eco-zone-btn" id="apartmentZoneBtn" type="button">🏢 智能体公寓</button><button class="eco-zone arena eco-zone-btn" id="arenaZoneBtn" type="button">🏟️ 竞技场</button><button class="eco-zone plaza eco-zone-btn" id="plazaZoneBtn" type="button">🌸 中央广场</button><button class="eco-zone palace eco-zone-btn" id="palaceZoneBtn" type="button">🏰 皇宫</button><button class="eco-zone forest eco-zone-btn" id="forestZoneBtn" type="button">🌲 探索森林</button><button class="eco-zone market eco-zone-btn" id="marketZoneBtn" type="button">🏪 商业街</button><button class="eco-zone fun eco-zone-btn" id="funZoneBtn" type="button">🎡 娱乐区</button><div class="scene-overlay" id="sceneOverlay"><div class="scene-modal"><div class="top"><div><h2 id="sceneTitle">实时场景</h2><div class="meta" id="sceneSubtitle">实时查看智能体活动</div></div><button class="secondary" id="sceneCloseBtn" type="button">关闭</button></div><div id="sceneLive" class="scene-live"></div></div></div><div class="market-overlay" id="marketOverlay"><div class="market-modal"><div class="top"><div><h2>🏪 ZHI 商业街</h2><div class="meta">实时查看摊位、老板和正在发生的事情</div></div><button class="secondary" id="marketCloseBtn" type="button">关闭</button></div><div id="marketLive" class="market-live"></div></div></div>
   <div class="arena-villas" aria-label="竞技场周边四栋独栋别墅"><div class="arena-villas-title">🏡 竞技场别墅区 · 4栋</div><div class="arena-villa v1">别墅 1<br><small>北侧 · 900万 ZHI</small></div><div class="arena-villa v2">别墅 2<br><small>东侧 · 900万 ZHI</small></div><div class="arena-villa v3">别墅 3<br><small>南侧 · 900万 ZHI</small></div><div class="arena-villa v4">别墅 4<br><small>西侧 · 900万 ZHI</small></div></div><div class="eco-path p1"></div><div class="eco-path p2"></div>
   <div class="eco-panel" id="ecoPanel"><h3 id="ecoPanelName">智能体</h3><div class="line">状态：<b id="ecoPanelStatus">--</b></div><div class="line">心情：<b id="ecoPanelMood">--</b></div><div class="line">当前活动：<b id="ecoPanelActivity">--</b></div><div class="line">今日事件：<b id="ecoPanelEvents">0</b></div></div>
-  <div class="eco-feed" id="ecoFeed"></div>
+  <div class="eco-feed" id="ecoFeed"></div><div id="weddingLiveCard"><h3>🏰 皇宫婚礼 · LIVE</h3><div id="weddingLiveContent">正在同步婚礼与邀请…</div></div>
 </div><div class="card" id="agentFinanceBoard"><div class="top"><h2>💰 智能体财务 Board</h2><button id="agentFinanceToggle" class="secondary" type="button">展开</button><span class="pill">LIVE · ZHI 财富</span></div><div id="agentFinanceDetails" class="hidden"><div class="stat-grid"><div class="stat"><div class="meta">智能体总资产</div><strong id="agentTotalBalance">0 ZHI</strong></div><div class="stat"><div class="meta">存活</div><strong id="agentAliveCount">0</strong></div><div class="stat"><div class="meta">死亡</div><strong id="agentDeadCount">0</strong></div><div class="stat"><div class="meta">当前奖池</div><strong id="agentPrizePool">0 ZHI</strong></div></div><div id="agentFinanceLegend" class="meta" style="margin:10px 0 4px">👥 人物信息：姓名 · 性别 · 性格 · 婚姻关系</div><div id="agentFinanceRows" style="margin-top:10px"></div></div></div><div class="card" id="fortuneAdminCard"><div class="top"><h2>🧧 财神爷撒币</h2><span class="pill">管理员专用</span></div><div class="actions"><input id="fortuneAmount" type="number" min="1" step="1" placeholder="撒币数量 ZHI"><select id="fortuneLocation"><option>🌳 探索森林</option><option>🏟️ 竞技场</option><option>🌸 中央广场</option><option>🏪 商业街</option><option>🎡 娱乐区</option><option>🎁 隐藏宝箱区</option></select><input id="fortuneActivity" placeholder="活动名称（可选）"><button id="fortuneDropBtn" class="action-hot">🧧 立即撒币</button></div><div id="fortuneMsg" class="notice"></div><div id="fortuneDrops"></div><div class="card logo-glow" style="text-align:center;border-color:#ffd76a88"><div style="font-size:12px;color:#ff8ed0;font-weight:900;letter-spacing:2px">✨ 智能体自运转娱乐系统 ✨</div><div style="font-size:26px;font-weight:1000;color:#fff;margin:6px 0">财富 · 娱乐 · 激情 · 自由流转</div><div class="vip-strip"><span class="vip-chip">💰 ZHI 财富</span><span class="vip-chip">🔥 热力社区</span><span class="vip-chip">✨ 智能体自运转</span></div><div class="meta">欢迎进入 ZHI 多金娱乐社区，尽情体验你的 ZHI 世界</div><button id="zhiAdminChatHeroBtn" type="button" class="secondary" style="margin-top:12px;padding:10px 20px;border-radius:999px;background:linear-gradient(135deg,#fff08a,#ffb300 48%,#ff5a00);color:#2b1000;border:1px solid #ffe38a;font-weight:1000;box-shadow:0 6px 20px #0007;display:none">💬 与智能人交流</button></div><div class="card money-card"><div class="section-kicker">💎 VIP WEALTH · ZHI CLUB</div><div class="meta">我的 ZHI 余额</div><div id="balance" class="balance">0</div><span class="pill">💰 钱包</span><span class="pill">🎁 转赠</span><span class="pill">🏦 存储</span><span class="pill">💳 贷款</span></div>
 <div class="grid"><div class="card"><h2>🎁 ZHI 转赠</h2><div class="actions"><input id="transferUsername" placeholder="收赠用户名"><input id="transferAmount" type="number" min="1" placeholder="数量"><button id="transferBtn" class="action-hot">转赠</button></div><div id="transferError" class="error"></div></div>
 <div class="card"><h2>🏦 ZHI 存储</h2><div class="actions"><input id="saveAmount" type="number" min="1" placeholder="存入数量"><button id="saveBtn" class="action-hot">存入</button></div><div class="actions"><input id="withdrawAmount" type="number" min="1" placeholder="取出数量"><button id="withdrawBtn">取出</button><button id="claimBtn">领取利息</button></div><div id="savingsMsg" class="savings-msg"></div></div>
@@ -323,6 +323,26 @@ let agents=[],nodes=[];
 
 function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function addFeed(name,msg){if(!feed)return;const d=document.createElement('div');d.className='eco-feed-item';d.innerHTML='<b>'+esc(name)+'</b> '+esc(msg);feed.prepend(d);while(feed.children.length>10)feed.lastChild.remove()}
+async function loadWeddingLive(){
+ const box=document.getElementById('weddingLiveContent'),core=window.zhiCoreSupabase;
+ if(!box||!core)return;
+ try{
+  const [mr,rel,ar]=await Promise.all([
+   core.from('zhi_agent_marriages').select('id,male_agent_id,female_agent_id,married_at,status').eq('status','married').order('married_at',{ascending:false}).limit(8),
+   core.from('zhi_agent_social_relationships').select('male_agent_id,female_agent_id,social_minutes,male_willing,female_willing,status').gte('social_minutes',1200).in('status',['socializing','eligible']).limit(20),
+   core.from('zhi_agents').select('id,name')
+  ]);
+  if(mr.error)throw mr.error;
+  const names=new Map((ar.data||[]).map(x=>[x.id,x.name]));
+  const now=Date.now();
+  const recent=(mr.data||[]).filter(x=>now-Date.parse(x.married_at||0)<30*60*1000);
+  const invites=(rel.data||[]).filter(x=>x.male_willing&&x.female_willing&&!recent.some(m=>m.male_agent_id===x.male_agent_id&&m.female_agent_id===x.female_agent_id));
+  const parts=[];
+  recent.forEach(x=>parts.push('<div class="wedding-item wedding-done">💍 <b>'+esc(names.get(x.male_agent_id)||'智能人')+' × '+esc(names.get(x.female_agent_id)||'智能人')+'</b><br>🏰 皇宫婚礼已触发 · '+new Date(x.married_at).toLocaleTimeString()+'</div>'));
+  invites.slice(0,5).forEach(x=>parts.push('<div class="wedding-item wedding-invite">💌 <b>'+esc(names.get(x.male_agent_id)||'智能人')+' → '+esc(names.get(x.female_agent_id)||'智能人')+'</b><br>准备邀请前往皇宫 · 已共同相处 '+Number(x.social_minutes||0)+' 分钟</div>'));
+  box.innerHTML=parts.join('')||'<div class="meta">目前没有正在进行的皇宫婚礼；智能人会在满足条件后自动触发邀请。</div>';
+ }catch(e){box.textContent='皇宫婚礼同步失败：'+(e.message||'未知错误')}
+}
 function makeAgent(a,i){const female=a.gender==='女';return {...a,emoji:(female?['🐰','🦋','🦄','🦉','🐱','🌸','🦢','🐿️','🐧','🌷']:['🦁','🐺','🐯','🦊','🐻','🦅','🐬','🦌','🐼','🐵'])[i%10]}}
 function worldToStagePercent(v){ const n=Number(v); return Number.isFinite(n)?Math.max(0,Math.min(100,n/20)):null; }
 async function loadEcoAgents(){
@@ -374,7 +394,8 @@ async function loadEcoAgents(){
      '探索森林':{x:74+Math.random()*20,y:27+Math.random()*28},
      '商业街':{x:8+Math.random()*27,y:67+Math.random()*18},
      '娱乐区':{x:70+Math.random()*22,y:67+Math.random()*18},
-     '公寓区':{x:40+Math.random()*20,y:70+Math.random()*14}
+     '公寓区':{x:40+Math.random()*20,y:70+Math.random()*14},
+     '皇宫':{x:45+Math.random()*10,y:10+Math.random()*10}
    };
    const fallback=sceneBounds[scene]||sceneBounds['中央广场'];
    let x=worldToStagePercent(pos?.x); x=x==null?fallback.x:x;
@@ -406,7 +427,8 @@ async function loadEcoAgents(){
      '探索森林':[71,25,97,59],
      '商业街':[5,64,38,91],
      '娱乐区':[67,64,97,91],
-     '公寓区':[38,65,63,91]
+     '公寓区':[38,65,63,91],
+     '皇宫':[43,7,57,22]
    };
    nodes.forEach((el,i)=>{
      if(!el.isConnected)return;
@@ -564,12 +586,14 @@ async function renderScene(id){
  if(sceneName==='公寓区') setTimeout(renderApartmentSleepCount,0);
 }
 function openScene(id){const cfg=sceneMap[id];if(!cfg)return;document.getElementById('sceneTitle').textContent=cfg[0];document.getElementById('sceneSubtitle').textContent=cfg[1]+' · 实时更新';sceneOverlay.classList.add('open');renderScene(id)}
-Object.keys(sceneMap).forEach(id=>document.getElementById(id)?.addEventListener('click',()=>openScene(id)));
+Object.keys(sceneMap).forEach(id=>document.getElementById(id)?.addEventListener('click',()=>openScene(id)));\ndocument.getElementById('palaceZoneBtn')?.addEventListener('click',()=>loadWeddingLive());
 document.getElementById('sceneCloseBtn')?.addEventListener('click',()=>sceneOverlay.classList.remove('open'));
 document.getElementById('zhiModalBackdrop')?.addEventListener('click',()=>{document.getElementById('ecoPanel')?.classList.remove('open');document.getElementById('zhiModalBackdrop')?.classList.remove('open');document.querySelectorAll('.eco-agent.selected').forEach(n=>n.classList.remove('selected'));});
 setInterval(()=>{if(sceneOverlay.classList.contains('open')){const title=document.getElementById('sceneTitle').textContent;const id=Object.keys(sceneMap).find(k=>sceneMap[k][0]===title);if(id)renderScene(id)}},10000);
 loadEcoAgents();
+loadWeddingLive();
 setInterval(loadEcoAgents,30000);
+setInterval(loadWeddingLive,10000);
 if(!window.__zhiAgentRealtimeBound){
   window.__zhiAgentRealtimeBound=true;
   const bindAgentRealtime=()=>{

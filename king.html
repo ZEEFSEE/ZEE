@@ -52,12 +52,26 @@ const $=id=>document.getElementById(id), esc=v=>String(v??'').replace(/[&<>"']/g
 function toast(s){$('toast').textContent=s;$('toast').style.display='block';setTimeout(()=>$('toast').style.display='none',2200)}
 function pos(scene,x,y){return {x:Math.max(3,Math.min(97,Number(x))),y:Math.max(8,Math.min(92,Number(y)))}}
 async function init(){
- const {data:{session},error:sessionError}=await finance().auth.getSession();
+ const sb=finance();
+ let session=null,sessionError=null;
+ try{
+   const r=await sb.auth.getSession();
+   session=r.data?.session||null; sessionError=r.error||null;
+ }catch(e){sessionError=e}
+ // KING 与管理员是同一个真实账号：优先读取 ZHI 当前登录会话。
+ if(!session?.user && window.localStorage){
+   // 给同源 Supabase 会话一点时间完成恢复，避免从 index.html 点击进入时出现假性“未登录”。
+   await new Promise(resolve=>setTimeout(resolve,800));
+   try{
+     const r=await sb.auth.getSession();
+     session=r.data?.session||null; sessionError=r.error||null;
+   }catch(e){sessionError=e}
+ }
  const user=session?.user;
- if(sessionError){$('loginmsg').textContent='登录状态读取失败，请返回 ZHI 重新登录。';return}
+ if(sessionError){$('loginmsg').textContent='登录状态读取失败，请返回 ZHI 后重新进入 KING。';return}
  if(!user||user.id!==ADMIN_ID){
-   $('loginmsg').textContent='请先登录 ZHI 管理员账号；King 与管理员使用同一个真实账号，不需要第二套登录。';
-   $('enter').textContent='返回 ZHI 登录';
+   $('loginmsg').textContent='当前不是管理员登录状态。King 与管理员使用同一个 ZHI 账号，不需要第二个账号。';
+   $('enter').textContent='返回 ZHI';
    $('enter').onclick=()=>location.href='index.html';
    return;
  }

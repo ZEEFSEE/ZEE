@@ -575,6 +575,11 @@ async function init(){
   $('loginmsg').textContent='King 已连接，正在加载 3D 城市…';
   $('login').classList.add('hidden');$('game').classList.remove('hidden');
   try{await refresh()}catch(e){console.warn('[ZHI refresh]',e);$('state').textContent='世界已启动，部分资料读取失败'}
+  // 管理员进入 KING 世界后直接进入 KING 自主第一视角，不再要求点击“驾驶 / 行走模式”。
+  // 浏览器的 Pointer Lock 仍只能由用户手势触发，因此首次需要鼠标控制时点击画面即可。
+  controlMode=false;
+  $('start').classList.add('hidden');
+  $('state').textContent='👑 KING 自主行走视野 · 自动移动 · 点击画面可接管控制';
   loadPublicAssets().catch(e=>console.warn('[ZHI CDN]',e));
   setInterval(refresh,5000);animate()
 }

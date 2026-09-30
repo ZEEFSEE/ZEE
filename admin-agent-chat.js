@@ -186,7 +186,7 @@
               {role:'system',content:compact.system},
               {role:'user',content:compact.prompt}
             ],
-            options:{temperature:0.6,num_ctx:4096}
+            options:{temperature:0.45,num_ctx:2048,num_predict:180}
           }),
           signal:controller.signal
         });

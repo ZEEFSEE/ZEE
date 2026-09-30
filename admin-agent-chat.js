@@ -162,6 +162,21 @@
       return;
     }
 
+    const fastReply=await fastFactReply(selected,msg);
+    if(fastReply){
+      status.textContent='⚡ '+selected.name+' 已从世界事实层快速回答';
+      const savedFast=await core.functions.invoke('zhi-agent-brain',{
+        body:{mode:'save_reply',agent_id:selected.id,message:msg,reply:fastReply},
+        headers:{Authorization:`Bearer ${session.access_token}`}
+      });
+      const fastSaveError=savedFast.error?.message||savedFast.data?.error;
+      if(fastSaveError){status.textContent='已快速回答，但保存智能人记忆失败：'+fastSaveError;chatBusy=false;return;}
+      status.textContent='⚡ '+selected.name+' 快速回复完成 · 世界事实层';
+      await loadMessages();
+      chatBusy=false;
+      return;
+    }
+
     const brain=await core.functions.invoke('zhi-agent-brain',{
       body:{mode:'prepare',agent_id:selected.id,message:msg},
       headers:{Authorization:`Bearer ${session.access_token}`}

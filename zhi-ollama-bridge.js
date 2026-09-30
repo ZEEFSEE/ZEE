@@ -74,7 +74,7 @@ function proxy(req, res, targetPath) {
   req.pipe(upstream);
 }
 
-http.createServer((req,res) => {
+const server = http.createServer((req,res) => {
   cors(res);
   if(req.method === 'OPTIONS') {
     res.writeHead(204);
@@ -106,4 +106,15 @@ http.createServer((req,res) => {
   if(path === '/api/tags' || path === '/api/chat') return proxy(req,res,path);
 
   return json(res,404,{ok:false,error:'NOT_FOUND'});
-}).listen(PORT,HOST,()=>console.log('ZHI Brain Bridge: http://'+HOST+':'+PORT+' -> '+OLLAMA));
+});
+server.on('error', err => {
+  if (err.code === 'EADDRINUSE') {
+    console.error('[Bridge] Port '+PORT+' is already in use. A ZHI Brain Bridge may already be running.');
+    console.error('[Bridge] Test existing instance: http://127.0.0.1:'+PORT+'/health');
+    process.exitCode = 2;
+  } else {
+    console.error('[Bridge] Server error:', err.message);
+    process.exitCode = 1;
+  }
+});
+server.listen(PORT,HOST,()=>console.log('ZHI Brain Bridge: http://'+HOST+':'+PORT+' -> '+OLLAMA));

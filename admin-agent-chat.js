@@ -6,7 +6,7 @@
   let chatBusy=false;
   let brainModels=[];
   const BRAIN_BRIDGE='http://127.0.0.1:11435';
-  const BRAIN_UI_VERSION='brainv2';
+  const BRAIN_UI_VERSION='brainv3';
   function css(){
     if(document.getElementById('zhiAdminChatStyle'))return;
     const s=document.createElement('style');s.id='zhiAdminChatStyle';s.textContent=
@@ -26,10 +26,10 @@
     try{
       const h=await fetch(BRAIN_BRIDGE+'/health',{cache:'no-store'});
       const ht=await h.text(); if(!h.ok) throw new Error('HTTP '+h.status+' · '+ht);
-      const t=await fetch(BRAIN_BRIDGE+'/api/tags',{cache:'no-store'});
-      const tt=await t.text(); if(!t.ok) throw new Error('Ollama HTTP '+t.status+' · '+tt);
+      const t=await fetch(BRAIN_BRIDGE+'/ready',{cache:'no-store'});
+      const tt=await t.text(); if(!t.ok) throw new Error('Brain READY HTTP '+t.status+' · '+tt);
       let j={}; try{j=JSON.parse(tt)}catch(_){ }
-      const models=(j.models||[]).map(x=>x.name).filter(Boolean);
+      const models=j.model?[j.model]:[];
       if(showStatus) status.textContent='🟢 Brain Bridge + Ollama 正常 · '+(models.join(', ')||'未发现模型');
       return {ok:true,models};
     }catch(e){

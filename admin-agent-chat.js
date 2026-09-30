@@ -134,7 +134,7 @@
       const controller=new AbortController();
       const timeoutId=setTimeout(()=>controller.abort(),120000);
       const startedAt=performance.now();
-      status.textContent='🧠 '+selected.name+' 正在连接本机 Ollama…';
+      status.textContent='🧠 '+selected.name+' 正在调用本机 Ollama · 最多等待 120 秒…';
       let r;
       try{
         r=await fetch(ollamaUrl,{
@@ -170,7 +170,7 @@
         console.error('[ZHI Ollama]',{url:ollamaUrl,status:r.status,statusText:r.statusText,body:responseText,elapsed_ms:elapsed});
         return;
       }
-      status.textContent='🟢 Ollama HTTP '+r.status+' · '+model+' · '+elapsed+'ms';
+      status.textContent='🟢 '+selected.name+' 的模型回复已返回 · HTTP '+r.status+' · '+model+' · '+elapsed+'ms';
       console.info('[ZHI Ollama]',{url:ollamaUrl,status:r.status,statusText:r.statusText,body:responseText,elapsed_ms:elapsed});
     }catch(e){
       const detail=e?.message||String(e);
@@ -183,6 +183,7 @@
       return;
     }
 
+    status.textContent='💾 '+selected.name+' 已回答 · 正在写入记忆…';
     const saved=await core.functions.invoke('zhi-agent-brain',{
       body:{mode:'save_reply',agent_id:selected.id,message:msg,reply:ollama},
       headers:{Authorization:`Bearer ${session.access_token}`}

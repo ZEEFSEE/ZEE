@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ZHI · King Virtual World</title>
+<style>
+:root{--gold:#ffd76a;--deep:#090611;--panel:#12091df2;--line:#ffd76a55;--text:#fff5cf}
+*{box-sizing:border-box}body{margin:0;background:#07040d;color:#fff;font:14px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:hidden}
+button{font:inherit;cursor:pointer}.hidden{display:none!important}
+#world{position:fixed;inset:0;background:
+radial-gradient(circle at 50% 15%,#7b246e 0,#34105b 30%,#10091d 65%,#061713 100%)}
+#world:before{content:"";position:absolute;inset:48% 0 0;background:radial-gradient(ellipse at 50% 70%,#21472c 0,transparent 60%),linear-gradient(#11291e,#06130f)}
+.header{position:absolute;z-index:20;left:18px;right:18px;top:14px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.brand{font-size:24px;font-weight:1000;color:#ffe990;text-shadow:0 0 20px #ffb300}.sub{font-size:11px;color:#dccbe8}
+.pill{padding:8px 12px;border:1px solid var(--line);background:#12091dcc;border-radius:999px;color:#ffe9a4;font-weight:900}
+#map{position:absolute;inset:0}
+.zone{position:absolute;padding:10px 15px;border:1px solid #ffd76a35;border-radius:999px;background:#130b20a8;color:#ffe9a4;font-weight:900;backdrop-filter:blur(5px)}
+.arena{left:7%;top:29%}.plaza{left:43%;top:32%}.forest{right:7%;top:29%}.market{left:11%;bottom:17%}.fun{right:11%;bottom:17%}.apt{left:43%;bottom:13%}
+.path{position:absolute;border:2px dashed #ffd76a22;border-radius:50%;pointer-events:none}.p1{width:70%;height:58%;left:15%;top:22%}.p2{width:38%;height:30%;left:31%;top:38%}
+.agent{position:absolute;z-index:8;transform:translate(-50%,-50%);transition:left 1.2s linear,top 1.2s linear;cursor:pointer;text-align:center}
+.agent .dot{width:18px;height:18px;margin:auto;border-radius:50%;background:#ffe17a;border:2px solid #fff7c5;box-shadow:0 0 18px #ffb300}
+.agent.king .dot{width:28px;height:28px;background:#ffb300;box-shadow:0 0 30px #ffb300,0 0 60px #ff8a00}
+.agent .label{margin-top:4px;padding:3px 7px;border-radius:8px;background:#10091ddc;border:1px solid #ffd76a55;color:#fff3b0;font-size:11px;font-weight:1000;white-space:nowrap}
+.panel{position:absolute;z-index:30;background:var(--panel);border:1px solid var(--line);box-shadow:0 18px 70px #000c;backdrop-filter:blur(12px);border-radius:18px}
+#hud{left:18px;bottom:18px;width:min(360px,calc(100vw - 36px));padding:15px}
+#hud h2{margin:0;color:#ffe890}.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.stat{padding:9px;border-radius:10px;background:#08050f99;border:1px solid #fff1}.stat small{display:block;color:#bdaecb}.stat b{color:#fff0a4}
+#chat{right:18px;bottom:18px;width:min(390px,calc(100vw - 36px));height:min(500px,62vh);display:flex;flex-direction:column}
+.chathead{padding:12px 14px;border-bottom:1px solid #ffffff15;display:flex;justify-content:space-between}.chathead b{color:#ffe890}.close{border:0;background:#ffffff15;color:#fff;border-radius:8px;padding:5px 9px}
+#messages{flex:1;overflow:auto;padding:12px}.msg{max-width:88%;padding:9px 11px;border-radius:12px;margin:7px 0;line-height:1.45}.me{margin-left:auto;background:#5b2b86}.agentmsg{background:#fff7d9;color:#351900}
+.compose{display:flex;gap:6px;padding:9px;border-top:1px solid #ffffff15}.compose textarea{flex:1;min-height:42px;resize:none;color:#fff;background:#08050f;border:1px solid var(--line);border-radius:10px;padding:9px}.send{background:#ffb300;border:1px solid #fff0a0;border-radius:10px;padding:8px 12px;font-weight:1000}
+#login{position:fixed;inset:0;z-index:99;display:grid;place-items:center;background:#08040e}.loginbox{width:min(430px,calc(100vw - 30px));padding:25px;border:1px solid var(--line);border-radius:20px;background:#12091df5;text-align:center}.loginbox h1{color:#ffe890}.loginbox button{padding:12px 18px;border:1px solid #fff0a0;border-radius:10px;background:#ffb300;font-weight:1000}
+#toast{position:fixed;z-index:60;top:72px;left:50%;transform:translateX(-50%);padding:8px 13px;border-radius:999px;background:#12091df5;border:1px solid var(--line);color:#ffe9a4;display:none}
+@media(max-width:700px){#chat{height:45vh}.zone{font-size:10px;padding:7px 10px}.brand{font-size:20px}}
+</style>
+</head>
+<body>
+<div id="login"><div class="loginbox"><h1>👑 ZHI · KING MODE</h1><p>进入与你的 ZHI 世界完全同步的虚拟体验界面。</p><p class="sub">King 是独立虚拟人格；管理员权限不会进入 King 世界。</p><button id="enter">进入虚拟世界</button><div id="loginmsg" class="sub" style="margin-top:10px"></div></div></div>
+<div id="world" class="hidden">
+<div class="header"><div><div class="brand">👑 KING MODE</div><div class="sub">ZHI Virtual World · 第一视角体验</div></div><div class="pill" id="balance">💰 -- ZHI</div><button class="pill" id="back">← 返回管理员</button></div>
+<div id="map"><div class="path p1"></div><div class="path p2"></div><div class="zone arena">🏟️ 竞技场</div><div class="zone plaza">🌸 中央广场</div><div class="zone forest">🌲 探索森林</div><div class="zone market">🏪 商业街</div><div class="zone fun">🎡 娱乐区</div><div class="zone apt">🏠 公寓区</div><div id="agents"></div></div>
+<div id="hud" class="panel"><h2>👑 King</h2><div id="state">正在读取世界状态…</div><div class="stats"><div class="stat"><small>心情</small><b id="mood">--</b></div><div class="stat"><small>精力</small><b id="energy">--</b></div><div class="stat"><small>好奇心</small><b id="curiosity">--</b></div><div class="stat"><small>当前目标</small><b id="goal">--</b></div></div><button id="chatBtn" class="send" style="margin-top:10px;width:100%">💬 与附近智能人交流</button></div>
+<div id="chat" class="panel hidden"><div class="chathead"><b id="chatTitle">智能人</b><button class="close" id="closeChat">✕</button></div><div id="messages"><div class="sub">点击地图上的智能人开始交流。</div></div><div class="compose"><textarea id="input" placeholder="对这位智能人说点什么…"></textarea><button class="send" id="send">发送</button></div></div>
+<div id="toast"></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-client.js"></script>
+<script>
+(function(){
+const ADMIN_ID='8ea33807-8b68-4f8b-b145-398937c7bba1', core=()=>window.zhiCoreSupabase, finance=()=>window.zhiSupabase;
+let king=null, selected=null, busy=false;
+const $=id=>document.getElementById(id), esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+function toast(s){$('toast').textContent=s;$('toast').style.display='block';setTimeout(()=>$('toast').style.display='none',2200)}
+function pos(scene,x,y){return {x:Math.max(3,Math.min(97,Number(x))),y:Math.max(8,Math.min(92,Number(y)))}}
+async function init(){
+ const {data:{user}}=await finance().auth.getUser();
+ if(!user||user.id!==ADMIN_ID){$('loginmsg').textContent='请先使用管理员账号登录 ZHI。';return}
+ const {data,error}=await core().from('zhi_agents').select('id,name,gender,personality,life_status,active').eq('active',true).order('name');
+ if(error){$('loginmsg').textContent='世界读取失败：'+error.message;return}
+ king=(data||[]).find(a=>a.name==='King');
+ if(!king){$('loginmsg').textContent='King 尚未创建。';return}
+ $('login').classList.add('hidden');$('world').classList.remove('hidden');await refresh();setInterval(refresh,5000)
+}
+async function refresh(){
+ if(!king)return;
+ const [w,p,m,a,allpos]=await Promise.all([
+  core().from('zhi_agent_wallets').select('balance').eq('agent_id',king.id).maybeSingle(),
+  core().from('zhi_agent_world_positions').select('*').eq('agent_id',king.id).maybeSingle(),
+  core().from('zhi_agent_minds').select('mood,energy,curiosity,confidence,current_goal,short_term_goal,long_term_goal').eq('agent_id',king.id).maybeSingle(),
+  core().from('zhi_agent_activities').select('activity_type,status,location_name,ends_at').eq('agent_id',king.id).maybeSingle(),
+  core().from('zhi_agent_world_positions').select('agent_id,x,y,current_scene,walking').eq('agent_id','neq',king.id)
+ ]);
+ if(w.data)$('balance').textContent='💰 '+Number(w.data.balance).toLocaleString()+' ZHI';
+ if(m.data){$('mood').textContent=m.data.mood;$('energy').textContent=m.data.energy;$('curiosity').textContent=m.data.curiosity;$('goal').textContent=m.data.current_goal||'—'}
+ if(p.data)$('state').textContent=(p.data.current_scene||'未知地点')+' · '+(a.data?.activity_type||'idle')+(p.data.walking?' · 🚶 行走中':'');
+ renderAgents(allpos.data||[],p.data);
+}
+function renderAgents(rows,kp){
+ const box=$('agents');box.innerHTML='';
+ const all=[...(rows||[]),...(kp?[kp]:[])];
+ all.forEach(r=>{
+  const el=document.createElement('div');el.className='agent '+(r.agent_id===king.id?'king':'');el.style.left=pos(r.current_scene,r.x,r.y).x+'%';el.style.top=pos(r.current_scene,r.x,r.y).y+'%';
+  const name=document.createElement('div');name.className='label';name.textContent=r.agent_id===king.id?'👑 King':'';
+  el.innerHTML='<div class="dot"></div>';el.appendChild(name);
+  if(r.agent_id!==king.id){
+   el.title='点击查看并与其交流';el.onclick=async()=>selectById(r.agent_id)
+  }
+  box.appendChild(el);
+ });
+}
+async function selectById(id){
+ const {data}=await core().from('zhi_agents').select('id,name,gender,personality').eq('id',id).maybeSingle();
+ if(!data)return;selected=data;$('chatTitle').textContent='💬 '+data.name;$('chat').classList.remove('hidden');$('messages').innerHTML='<div class="sub">你正在与 '+esc(data.name)+' 交流。</div>'
+}
+$('chatBtn').onclick=()=>{const first=document.querySelector('.agent:not(.king)');if(first)first.click();else toast('附近暂时没有其他智能人')};
+$('closeChat').onclick=()=>$('chat').classList.add('hidden');
+$('back').onclick=()=>location.href='index.html';
+$('send').onclick=send;$('input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});
+async function send(){
+ if(!selected||busy)return;const msg=$('input').value.trim();if(!msg)return;busy=true;$('input').value='';
+ $('messages').insertAdjacentHTML('beforeend','<div class="msg me">'+esc(msg)+'</div>');
+ const {data:{session}}=await finance().auth.getSession();if(!session){toast('管理员会话已失效');busy=false;return}
+ const brain=await core().functions.invoke('zhi-agent-brain',{body:{mode:'prepare',agent_id:selected.id,message:msg},headers:{Authorization:'Bearer '+session.access_token}});
+ if(brain.error||!brain.data?.system){toast('Brain 暂时不可用');busy=false;return}
+ try{
+  const r=await fetch('http://127.0.0.1:11435/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:brain.data.model||'llama3.1:8b',stream:false,keep_alive:'15m',messages:[{role:'system',content:brain.data.system},{role:'user',content:brain.data.prompt}],options:{temperature:.35,num_ctx:1536,num_predict:96}})});
+  const j=await r.json();const reply=String(j?.message?.content||'').trim();if(!reply)throw new Error('empty');
+  $('messages').insertAdjacentHTML('beforeend','<div class="msg agentmsg">'+esc(reply)+'</div>');
+  await core().functions.invoke('zhi-agent-brain',{body:{mode:'save_reply',agent_id:selected.id,message:msg,reply},headers:{Authorization:'Bearer '+session.access_token}});
+ }catch(e){$('messages').insertAdjacentHTML('beforeend','<div class="sub">Brain Bridge 暂时无法连接。</div>')}
+ busy=false
+}
+init().catch(e=>{$('loginmsg').textContent='启动失败：'+e.message});
+})();
+</script>
+</body></html>

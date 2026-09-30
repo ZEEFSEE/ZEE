@@ -134,7 +134,15 @@
       const controller=new AbortController();
       const timeoutId=setTimeout(()=>controller.abort(),180000);
       const startedAt=performance.now();
-      status.textContent='🧠 '+selected.name+' 正在连接本机 Ollama…';
+      const systemChars=String(brain.data.system||'').length;
+      const promptChars=String(brain.data.prompt||'').length;
+      const totalChars=systemChars+promptChars;
+      status.textContent='🧠 '+selected.name+' 正在连接本机 Ollama… · 上下文 '+totalChars.toLocaleString()+' 字';
+      const waitTimer=setTimeout(()=>{
+        const sec=Math.round((performance.now()-startedAt)/1000);
+        status.textContent='🟠 Ollama 尚未返回首个 HTTP 响应 · 已等待 '+sec+' 秒 · 上下文 '+totalChars.toLocaleString()+' 字';
+        console.warn('[ZHI Ollama waiting]',{model,system_chars:systemChars,prompt_chars:promptChars,total_chars:totalChars,wait_seconds:sec});
+      },5000);
       let r;
       try{
         r=await fetch(ollamaUrl,{
@@ -151,7 +159,7 @@
           }),
           signal:controller.signal
         });
-      }finally{clearTimeout(timeoutId)}
+      }finally{clearTimeout(timeoutId);clearTimeout(waitTimer)}
       if(!r.ok){
         const errorText=await r.text();
         status.textContent='❌ Ollama HTTP '+r.status+' · '+(errorText||r.statusText||'请求失败');

@@ -493,7 +493,7 @@ async function loadEcoAgents(){
 
      if(el.__zhiMotion?.mode==='walking'){
        const targetScene=String(pos.current_scene||'');
-       el.__zhiMotion={mode:'arrived',x:worldToStagePercent(pos.x)??parseFloat(el.style.left)||50,y:worldToStagePercent(pos.y)??parseFloat(el.style.top)||50,scene:targetScene,last:performance.now()};
+       el.__zhiMotion={mode:'arrived',x:(worldToStagePercent(pos.x)??parseFloat(el.style.left)??50),y:(worldToStagePercent(pos.y)??parseFloat(el.style.top)??50),scene:targetScene,last:performance.now()};
        el.style.left=el.__zhiMotion.x+'%';
        el.style.top=el.__zhiMotion.y+'%';
      }

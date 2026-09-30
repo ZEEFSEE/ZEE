@@ -127,7 +127,6 @@ let king=null,selected=null,busy=false,agents=[],positions=[],lastSync=0;
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function toast(s){$('toast').textContent=s;$('toast').style.display='block';setTimeout(()=>$('toast').style.display='none',2200)}
 function sceneCenter(scene){const map={'🏟️竞技场':[-650,350],'🌸中央广场':[0,0],'🌲探索森林':[650,350],'🏪商业街':[-520,-500],'🎡娱乐区':[520,-500],'🏠公寓区':[0,-620]};return map[scene]||[0,0]}
-else {
 if(!window.THREE){throw new Error('THREE.js 未加载：CDN 不可用');} if(!window.WebGLRenderingContext){throw new Error('浏览器不支持 WebGL');} const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;$('game').prepend(renderer.domElement);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x07111b);scene.fog=new THREE.Fog(0x07111b,120,950);
 const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.1,2500);camera.position.set(0,6,40);
@@ -349,7 +348,6 @@ document.addEventListener('pointerlockchange',()=>{
 $('send').onclick=send;$('input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});
 async function send(){if(!selected||busy)return;const msg=$('input').value.trim();if(!msg)return;busy=true;$('input').value='';$('messages').insertAdjacentHTML('beforeend','<div class="msg me">'+esc(msg)+'</div>');try{const {data:{session}}=await finance().auth.getSession();if(!session)throw Error('AUTH');const brain=await core().functions.invoke('zhi-agent-brain',{body:{mode:'prepare',agent_id:selected.id,message:msg},headers:{Authorization:'Bearer '+session.access_token}});if(brain.error||!brain.data?.system)throw Error('BRAIN');const r=await fetch('http://127.0.0.1:11435/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:brain.data.model||'llama3.1:8b',stream:false,keep_alive:'15m',messages:[{role:'system',content:brain.data.system},{role:'user',content:brain.data.prompt}],options:{temperature:.35,num_ctx:1536,num_predict:96}})});const j=await r.json();const reply=String(j?.message?.content||'').trim();if(!reply)throw Error('EMPTY');$('messages').insertAdjacentHTML('beforeend','<div class="msg agentmsg">'+esc(reply)+'</div>');await core().functions.invoke('zhi-agent-brain',{body:{mode:'save_reply',agent_id:selected.id,message:msg,reply},headers:{Authorization:'Bearer '+session.access_token}})}catch(e){$('messages').insertAdjacentHTML('beforeend','<div class="sub">Brain Bridge 暂时无法连接。</div>')}busy=false}
 window.__zhiKingStart=async()=>{try{await init()}catch(e){console.error('[ZHI KING]',e);$('loginmsg').textContent='启动失败：'+(e?.message||e);$('login').classList.remove('hidden');$('game').classList.add('hidden');$('enter').disabled=false;$('enter').textContent='重新进入虚拟世界'}};
-}
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)})
 })();
 </script>

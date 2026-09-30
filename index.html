@@ -233,6 +233,7 @@ let agents=[],nodes=[];
 function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function addFeed(name,msg){if(!feed)return;const d=document.createElement('div');d.className='eco-feed-item';d.innerHTML='<b>'+esc(name)+'</b> '+esc(msg);feed.prepend(d);while(feed.children.length>10)feed.lastChild.remove()}
 function makeAgent(a,i){const female=a.gender==='女';return {...a,emoji:(female?['🐰','🦋','🦄','🦉','🐱','🌸','🦢','🐿️','🐧','🌷']:['🦁','🐺','🐯','🦊','🐻','🦅','🐬','🦌','🐼','🐵'])[i%10]}}
+function worldToStagePercent(v){ const n=Number(v); return Number.isFinite(n)?Math.max(0,Math.min(100,n/20)):null; }
 async function loadEcoAgents(){
  const core=window.zhiCoreSupabase;if(!core||!stage)return;
  const [ar,wr,ac,pr]=await Promise.all([
@@ -278,8 +279,8 @@ async function loadEcoAgents(){
      '公寓区':{x:40+Math.random()*20,y:70+Math.random()*14}
    };
    const fallback=sceneBounds[scene]||sceneBounds['中央广场'];
-   let x=Number.isFinite(Number(pos?.x))?Number(pos.x):fallback.x;
-   let y=Number.isFinite(Number(pos?.y))?Number(pos.y):fallback.y;
+   let x=worldToStagePercent(pos?.x); x=x==null?fallback.x:x;
+   let y=worldToStagePercent(pos?.y); y=y==null?fallback.y:y;
    // 已存在的节点保留当前位置；只有首次创建才采用数据库坐标。
    if(existing.has(a.id)){ x=parseFloat(el.style.left)||x; y=parseFloat(el.style.top)||y; }
    el.style.left=x+'%';el.style.top=y+'%';
@@ -321,8 +322,8 @@ async function loadEcoAgents(){
      const isWalking=pos.walking===true || String(pos.walking)==='true';
      if(isWalking && pos.destination_x!=null && pos.destination_y!=null){
        let state=el.__zhiMotion;
-       const targetX=Number(pos.destination_x), targetY=Number(pos.destination_y);
-       const dbX=Number(pos.x), dbY=Number(pos.y);
+       const targetX=worldToStagePercent(pos.destination_x), targetY=worldToStagePercent(pos.destination_y);
+       const dbX=worldToStagePercent(pos.x), dbY=worldToStagePercent(pos.y);
        const started=Date.parse(pos.walk_started_at||'');
        const arrive=Date.parse(pos.walk_arrive_at||'');
        const now=Date.now();
@@ -372,7 +373,7 @@ async function loadEcoAgents(){
 
      if(el.__zhiMotion?.mode==='walking'){
        const targetScene=String(pos.current_scene||'');
-       el.__zhiMotion={mode:'arrived',x:Number(pos.x)||parseFloat(el.style.left)||50,y:Number(pos.y)||parseFloat(el.style.top)||50,scene:targetScene,last:performance.now()};
+       el.__zhiMotion={mode:'arrived',x:worldToStagePercent(pos.x)??parseFloat(el.style.left)||50,y:worldToStagePercent(pos.y)??parseFloat(el.style.top)||50,scene:targetScene,last:performance.now()};
        el.style.left=el.__zhiMotion.x+'%';
        el.style.top=el.__zhiMotion.y+'%';
      }

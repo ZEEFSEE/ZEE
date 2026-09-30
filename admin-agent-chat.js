@@ -310,4 +310,4 @@
     setInterval(()=>{if(selected&&!chatBusy)loadMessages()},5000);
   }
   const t=setInterval(()=>{try{init()}catch(e){}},1000);
-})();
+})();\n

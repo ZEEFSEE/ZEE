@@ -304,9 +304,59 @@ function updatePlayer(dt){
   if(dir.lengthSq()){dir.normalize();const c=Math.cos(yaw),s=Math.sin(yaw);const dx=dir.x*c-dir.z*s,dz=dir.x*s+dir.z*c;camera.position.x+=dx*speed*dt;camera.position.z+=dz*speed*dt;camera.position.x=Math.max(-990,Math.min(990,camera.position.x));camera.position.z=Math.max(-990,Math.min(990,camera.position.z));}
   camera.position.y=6;camera.rotation.order='YXZ';camera.rotation.y=yaw;camera.rotation.x=pitch;
 }
+function makeLabel(text,isKing){
+  const c=document.createElement('canvas');c.width=320;c.height=80;const x=c.getContext('2d');
+  x.fillStyle='rgba(16,10,24,.78)';x.strokeStyle=isKing?'#ffd76a':'#ffffff66';x.lineWidth=3;
+  x.beginPath();if(x.roundRect)x.roundRect(4,8,312,64,16);else x.rect(4,8,312,64);x.fill();x.stroke();
+  x.font='bold 34px system-ui,"Microsoft YaHei",sans-serif';x.textAlign='center';x.textBaseline='middle';
+  x.fillStyle=isKing?'#ffd76a':'#fff5cf';x.fillText(text,160,41);
+  const t=new THREE.CanvasTexture(c);if(THREE.SRGBColorSpace)t.colorSpace=THREE.SRGBColorSpace;
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,fog:false}));
+  s.scale.set(10,2.5,1);return s;
+}
+function makeAgentMesh(a){
+  const isKing=a.name==='King';
+  const g=String(a.gender||'').trim().toLowerCase();
+  const female=/女|female|^f|woman|girl/.test(g);
+  let h=0;for(const ch of String(a.id))h=(h*31+ch.charCodeAt(0))|0;h=Math.abs(h);
+  const pick=(arr,k)=>arr[(h*(k+3)+k)%arr.length];
+  const skin=pick([0xf5d3b3,0xe8b88f,0xd09a70,0x9c6a48],1);
+  const hairCol=female?pick([0x1a1210,0x4b2a17,0x7a3f1d,0x2d1b3d],2):pick([0x1b1512,0x3a2a1c,0x5a3b1e,0x222222],2);
+  const top=isKing?0xffb300:(female?pick([0xd6528a,0x8a5bd6,0x22a3a3,0xe0793a],3):pick([0x2f6db5,0x2e7d5b,0x555c66,0x8a4b2a],3));
+  const bottom=female?top:0x2a2f3a;
+  const mat=c=>new THREE.MeshStandardMaterial({color:c,roughness:.8});
+  const grp=new THREE.Group();
+  const add=(m,x=0,y=0,z=0)=>{m.position.set(x,y,z);m.castShadow=true;grp.add(m);return m};
+  const limb=(r,len,c,x,y)=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r*.85,len,8),mat(c));m.geometry.translate(0,-len/2,0);return add(m,x,y,0)};
+  const legL=limb(.75,5.4,female?skin:bottom,-.95,5.4), legR=limb(.75,5.4,female?skin:bottom,.95,5.4);
+  if(female){
+    add(new THREE.Mesh(new THREE.CylinderGeometry(1.8,1.5,3.6,10),mat(top)),0,7.6,0);
+    add(new THREE.Mesh(new THREE.CylinderGeometry(1.5,2.9,2.6,12),mat(bottom)),0,5.6,0);
+  }else{
+    add(new THREE.Mesh(new THREE.CylinderGeometry(2.4,1.8,4.8,10),mat(top)),0,7.8,0);
+  }
+  const sx=female?2.15:2.85, sy=female?9.2:10;
+  const armL=limb(.55,4.2,top,-sx,sy), armR=limb(.55,4.2,top,sx,sy);
+  for(const arm of [armL,armR]){const hand=new THREE.Mesh(new THREE.SphereGeometry(.6,8,6),mat(skin));hand.position.y=-4.2;arm.add(hand)}
+  const neckY=female?9.4:10.2, headY=neckY+2.0;
+  add(new THREE.Mesh(new THREE.CylinderGeometry(.6,.7,.9,8),mat(skin)),0,neckY+.3,0);
+  add(new THREE.Mesh(new THREE.SphereGeometry(1.7,14,12),mat(skin)),0,headY,0);
+  add(new THREE.Mesh(new THREE.SphereGeometry(1.85,14,10,0,Math.PI*2,0,Math.PI*.58),mat(hairCol)),0,headY,-.05);
+  if(female)add(new THREE.Mesh(new THREE.CylinderGeometry(1.6,1.0,4.6,10),mat(hairCol)),0,headY-1.9,-.9);
+  for(const s of [-1,1])add(new THREE.Mesh(new THREE.SphereGeometry(.22,8,6),mat(0x1a1a22)),s*.62,headY+.1,1.58);
+  add(new THREE.Mesh(new THREE.BoxGeometry(.7,.12,.1),mat(0xb5524a)),0,headY-.65,1.56);
+  if(isKing){
+    add(new THREE.Mesh(new THREE.CylinderGeometry(1.4,1.6,.9,6),new THREE.MeshStandardMaterial({color:0xffd76a,emissive:0x664400,emissiveIntensity:.6,metalness:.5,roughness:.4})),0,headY+1.9,0);
+    add(new THREE.Mesh(new THREE.BoxGeometry(4.8,6,.25),mat(0xa3202f)),0,7.2,female?-3:-2.5);
+  }
+  const label=makeLabel((female?'♀ ':'♂ ')+(a.name||'智能人'),isKing);
+  label.position.set(0,headY+3.6,0);grp.add(label);
+  grp.userData.parts={legL,legR,armL,armR};
+  return grp;
+}
 const agentMeshes=new Map();
 function renderAgents(){const byId=new Map(positions.map(p=>[p.agent_id,p]));
-const active=agents.filter(a=>a.active);$('worldCount').textContent='🌍 智能人：'+active.length;for(const [id,obj] of agentMeshes){if(!active.some(a=>a.id===id)){scene.remove(obj);agentMeshes.delete(id)}}for(const a of active){const p=byId.get(a.id)||{x:1000,y:1000,current_scene:'🌸中央广场',walking:false};let o=agentMeshes.get(a.id);if(!o){o=new THREE.Group();const body=new THREE.Mesh(new THREE.CapsuleGeometry(2.2,5,4,8),new THREE.MeshStandardMaterial({color:a.id===king?.id?0xffb300:0xffd76a}));body.position.y=5;o.add(body);const head=new THREE.Mesh(new THREE.SphereGeometry(2.5,12,10),new THREE.MeshStandardMaterial({color:0xffd2b0}));head.position.y=10;o.add(head);o.userData.agent=a;o.userData.pos={x:Number(p.x),y:Number(p.y)};o.userData.target={x:Number(p.x),y:Number(p.y)};scene.add(o);agentMeshes.set(a.id,o)}
+const active=agents.filter(a=>a.active);$('worldCount').textContent='🌍 智能人：'+active.length;for(const [id,obj] of agentMeshes){if(!active.some(a=>a.id===id)){scene.remove(obj);agentMeshes.delete(id)}}for(const a of active){const p=byId.get(a.id)||{x:1000,y:1000,current_scene:'🌸中央广场',walking:false};let o=agentMeshes.get(a.id);if(!o){o=makeAgentMesh(a);o.userData.agent=a;o.userData.pos={x:Number(p.x),y:Number(p.y)};o.userData.target={x:Number(p.x),y:Number(p.y)};scene.add(o);agentMeshes.set(a.id,o)}
 const tx=Number(p.x),tz=Number(p.y);
 o.userData.target={x:tx,y:tz};o.userData.pos=p;o.userData.agent=a;
 const dx=tx-(o.userData.worldX??tx),dz=tz-(o.userData.worldY??tz);
@@ -359,6 +409,7 @@ function updateAgentVisuals(dt){
       o.position.set(o.userData.worldX-1000,0,o.userData.worldY-1000);
       o.rotation.y=Math.atan2(dx,dz);o.position.y=Math.sin(performance.now()*.008+o.userData.agent.id.charCodeAt(0))*.12;
     }
+    const pt=o.userData.parts;if(pt){const w=dist>0.01?Math.sin(performance.now()*.006)*.6:0;pt.legL.rotation.x=w;pt.legR.rotation.x=-w;pt.armL.rotation.x=-w;pt.armR.rotation.x=w}
   }
 }
 

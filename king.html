@@ -27,6 +27,12 @@ button{font:inherit;cursor:pointer}.hidden{display:none!important}
 .kingBoard.collapsed .kingBoardBody{display:none}
 .kingBoard.collapsed .kingBoardToggle span:last-child{transform:rotate(180deg)}
 .kingBoardBody{padding-top:8px}
+#overview{pointer-events:auto}
+.overviewPanel{overflow:hidden}
+.overviewToggle{width:100%;display:flex;justify-content:space-between;align-items:center;background:transparent;border:0;color:#fff;padding:0; font:700 14px system-ui,"Microsoft YaHei",sans-serif;cursor:pointer;text-align:left}
+.overviewToggle .overviewChevron{transition:transform .2s ease}
+#overview.collapsed .overviewBody{display:none}
+#overview.collapsed .overviewChevron{transform:rotate(180deg)}
 </style>
 </head>
 <body>
@@ -47,13 +53,25 @@ window.zhiForceEnterKing=function(){
 <div class="hud bottom card kingBoard collapsed" id="kingBoard"><button class="kingBoardToggle" id="kingBoardToggle" type="button" aria-expanded="false"><span>👑 KING 信息</span><span id="kingBoardChevron">⌃</span></button><div class="kingBoardBody"><h3>👑 King</h3><div id="state">正在读取世界…</div><div class="stats"><div class="stat"><small>心情</small><b id="mood">--</b></div><div class="stat"><small>精力</small><b id="energy">--</b></div><div class="stat"><small>好奇心</small><b id="curiosity">--</b></div><div class="stat"><small>目标</small><b id="goal">--</b></div><div class="stat"><small>压力</small><b id="stress">--</b></div><div class="stat"><small>信心</small><b id="confidence">--</b></div></div><div class="kingThought" id="thought">正在形成下一步想法…</div><div class="controls">👁️ 纯观察模式 · KING 自主移动与转向 · 你的视野完全同步 KING · 你不能驾驶、移动或转向</div></div></div>
 <div id="info" class="hidden"><div class="head"><b id="infoTitle">智能人</b><button class="close" id="closeInfo">✕</button></div><div id="infoBody"></div><button id="infoChat" class="send" style="width:100%;margin-top:6px">🚶 邀请 TA 过来聊天</button></div>
 <div id="chat" class="hidden"><div class="chathead"><b id="chatTitle">智能人</b><button class="close" id="closeChat">✕</button></div><div id="messages"><div class="sub">开始聊天。</div></div><div class="compose"><textarea id="input" placeholder="对这位智能人说点什么…"></textarea><button class="send" id="send">发送</button></div></div>
-<div id="overview"><div class="overviewTitle">🗺️ ZHI 世界 · 智能人位置</div><canvas id="overviewCanvas" class="overviewCanvas" width="220" height="220"></canvas><div class="overviewHint">滚轮缩放视野 · M 切换全景</div></div><div id="toast"></div>
+<div id="overview" class="overviewPanel collapsed"><button type="button" class="overviewToggle" id="overviewToggle" aria-expanded="false"><span>🗺️ ZHI 世界 · 智能人位置</span><span class="overviewChevron" id="overviewChevron">⌃</span></button><div class="overviewBody"><canvas id="overviewCanvas" class="overviewCanvas" width="220" height="220"></canvas><div class="overviewHint">滚轮缩放视野 · M 切换全景</div></div></div><div id="toast"></div>
 </div>
 <script>window.addEventListener('error',function(e){window.__zhiErr=(e.message||'')+' @'+String(e.filename||'').split('/').pop()+':'+e.lineno;});</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-client.js?v=20260930-05"></script>
 <script>
 window.__zhiKingBooted=false;
+(function(){
+  const overview=document.getElementById('overview');
+  const toggle=document.getElementById('overviewToggle');
+  const chevron=document.getElementById('overviewChevron');
+  if(overview&&toggle){
+    toggle.addEventListener('click',function(){
+      const collapsed=overview.classList.toggle('collapsed');
+      toggle.setAttribute('aria-expanded',String(!collapsed));
+      if(chevron)chevron.textContent=collapsed?'⌃':'⌄';
+    });
+  }
+})();
 (function(){
   const board=document.getElementById('kingBoard');
   const toggle=document.getElementById('kingBoardToggle');

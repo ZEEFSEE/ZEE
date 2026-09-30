@@ -60,7 +60,13 @@
     const ins=await db().from('admin_agent_messages').insert({admin_user_id:ADMIN_ID,agent_id:selected.id,agent_name:selected.name,sender_type:'admin',content:msg});
     if(ins.error){status.textContent='发送失败：'+ins.error.message;return}
     await loadMessages();
-    let reply=await db().functions.invoke('zhi-agent-brain',{body:{agent_id:selected.id,message:msg}});
+    const {data:{session}}=await db().auth.getSession();
+    let reply;
+    if(session?.access_token){
+      reply=await core.functions.invoke('zhi-agent-brain',{body:{agent_id:selected.id,message:msg},headers:{Authorization:`Bearer ${session.access_token}`}});
+    }else{
+      reply={error:{message:'登录会话已失效，请重新登录'}};
+    }
     let brainError=reply.error?.message||reply.data?.error;
     // Brain unavailable? Keep chat alive with the existing ZHI reply engine.
     if(brainError||!reply.data?.reply){

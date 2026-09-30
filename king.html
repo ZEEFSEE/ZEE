@@ -12,7 +12,7 @@ button{font:inherit;cursor:pointer}.hidden{display:none!important}
 .pill,.card{background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(10px);box-shadow:0 10px 40px #0008;border-radius:14px}.pill{padding:8px 12px;color:#ffe9a4;font-weight:900}
 .bottom{left:18px;bottom:18px;width:min(390px,calc(100vw - 36px));padding:14px}.bottom h3{margin:0 0 8px;color:#ffe890}.stats{display:grid;grid-template-columns:1fr 1fr;gap:7px}.stat{padding:8px;background:#07080ccc;border-radius:9px}.stat small{display:block;color:#bdaecb}.stat b{color:#fff0a4}.controls{margin-top:9px;color:#ddd;font-size:11px;line-height:1.6}
 #crosshair{left:50%;top:50%;width:18px;height:18px;transform:translate(-50%,-50%);opacity:.9}#crosshair:before,#crosshair:after{content:"";position:absolute;background:#fff3b0}#crosshair:before{width:18px;height:2px;left:0;top:8px}#crosshair:after{width:2px;height:18px;left:8px;top:0}
-#start{position:absolute;z-index:90;inset:0;display:grid;place-items:center;background:linear-gradient(#07040ee8,#080b0ee8)}.startbox{width:min(520px,calc(100vw - 30px));padding:28px;text-align:center}.startbox h1{margin:0 0 10px;color:#ffe890;font-size:30px}.startbox button{margin-top:15px;padding:13px 24px;border-radius:11px;border:1px solid #fff0a0;background:#ffb300;font-weight:1000}
+#start{pointer-events:auto;position:absolute;z-index:9999;inset:0;display:grid;place-items:center;background:linear-gradient(#07040ee8,#080b0ee8)}.startbox{width:min(520px,calc(100vw - 30px));padding:28px;text-align:center}.startbox h1{margin:0 0 10px;color:#ffe890;font-size:30px}.startbox button{margin-top:15px;padding:13px 24px;border-radius:11px;border:1px solid #fff0a0;background:#ffb300;font-weight:1000}
 #login{position:fixed;z-index:100;inset:0;display:grid;place-items:center;background:#08040e}.loginbox{width:min(430px,calc(100vw - 30px));padding:25px;text-align:center;background:#12091df5;border:1px solid var(--line);border-radius:20px}.loginbox h1{color:#ffe890}.loginbox button{padding:12px 18px;border:1px solid #fff0a0;border-radius:10px;background:#ffb300;font-weight:1000}
 #info,#chat{position:absolute;z-index:70;background:#100a18f7;border:1px solid var(--line);box-shadow:0 18px 70px #000c;backdrop-filter:blur(14px);border-radius:18px}
 #info{right:18px;top:100px;width:min(360px,calc(100vw - 36px));padding:16px}.head{display:flex;justify-content:space-between;align-items:center}.head b{color:#ffe890;font-size:17px}.close{border:0;background:#ffffff15;color:#fff;border-radius:8px;padding:5px 9px}
@@ -25,7 +25,7 @@ button{font:inherit;cursor:pointer}.hidden{display:none!important}
 <body>
 <div id="login"><div class="loginbox"><h1>👑 ZHI · KING MODE</h1><p>进入 2 km × 2 km 的 ZHI 第一视角虚拟世界。</p><p class="sub">King 与管理员账号统一身份。</p><button id="enter">进入虚拟世界</button><div id="loginmsg" class="sub" style="margin-top:10px"></div></div></div>
 <div id="game" class="hidden">
-<div id="start"><div class="startbox card"><h1>🌍 ZHI Virtual World</h1><p>2,000 m × 2,000 m 第一视角世界</p><p class="sub">鼠标控制视角 / 转向　W 前进　S 后退　A/D 左右移动　行走最高 2 m/s　Esc 释放鼠标</p><button id="play">🖱️ 点击进入驾驶 / 行走模式</button></div></div>
+<div id="start"><div class="startbox card"><h1>🌍 ZHI Virtual World</h1><p>2,000 m × 2,000 m 第一视角世界</p><p class="sub">鼠标控制视角 / 转向　W 前进　S 后退　A/D 左右移动　行走最高 2 m/s　Esc 释放鼠标</p><button id="play" type="button" onclick="window.zhiEnterControlMode&&window.zhiEnterControlMode()">🖱️ 点击进入驾驶 / 行走模式</button></div></div>
 <div class="hud top"><div><div class="brand">👑 KING MODE</div><div class="sub">ZHI Virtual World · 2 km × 2 km · First Person · 公共 3D Asset CDN</div></div><div style="display:flex;gap:8px;align-items:center"><div class="pill" id="worldCount">🌍 智能人：--</div><div class="pill" id="balance">💰 -- ZHI</div><button class="pill" id="back" style="pointer-events:auto">← 返回管理员</button></div></div>
 <div id="crosshair" class="hud"></div>
 <div class="hud bottom card"><h3>👑 King</h3><div id="state">正在读取世界…</div><div class="stats"><div class="stat"><small>心情</small><b id="mood">--</b></div><div class="stat"><small>精力</small><b id="energy">--</b></div><div class="stat"><small>好奇心</small><b id="curiosity">--</b></div><div class="stat"><small>目标</small><b id="goal">--</b></div></div><div class="controls">W/S 前进后退 · A/D 横移 · 鼠标左/右转向与上下看 · 最高 2 m/s · 点击智能人查看资料</div></div>
@@ -312,7 +312,7 @@ async function worldTick(){
 setInterval(worldTick,2000);
 let controlMode=false;
 function animate(){requestAnimationFrame(animate);const now=performance.now(),dt=Math.min(.05,(now-last)/1000);last=now;updateAgentVisuals(dt);if(!$('start').classList.contains('hidden')||!controlMode){renderer.render(scene,camera);return}updatePlayer(dt);renderer.render(scene,camera)}
-function enterControlMode(){
+window.zhiEnterControlMode=function(){
   controlMode=true;
   $('start').classList.add('hidden');
   try{

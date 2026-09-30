@@ -42,7 +42,7 @@ window.zhiForceEnterKing=function(){
 <div class="hud top"><div><div class="brand">👑 KING MODE</div><div class="sub">ZHI Virtual World · 2 km × 2 km · First Person · 公共 3D Asset CDN</div></div><div style="display:flex;gap:8px;align-items:center"><div class="pill" id="worldCount">🌍 智能人：--</div><div class="pill" id="balance">💰 -- ZHI</div><button class="pill" id="back" style="pointer-events:auto">← 返回管理员</button></div></div>
 <div id="crosshair" class="hud"></div>
 <div class="hud bottom card"><h3>👑 King</h3><div id="state">正在读取世界…</div><div class="stats"><div class="stat"><small>心情</small><b id="mood">--</b></div><div class="stat"><small>精力</small><b id="energy">--</b></div><div class="stat"><small>好奇心</small><b id="curiosity">--</b></div><div class="stat"><small>目标</small><b id="goal">--</b></div></div><div class="controls">W/S 前进后退 · A/D 横移 · 鼠标左/右转向与上下看 · 最高 2 m/s · 点击智能人查看资料</div></div>
-<div id="info" class="hidden"><div class="head"><b id="infoTitle">智能人</b><button class="close" id="closeInfo">✕</button></div><div id="infoBody"></div><button id="infoChat" class="send" style="width:100%;margin-top:6px">💬 与 TA 聊天</button></div>
+<div id="info" class="hidden"><div class="head"><b id="infoTitle">智能人</b><button class="close" id="closeInfo">✕</button></div><div id="infoBody"></div><button id="infoChat" class="send" style="width:100%;margin-top:6px">🚶 邀请 TA 过来聊天</button></div>
 <div id="chat" class="hidden"><div class="chathead"><b id="chatTitle">智能人</b><button class="close" id="closeChat">✕</button></div><div id="messages"><div class="sub">开始聊天。</div></div><div class="compose"><textarea id="input" placeholder="对这位智能人说点什么…"></textarea><button class="send" id="send">发送</button></div></div>
 <div id="overview"><div class="overviewTitle">🗺️ ZHI 世界 · 智能人位置</div><canvas id="overviewCanvas" class="overviewCanvas" width="220" height="220"></canvas><div class="overviewHint">滚轮缩放视野 · M 切换全景</div></div><div id="toast"></div>
 </div>
@@ -397,6 +397,43 @@ async function init(){
 }
 let zhiConversationActive=false;
 let zhiConversationAgentId=null;
+let zhiConversationApproach=false;
+let zhiConversationApproachStartedAt=0;
+const ZHI_CHAT_APPROACH_DISTANCE=14;
+function startAgentChatApproach(){
+  if(!selected)return;
+  const o=agentMeshes.get(selected.id);
+  if(!o)return;
+  const px=camera.position.x+1000,pz=camera.position.z+1000;
+  o.userData.talking=false;
+  o.userData.departurePending=false;
+  o.userData.conversationApproach=true;
+  o.userData.approachTarget={x:px,y:pz};
+  zhiConversationApproach=true;
+  zhiConversationApproachStartedAt=performance.now();
+  $('infoChat').disabled=true;
+  $('infoChat').textContent='🚶 TA 正在走过来…';
+  $('infoBody').insertAdjacentHTML('beforeend','<div class="sub" id="approachStatus" style="margin-top:8px">对方愿意交流，正在走过来。</div>');
+  toast('🚶 '+esc(selected.name)+' 愿意聊天，正在向你走来');
+}
+function openAgentConversation(){
+  if(!selected)return;
+  const o=agentMeshes.get(selected.id);
+  if(o){
+    o.userData.conversationApproach=false;
+    o.userData.talking=true;
+    o.userData.talkTarget={x:camera.position.x+1000,y:camera.position.z+1000};
+  }
+  zhiConversationApproach=false;
+  zhiConversationActive=true;
+  zhiConversationAgentId=selected.id;
+  $('infoChat').disabled=false;
+  $('infoChat').textContent='💬 与 TA 聊天';
+  $('chatTitle').textContent='💬 '+selected.name;
+  $('chat').classList.remove('hidden');
+  $('info').classList.add('hidden');
+  $('messages').innerHTML='<div class="sub">'+esc(selected.name)+' 已走到你面前，愿意和你交流。</div>';
+}
 function setAgentConversationState(active){
   zhiConversationActive=active;
   zhiConversationAgentId=active&&selected?selected.id:null;
@@ -425,6 +462,23 @@ function updateAgentVisuals(dt){
   for(const o of agentMeshes.values()){
     const p=o.userData.pos||{};const t=o.userData.target||p;
     const speed=Math.min(Number(p.speed_mps)||1.2,MAX_AGENT_SPEED_MPS);
+    if(o.userData.conversationApproach){
+      const tx=camera.position.x+1000,tz=camera.position.z+1000;
+      const fx=tx-(o.userData.worldX??Number(p.x||0)),fz=tz-(o.userData.worldY??Number(p.y||0));
+      const distToPlayer=Math.hypot(fx,fz);
+      if(distToPlayer>0.01)o.rotation.y=Math.atan2(fx,fz);
+      if(distToPlayer<=ZHI_CHAT_APPROACH_DISTANCE || performance.now()-zhiConversationApproachStartedAt>20000){
+        o.userData.conversationApproach=false;
+        openAgentConversation();
+      }else{
+        const step=Math.min(distToPlayer,speed*dt);
+        o.userData.worldX=(o.userData.worldX??Number(p.x||0))+(fx/distToPlayer)*step;
+        o.userData.worldY=(o.userData.worldY??Number(p.y||0))+(fz/distToPlayer)*step;
+        o.position.set(o.userData.worldX-1000,0,o.userData.worldY-1000);
+        const pt=o.userData.parts;if(pt){const w=Math.sin(performance.now()*.006)*.6;pt.legL.rotation.x=w;pt.legR.rotation.x=-w;pt.armL.rotation.x=-w;pt.armR.rotation.x=w}
+        continue;
+      }
+    }
     if(o.userData.talking){
       const tx=camera.position.x+1000,tz=camera.position.z+1000;
       const fx=tx-(o.userData.worldX??Number(p.x||0)),fz=tz-(o.userData.worldY??Number(p.y||0));
@@ -477,7 +531,7 @@ document.addEventListener('pointerlockchange',()=>{
     $('start').classList.add('hidden');
     $('state').textContent='👑 KING 行走模式 · WASD 移动 · 鼠标控制视角 · Esc 释放鼠标';
   }
-});$('closeInfo').onclick=()=>$('info').classList.add('hidden');$('closeChat').onclick=()=>{if(zhiConversationActive){$('messages').insertAdjacentHTML('beforeend','<div class="msg agentmsg">我有事情要离开了。</div>');finishAgentConversation()}$('chat').classList.add('hidden')};$('back').onclick=()=>location.href='index.html';$('infoChat').onclick=()=>{if(selected){setAgentConversationState(true);$('chatTitle').textContent='💬 '+selected.name;$('chat').classList.remove('hidden');$('info').classList.add('hidden');$('messages').innerHTML='<div class="sub">你正在与 '+esc(selected.name)+' 交流。对方会停下并看着你。</div>'}};
+});$('closeInfo').onclick=()=>{if(zhiConversationApproach){const o=selected?agentMeshes.get(selected.id):null;if(o)o.userData.conversationApproach=false;zhiConversationApproach=false;$('infoChat').disabled=false;$('infoChat').textContent='🚶 邀请 TA 过来聊天'}$('info').classList.add('hidden')};$('closeChat').onclick=()=>{if(zhiConversationActive){$('messages').insertAdjacentHTML('beforeend','<div class="msg agentmsg">我有事情要离开了。</div>');finishAgentConversation()}$('chat').classList.add('hidden')};$('back').onclick=()=>location.href='index.html';$('infoChat').onclick=()=>{if(selected&&!zhiConversationApproach&&!zhiConversationActive){startAgentChatApproach()}};
 $('send').onclick=send;$('input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});
 async function send(){if(!selected||busy)return;const msg=$('input').value.trim();if(!msg)return;busy=true;$('input').value='';$('messages').insertAdjacentHTML('beforeend','<div class="msg me">'+esc(msg)+'</div>');try{const {data:{session}}=await finance().auth.getSession();if(!session)throw Error('AUTH');const brain=await core().functions.invoke('zhi-agent-brain',{body:{mode:'prepare',agent_id:selected.id,message:msg},headers:{Authorization:'Bearer '+session.access_token}});if(brain.error||!brain.data?.system)throw Error('BRAIN');const r=await fetch('http://127.0.0.1:11435/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:brain.data.model||'llama3.1:8b',stream:false,keep_alive:'15m',messages:[{role:'system',content:brain.data.system},{role:'user',content:brain.data.prompt}],options:{temperature:.35,num_ctx:1536,num_predict:96}})});const j=await r.json();const reply=String(j?.message?.content||'').trim();if(!reply)throw Error('EMPTY');$('messages').insertAdjacentHTML('beforeend','<div class="msg agentmsg">'+esc(reply)+'</div>');await core().functions.invoke('zhi-agent-brain',{body:{mode:'save_reply',agent_id:selected.id,message:msg,reply},headers:{Authorization:'Bearer '+session.access_token}})}catch(e){$('messages').insertAdjacentHTML('beforeend','<div class="sub">Brain Bridge 暂时无法连接。</div>')}busy=false}
 window.__zhiKingStart=async()=>{try{await init()}catch(e){console.error('[ZHI KING]',e);$('loginmsg').textContent='启动失败：'+(e?.message||e);$('login').classList.remove('hidden');$('game').classList.add('hidden');$('enter').disabled=false;$('enter').textContent='重新进入虚拟世界'}};

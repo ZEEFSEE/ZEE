@@ -312,20 +312,26 @@
   }
   let started=false;
   async function init(){
-    if(started)return;
     const database=db(),core=window.zhiCoreSupabase;
     if(!database||!core)return;
-    // IMPORTANT: this page may use a Supabase client configured with an accessToken callback.
-    // getUser() is not supported on that client; use verified JWT claims instead.
-    const {data:{claims},error:claimsError}=await database.auth.getClaims();
-    if(claimsError||claims?.sub!==ADMIN_ID)return;
-    started=true;
-    ui();
-    loadAgents();
-    const initialBridge=await checkBrainBridge(true); if(initialBridge.ok) brainModels=initialBridge.models;
-    setInterval(loadAgents,15000);
-    setInterval(()=>{if(!chatBusy) checkBrainBridge(false).then(x=>{if(x.ok)brainModels=x.models})},30000);
-    setInterval(()=>{if(selected&&!chatBusy)loadMessages()},5000);
+    try{
+      const {data:{session},error:sessionError}=await database.auth.getSession();
+      const authUser=session?.user;
+      if(sessionError){
+        console.warn('[ZHI Admin Chat] session check failed',sessionError);
+        return;
+      }
+      if(authUser?.id!==ADMIN_ID)return;
+      started=true;
+      ui();
+      loadAgents();
+      const initialBridge=await checkBrainBridge(true); if(initialBridge.ok) brainModels=initialBridge.models;
+      setInterval(loadAgents,15000);
+      setInterval(()=>{if(!chatBusy) checkBrainBridge(false).then(x=>{if(x.ok)brainModels=x.models})},30000);
+      setInterval(()=>{if(selected&&!chatBusy)loadMessages()},5000);
+    }catch(e){
+      console.warn('[ZHI Admin Chat] init failed',e);
+    }
   }
-  const t=setInterval(()=>{try{init()}catch(e){}},1000);
-})();\n
+  const t=setInterval(()=>{init()},500);
+  init();\n

@@ -3,6 +3,8 @@
   const db=()=>window.zhiSupabase;
   const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   let agents=[],selected=null;
+  let chatBusy=false;
+  let brainModels=[];
   const BRAIN_BRIDGE='http://127.0.0.1:11435';
   const BRAIN_UI_VERSION='braindiag3';
   function css(){
@@ -36,6 +38,18 @@
       console.error('[ZHI Brain Bridge]',e);
       return {ok:false,models:[]};
     }
+  }
+  function compactBrainContext(system,prompt,maxTotal=6000){
+    const s=String(system||''), u=String(prompt||'');
+    if(s.length+u.length<=maxTotal) return {system:s,prompt:u,chars:s.length+u.length,compressed:false};
+    const systemBudget=Math.min(3800,Math.max(2600,Math.floor(maxTotal*0.62)));
+    const promptBudget=maxTotal-systemBudget;
+    const trim=(text,budget)=>{
+      if(text.length<=budget)return text;
+      const head=Math.floor(budget*0.78), tail=budget-head;
+      return text.slice(0,head)+'\n…[相关上下文已压缩]…\n'+text.slice(-tail);
+    };
+    return {system:trim(s,systemBudget),prompt:trim(u,promptBudget),chars:Math.min(maxTotal,s.length+u.length),compressed:true};
   }
   function ui(){
     css();
@@ -102,7 +116,8 @@
     return true;
   }
   async function send(){
-    if(!selected)return;
+    if(!selected||chatBusy)return;
+    chatBusy=true;
     const input=document.getElementById('zacInput'),msg=input.value.trim(),status=document.getElementById('zacStatus');
     if(!msg)return;
     input.value='';
@@ -152,9 +167,8 @@
     }
 
     const model=brain.data.model||'llama3.1:8b';
-    const bridge=await checkBrainBridge(true);
-    if(!bridge.ok)return;
-    if(bridge.models.length && !bridge.models.some(x=>x===model || x.startsWith(model+':'))){status.textContent='❌ 找不到模型 '+model+' · 已安装：'+bridge.models.join(', ');return;}
+    const compact=compactBrainContext(brain.data.system,brain.data.prompt,6000);
+    if(brainModels.length && !brainModels.some(x=>x===model || x.startsWith(model+':'))){status.textContent='❌ 找不到模型 '+model+' · 已安装：'+brainModels.join(', ');return;}
     status.textContent='🧠 '+selected.name+' 正在根据自己的资料思考…';
     let ollama;
     try{
@@ -162,8 +176,10 @@
       const controller=new AbortController();
       const timeoutId=setTimeout(()=>controller.abort(),180000);
       const startedAt=performance.now();
-      const systemChars=String(brain.data.system||'').length;
-      const promptChars=String(brain.data.prompt||'').length;
+      const originalSystemChars=String(brain.data.system||'').length;
+      const originalPromptChars=String(brain.data.prompt||'').length;
+      const systemChars=compact.system.length;
+      const promptChars=compact.prompt.length;
       const totalChars=systemChars+promptChars;
       status.textContent='🧠 '+selected.name+' 正在连接本机 Ollama… · 上下文 '+totalChars.toLocaleString()+' 字';
       const waitTimer=setTimeout(()=>{
@@ -180,8 +196,8 @@
             model,
             stream:true,
             messages:[
-              {role:'system',content:brain.data.system},
-              {role:'user',content:brain.data.prompt}
+              {role:'system',content:compact.system},
+              {role:'user',content:compact.prompt}
             ],
             options:{temperature:0.75}
           }),
@@ -233,13 +249,14 @@
       }
       ollama=full.trim();
       const elapsed=Math.round(performance.now()-startedAt);
-      if(!ollama){
+        if(!ollama){
         status.textContent='❌ Ollama 已连接但没有生成文字';
         console.error('[ZHI Ollama]',{url:ollamaUrl,status:r.status,elapsed_ms:elapsed,chunks});
+        chatBusy=false;
         return;
       }
       status.textContent='🟢 '+selected.name+' 回复完成 · '+model+' · '+elapsed+'ms · '+ollama.length+'字';
-      console.info('[ZHI Ollama]',{url:ollamaUrl,status:r.status,elapsed_ms:elapsed,chunks,chars:ollama.length});
+      console.info('[ZHI Ollama]',{url:ollamaUrl,status:r.status,elapsed_ms:elapsed,chunks,chars:ollama.length,original_context_chars:originalSystemChars+originalPromptChars,sent_context_chars:totalChars,compressed:compact.compressed});
     }catch(e){
       const detail=e?.message||String(e);
       const name=e?.name||'Error';
@@ -247,7 +264,9 @@
         ?'请求超过 180 秒，已自动终止'
         :'Brain Bridge 没有完成 Ollama 流式响应，请检查 Bridge 窗口日志';
       status.textContent='❌ Ollama 请求异常 · '+name+' · '+detail+' · '+diagnosis;
+      chatBusy=false;
       console.error('[ZHI Ollama]',{error:e,name,message:detail,page_protocol:location.protocol,diagnosis});
+      chatBusy=false;
       return;
     }
 
@@ -263,6 +282,7 @@
 
     status.textContent='🟢 已收到真正模型回复 · '+model+' · 已写入智能人记忆';
     await loadMessages();
+    chatBusy=false;
   }
   let started=false;
   async function init(){
@@ -274,10 +294,10 @@
     started=true;
     ui();
     loadAgents();
-    checkBrainBridge(true);
+    const initialBridge=await checkBrainBridge(true); if(initialBridge.ok) brainModels=initialBridge.models;
     setInterval(loadAgents,15000);
-    setInterval(()=>checkBrainBridge(false),30000);
-    setInterval(()=>{if(selected)loadMessages()},5000);
+    setInterval(()=>{if(!chatBusy) checkBrainBridge(false).then(x=>{if(x.ok)brainModels=x.models})},30000);
+    setInterval(()=>{if(selected&&!chatBusy)loadMessages()},5000);
   }
   const t=setInterval(()=>{try{init()}catch(e){}},1000);
 })();

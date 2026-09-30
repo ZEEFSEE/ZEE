@@ -34,7 +34,7 @@ radial-gradient(circle at 50% 15%,#7b246e 0,#34105b 30%,#10091d 65%,#061713 100%
 </style>
 </head>
 <body>
-<div id="login"><div class="loginbox"><h1>👑 ZHI · KING MODE</h1><p>进入与你的 ZHI 世界完全同步的虚拟体验界面。</p><p class="sub">King 是独立虚拟人格；管理员权限不会进入 King 世界。</p><button id="enter">进入虚拟世界</button><div id="loginmsg" class="sub" style="margin-top:10px"></div></div></div>
+<div id="login"><div class="loginbox"><h1>👑 ZHI · KING MODE</h1><p>进入与你的 ZHI 世界完全同步的虚拟体验界面。</p><p class="sub">King 是独立虚拟人格，但与管理员账号统一身份；管理员不是第二个 King 账号。</p><button id="enter">进入虚拟世界</button><div id="loginmsg" class="sub" style="margin-top:10px"></div></div></div>
 <div id="world" class="hidden">
 <div class="header"><div><div class="brand">👑 KING MODE</div><div class="sub">ZHI Virtual World · 第一视角体验</div></div><div class="pill" id="balance">💰 -- ZHI</div><button class="pill" id="back">← 返回管理员</button></div>
 <div id="map"><div class="path p1"></div><div class="path p2"></div><div class="zone arena">🏟️ 竞技场</div><div class="zone plaza">🌸 中央广场</div><div class="zone forest">🌲 探索森林</div><div class="zone market">🏪 商业街</div><div class="zone fun">🎡 娱乐区</div><div class="zone apt">🏠 公寓区</div><div id="agents"></div></div>
@@ -52,8 +52,15 @@ const $=id=>document.getElementById(id), esc=v=>String(v??'').replace(/[&<>"']/g
 function toast(s){$('toast').textContent=s;$('toast').style.display='block';setTimeout(()=>$('toast').style.display='none',2200)}
 function pos(scene,x,y){return {x:Math.max(3,Math.min(97,Number(x))),y:Math.max(8,Math.min(92,Number(y)))}}
 async function init(){
- const {data:{user}}=await finance().auth.getUser();
- if(!user||user.id!==ADMIN_ID){$('loginmsg').textContent='请先使用管理员账号登录 ZHI。';return}
+ const {data:{session},error:sessionError}=await finance().auth.getSession();
+ const user=session?.user;
+ if(sessionError){$('loginmsg').textContent='登录状态读取失败，请返回 ZHI 重新登录。';return}
+ if(!user||user.id!==ADMIN_ID){
+   $('loginmsg').textContent='请先登录 ZHI 管理员账号；King 与管理员使用同一个真实账号，不需要第二套登录。';
+   $('enter').textContent='返回 ZHI 登录';
+   $('enter').onclick=()=>location.href='index.html';
+   return;
+ }
  const {data,error}=await core().from('zhi_agents').select('id,name,gender,personality,life_status,active').eq('active',true).order('name');
  if(error){$('loginmsg').textContent='世界读取失败：'+error.message;return}
  king=(data||[]).find(a=>a.name==='King');
@@ -109,6 +116,7 @@ async function send(){
  }catch(e){$('messages').insertAdjacentHTML('beforeend','<div class="sub">Brain Bridge 暂时无法连接。</div>')}
  busy=false
 }
+$('enter').onclick=()=>init();
 init().catch(e=>{$('loginmsg').textContent='启动失败：'+e.message});
 })();
 </script>

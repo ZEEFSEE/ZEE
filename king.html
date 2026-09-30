@@ -392,20 +392,35 @@ function updatePlayer(dt){
   const speed=Math.min(WALK_SPEED_MPS,MAX_PLAYER_SPEED_MPS);if(!king)return;
   const dir=new THREE.Vector3();
   if(keys.has('KeyW'))dir.z-=1;if(keys.has('KeyS'))dir.z+=1;if(keys.has('KeyA'))dir.x-=1;if(keys.has('KeyD'))dir.x+=1;
+  const km=agentMeshes.get(king.id);
+  const kx=km?.userData.worldX??(camera.position.x+1000), kz=km?.userData.worldY??(camera.position.z+1000);
+  let moved=false;
   if(dir.lengthSq()){
     dir.normalize();
-    // 严格以当前视线方向作为“前”：W 向镜头正前方，S 后退，A 左，D 右。
     const sy=Math.sin(yaw),cy=Math.cos(yaw);
     const forwardX=-sy,forwardZ=-cy;
     const rightX=cy,rightZ=-sy;
     const dx=forwardX*(-dir.z)+rightX*dir.x;
     const dz=forwardZ*(-dir.z)+rightZ*dir.x;
-    camera.position.x+=dx*speed*dt;
-    camera.position.z+=dz*speed*dt;
-    camera.position.x=Math.max(-990,Math.min(990,camera.position.x));
-    camera.position.z=Math.max(-990,Math.min(990,camera.position.z));
+    const nx=Math.max(10,Math.min(WORLD-10,kx+dx*speed*dt));
+    const nz=Math.max(10,Math.min(WORLD-10,kz+dz*speed*dt));
+    if(km){km.userData.worldX=nx;km.userData.worldY=nz;km.userData.target={x:nx,y:nz};km.userData.pos={...(km.userData.pos||{}),x:nx,y:nz,walking:true};km.position.set(nx-1000,0,nz-1000);km.rotation.y=yaw;km.classList?.remove?.('is-walking');}
+    moved=true;
   }
-  camera.position.y=6;camera.rotation.order='YXZ';camera.rotation.y=yaw;camera.rotation.x=pitch;
+  const px=km?.userData.worldX??kx, pz=km?.userData.worldY??kz;
+  camera.position.x=px-1000;camera.position.z=pz-1000;camera.position.y=6.1;
+  camera.rotation.order='YXZ';camera.rotation.y=yaw;camera.rotation.x=pitch;
+  if(moved) window.__zhiKingLastManualAt=Date.now();
+}
+function updateKingFollowCamera(){
+  if(controlMode||!king)return;
+  const km=agentMeshes.get(king.id);if(!km)return;
+  const x=Number(km.userData.worldX),z=Number(km.userData.worldY);
+  if(!Number.isFinite(x)||!Number.isFinite(z))return;
+  const targetYaw=Number.isFinite(km.rotation.y)?km.rotation.y:yaw;
+  yaw=targetYaw;
+  camera.position.set(x-1000,6.1,z-1000);
+  camera.rotation.order='YXZ';camera.rotation.y=yaw;camera.rotation.x=0;
 }
 function makeLabel(text,isKing){
   const c=document.createElement('canvas');c.width=320;c.height=80;const x=c.getContext('2d');

@@ -295,7 +295,12 @@ addEventListener('keydown',e=>{if(e.code==='KeyM'){overviewMode=!overviewMode;up
 let savedFirstPersonPosition=null;
 function updateOverviewCamera(){
   if(overviewMode){
-    savedFirstPersonPosition={x:camera.position.x,y:camera.position.y,z:camera.position.z,yaw,pitch};
+    // 只在“第一次进入全景模式”时保存第一视角位置。
+    // M 键重复触发时绝不能把已经位于全景相机的 (0, overviewHeight, 0)
+    // 再保存一次，否则退出时会把 King 错误恢复到中央广场。
+    if(!savedFirstPersonPosition){
+      savedFirstPersonPosition={x:camera.position.x,y:camera.position.y,z:camera.position.z,yaw,pitch};
+    }
     camera.position.set(0,overviewHeight,0);
     camera.rotation.set(-Math.PI/2,0,0);
     $('crosshair').style.display='none';

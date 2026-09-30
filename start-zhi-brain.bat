@@ -80,7 +80,7 @@ timeout /t 1 /nobreak >nul
 set /a BRIDGE_TRIES+=1
 curl --max-time 2 -s "%BRIDGE_READY%" >nul 2>nul
 if not errorlevel 1 goto BRIDGE_READY
-if %BRIDGE_TRIES% GEQ 10 (
+if !BRIDGE_TRIES! GEQ 10 (
   echo [ERROR] ZHI Brain Bridge did not become ready within 10 seconds.
   echo Check the ZHI Brain Bridge window for the error.
   pause

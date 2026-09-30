@@ -53,12 +53,7 @@ document.getElementById('enter').addEventListener('click',function(){
   },100);
 });
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r180/three.min.js"></script>
-<script>
-if(!window.THREE){
-  document.write('<script src="https://unpkg.com/three@0.180.0/build/three.min.js"><\\/script>');
-}
-</script>
+<script src="https://unpkg.com/three@0.180.0/build/three.min.js"></script>
 <script>
 (function(){
 let GLTFLoader=null;
@@ -182,6 +177,40 @@ function addRoad(x,z,w,d){const m=new THREE.Mesh(new THREE.BoxGeometry(w,.12,d),
 addRoad(0,0,70,2000);addRoad(0,0,2000,70);addRoad(-600,0,35,1600);addRoad(600,0,35,1600);addRoad(0,-560,1250,35);
 function landmark(name,x,z,color){const g=new THREE.Group();const base=new THREE.Mesh(new THREE.CylinderGeometry(35,45,4,24),new THREE.MeshStandardMaterial({color,roughness:.8}));base.position.y=2;g.add(base);const tower=new THREE.Mesh(new THREE.CylinderGeometry(10,15,28,16),new THREE.MeshStandardMaterial({color:0xffd76a,metalness:.15,roughness:.6}));tower.position.y=16;g.add(tower);g.position.set(x,0,z);g.userData={sceneName:name};scene.add(g)}
 landmark('🏟️竞技场',-650,-350,0x573b65);landmark('🌸中央广场',0,0,0x75516b);landmark('🌲探索森林',650,-350,0x315b39);landmark('🏪商业街',-520,500,0x66563a);landmark('🎡娱乐区',520,500,0x6a4540);landmark('🏠公寓区',0,620,0x485064);
+function building(x,z,w,d,h,color,label){
+  const g=new THREE.Group();
+  const base=new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({color,roughness:.78,metalness:.05}));
+  base.position.y=h/2; base.castShadow=true; base.receiveShadow=true; g.add(base);
+  const roof=new THREE.Mesh(new THREE.BoxGeometry(w*1.04,1.2,d*1.04),new THREE.MeshStandardMaterial({color:0x25232a,roughness:.8}));
+  roof.position.y=h+.6;roof.castShadow=true;g.add(roof);
+  const rows=Math.max(1,Math.floor(h/8)), cols=Math.max(2,Math.floor(w/7));
+  for(let r=0;r<rows;r++)for(let q=0;q<cols;q++){
+    const win=new THREE.Mesh(new THREE.BoxGeometry(1.8,.9,.12),new THREE.MeshStandardMaterial({color:0xffd76a,emissive:0x332200,emissiveIntensity:.35}));
+    win.position.set(-w/2+4+q*((w-8)/Math.max(1,cols-1)),4+r*7,d/2+.08);g.add(win);
+    const win2=win.clone();win2.position.z=-d/2-.08;g.add(win2);
+  }
+  g.position.set(x,0,z);g.userData={sceneName:label};scene.add(g);
+}
+function tree(x,z,s=1){
+  const g=new THREE.Group();
+  const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.8,1.1,7,8),new THREE.MeshStandardMaterial({color:0x5a3a22}));
+  trunk.position.y=3.5;g.add(trunk);
+  const crown=new THREE.Mesh(new THREE.SphereGeometry(4.5,10,8),new THREE.MeshStandardMaterial({color:0x2f6b3b,roughness:1}));
+  crown.position.y=8;g.add(crown);g.position.set(x,0,z);g.scale.setScalar(s);scene.add(g);
+}
+for(const b of [
+ [-430,-390,70,55,48,0x3f4652,'🏢 商业大厦'],[-300,-390,85,55,72,0x5a465c,'🏬 商场'],
+ [-430,-250,60,50,34,0x665a4b,'🏪 商铺'],[-300,-250,60,50,42,0x4d5965,'🏢 办公楼'],
+ [330,-410,65,60,55,0x48556b,'🏨 酒店'],[450,-410,90,60,88,0x5b4b64,'🏢 金融中心'],
+ [330,-270,70,55,38,0x5f604d,'🏠 社区中心'],[460,-270,60,50,30,0x6a5544,'☕ 咖啡馆'],
+ [-430,300,70,55,52,0x45566a,'🏢 公寓'],[-300,300,90,60,70,0x5a5068,'🏙️ 高层公寓'],
+ [320,300,75,60,60,0x465d58,'🏢 科技园'],[460,300,90,65,76,0x4c5363,'🏢 企业总部'],
+ [-420,470,70,55,35,0x665744,'🏠 住宅'],[-300,470,65,50,32,0x725f4b,'🏠 住宅'],
+ [330,470,70,55,36,0x625447,'🏠 住宅'],[450,470,65,50,30,0x705b49,'🏠 住宅']
+]) building(...b);
+for(let x=-900;x<=900;x+=90){tree(x,-850,.8+((x+900)%180)/450);tree(x,850,.7+((x+90)%180)/500);}
+for(let z=-800;z<=800;z+=100){tree(-900,z,.7);tree(900,z,.75);}
+
 const keys=new Set();const WALK_SPEED_MPS=MAX_PLAYER_SPEED_MPS;let yaw=0,pitch=0,velocity=0,last=performance.now();
 addEventListener('keydown',e=>{if(['INPUT','TEXTAREA'].includes(e.target.tagName))return;keys.add(e.code);if(e.code==='Escape')document.exitPointerLock?.()});
 addEventListener('keyup',e=>keys.delete(e.code));

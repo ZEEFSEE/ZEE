@@ -60,6 +60,7 @@
     const ins=await db().from('admin_agent_messages').insert({admin_user_id:ADMIN_ID,agent_id:selected.id,agent_name:selected.name,sender_type:'admin',content:msg});
     if(ins.error){status.textContent='发送失败：'+ins.error.message;return}
     await loadMessages();
+    const core=window.zhiCoreSupabase;
     const {data:{session}}=await db().auth.getSession();
     let reply;
     if(session?.access_token){

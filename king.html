@@ -275,4 +275,19 @@ addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updat
     if(!window.__zhiEmergencyRunning){window.__zhiEmergencyRunning=true;draw()}
   };
 })();
+</script><script>
+(function(){
+  const b=document.getElementById('play');
+  if(!b)return;
+  b.onclick=function(e){
+    e.preventDefault();
+    const start=document.getElementById('start');
+    if(start)start.classList.add('hidden');
+    if(window.renderer?.domElement) window.renderer.domElement.requestPointerLock?.();
+    else {
+      const cv=document.getElementById('zhiEmergencyWorld')||document.getElementById('zhiFallback3D');
+      cv?.requestPointerLock?.();
+    }
+  };
+})();
 </script></body></html>

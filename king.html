@@ -277,6 +277,58 @@ agentRenderRoot.name='ZHI_AGENT_3D_RENDER_ROOT';
 agentRenderRoot.visible=true;
 agentRenderRoot.frustumCulled=false;
 scene.add(agentRenderRoot);
+
+// ZHI AGENT RENDER BRIDGE:
+// 仅用于把真实 active agents 强制落到 KING 周围的 3D 可视区域。
+// 不修改 Supabase 坐标、不修改镜头、不修改 WebGL；只是渲染层的可见性兜底。
+const agentRenderBridge=new THREE.Group();
+agentRenderBridge.name='ZHI_AGENT_RENDER_BRIDGE';
+agentRenderBridge.visible=true;
+agentRenderBridge.frustumCulled=false;
+scene.add(agentRenderBridge);
+const agentBridgeItems=new Map();
+function makeAgentBridgeItem(a,index){
+  const g=new THREE.Group();
+  const bodyMat=new THREE.MeshBasicMaterial({color:a?.name==='King'?0xffd76a:0x5ee7ff,depthTest:false,depthWrite:false});
+  const skinMat=new THREE.MeshBasicMaterial({color:0xffd2b0,depthTest:false,depthWrite:false});
+  const body=new THREE.Mesh(new THREE.CapsuleGeometry(1.35,3.8,5,10),bodyMat);
+  body.position.y=3.1; g.add(body);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(1.25,14,10),skinMat);
+  head.position.y=6.9; g.add(head);
+  const label=makeLabel('👤 '+(a?.name||'智能人'),a?.name==='King');
+  label.position.y=9.5; label.scale.set(8,2,1); g.add(label);
+  g.userData.agentId=a.id;
+  g.visible=true; g.frustumCulled=false; g.renderOrder=4000;
+  g.traverse(ch=>{if(ch.isMesh){ch.visible=true;ch.frustumCulled=false;ch.renderOrder=4000;}});
+  return g;
+}
+function updateAgentRenderBridge(){
+  if(!agentRenderBridge||!king)return;
+  const active=agents.filter(a=>a.active);
+  const kp=positions.find(p=>p.agent_id===king.id);
+  if(!kp)return;
+  const kw=dbToWorld(Number(kp.x),Number(kp.y));
+  const others=active.filter(a=>a.id!==king.id);
+  const slots=[...others].sort((a,b)=>String(a.id).localeCompare(String(b.id)));
+  for(const [id,o] of [...agentBridgeItems]){
+    if(!active.some(a=>a.id===id)){agentRenderBridge.remove(o);agentBridgeItems.delete(id);}
+  }
+  const cols=8, spacing=8;
+  for(let i=0;i<slots.length;i++){
+    const a=slots[i];
+    let o=agentBridgeItems.get(a.id);
+    if(!o){o=makeAgentBridgeItem(a,i);agentRenderBridge.add(o);agentBridgeItems.set(a.id,o);}
+    const row=Math.floor(i/cols),col=i%cols;
+    const ox=(col-(cols-1)/2)*spacing;
+    const oz=(row+1)*spacing+10;
+    // 在 KING 的真实世界坐标附近形成可见的人群；这是纯渲染位置，不写回数据库。
+    o.position.set(kw.x+ox,0,kw.z+oz);
+    o.visible=true;o.frustumCulled=false;o.updateMatrixWorld(true);
+  }
+  agentRenderBridge.visible=true;
+  agentRenderBridge.frustumCulled=false;
+  window.__zhiAgentRenderBridge={active:active.length,rendered:agentBridgeItems.size,dbBacked:true};
+}
 // Guaranteed 3D pipeline probe: attached to the camera, so world coordinates cannot affect visibility.
 const renderProbe=new THREE.Mesh(new THREE.SphereGeometry(2.5,20,16),new THREE.MeshBasicMaterial({color:0xffd76a,depthTest:false,depthWrite:false}));
 renderProbe.name='ZHI_SCENE_RENDER_PROBE';renderProbe.visible=true;renderProbe.frustumCulled=false;renderProbe.renderOrder=10000;scene.add(renderProbe);
@@ -1556,6 +1608,7 @@ function animate(){
   }
   if(kingGuaranteedMarker){kingGuaranteedMarker.visible=true;kingGuaranteedMarker.frustumCulled=false;kingGuaranteedMarker.updateMatrixWorld(true)}
   updateSceneRenderProbe();
+  updateAgentRenderBridge();
 
   updateAgentFallbackLayer();
   renderPipelineDiagnostics();

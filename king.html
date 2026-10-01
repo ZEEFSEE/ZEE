@@ -728,21 +728,37 @@ function syncKingCameraFromDB(){
 }
 function updateKingFollowCamera(){
   if(!king)return false;
-  // 每一帧直接以数据库同步后的 KING 世界坐标为唯一真源。
-  // 绝不使用中央广场/相机当前位置作为 KING 的默认位置。
   const p=positions.find(x=>x.agent_id===king.id);
-  const km=agentMeshes.get(king.id);
   if(!p)return false;
-  const x=Number(p.x),z=Number(p.y);
-  if(!Number.isFinite(x)||!Number.isFinite(z))return false;
+  const dbx=Number(p.x), dbz=Number(p.y);
+  if(!Number.isFinite(dbx)||!Number.isFinite(dbz))return false;
   const h=kingForwardHeading(p);
+  const now=performance.now();
+  if(!Number.isFinite(Number(window.__kingCameraWorldX))||!Number.isFinite(Number(window.__kingCameraWorldZ))){
+    window.__kingCameraWorldX=dbx; window.__kingCameraWorldZ=dbz;
+  }else{
+    const dx=dbx-Number(window.__kingCameraWorldX), dz=dbz-Number(window.__kingCameraWorldZ);
+    if(Math.hypot(dx,dz)>35){window.__kingCameraWorldX=dbx;window.__kingCameraWorldZ=dbz;}
+    else if(Math.hypot(dx,dz)>0.05){
+      const a=Math.min(1,Math.max(0.08,(now-(window.__kingCameraLastAt||now))/1000*6));
+      window.__kingCameraWorldX+=dx*a; window.__kingCameraWorldZ+=dz*a;
+    }
+  }
+  window.__kingCameraLastAt=now;
+  if(p.walking&&p.destination_x!=null&&p.destination_y!=null){
+    const tx=Number(p.destination_x),tz=Number(p.destination_y),fx=tx-window.__kingCameraWorldX,fz=tz-window.__kingCameraWorldZ,d=Math.hypot(fx,fz);
+    if(d>0.05){
+      const step=Math.min(d,Math.max(.1,Math.min(Number(p.speed_mps)||5,MAX_AGENT_SPEED_MPS))/60);
+      window.__kingCameraWorldX+=fx/d*step; window.__kingCameraWorldZ+=fz/d*step;
+    }
+  }
+  const x=window.__kingCameraWorldX,z=window.__kingCameraWorldZ;
+  const km=agentMeshes.get(king.id);
   if(km){km.visible=false;km.userData.worldX=x;km.userData.worldY=z;km.rotation.y=h;}
   yaw=h;
   camera.position.set(x-1000,6.1,z-1000);
-  camera.rotation.order='YXZ';
-  camera.rotation.y=h;
-  camera.rotation.x=0;
-  window.__zhiKingFirstPerson={x,z,heading:yaw,source:'db',at:Date.now()};
+  camera.rotation.order='YXZ'; camera.rotation.y=h; camera.rotation.x=0;
+  window.__zhiKingFirstPerson={x,z,heading:yaw,source:'db-continuous-forward',at:Date.now()};
   return true;
 }
 function makeLabel(text,isKing){

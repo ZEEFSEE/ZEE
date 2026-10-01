@@ -1108,6 +1108,60 @@ async function refresh(){
   }else $('state').textContent='⚠️ KING 位置暂时无法读取';
   renderAgents(); syncKingCameraFromDB(); lastSync=Date.now();
 }
+// KING LIVE SYNC: database -> immediate state -> continuous first-person movement.
+// Realtime is preferred; a lightweight KING-only REST heartbeat is the safety net.
+let kingLiveChannel=null;
+let kingLiveTimer=null;
+let kingLiveBusy=false;
+function mergeKingPosition(row){
+  if(!row||!king)return;
+  const next={...row,agent_id:row.agent_id||king.id};
+  const i=positions.findIndex(x=>x.agent_id===king.id);
+  if(i>=0) positions[i]={...positions[i],...next}; else positions.push(next);
+  // Do not wait for the next full world refresh: update camera/visual immediately.
+  updateKingFollowCamera();
+  const a=positions.find(x=>x.agent_id===king.id);
+  if(a){
+    const moving=Boolean(a.walking)&&a.destination_x!=null&&a.destination_y!=null;
+    $('state').textContent=moving&&a.destination_scene
+      ? '👁️ KING 正在前往 '+a.destination_scene+' · 纯观察模式'
+      : ((a.current_scene||'未知地点')+' · 纯观察模式');
+  }
+}
+async function kingLiveHeartbeat(){
+  if(!king||kingLiveBusy)return;
+  kingLiveBusy=true;
+  try{
+    const rows=await directCoreTable('zhi_agent_world_positions?select=agent_id,x,y,current_scene,destination_x,destination_y,destination_scene,walking,speed_mps,heading_rad,walk_started_at,walk_arrive_at,updated_at&agent_id=eq.'+encodeURIComponent(king.id)+'&limit=1',4000);
+    if(Array.isArray(rows)&&rows[0])mergeKingPosition(rows[0]);
+  }catch(e){console.warn('[ZHI KING live heartbeat]',e)}
+  finally{kingLiveBusy=false}
+}
+function startKingLiveSync(){
+  if(!king||window.__zhiKingLiveStarted)return;
+  window.__zhiKingLiveStarted=true;
+  // Immediate fallback path, independent of the bulk refresh chain.
+  kingLiveTimer=setInterval(kingLiveHeartbeat,500);
+  kingLiveHeartbeat();
+  try{
+    const c=core();
+    if(c?.channel){
+      kingLiveChannel=c.channel('king-live-world-'+king.id)
+        .on('postgres_changes',{event:'*',schema:'public',table:'zhi_agent_world_positions',filter:'agent_id=eq.'+king.id},payload=>{
+          if(payload?.new)mergeKingPosition(payload.new);
+        })
+        .on('postgres_changes',{event:'*',schema:'public',table:'zhi_agent_minds',filter:'agent_id=eq.'+king.id},payload=>{
+          if(payload?.new){
+            set('mood',payload.new.mood);set('energy',payload.new.energy);set('curiosity',payload.new.curiosity);
+            set('goal',payload.new.current_goal);set('stress',payload.new.stress);set('confidence',payload.new.confidence);
+            set('thought','💭 '+(payload.new.last_thought||'正在观察周围世界…'));
+          }
+        })
+        .subscribe(status=>console.log('[ZHI KING realtime]',status));
+    }
+  }catch(e){console.warn('[ZHI KING realtime setup]',e)}
+}
+
 async function init(){
   $('loginmsg').textContent='正在启动 3D 引擎…';
   try{await Promise.race([window.__zhiThreeReady,new Promise((_,rej)=>setTimeout(()=>rej(Error('3D 引擎加载超时')),10000))]);}
@@ -1141,7 +1195,7 @@ async function init(){
   updateKingFollowCamera();
   $('state').textContent=kp?.walking&&kp?.destination_scene?('👁️ KING 正在前往 '+kp.destination_scene+' · 纯观察模式'):((kp?.current_scene||'未知地点')+' · 纯观察模式');
   loadPublicAssets().catch(e=>console.warn('[ZHI CDN]',e));
-  setInterval(refresh,1000);animate()
+  startKingLiveSync(); setInterval(refresh,3000);animate()
 }
 let zhiConversationActive=false;
 let zhiConversationAgentId=null;
@@ -1280,7 +1334,7 @@ function updateAgentVisuals(dt){
 
 function worldTick(){
   // KING 的自主决策只由后台 AI Life Engine 负责。
-  // 前端不再拥有决策权，避免“网页 + cron”双重驱动造成重复目标。
+  // 前端只负责读取与渲染，不创建目的地、不做决策。
   if(controlMode)return;
   refresh().catch(e=>console.warn('[ZHI world refresh]',e));
 }

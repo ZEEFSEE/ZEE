@@ -701,7 +701,11 @@ function updatePlayer(dt){
 }
 function kingForwardHeading(p){
   const x=Number(p?.x),z=Number(p?.y),dx=Number(p?.destination_x),dz=Number(p?.destination_y);
-  if(Number.isFinite(dx)&&Number.isFinite(dz)&&Math.hypot(dx-x,dz-z)>0.05)return Math.atan2(dx-x,dz-z);
+  if(Number.isFinite(dx)&&Number.isFinite(dz)&&Math.hypot(dx-x,dz-z)>0.05){
+    // Three.js camera looks along -Z. Convert world travel vector directly
+    // into the camera/body yaw so forward travel and first-person view agree.
+    return Math.atan2(-(dx-x),-(dz-z));
+  }
   const h=Number(p?.heading_rad);
   return Number.isFinite(h)?h:0;
 }

@@ -200,7 +200,7 @@ async function loadAgentFinanceBoard(){
  try{
   const sr=await finance.auth.getSession();
   const session=sr?.data?.session;
-  const token=session?.access_token;
+  let token=session?.access_token;
   if(!token){setMsg('请先登录管理员账号后查看智能体财务 / Please sign in as admin');return}
 
   const controller=new AbortController();

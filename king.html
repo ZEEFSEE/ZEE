@@ -408,7 +408,9 @@ function buildPalaceInteriors(){
 buildPalaceInteriors();
 function buildAplusEducationCenter(){
   const g=new THREE.Group(); g.name='APLUS ACHIEVER Education Center';
-  // DB 世界坐标 (350,100) 映射到 Three.js 场景坐标 (-650,-900)。\n  // 所有智能人坐标都统一使用 DB 0..2000m → Three.js -1000..1000m。\n  const cx=-650,cz=-900,w=120,d=105,h=13;
+  // DB 世界坐标 (350,100) 映射到 Three.js 场景坐标 (-650,-900)。
+  // 所有智能人坐标都统一使用 DB 0..2000m → Three.js -1000..1000m。
+  const cx=-650,cz=-900,w=120,d=105,h=13;
   const matBody=new THREE.MeshStandardMaterial({color:0xe9e2d4,roughness:.72});
   const matGlass=new THREE.MeshStandardMaterial({color:0x8bd7ff,metalness:.2,roughness:.2,transparent:true,opacity:.7});
   const matDark=new THREE.MeshStandardMaterial({color:0x27242a,roughness:.6});

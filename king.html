@@ -907,12 +907,14 @@ function finishAgentConversation(){
   zhiConversationActive=false;
   zhiConversationAgentId=null;
 }
+function royalSpouseIndex(id){return Math.max(0,[...royalSpouseIds].indexOf(id))}
 function updateAgentVisuals(dt){
   for(const o of agentMeshes.values()){
     const p=o.userData.pos||{};const t=o.userData.target||p;
     const speed=Math.min(Number(p.speed_mps)||1.2,MAX_AGENT_SPEED_MPS);
     if(o.userData.conversationApproach){
       const at=o.userData.approachTarget||{x:camera.position.x+1000,y:camera.position.z+1000};
+      if(o.userData.royalSpouse&&royalPointBlocked(at.x,at.y,1.8)){const safe=royalSpouseTarget(royalSpouseIndex(o.userData.agent?.id));at.x=safe.x;at.y=safe.y;o.userData.approachTarget=at}
       const wx=o.userData.worldX??Number(p.x||0),wy=o.userData.worldY??Number(p.y||0);
       const fx=at.x-wx,fz=at.y-wy;
       const distToTarget=Math.hypot(fx,fz);
@@ -938,7 +940,8 @@ function updateAgentVisuals(dt){
       }
     }
     if(o.userData.talking){
-      const tx=camera.position.x+1000,tz=camera.position.z+1000;
+      let tx=camera.position.x+1000,tz=camera.position.z+1000;
+      if(o.userData.royalSpouse&&royalPointBlocked(tx,tz,1.8)){const safe=nearestRoyalFreePoint(tx,tz);tx=safe.x;tz=safe.y}
       const fx=tx-(o.userData.worldX??Number(p.x||0)),fz=tz-(o.userData.worldY??Number(p.y||0));
       if(Math.hypot(fx,fz)>0.01)o.rotation.y=Math.atan2(fx,fz);
       const pt=o.userData.parts;if(pt){pt.legL.rotation.x=0;pt.legR.rotation.x=0;pt.armL.rotation.x=0;pt.armR.rotation.x=0}
@@ -948,8 +951,10 @@ function updateAgentVisuals(dt){
       o.userData.departurePending=false;
       o.userData.target={x:Number(p.destination_x??p.x??0),y:Number(p.destination_y??p.y??0)};
     }
-    const dx=Number(t.x||0)-(o.userData.worldX??Number(p.x||0));
-    const dz=Number(t.y||0)-(o.userData.worldY??Number(p.y||0));
+    if(o.userData.royalSpouse){const wx=o.userData.worldX??Number(p.x||0),wy=o.userData.worldY??Number(p.y||0);const inside=wx>=ROYAL_BEDROOM.minX&&wx<=ROYAL_BEDROOM.maxX&&wy>=ROYAL_BEDROOM.minY&&wy<=ROYAL_BEDROOM.maxY;if(inside&&royalPointBlocked(Number(o.userData.target?.x),Number(o.userData.target?.y),1.8))o.userData.target=royalSpouseTarget(royalSpouseIndex(o.userData.agent?.id));}
+    let dx=Number(t.x||0)-(o.userData.worldX??Number(p.x||0));
+    let dz=Number(t.y||0)-(o.userData.worldY??Number(p.y||0));
+    if(o.userData.royalSpouse){const wx=o.userData.worldX??Number(p.x||0),wy=o.userData.worldY??Number(p.y||0);if(royalPointBlocked(wx+dx,wy+dz,1.8)){const safe=nearestRoyalFreePoint(wx+dx,wy+dz);dx=safe.x-wx;dz=safe.y-wy;o.userData.target=safe}}
     const dist=Math.hypot(dx,dz);
     if(dist>0.01){
       const step=Math.min(dist,speed*dt);

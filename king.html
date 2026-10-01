@@ -60,7 +60,7 @@ window.zhiForceEnterKing=function(){
 </div>
 <script>window.addEventListener('error',function(e){window.__zhiErr=(e.message||'')+' @'+String(e.filename||'').split('/').pop()+':'+e.lineno;});</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-client.js?v=20260930-05"></script>
+<script src="supabase-client.js?v=20261001-06"></script>
 <script>
 window.__zhiKingBooted=false;
 (function(){
@@ -1001,7 +1001,10 @@ async function refresh(){
   if(!king)return;
   const safe=async(label,fn,fallback)=>{try{const r=await fn();if(r?.error){console.warn('[ZHI '+label+']',r.error);return fallback}return r}catch(e){console.warn('[ZHI '+label+']',e);return fallback}};
   const w=await safe('wallet',()=>finance().from('wallets').select('balance').eq('user_id',ADMIN_ID).maybeSingle(),{data:null});
-  const p=await safe('king position',()=>core().from('zhi_agent_world_positions').select('agent_id,x,y,current_scene,walking,speed_mps,destination_x,destination_y,destination_scene,heading_rad').eq('agent_id',king.id).maybeSingle(),{data:null});
+  const p0=await safe('king position rpc',()=>core().rpc('zhi_get_world_agent_positions'),{data:[]});
+  const pRows=Array.isArray(p0.data)?p0.data:[];
+  const kingPos=pRows.find(x=>x.agent_id===king.id)||null;
+  const p={data:kingPos};
   const km=await safe('king status rpc',()=>core().rpc('zhi_get_king_status',{p_agent_id:king.id}),{data:null});
   let kingStatus=Array.isArray(km.data)?(km.data[0]||null):(km.data||null);
   // RPC is preferred, but keep the KING panel alive if the browser cannot execute the RPC.
@@ -1012,7 +1015,7 @@ async function refresh(){
   const m={data:kingStatus};
   const a={data:kingStatus};
   const ar=await safe('agents',()=>core().from('zhi_agents').select('id,name,gender,personality,life_status,active').eq('active',true).order('name'),{data:[]});
-  const pr=await safe('positions',()=>core().from('zhi_agent_world_positions').select('agent_id,x,y,current_scene,walking,speed_mps,destination_x,destination_y,destination_scene,heading_rad').order('agent_id'),{data:[]});
+  const pr=await safe('positions rpc',()=>core().rpc('zhi_get_world_agent_positions'),{data:[]});
   const fr=await safe('facilities',()=>core().rpc('zhi_get_world_facilities'),{data:[]});
   const an=await safe('animals',()=>core().rpc('zhi_get_world_animals'),{data:[]});
   const ev=await safe('events',()=>core().from('zhi_fortune_events').select('id,location_code,location_name,activity_type,reward_pool,status,created_at,target_count,claimed_count').in('status',['open','running']),{data:[]});
@@ -1027,6 +1030,8 @@ async function refresh(){
   updateEducationScreen(ed.data||[]); renderFortuneDrops(ev.data||[]); renderAnimals(); drawOverview();
 
   $('overviewMeta').textContent=positions.length?'🟠 智能人 '+positions.length+' · 🏢 设施 '+facilities.length+' · 数据已连接':'⚠️ 暂无位置数据';
+  if(!positions.length){const errs=(window.__zhiCoreReadErrors||[]).slice(-3);$('overviewMeta').textContent='⚠️ 位置读取失败 · '+(errs.map(x=>x.label+': '+x.message).join(' | ')||'等待 Core 数据');}
+  if(!m.data){const errs=(window.__zhiCoreReadErrors||[]).slice(-5);$('thought').textContent='⚠️ KING 状态读取失败 · '+(errs.find(x=>/king/i.test(x.label))?.message||'等待 Core 数据');}
   if(w.data)$('balance').textContent='💰 '+Number(w.data.balance||0).toLocaleString()+' ZHI';
   if(m.data){$('mood').textContent=m.data.mood??'—';$('energy').textContent=m.data.energy??'—';$('curiosity').textContent=m.data.curiosity??'—';$('goal').textContent=m.data.current_goal||'—';$('stress').textContent=m.data.stress??'—';$('confidence').textContent=m.data.confidence??'—';$('thought').textContent='💭 '+(m.data.last_thought||'正在观察周围世界…')}else{$('mood').textContent='—';$('energy').textContent='—';$('curiosity').textContent='—';$('goal').textContent='—';$('stress').textContent='—';$('confidence').textContent='—';$('thought').textContent='💭 KING 状态暂时无法读取，请稍候自动重试…'}
   if(p.data){

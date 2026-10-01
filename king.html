@@ -762,14 +762,25 @@ const keys=new Set();const WALK_SPEED_MPS=MAX_PLAYER_SPEED_MPS;let yaw=0,pitch=0
 let fullWorldZoom=1;
 
 addEventListener('keyup',e=>keys.delete(e.code));
+function handleWorldWheel(e){
+  if(!window.__zhiWorld3DMode)return;
+  e.preventDefault();
+  e.stopPropagation();
+  const factor=e.deltaY>0?.82:1.22;
+  fullWorldZoom=Math.max(.1,Math.min(10,fullWorldZoom*factor));
+  updateFullWorldCamera();
+}
+// 同时绑定到 canvas 和 window，确保 Chrome/触控板/鼠标滚轮都能触发。
+function bindWorldZoomWheel(){
+  const canvas=renderer?.domElement;
+  if(canvas&&!canvas.__zhiZoomWheelBound){
+    canvas.addEventListener('wheel',handleWorldWheel,{passive:false});
+    canvas.__zhiZoomWheelBound=true;
+  }
+}
 addEventListener('wheel',e=>{
   if(e.target.closest?.('#chat,#info'))return;
-  if(window.__zhiWorld3DMode){
-    e.preventDefault();
-    fullWorldZoom=Math.max(.1,Math.min(10,fullWorldZoom*(e.deltaY>0?.8:1.25)));
-    updateFullWorldCamera();
-    return;
-  }
+  if(window.__zhiWorld3DMode){handleWorldWheel(e);return;}
   e.preventDefault();
   overviewHeight=Math.max(180,Math.min(1400,overviewHeight+(e.deltaY>0?70:-70)));
   if(overviewMode)updateOverviewCamera();
@@ -997,12 +1008,13 @@ function updateKingFollowCamera(){
   return true;
 }
 function updateFullWorldCamera(){
+  bindWorldZoomWheel();
   // 全体3D观察：真实坐标不变；缩放只改变观察距离，不改变任何智能人的 DB 坐标。
   const size=2000;
   const distance=1450/fullWorldZoom;
   camera.position.set(0,distance,distance);
   camera.rotation.order='YXZ';
-  camera.fov=100;
+  camera.fov=Math.max(35,Math.min(100,100-(fullWorldZoom-1)*7));
   camera.near=.1;
   camera.far=5000;
   camera.updateProjectionMatrix();

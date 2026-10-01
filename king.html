@@ -435,7 +435,7 @@ function buildAplusEducationCenter(){
   const label=document.createElement('div');label.id='educationScreenLive';label.textContent='升级程序 2026.10.01 · 学习中 0% → 100%';label.style.cssText='position:absolute;z-index:66;left:50%;top:72px;transform:translateX(-50%);padding:7px 14px;border:1px solid #65d9ff66;border-radius:999px;background:#06131dcc;color:#b9f1ff;font-weight:900;display:none;pointer-events:none';document.body.appendChild(label);
   const centerLabel=document.createElement('div');centerLabel.textContent='🏫 APLUS ACHIEVER 教育中心 · 73 SEATS';centerLabel.style.cssText='position:absolute;z-index:66;left:50%;top:112px;transform:translateX(-50%);padding:6px 12px;border-radius:999px;background:#100a18dd;border:1px solid #ffd76a66;color:#ffe890;font-weight:900;display:none;pointer-events:none';document.body.appendChild(centerLabel);
   g.userData.screen=screen;g.userData.upgradeLabel=label;g.userData.centerLabel=centerLabel;
-  scene.add(g);
+  scene.add(g);label.style.display='block';
   const phase={t:0}; function animateScreen(){phase.t+=.04;screen.material.emissiveIntensity=1.1+Math.sin(phase.t)*.5;requestAnimationFrame(animateScreen)} animateScreen();
 }
 buildAplusEducationCenter();
@@ -1035,10 +1035,18 @@ function worldTick(){
 }
 setInterval(worldTick,2000);
 let controlMode=false;
+function updateEducationScreenOverlay(){
+  const el=document.querySelector('#educationScreenLive');if(!el)return;
+  const v=new THREE.Vector3(350-1000,11.2,100-45-1000).project(camera);
+  const visible=v.z>-1&&v.z<1&&v.x>-1.2&&v.x<1.2&&v.y>-1.2&&v.y<1.2;
+  el.style.display=visible?'block':'none';
+  if(visible){el.style.left=((v.x*.5+.5)*innerWidth)+'px';el.style.top=((-v.y*.5+.5)*innerHeight)+'px';}
+}
 function animate(){
   requestAnimationFrame(animate);
   const now=performance.now(),dt=Math.min(.05,(now-last)/1000);last=now;
   updateAgentVisuals(dt);
+  updateEducationScreenOverlay();
   updateKingFollowCamera();
   if(!$('start').classList.contains('hidden')||!controlMode){renderer.render(scene,camera);return}
   if(!overviewMode)updatePlayer(dt);

@@ -984,14 +984,25 @@ function updateKingFollowCamera(){
   return true;
 }
 function updateFullWorldCamera(){
+  // 全体3D观察：不改变任何人的真实坐标，只把 2km × 2km 世界完整放入同一视锥。
   const size=2000;
-  const altitude=1150;
-  camera.position.set(0,altitude,0);
+  const viewHeight=1080;
+  const viewDepth=1080;
+  camera.position.set(0,viewHeight,viewDepth);
   camera.rotation.order='YXZ';
-  camera.fov=82;
+  camera.fov=78;
+  camera.near=.1;
+  camera.far=5000;
   camera.updateProjectionMatrix();
   camera.lookAt(0,0,0);
-  window.__zhiWorld3DView={mode:'full-world',worldSize:size,agentCount:agentMeshes.size,source:'zhi_agent_world_positions',at:Date.now()};
+  window.__zhiWorld3DView={
+    mode:'full-world',
+    worldSize:size,
+    agentCount:agentMeshes.size,
+    projectedAgents:[...agentMeshes.values()].filter(o=>o.visible&&o.userData?.projected3D).length,
+    source:'zhi_agent_world_positions',
+    at:Date.now()
+  };
 }
 function makeLabel(text,isKing){
   const c=document.createElement('canvas');c.width=320;c.height=80;const x=c.getContext('2d');

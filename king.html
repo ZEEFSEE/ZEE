@@ -318,22 +318,15 @@ function makeAgentBridgeItem(a){
 }
 
 function updateAgentRenderBridge(){
-  if(!agentRenderBridge||!king)return;
+  if(!agentRenderBridge)return;
   const active=agents.filter(a=>a.active);
-  const kp=positions.find(p=>p.agent_id===king.id);
-  if(!kp)return;
-  const kw=dbToWorld(Number(kp.x),Number(kp.y));
-  const others=active.filter(a=>a.id!==king.id);
-
+  const byId=new Map(positions.map(p=>[p.agent_id,p]));
   for(const [id,o] of [...agentBridgeItems]){
-    if(!active.some(a=>a.id===id)){
-      agentRenderBridge.remove(o);
-      agentBridgeItems.delete(id);
-    }
+    if(!active.some(a=>a.id===id)){agentRenderBridge.remove(o);agentBridgeItems.delete(id);}
   }
 
-  // 不再使用 cols/row 方阵。每个人都有稳定但不规则的自然位置。
-  for(const a of others){
+  // 视觉层跟随每个智能人的真实 DB/动画坐标，不再把所有人固定在 KING 周围。
+  for(const a of active){
     let o=agentBridgeItems.get(a.id);
     if(!o){
       try{o=makeAgentBridgeItem(a);}
@@ -341,12 +334,36 @@ function updateAgentRenderBridge(){
       agentRenderBridge.add(o);
       agentBridgeItems.set(a.id,o);
     }
-    const j=bridgeJitter(a.id);
-    o.position.set(kw.x+j.x,0,kw.z+j.z);
-    o.rotation.y=j.yaw;
-    o.visible=true;
-    o.frustumCulled=false;
-    o.updateMatrixWorld(true);
+
+    const p=byId.get(a.id);
+    const rawX=Number(p?.x), rawZ=Number(p?.y);
+    const ox=Number.isFinite(rawX)?rawX:1000;
+    const oz=Number.isFinite(rawZ)?rawZ:1000;
+    const moving=Boolean(p?.walking)&&p?.destination_x!=null&&p?.destination_y!=null;
+    const tx=Number(p?.destination_x), tz=Number(p?.destination_y);
+
+    // 平滑追踪真实位置；walking 时按 destination 做前进动画，避免画面静止等待 DB 刷新。
+    if(!Number.isFinite(Number(o.userData.worldX))||Math.abs(Number(o.userData.worldX)-ox)>80){
+      o.userData.worldX=ox;o.userData.worldY=oz;
+    }
+    if(moving&&Number.isFinite(tx)&&Number.isFinite(tz)){
+      const speed=Math.max(0.8,Math.min(5.5,Number(p?.speed_mps)||1.8));
+      const dx=tx-Number(o.userData.worldX),dy=tz-Number(o.userData.worldY),dist=Math.hypot(dx,dy);
+      if(dist>0.15){
+        const step=Math.min(dist,speed*0.016);
+        o.userData.worldX+=dx/dist*step;o.userData.worldY+=dy/dist*step;
+        o.rotation.y=Math.atan2(-dx,-dy);
+      }
+    }else{
+      const dx=ox-Number(o.userData.worldX),dy=oz-Number(o.userData.worldY),dist=Math.hypot(dx,dy);
+      if(dist>0.05){
+        const step=Math.min(dist,Math.max(0.8,Number(p?.speed_mps)||1.8)*0.016);
+        o.userData.worldX+=dx/dist*step;o.userData.worldY+=dy/dist*step;
+      }
+    }
+
+    setObjectFromDb(o,Number(o.userData.worldX),Number(o.userData.worldY),0);
+    o.visible=true;o.frustumCulled=false;o.updateMatrixWorld(true);
   }
 
   agentRenderBridge.visible=true;
@@ -355,7 +372,7 @@ function updateAgentRenderBridge(){
     active:active.length,
     rendered:agentBridgeItems.size,
     dbBacked:true,
-    visualMode:'original-human-scattered'
+    visualMode:'original-human-real-position-follow'
   };
 }
 // Guaranteed 3D pipeline probe: attached to the camera, so world coordinates cannot affect visibility.
@@ -1168,12 +1185,11 @@ function makeEmergencyAgentMesh(a){
   return g;
 }
 function makeKingGuaranteedMarker(a){
+  // Legacy diagnostic marker retained for compatibility but hidden from the world.
   const g=new THREE.Group();
-  const mat=new THREE.MeshBasicMaterial({color:0xffd76a,depthTest:false,depthWrite:false,transparent:true,opacity:1});
-  const pole=new THREE.Mesh(new THREE.CylinderGeometry(.28,.28,14,10),mat);pole.position.y=7;g.add(pole);
-  const head=new THREE.Mesh(new THREE.SphereGeometry(2.4,16,12),mat);head.position.y=15;g.add(head);
-  const label=makeLabel('👑 KING · LIVE',true);label.position.y=19;label.scale.set(14,3.5,1);g.add(label);
-  g.renderOrder=2000;g.traverse(ch=>{if(ch.isMesh){ch.frustumCulled=false;ch.renderOrder=2000;}});return g;
+  g.visible=false;
+  g.name='ZHI_KING_LEGACY_DIAGNOSTIC_MARKER';
+  return g;
 }
 function updateSceneRenderProbe(){
   if(!renderProbe||!camera)return;
@@ -1635,7 +1651,8 @@ function animate(){
     o.frustumCulled=false;
     o.updateMatrixWorld(true);
   }
-  if(kingGuaranteedMarker){kingGuaranteedMarker.visible=true;kingGuaranteedMarker.frustumCulled=false;kingGuaranteedMarker.updateMatrixWorld(true)}
+  // 不再显示诊断用黄色 KING 球；正式 KING 使用原有人形渲染。
+  if(kingGuaranteedMarker){kingGuaranteedMarker.visible=false;}
   updateSceneRenderProbe();
   updateAgentRenderBridge();
 

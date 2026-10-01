@@ -870,7 +870,7 @@ function renderAgents(){const byId=new Map(positions.map(p=>[p.agent_id,p]));
 const active=agents.filter(a=>a.active);$('worldCount').textContent='🌍 智能人：'+active.length;for(const [id,obj] of agentMeshes){if(!active.some(a=>a.id===id)){scene.remove(obj);agentMeshes.delete(id)}}for(const a of active){const p=byId.get(a.id)||{x:1000,y:1000,current_scene:'🌸中央广场',walking:false};let o=agentMeshes.get(a.id);if(!o){o=makeAgentMesh(a);o.userData.agent=a;o.userData.royalSpouse=royalSpouseIds.has(a.id);o.userData.pos={x:Number(p.x),y:Number(p.y)};o.userData.target={x:Number(p.x),y:Number(p.y)};scene.add(o);agentMeshes.set(a.id,o)}
 const tx=Number(p.x),tz=Number(p.y);
 const edu=educationSessions.get(a.id);
-if(edu?.status==='learning'){const seat=educationSeat(edu.metadata?.seat_no);o.userData.target={x:seat.x,y:seat.y};o.userData.pos={...p,x:seat.x,y:seat.y,walking:false,speed_mps:0.1};o.userData.worldX=seat.x;o.userData.worldY=seat.y;o.position.set(seat.x-1000,0,seat.y-1000);o.rotation.y=Math.PI;o.userData.educationSeated=true;}else{o.userData.educationSeated=false;o.userData.target={x:tx,y:tz};o.userData.pos=p;}
+if(edu?.status==='learning'){const seat=educationSeat(edu.metadata?.seat_no);o.userData.target={x:seat.x,y:seat.y};o.userData.pos={...p,x:seat.x,y:seat.y,walking:false,speed_mps:0.1};o.userData.worldX=seat.x;o.userData.worldY=seat.y;o.position.set(seat.x-1000,0,seat.y-1000);o.rotation.y=Math.PI;o.userData.educationSeated=true;}else{o.userData.educationSeated=false;const moving=Boolean(p.walking)&&p.destination_x!=null&&p.destination_y!=null;o.userData.target={x:moving?Number(p.destination_x):tx,y:moving?Number(p.destination_y):tz};o.userData.pos=p;if(!Number.isFinite(Number(o.userData.worldX))||Math.abs(Number(o.userData.worldX)-tx)>30)o.userData.worldX=tx;if(!Number.isFinite(Number(o.userData.worldY))||Math.abs(Number(o.userData.worldY)-tz)>30)o.userData.worldY=tz;}
 o.userData.agent=a;applyJewelryVisuals(o,jewelryByAgent.get(a.id)||[]);
 if(a.id===king?.id){o.userData.worldX=tx;o.userData.worldY=tz;o.userData.target={x:Number(p.destination_x??tx),y:Number(p.destination_y??tz)};o.userData.pos=p;const h=Number(p.heading_rad);if(Number.isFinite(h))o.rotation.y=h;else if(p.destination_x!=null&&p.destination_y!=null)o.rotation.y=Math.atan2(Number(p.destination_x)-tx,Number(p.destination_y)-tz);}
 if(!Number.isFinite(Number(o.userData.worldX)))o.userData.worldX=tx;
@@ -1060,7 +1060,7 @@ function worldTick(){
     .then(()=>refresh())
     .catch(e=>console.warn('[ZHI world tick]',e));
 }
-setInterval(worldTick,2000);
+setInterval(worldTick,5000);
 let controlMode=false;
 function updateEducationScreenOverlay(){
   const el=document.querySelector('#educationScreenLive');if(!el)return;

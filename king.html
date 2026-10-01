@@ -1083,7 +1083,29 @@ function renderAgents(){
     }
     if(!Number.isFinite(Number(o.userData.worldX)))o.userData.worldX=tx;
     if(!Number.isFinite(Number(o.userData.worldY)))o.userData.worldY=tz;
-    o.position.set(o.userData.worldX-1000,0,o.userData.worldY-1000);
+    // 视觉层防重叠：当多个智能人共享同一个数据库坐标时，不把 3D 人物堆成一个点。
+    // 不修改数据库坐标，只在客户端做稳定、可逆的空间分离，让真实人物模型始终可见。
+    const anchorX=Number(o.userData.worldX),anchorY=Number(o.userData.worldY);
+    const crowd=active.filter(x=>x.id!==king?.id).map(x=>{
+      const q=byId.get(x.id);return q&&Number.isFinite(Number(q.x))&&Number.isFinite(Number(q.y))?{id:x.id,x:Number(q.x),y:Number(q.y)}:null;
+    }).filter(Boolean).filter(q=>Math.hypot(q.x-anchorX,q.y-anchorY)<8);
+    let vx=anchorX,vy=anchorY;
+    if(a.id!==king?.id && crowd.length>1){
+      const sorted=crowd.slice().sort((u,v)=>String(u.id).localeCompare(String(v.id)));
+      const slot=Math.max(0,sorted.findIndex(q=>q.id===a.id));
+      const radius=10+Math.min(18,Math.floor(slot/8)*5);
+      const angle=(slot%8)*(Math.PI*2/8)+(Math.floor(slot/8)%2)*Math.PI/8;
+      vx=anchorX+Math.cos(angle)*radius;vy=anchorY+Math.sin(angle)*radius;
+      o.userData.visualCrowdOffset={x:vx,y:vy};
+    }else{
+      o.userData.visualCrowdOffset=null;
+    }
+    if(a.id!==king?.id && o.userData.visualCrowdOffset){
+      o.position.set(vx-1000,0,vy-1000);
+    }else{
+      o.position.set(o.userData.worldX-1000,0,o.userData.worldY-1000);
+    }
+    o.visible=true;
   }
 }
 function nearestAgent(){let best=null,dist=Infinity;for(const o of agentMeshes.values()){if(o.userData.agent.id===king?.id)continue;const d=o.position.distanceTo(camera.position);if(d<dist){dist=d;best=o}}return best}

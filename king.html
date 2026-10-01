@@ -1282,7 +1282,14 @@ function renderAgents(){
       if(Number.isFinite(anchorX)&&Number.isFinite(anchorY)){
         projectAgentCoordinate3D(o,anchorX,anchorY,0);
       }
+      // 强制正式人形及其全部子 Mesh 可见；坐标投射后立即更新世界矩阵。
       o.visible=true;
+      o.frustumCulled=false;
+      o.traverse(ch=>{
+        ch.visible=true;
+        if(ch.isMesh){ch.frustumCulled=false;ch.renderOrder=30;}
+      });
+      o.updateMatrixWorld(true);
       // 正式画面只使用原有人形，不显示坐标诊断球。
 
       // 正式画面只显示原有人形模型；不再生成诊断用光柱/圆环。

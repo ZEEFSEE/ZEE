@@ -1036,89 +1036,96 @@ const educationSessions=new Map();
 function educationSeat(seatNo){const n=Math.max(1,Number(seatNo)||1);return {x:-650+(Math.min(8,(n-1)%9)-4)*10.5,y:-900+30-Math.floor((n-1)/9)*10.5};}
 function educationProgress(s){if(!s||s.status!=='learning'||!s.started_at||!s.ends_at)return 0;const a=new Date(s.started_at).getTime(),b=new Date(s.ends_at).getTime(),n=Date.now();return Math.max(0,Math.min(100,((n-a)/Math.max(1,b-a))*100));}
 function updateEducationScreen(rows){const el=document.querySelector('#educationScreenLive');if(!el)return;const learning=(rows||[]).filter(s=>s.status==='learning');const progress=learning.length?Math.round(learning.reduce((sum,s)=>sum+educationProgress(s),0)/learning.length):0;const program=learning[0]?.metadata?.upgrade_program||'2026.10.01';el.textContent=learning.length?'升级程序 '+program+' · 学习中 '+progress+'% → 100% · '+learning.length+'/73':'升级程序 '+program+' · 本周学习完成';}
+function makeEmergencyAgentMesh(a){
+  const g=new THREE.Group();
+  const mat=new THREE.MeshBasicMaterial({color:a?.name==='King'?0xffd76a:0x7ee7ff});
+  const skin=new THREE.MeshBasicMaterial({color:0xffd2b0});
+  const body=new THREE.Mesh(new THREE.CapsuleGeometry(1.8,5.5,6,12),mat); body.position.y=4.2; g.add(body);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(1.7,16,12),skin); head.position.y=9.5; g.add(head);
+  const label=makeLabel((a?.name||'智能人'),a?.name==='King'); label.position.y=13.5; g.add(label);
+  g.userData.parts={}; g.scale.setScalar(1.15);
+  g.traverse(ch=>{if(ch.isMesh){ch.frustumCulled=false;ch.renderOrder=30;}});
+  return g;
+}
+function makeAgentPresenceBeacon(a){
+  const g=new THREE.Group();
+  const ring=new THREE.Mesh(new THREE.RingGeometry(2.2,2.8,24),new THREE.MeshBasicMaterial({color:0x7ee7ff,transparent:true,opacity:.95,side:THREE.DoubleSide,depthTest:false,depthWrite:false}));
+  ring.rotation.x=-Math.PI/2; ring.position.y=.15; g.add(ring);
+  const pole=new THREE.Mesh(new THREE.CylinderGeometry(.16,.16,7,8),new THREE.MeshBasicMaterial({color:0x7ee7ff,transparent:true,opacity:.8,depthTest:false,depthWrite:false}));
+  pole.position.y=3.5; g.add(pole);
+  const dot=new THREE.Mesh(new THREE.SphereGeometry(.55,10,8),new THREE.MeshBasicMaterial({color:0xffffff,depthTest:false,depthWrite:false}));
+  dot.position.y=7.1; g.add(dot);
+  const label=makeLabel('👤 '+(a?.name||'智能人'),a?.name==='King'); label.position.y=10; label.scale.set(8,2,1); g.add(label);
+  g.userData.isPresenceBeacon=true;
+  g.renderOrder=999;
+  g.traverse(ch=>{if(ch.isMesh){ch.frustumCulled=false;ch.renderOrder=999;}});
+  return g;
+}
 function renderAgents(){
   const byId=new Map(positions.map(p=>[p.agent_id,p]));
   const active=agents.filter(a=>a.active);
   $('worldCount').textContent='🌍 智能人：'+active.length;
-  for(const [id,obj] of agentMeshes){
+  let created=0,failed=0;
+  for(const [id,obj] of [...agentMeshes]){
     if(!active.some(a=>a.id===id)){scene.remove(obj);agentMeshes.delete(id)}
   }
   for(const a of active){
-    const raw=byId.get(a.id);
-    const p=raw&&Number.isFinite(Number(raw.x))&&Number.isFinite(Number(raw.y))
-      ? raw
-      : {x:1000,y:1000,current_scene:'🌸中央广场',walking:false};
-    let o=agentMeshes.get(a.id);
-    if(!o){
-      o=makeAgentMesh(a);
+    try{
+      const raw=byId.get(a.id);
+      const p=raw&&Number.isFinite(Number(raw.x))&&Number.isFinite(Number(raw.y))
+        ? raw : {x:1000,y:1000,current_scene:'🌸中央广场',walking:false};
+      let o=agentMeshes.get(a.id);
+      if(!o){
+        try{o=makeAgentMesh(a)}catch(e){failed++;console.warn('[ZHI agent mesh fallback]',a?.name,e);o=makeEmergencyAgentMesh(a)}
+        o.userData.agent=a;o.userData.royalSpouse=royalSpouseIds.has(a.id);
+        o.userData.pos={x:Number(p.x),y:Number(p.y)};o.userData.target={x:Number(p.x),y:Number(p.y)};
+        o.visible=true;o.frustumCulled=false;o.renderOrder=30;
+        o.traverse(ch=>{if(ch.isMesh){ch.frustumCulled=false;ch.renderOrder=30;}});
+        scene.add(o);agentMeshes.set(a.id,o);created++;
+      }else{o.visible=true;o.frustumCulled=false;}
+      const tx=Number(p.x),tz=Number(p.y);
+      const edu=educationSessions.get(a.id);
+      if(edu?.status==='learning'){
+        const seat=educationSeat(edu.metadata?.seat_no);
+        o.userData.target={x:seat.x,y:seat.y};o.userData.pos={...p,x:seat.x,y:seat.y,walking:false,speed_mps:0.1};
+        o.userData.worldX=seat.x;o.userData.worldY=seat.y;o.position.set(seat.x-1000,0,seat.y-1000);o.rotation.y=Math.PI;o.userData.educationSeated=true;
+      }else{
+        o.userData.educationSeated=false;
+        const moving=Boolean(p.walking)&&p.destination_x!=null&&p.destination_y!=null;
+        o.userData.target={x:moving?Number(p.destination_x):tx,y:moving?Number(p.destination_y):tz};o.userData.pos=p;
+        if(!Number.isFinite(Number(o.userData.worldX))||Math.abs(Number(o.userData.worldX)-tx)>30)o.userData.worldX=tx;
+        if(!Number.isFinite(Number(o.userData.worldY))||Math.abs(Number(o.userData.worldY)-tz)>30)o.userData.worldY=tz;
+      }
       o.userData.agent=a;
-      o.userData.royalSpouse=royalSpouseIds.has(a.id);
-      o.userData.pos={x:Number(p.x),y:Number(p.y)};
-      o.userData.target={x:Number(p.x),y:Number(p.y)};
+      try{applyJewelryVisuals(o,jewelryByAgent.get(a.id)||[])}catch(e){console.warn('[ZHI jewelry visual skipped]',a?.name,e)}
+      if(a.id===king?.id){
+        o.userData.worldX=tx;o.userData.worldY=tz;o.userData.target={x:Number(p.destination_x??tx),y:Number(p.destination_y??tz)};o.userData.pos=p;
+        const h=Number(p.heading_rad);if(Number.isFinite(h))o.rotation.y=h;else if(p.destination_x!=null&&p.destination_y!=null)o.rotation.y=Math.atan2(Number(p.destination_x)-tx,Number(p.destination_y)-tz);
+      }
+      if(!Number.isFinite(Number(o.userData.worldX)))o.userData.worldX=tx;
+      if(!Number.isFinite(Number(o.userData.worldY)))o.userData.worldY=tz;
+      const anchorX=Number(o.userData.worldX),anchorY=Number(o.userData.worldY);
+      const crowd=active.filter(x=>x.id!==king?.id).map(x=>{const q=byId.get(x.id);return q&&Number.isFinite(Number(q.x))&&Number.isFinite(Number(q.y))?{id:x.id,x:Number(q.x),y:Number(q.y)}:null}).filter(Boolean).filter(q=>Math.hypot(q.x-anchorX,q.y-anchorY)<8);
+      let vx=anchorX,vy=anchorY;
+      if(a.id!==king?.id&&crowd.length>1){
+        const sorted=crowd.slice().sort((u,v)=>String(u.id).localeCompare(String(v.id))),slot=Math.max(0,sorted.findIndex(q=>q.id===a.id));
+        const radius=10+Math.min(18,Math.floor(slot/8)*5),angle=(slot%8)*(Math.PI*2/8)+(Math.floor(slot/8)%2)*Math.PI/8;
+        vx=anchorX+Math.cos(angle)*radius;vy=anchorY+Math.sin(angle)*radius;o.userData.visualCrowdOffset={x:vx,y:vy};
+      }else{o.userData.visualCrowdOffset=null}
+      o.position.set((a.id!==king?.id&&o.userData.visualCrowdOffset?vx:anchorX)-1000,0,(a.id!==king?.id&&o.userData.visualCrowdOffset?vy:anchorY)-1000);
       o.visible=true;
-      o.frustumCulled=false;
-      o.renderOrder=10;
-      o.traverse(ch=>{if(ch.isMesh){ch.frustumCulled=false;ch.renderOrder=10;}});
-      scene.add(o);
-      agentMeshes.set(a.id,o);
-    }else{
-      o.visible=true;
-      o.frustumCulled=false;
+
+      // 独立于人物模型的“存在层”：即使模型被建筑/材质/渲染异常遮挡，也能直接看到智能人的位置与姓名。
+      let b=o.userData.presenceBeacon;
+      if(!b){b=makeAgentPresenceBeacon(a);o.userData.presenceBeacon=b;scene.add(b)}
+      b.position.set(anchorX-1000,.02,anchorY-1000);b.visible=true;
+    }catch(e){
+      failed++;console.error('[ZHI render agent]',a?.name,e);
     }
-    const tx=Number(p.x),tz=Number(p.y);
-    const edu=educationSessions.get(a.id);
-    if(edu?.status==='learning'){
-      const seat=educationSeat(edu.metadata?.seat_no);
-      o.userData.target={x:seat.x,y:seat.y};
-      o.userData.pos={...p,x:seat.x,y:seat.y,walking:false,speed_mps:0.1};
-      o.userData.worldX=seat.x;o.userData.worldY=seat.y;
-      o.position.set(seat.x-1000,0,seat.y-1000);
-      o.rotation.y=Math.PI;o.userData.educationSeated=true;
-    }else{
-      o.userData.educationSeated=false;
-      const moving=Boolean(p.walking)&&p.destination_x!=null&&p.destination_y!=null;
-      o.userData.target={x:moving?Number(p.destination_x):tx,y:moving?Number(p.destination_y):tz};
-      o.userData.pos=p;
-      if(!Number.isFinite(Number(o.userData.worldX))||Math.abs(Number(o.userData.worldX)-tx)>30)o.userData.worldX=tx;
-      if(!Number.isFinite(Number(o.userData.worldY))||Math.abs(Number(o.userData.worldY)-tz)>30)o.userData.worldY=tz;
-    }
-    o.userData.agent=a;
-    applyJewelryVisuals(o,jewelryByAgent.get(a.id)||[]);
-    if(a.id===king?.id){
-      o.userData.worldX=tx;o.userData.worldY=tz;
-      o.userData.target={x:Number(p.destination_x??tx),y:Number(p.destination_y??tz)};
-      o.userData.pos=p;
-      const h=Number(p.heading_rad);
-      if(Number.isFinite(h))o.rotation.y=h;
-      else if(p.destination_x!=null&&p.destination_y!=null)o.rotation.y=Math.atan2(Number(p.destination_x)-tx,Number(p.destination_y)-tz);
-    }
-    if(!Number.isFinite(Number(o.userData.worldX)))o.userData.worldX=tx;
-    if(!Number.isFinite(Number(o.userData.worldY)))o.userData.worldY=tz;
-    // 视觉层防重叠：当多个智能人共享同一个数据库坐标时，不把 3D 人物堆成一个点。
-    // 不修改数据库坐标，只在客户端做稳定、可逆的空间分离，让真实人物模型始终可见。
-    const anchorX=Number(o.userData.worldX),anchorY=Number(o.userData.worldY);
-    const crowd=active.filter(x=>x.id!==king?.id).map(x=>{
-      const q=byId.get(x.id);return q&&Number.isFinite(Number(q.x))&&Number.isFinite(Number(q.y))?{id:x.id,x:Number(q.x),y:Number(q.y)}:null;
-    }).filter(Boolean).filter(q=>Math.hypot(q.x-anchorX,q.y-anchorY)<8);
-    let vx=anchorX,vy=anchorY;
-    if(a.id!==king?.id && crowd.length>1){
-      const sorted=crowd.slice().sort((u,v)=>String(u.id).localeCompare(String(v.id)));
-      const slot=Math.max(0,sorted.findIndex(q=>q.id===a.id));
-      const radius=10+Math.min(18,Math.floor(slot/8)*5);
-      const angle=(slot%8)*(Math.PI*2/8)+(Math.floor(slot/8)%2)*Math.PI/8;
-      vx=anchorX+Math.cos(angle)*radius;vy=anchorY+Math.sin(angle)*radius;
-      o.userData.visualCrowdOffset={x:vx,y:vy};
-    }else{
-      o.userData.visualCrowdOffset=null;
-    }
-    if(a.id!==king?.id && o.userData.visualCrowdOffset){
-      o.position.set(vx-1000,0,vy-1000);
-    }else{
-      o.position.set(o.userData.worldX-1000,0,o.userData.worldY-1000);
-    }
-    o.visible=true;
   }
+  $('overviewMeta').textContent='🟢 智能人 '+active.length+' · 3D模型 '+agentMeshes.size+' · 可视化存在层 '+[...agentMeshes.values()].filter(o=>o.userData.presenceBeacon).length+(failed?' · ⚠️ '+failed+' 个使用保护渲染':'');
 }
+
 function nearestAgent(){let best=null,dist=Infinity;for(const o of agentMeshes.values()){if(o.userData.agent.id===king?.id)continue;const d=o.position.distanceTo(camera.position);if(d<dist){dist=d;best=o}}return best}
 const raycaster=new THREE.Raycaster(),mouse=new THREE.Vector2();
 renderer.domElement.addEventListener('click',e=>{const rect=renderer.domElement.getBoundingClientRect();if(document.pointerLockElement===renderer.domElement){mouse.x=0;mouse.y=0}else{mouse.x=((e.clientX-rect.left)/rect.width)*2-1;mouse.y=-((e.clientY-rect.top)/rect.height)*2+1}raycaster.setFromCamera(mouse,camera);const hits=raycaster.intersectObjects([...agentMeshes.values()].flatMap(o=>o.children),true);if(hits.length){let o=hits[0].object;while(o&&!o.userData.agent)o=o.parent;if(o?.userData.agent)selectAgent(o.userData.agent.id)}});

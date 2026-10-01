@@ -994,8 +994,10 @@ function updateKingFollowCamera(){
   // KING 同步视角：镜头始终跟随 KING，但保持约 22m 后方 + 10m 高度的观察距离。
   // 第三人称跟随：镜头固定在 KING 后方约 18m、上空 5m，轻微俯视 KING。
   // KING 本体保持可见，镜头不再进入第一视角。
-  const backX=Math.sin(h)*20;
-  const backZ=Math.cos(h)*20;
+  // 第三人称观察：镜头必须在 KING 背后，而不是站到 KING 面前。
+  // KING 的正面朝向为 (+sin(h), +cos(h))，因此镜头放在其反方向。
+  const backX=-Math.sin(h)*20;
+  const backZ=-Math.cos(h)*20;
   // 镜头保持在 KING 后方、略高于 KING，并把视线放到 KING 前方约 10m。
   // 这样 KING 本体 + 同区域智能人都会落入主视野，而不是只盯着 KING 身体。
   const cameraHeight=12.0;

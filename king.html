@@ -779,18 +779,30 @@ function bindWorldZoomWheel(){
   }
 }
 // 捕获阶段监听：HUD、按钮、canvas 等覆盖层存在时，滚轮仍能可靠控制全体3D缩放。
-document.addEventListener('wheel',e=>{
-  if(!window.__zhiWorld3DMode)return;
-  const target=e.target;
-  if(target?.closest?.('#chat,#info'))return;
-  e.preventDefault();
-  e.stopPropagation();
-  const factor=e.deltaY>0?0.8:1.25;
+function applyFullWorldWheelZoom(e){
+  if(!window.__zhiWorld3DMode)return false;
+  const dy=Number(e.deltaY||0);
+  if(!dy)return false;
+  const factor=dy>0?.72:1.38;
   fullWorldZoom=Math.max(.1,Math.min(10,fullWorldZoom*factor));
   updateFullWorldCamera();
   const s=document.getElementById('state');
   if(s)s.textContent='🌐 全体3D · 缩放 '+Math.round(fullWorldZoom*100)+'% · 真实坐标';
-},{capture:true,passive:false});
+  return true;
+}
+// 最底层捕获：不依赖鼠标当前悬停在哪个 HUD / Canvas 元素上。
+document.addEventListener('wheel',e=>{
+  if(applyFullWorldWheelZoom(e)){
+    e.preventDefault();
+    e.stopImmediatePropagation();
+  }
+},true);
+// 同时提供键盘缩放，便于确认缩放状态是否正常。
+document.addEventListener('keydown',e=>{
+  if(!window.__zhiWorld3DMode)return;
+  if(e.key==='+'||e.key==='='){e.preventDefault();setFullWorldZoom(fullWorldZoom*1.5);}
+  if(e.key==='-'||e.key==='_'){e.preventDefault();setFullWorldZoom(fullWorldZoom/1.5);}
+},true);
 
 addEventListener('wheel',e=>{
   if(e.target.closest?.('#chat,#info'))return;
@@ -1025,7 +1037,7 @@ function updateFullWorldCamera(){
   bindWorldZoomWheel();
   // 全体3D观察：真实坐标不变；缩放只改变观察距离，不改变任何智能人的 DB 坐标。
   const size=2000;
-  const distance=1450/fullWorldZoom;
+  const distance=1450/Math.sqrt(fullWorldZoom);
   camera.position.set(0,distance,distance);
   camera.rotation.order='YXZ';
   camera.fov=Math.max(35,Math.min(100,100-(fullWorldZoom-1)*7));

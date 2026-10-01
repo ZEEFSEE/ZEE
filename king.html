@@ -1014,7 +1014,7 @@ function makeAgentMesh(a){
   const label=makeLabel((female?'♀ ':'♂ ')+(a.name||'智能人'),isKing);
   label.position.set(0,headY+(isKing?4.6:3.5),0);grp.add(label);
   // 统一为接近真实人的比例：King 视线高度约 6m 时，智能人的眼睛处于平视范围，避免聊天时仰视。
-  grp.scale.setScalar(0.5);
+  grp.scale.setScalar(isKing?0.7:0.72);
   grp.userData.parts={legL,legR,armL,armR};
   return grp;
 }
@@ -1025,17 +1025,66 @@ const educationSessions=new Map();
 function educationSeat(seatNo){const n=Math.max(1,Number(seatNo)||1);return {x:-650+(Math.min(8,(n-1)%9)-4)*10.5,y:-900+30-Math.floor((n-1)/9)*10.5};}
 function educationProgress(s){if(!s||s.status!=='learning'||!s.started_at||!s.ends_at)return 0;const a=new Date(s.started_at).getTime(),b=new Date(s.ends_at).getTime(),n=Date.now();return Math.max(0,Math.min(100,((n-a)/Math.max(1,b-a))*100));}
 function updateEducationScreen(rows){const el=document.querySelector('#educationScreenLive');if(!el)return;const learning=(rows||[]).filter(s=>s.status==='learning');const progress=learning.length?Math.round(learning.reduce((sum,s)=>sum+educationProgress(s),0)/learning.length):0;const program=learning[0]?.metadata?.upgrade_program||'2026.10.01';el.textContent=learning.length?'升级程序 '+program+' · 学习中 '+progress+'% → 100% · '+learning.length+'/73':'升级程序 '+program+' · 本周学习完成';}
-function renderAgents(){const byId=new Map(positions.map(p=>[p.agent_id,p]));
-const active=agents.filter(a=>a.active);$('worldCount').textContent='🌍 智能人：'+active.length;for(const [id,obj] of agentMeshes){if(!active.some(a=>a.id===id)){scene.remove(obj);agentMeshes.delete(id)}}for(const a of active){const p=byId.get(a.id)||{x:1000,y:1000,current_scene:'🌸中央广场',walking:false};let o=agentMeshes.get(a.id);if(!o){o=makeAgentMesh(a);o.userData.agent=a;o.userData.royalSpouse=royalSpouseIds.has(a.id);o.userData.pos={x:Number(p.x),y:Number(p.y)};o.userData.target={x:Number(p.x),y:Number(p.y)};scene.add(o);agentMeshes.set(a.id,o)}
-const tx=Number(p.x),tz=Number(p.y);
-const edu=educationSessions.get(a.id);
-if(edu?.status==='learning'){const seat=educationSeat(edu.metadata?.seat_no);o.userData.target={x:seat.x,y:seat.y};o.userData.pos={...p,x:seat.x,y:seat.y,walking:false,speed_mps:0.1};o.userData.worldX=seat.x;o.userData.worldY=seat.y;o.position.set(seat.x-1000,0,seat.y-1000);o.rotation.y=Math.PI;o.userData.educationSeated=true;}else{o.userData.educationSeated=false;const moving=Boolean(p.walking)&&p.destination_x!=null&&p.destination_y!=null;o.userData.target={x:moving?Number(p.destination_x):tx,y:moving?Number(p.destination_y):tz};o.userData.pos=p;if(!Number.isFinite(Number(o.userData.worldX))||Math.abs(Number(o.userData.worldX)-tx)>30)o.userData.worldX=tx;if(!Number.isFinite(Number(o.userData.worldY))||Math.abs(Number(o.userData.worldY)-tz)>30)o.userData.worldY=tz;}
-o.userData.agent=a;applyJewelryVisuals(o,jewelryByAgent.get(a.id)||[]);
-if(a.id===king?.id){o.userData.worldX=tx;o.userData.worldY=tz;o.userData.target={x:Number(p.destination_x??tx),y:Number(p.destination_y??tz)};o.userData.pos=p;const h=Number(p.heading_rad);if(Number.isFinite(h))o.rotation.y=h;else if(p.destination_x!=null&&p.destination_y!=null)o.rotation.y=Math.atan2(Number(p.destination_x)-tx,Number(p.destination_y)-tz);}
-if(!Number.isFinite(Number(o.userData.worldX)))o.userData.worldX=tx;
-if(!Number.isFinite(Number(o.userData.worldY)))o.userData.worldY=tz;
-o.position.set(o.userData.worldX-1000,0,o.userData.worldY-1000);
-}
+function renderAgents(){
+  const byId=new Map(positions.map(p=>[p.agent_id,p]));
+  const active=agents.filter(a=>a.active);
+  $('worldCount').textContent='🌍 智能人：'+active.length;
+  for(const [id,obj] of agentMeshes){
+    if(!active.some(a=>a.id===id)){scene.remove(obj);agentMeshes.delete(id)}
+  }
+  for(const a of active){
+    const raw=byId.get(a.id);
+    const p=raw&&Number.isFinite(Number(raw.x))&&Number.isFinite(Number(raw.y))
+      ? raw
+      : {x:1000,y:1000,current_scene:'🌸中央广场',walking:false};
+    let o=agentMeshes.get(a.id);
+    if(!o){
+      o=makeAgentMesh(a);
+      o.userData.agent=a;
+      o.userData.royalSpouse=royalSpouseIds.has(a.id);
+      o.userData.pos={x:Number(p.x),y:Number(p.y)};
+      o.userData.target={x:Number(p.x),y:Number(p.y)};
+      o.visible=true;
+      o.frustumCulled=false;
+      o.renderOrder=10;
+      o.traverse(ch=>{if(ch.isMesh){ch.frustumCulled=false;ch.renderOrder=10;}});
+      scene.add(o);
+      agentMeshes.set(a.id,o);
+    }else{
+      o.visible=true;
+      o.frustumCulled=false;
+    }
+    const tx=Number(p.x),tz=Number(p.y);
+    const edu=educationSessions.get(a.id);
+    if(edu?.status==='learning'){
+      const seat=educationSeat(edu.metadata?.seat_no);
+      o.userData.target={x:seat.x,y:seat.y};
+      o.userData.pos={...p,x:seat.x,y:seat.y,walking:false,speed_mps:0.1};
+      o.userData.worldX=seat.x;o.userData.worldY=seat.y;
+      o.position.set(seat.x-1000,0,seat.y-1000);
+      o.rotation.y=Math.PI;o.userData.educationSeated=true;
+    }else{
+      o.userData.educationSeated=false;
+      const moving=Boolean(p.walking)&&p.destination_x!=null&&p.destination_y!=null;
+      o.userData.target={x:moving?Number(p.destination_x):tx,y:moving?Number(p.destination_y):tz};
+      o.userData.pos=p;
+      if(!Number.isFinite(Number(o.userData.worldX))||Math.abs(Number(o.userData.worldX)-tx)>30)o.userData.worldX=tx;
+      if(!Number.isFinite(Number(o.userData.worldY))||Math.abs(Number(o.userData.worldY)-tz)>30)o.userData.worldY=tz;
+    }
+    o.userData.agent=a;
+    applyJewelryVisuals(o,jewelryByAgent.get(a.id)||[]);
+    if(a.id===king?.id){
+      o.userData.worldX=tx;o.userData.worldY=tz;
+      o.userData.target={x:Number(p.destination_x??tx),y:Number(p.destination_y??tz)};
+      o.userData.pos=p;
+      const h=Number(p.heading_rad);
+      if(Number.isFinite(h))o.rotation.y=h;
+      else if(p.destination_x!=null&&p.destination_y!=null)o.rotation.y=Math.atan2(Number(p.destination_x)-tx,Number(p.destination_y)-tz);
+    }
+    if(!Number.isFinite(Number(o.userData.worldX)))o.userData.worldX=tx;
+    if(!Number.isFinite(Number(o.userData.worldY)))o.userData.worldY=tz;
+    o.position.set(o.userData.worldX-1000,0,o.userData.worldY-1000);
+  }
 }
 function nearestAgent(){let best=null,dist=Infinity;for(const o of agentMeshes.values()){if(o.userData.agent.id===king?.id)continue;const d=o.position.distanceTo(camera.position);if(d<dist){dist=d;best=o}}return best}
 const raycaster=new THREE.Raycaster(),mouse=new THREE.Vector2();

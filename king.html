@@ -795,7 +795,7 @@ function makeAnimalMesh(a){
   const bodyMat=new THREE.MeshStandardMaterial({color:dog?0xc9a77b:cat?0x8d8d8d:chicken?0xd9b24c:rabbit?0xf0e4d8:duck?0xe7d36d:0xb58a62,roughness:.85});
   const dark=new THREE.MeshStandardMaterial({color:0x30251f,roughness:.8});
   const body=new THREE.Mesh(new THREE.SphereGeometry(dog||cat?0.8:0.72,12,9),bodyMat);body.scale.set(1.25,.85,1.05);body.position.y=.85;g.add(body);
-  const head=new THREE.Mesh(new THREE.SphereGeometry(dog||cat?.55:.5,12,9),bodyMat);head.position.set(0,1.35,.62);g.add(head);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(dog||cat?0.55:0.5,12,9),bodyMat);head.position.set(0,1.35,.62);g.add(head);
   if(dog||cat){for(const s of [-1,1]){const ear=new THREE.Mesh(new THREE.ConeGeometry(.16,.38,6),bodyMat);ear.position.set(s*.34,1.78,.62);ear.rotation.z=s*.35;g.add(ear);}}
   if(chicken){for(const s of [-1,1]){const leg=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,.48,6),dark);leg.position.set(s*.2,.38,0);g.add(leg);}const comb=new THREE.Mesh(new THREE.SphereGeometry(.14,8,6),new THREE.MeshStandardMaterial({color:0xc93434,roughness:.8}));comb.position.set(0,1.86,.62);g.add(comb);const beak=new THREE.Mesh(new THREE.ConeGeometry(.10,.28,6),new THREE.MeshStandardMaterial({color:0xf0a52b}));beak.rotation.x=Math.PI/2;beak.position.set(0,1.32,1.08);g.add(beak);}
   if(rabbit){for(const s of [-1,1]){const ear=new THREE.Mesh(new THREE.CapsuleGeometry(.12,.55,5,8),bodyMat);ear.position.set(s*.2,1.9,.58);g.add(ear);}}

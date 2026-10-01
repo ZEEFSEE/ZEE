@@ -109,9 +109,7 @@ box-shadow:0 18px 60px #000a,0 0 40px #ffb30018,inset 0 1px #fff2}
   z-index:-1;
   pointer-events:none;
 }
-</style><style id="zhi-overlay-v2">#zhiModalBackdrop{position:fixed!important;inset:0!important;z-index:9998!important;display:none!important;background:rgba(5,3,10,.94)!important;backdrop-filter:blur(12px)!important;-webkit-backdrop-filter:blur(12px)!important}#zhiModalBackdrop.open{display:block!important}#ecoPanel{position:fixed!important;right:24px!important;top:90px!important;z-index:10000!important;width:min(380px,calc(100vw - 32px))!important;max-height:calc(100vh - 120px)!important;overflow:auto!important;background:#12091ffb!important;backdrop-filter:blur(18px)!important;-webkit-backdrop-filter:blur(18px)!important;box-shadow:0 20px 80px #000!important}#sceneOverlay,#marketOverlay{position:fixed!important;inset:0!important;z-index:10000!important;background:rgba(5,3,10,.96)!important;backdrop-filter:blur(14px)!important;-webkit-backdrop-filter:blur(14px)!important}#sceneOverlay .scene-modal,#marketOverlay .market-modal{position:relative!important;z-index:10001!important;background:#12091ffb!important}</style></head><body><div id="zhiWorldFacilities" style="margin:18px 0;padding:16px;border:1px solid #ffffff22;border-radius:16px;background:#111827cc">
-  <div style="font-weight:900;font-size:18px">🌍 ZHI 世界 · 新增设施</div>
-  <div style="margin-top:10px;display:flex;gap:12px;flex-wrap:wrap">
+</style><style id="zhi-overlay-v2">#zhiModalBackdrop{position:fixed!important;inset:0!important;z-index:9998!important;display:none!important;background:rgba(5,3,10,.94)!important;backdrop-filter:blur(12px)!important;-webkit-backdrop-filter:blur(12px)!important}#zhiModalBackdrop.open{display:block!important}#ecoPanel{position:fixed!important;right:24px!important;top:90px!important;z-index:10000!important;width:min(380px,calc(100vw - 32px))!important;max-height:calc(100vh - 120px)!important;overflow:auto!important;background:#12091ffb!important;backdrop-filter:blur(18px)!important;-webkit-backdrop-filter:blur(18px)!important;box-shadow:0 20px 80px #000!important}#sceneOverlay,#marketOverlay{position:fixed!important;inset:0!important;z-index:10000!important;background:rgba(5,3,10,.96)!important;backdrop-filter:blur(14px)!important;-webkit-backdrop-filter:blur(14px)!important}#sceneOverlay .scene-modal,#marketOverlay .market-modal{position:relative!important;z-index:10001!important;background:#12091ffb!important}</style></head><body><div style="margin-top:10px;display:flex;gap:12px;flex-wrap:wrap">
     <div style="padding:12px 14px;border-radius:12px;background:#172033;border:1px solid #ffd76a55">
       🏫 <b>APLUS ACHIEVER 教育中心</b><br><small>73座位 · 每周必修 · 连续学习10分钟 · 最新升级程序</small>
     </div>
@@ -619,65 +617,6 @@ if(!window.__zhiAgentRealtimeBound){
   if(window.zhiCoreSupabase) bindAgentRealtime();
   else setTimeout(bindAgentRealtime,1500);
 }
-})();
-</script>
-<div id="fortuneClaimsLive" class="card" style="margin-top:10px">
-  <div class="top"><div><h2 class="section-title" style="margin:0">🎁 财神爷撒币现场 · 实时领取</h2><div class="meta">智能体发现撒币 → 前往现场 → 抢币 → 自动结算 → 钱包到账</div></div><button id="fortuneClaimsRefresh" class="secondary">立即刷新</button></div>
-  <div id="fortuneLatestClaim" class="fortune-latest">正在等待最新领取…</div>
-  <div id="fortuneClaimsBody" class="grid" style="margin-top:8px"><div class="notice">正在读取领取记录…</div></div>
-</div>
-<style>
-#fortuneClaimsLive{border:1px solid #ffd76a99;background:linear-gradient(145deg,#281044ee,#100817ee);box-shadow:0 10px 30px #0007}
-#fortuneClaimsBody{grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:8px}
-.fortune-latest{margin-top:9px;padding:10px 12px;border:1px solid #8ff0b055;border-radius:12px;background:#8ff0b00d;color:#eafff0;font-weight:800}
-.fortune-event-card{padding:10px 12px;border:1px solid #ffd76a55;border-radius:12px;background:#08050f99}
-.fortune-event-card h3{margin:0 0 5px;color:#ffe58c;font-size:14px}
-.fortune-claim-row{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid #ffffff0d;font-size:12px}
-.fortune-claim-row:last-child{border-bottom:0}.fortune-amount{color:#8ff0b0;font-weight:1000}.fortune-empty{color:#aaa;font-size:12px;padding:6px 0}
-</style>
-<script>
-(function(){
-  function escF(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
-  function moneyF(v){const n=Number(v);return Number.isFinite(n)?n.toLocaleString('en-US',{maximumFractionDigits:2}):'0';}
-  async function loadFortuneClaimsLive(){
-    const core=window.zhiCoreSupabase,box=document.getElementById('fortuneClaimsBody'),latest=document.getElementById('fortuneLatestClaim');
-    if(!box)return;
-    if(!core){if(latest)latest.textContent='正在连接 ZHI 世界数据库…';return;}
-    try{
-      const {data:events,error:ee}=await core.from('zhi_fortune_events').select('id,event_date,location_name,activity_type,reward_pool,status,created_at').order('created_at',{ascending:false}).limit(12);
-      if(ee)throw ee;
-      const ids=(events||[]).map(e=>e.id);let claims=[];
-      if(ids.length){
-        const r=await core.from('zhi_agent_fortune_claims').select('event_id,agent_id,reward,result,created_at').in('event_id',ids).order('created_at',{ascending:false});
-        if(r.error)throw r.error;claims=r.data||[];
-      }
-      const agentIds=[...new Set(claims.map(c=>c.agent_id).filter(Boolean))];let names=new Map();
-      if(agentIds.length){const r=await core.from('zhi_agents').select('id,name').in('id',agentIds);if(r.error)throw r.error;(r.data||[]).forEach(a=>names.set(a.id,a.name));}
-      const by=new Map();claims.forEach(c=>{if(!by.has(c.event_id))by.set(c.event_id,[]);by.get(c.event_id).push(c);});
-      const latestClaim=claims.find(c=>c.result==='won');
-      if(latest){
-        latest.textContent=latestClaim
-          ? '🎉 最新领取：'+(names.get(latestClaim.agent_id)||'智能体')+'  +'+moneyF(latestClaim.reward)+' ZHI'
-          : '🪙 目前还没有领取记录，智能体会自动发现并前往撒币现场。';
-      }
-      box.innerHTML=(events||[]).map(e=>{
-        const cs=(by.get(e.id)||[]).filter(c=>c.result==='won');
-        const rows=cs.length?cs.map(c=>'<div class="fortune-claim-row"><span>👤 '+escF(names.get(c.agent_id)||'智能体')+'</span><span class="fortune-amount">+'+moneyF(c.reward)+' ZHI</span></div>').join(''):'<div class="fortune-empty">目前还没有人领取</div>';
-        return '<div class="fortune-event-card"><h3>📍 '+escF(e.location_name||'未知地点')+' · '+escF(e.activity_type||'撒币')+'</h3><div class="meta">奖池剩余：'+moneyF(e.reward_pool)+' ZHI · 状态：'+escF(e.status||'open')+' · 已领取：'+cs.length+' 人</div><div style="margin-top:6px">'+rows+'</div></div>';
-      }).join('')||'<div class="notice">目前没有撒币活动。</div>';
-    }catch(err){
-      if(latest)latest.textContent='⚠️ 撒币记录连接失败：'+escF(err?.message||err);
-      box.innerHTML='<div class="notice">领取记录读取失败：'+escF(err?.message||err)+'</div>';
-    }
-  }
-  window.loadFortuneClaimsLive=loadFortuneClaimsLive;
-  function initFortuneClaimsLive(){
-    document.getElementById('fortuneClaimsRefresh')?.addEventListener('click',loadFortuneClaimsLive);
-    loadFortuneClaimsLive();
-    setTimeout(loadFortuneClaimsLive,1500);
-    setInterval(loadFortuneClaimsLive,5000);
-  }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initFortuneClaimsLive,{once:true});else initFortuneClaimsLive();
 })();
 </script>
 <script src="admin-agent-chat.js?v=brainv5"></script></body></html>

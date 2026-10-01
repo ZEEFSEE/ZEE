@@ -220,10 +220,17 @@ async function loadAgentFinanceBoard(){
    return rr;
   }
   let rr=await callFinanceBoard(token);
+  if(!rr || typeof rr.status!=='number'){
+   throw new Error('财务 Board 请求没有返回有效 HTTP 响应，请刷新页面后重试');
+  }
   if(rr.status===401){
    const refreshed=await finance.auth.refreshSession();
    const fresh=refreshed?.data?.session;
-   if(fresh?.access_token){token=fresh.access_token;rr=await callFinanceBoard(token)}
+   if(fresh?.access_token){
+    token=fresh.access_token;
+    rr=await callFinanceBoard(token);
+    if(!rr || typeof rr.status!=='number')throw new Error('刷新登录状态后财务 Board 没有返回有效响应');
+   }
   }
 
   const payload=await rr.json().catch(()=>({}));

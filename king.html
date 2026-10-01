@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ZHI · King Virtual World · FPS v20261001-02</title>
+<title>ZHI · King Virtual World · FPS v20261001-03</title>
 <style>
 :root{--gold:#ffd76a;--panel:#100a18eF;--line:#ffd76a66;--text:#fff5cf}
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#05070a;color:#fff;font:14px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
@@ -794,10 +794,19 @@ function updateKingFollowCamera(){
   }
   window.__kingCameraLastAt=now;
   if(p.walking&&p.destination_x!=null&&p.destination_y!=null){
-    const tx=Number(p.destination_x),tz=Number(p.destination_y),fx=tx-window.__kingCameraWorldX,fz=tz-window.__kingCameraWorldZ,d=Math.hypot(fx,fz);
-    if(d>0.05){
-      const step=Math.min(d,Math.max(.1,Math.min(Number(p.speed_mps)||5,MAX_AGENT_SPEED_MPS))/60);
-      window.__kingCameraWorldX+=fx/d*step; window.__kingCameraWorldZ+=fz/d*step;
+    const tx=Number(p.destination_x),tz=Number(p.destination_y);
+    const started=Date.parse(p.walk_started_at||'');
+    const arrive=Date.parse(p.walk_arrive_at||'');
+    if(Number.isFinite(started)&&Number.isFinite(arrive)&&arrive>started){
+      const ratio=Math.max(0,Math.min(1,(Date.now()-started)/(arrive-started)));
+      window.__kingCameraWorldX=dbx+(tx-dbx)*ratio;
+      window.__kingCameraWorldZ=dbz+(tz-dbz)*ratio;
+    }else{
+      const fx=tx-window.__kingCameraWorldX,fz=tz-window.__kingCameraWorldZ,d=Math.hypot(fx,fz);
+      if(d>0.05){
+        const step=Math.min(d,Math.max(.1,Math.min(Number(p.speed_mps)||5,MAX_AGENT_SPEED_MPS))/60);
+        window.__kingCameraWorldX+=fx/d*step; window.__kingCameraWorldZ+=fz/d*step;
+      }
     }
   }
   const x=window.__kingCameraWorldX,z=window.__kingCameraWorldZ;

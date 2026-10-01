@@ -52,7 +52,7 @@ window.zhiForceEnterKing=function(){
 };
 </script>
 <div id="start"><div class="startbox card"><h1>🌍 ZHI Virtual World</h1><p>2,000 m × 2,000 m 第一视角世界</p><p class="sub">视野完全由 KING 自主控制 · 你只能观察，不能驾驶、转向或干涉</p><div class="sub" style="margin-top:16px">👁️ KING 已自动接管视野 · 纯观察</div></div></div>
-<div class="hud top"><div><div class="brand">👑 KING MODE</div><div class="sub">ZHI Virtual World · 2 km × 2 km · First Person · 公共 3D Asset CDN</div></div><div style="display:flex;gap:8px;align-items:center"><div class="pill" id="worldCount">🌍 智能人：--</div><button class="pill" id="world3DView" style="pointer-events:auto;cursor:pointer">🌐 全体3D</button><div class="pill" id="balance">💰 -- ZHI</div><button class="pill" id="back" style="pointer-events:auto">← 返回管理员</button></div></div>
+<div class="hud top"><div><div class="brand">👑 KING MODE</div><div class="sub">ZHI Virtual World · 2 km × 2 km · First Person · 公共 3D Asset CDN</div></div><div style="display:flex;gap:8px;align-items:center"><div class="pill" id="worldCount">🌍 智能人：--</div><button class="pill" id="world3DView" style="pointer-events:auto;cursor:pointer">🌐 全体3D</button><button class="pill" id="worldZoomOut" style="pointer-events:auto;cursor:pointer" title="缩小">−</button><button class="pill" id="worldZoomIn" style="pointer-events:auto;cursor:pointer" title="放大">＋</button><button class="pill" id="worldZoomReset" style="pointer-events:auto;cursor:pointer" title="恢复全体视野">⌖</button><div class="pill" id="balance">💰 -- ZHI</div><button class="pill" id="back" style="pointer-events:auto">← 返回管理员</button></div></div>
 <div id="crosshair" class="hud"></div><div id="kingSleepOverlay" aria-hidden="true"><div>😴</div></div>
 <div class="hud bottom card kingBoard" id="kingBoard"><button class="kingBoardToggle" id="kingBoardToggle" type="button" aria-expanded="true"><span>👑 KING 信息</span><span id="kingBoardChevron">⌃</span></button><div class="kingBoardBody"><h3>👑 King</h3><div id="state">正在读取世界…</div><div class="stats"><div class="stat"><small>心情</small><b id="mood">--</b></div><div class="stat"><small>精力</small><b id="energy">--</b></div><div class="stat"><small>好奇心</small><b id="curiosity">--</b></div><div class="stat"><small>目标</small><b id="goal">--</b></div><div class="stat"><small>压力</small><b id="stress">--</b></div><div class="stat"><small>信心</small><b id="confidence">--</b></div></div><div class="kingThought" id="thought">正在形成下一步想法…</div><div class="controls">👁️ 纯观察模式 · KING 自主移动与转向 · 你的视野完全同步 KING · 你不能驾驶、移动或转向</div></div></div>
 <div id="info" class="hidden"><div class="head"><b id="infoTitle">智能人</b><button class="close" id="closeInfo">✕</button></div><div id="infoBody"></div><button id="infoChat" class="send" style="width:100%;margin-top:6px">🚶 邀请 TA 过来聊天</button></div>
@@ -759,9 +759,21 @@ park(650,0,260,220);park(-650,0,260,220);park(0,700,300,180);
 
 
 const keys=new Set();const WALK_SPEED_MPS=MAX_PLAYER_SPEED_MPS;let yaw=0,pitch=0,velocity=0,last=performance.now(),overviewMode=false,overviewHeight=520;
+let fullWorldZoom=1;
 
 addEventListener('keyup',e=>keys.delete(e.code));
-addEventListener('wheel',e=>{if(e.target.closest?.('#chat,#info'))return;e.preventDefault();overviewHeight=Math.max(180,Math.min(1400,overviewHeight+(e.deltaY>0?70:-70)));if(overviewMode)updateOverviewCamera();},{passive:false});
+addEventListener('wheel',e=>{
+  if(e.target.closest?.('#chat,#info'))return;
+  if(window.__zhiWorld3DMode){
+    e.preventDefault();
+    fullWorldZoom=Math.max(.25,Math.min(4,fullWorldZoom*(e.deltaY>0?.88:1.136)));
+    updateFullWorldCamera();
+    return;
+  }
+  e.preventDefault();
+  overviewHeight=Math.max(180,Math.min(1400,overviewHeight+(e.deltaY>0?70:-70)));
+  if(overviewMode)updateOverviewCamera();
+},{passive:false});
 
 let savedFirstPersonPosition=null;
 function updateOverviewCamera(){
@@ -985,9 +997,10 @@ function updateKingFollowCamera(){
   return true;
 }
 function updateFullWorldCamera(){
-  // 全体3D观察：真实坐标不变；使用斜上方广角，把整个 2km × 2km 世界稳定放入视野。
+  // 全体3D观察：真实坐标不变；缩放只改变观察距离，不改变任何智能人的 DB 坐标。
   const size=2000;
-  camera.position.set(0,1450,1450);
+  const distance=1450/fullWorldZoom;
+  camera.position.set(0,distance,distance);
   camera.rotation.order='YXZ';
   camera.fov=100;
   camera.near=.1;
@@ -999,6 +1012,7 @@ function updateFullWorldCamera(){
   window.__zhiWorld3DView={
     mode:'full-world',
     worldSize:size,
+    zoom:fullWorldZoom,
     agentCount:agentMeshes.size,
     projectedAgents:[...agentMeshes.values()].filter(o=>o.visible&&o.userData?.projected3D).length,
     source:'zhi_agent_world_positions',
@@ -1692,6 +1706,10 @@ $('world3DView').onclick=()=>{
   }
 };
 window.__zhiWorld3DMode=false;
+function setFullWorldZoom(z){fullWorldZoom=Math.max(.25,Math.min(4,Number(z)||1));if(window.__zhiWorld3DMode)updateFullWorldCamera();}
+$('worldZoomIn').onclick=()=>setFullWorldZoom(fullWorldZoom*1.25);
+$('worldZoomOut').onclick=()=>setFullWorldZoom(fullWorldZoom/1.25);
+$('worldZoomReset').onclick=()=>setFullWorldZoom(1);
 $('closeInfo').onclick=()=>{if(zhiConversationApproach){const o=selected?agentMeshes.get(selected.id):null;if(o)o.userData.conversationApproach=false;zhiConversationApproach=false;$('infoChat').disabled=false;$('infoChat').textContent='🚶 邀请 TA 过来聊天'}$('info').classList.add('hidden')};$('closeChat').onclick=()=>{if(zhiConversationActive){$('messages').insertAdjacentHTML('beforeend','<div class="msg agentmsg">我有事情要离开了。</div>');finishAgentConversation()}$('chat').classList.add('hidden')};$('back').onclick=()=>location.href='index.html';$('infoChat').onclick=()=>{if(selected&&!zhiConversationApproach&&!zhiConversationActive){startAgentChatApproach()}};
 $('send').onclick=send;$('input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});
 async function send(){if(!selected||busy)return;const msg=$('input').value.trim();if(!msg)return;busy=true;$('input').value='';$('messages').insertAdjacentHTML('beforeend','<div class="msg me">'+esc(msg)+'</div>');try{const {data:{session}}=await finance().auth.getSession();if(!session)throw Error('AUTH');const brain=await core().functions.invoke('zhi-agent-brain',{body:{mode:'prepare',agent_id:selected.id,message:msg},headers:{Authorization:'Bearer '+session.access_token}});if(brain.error||!brain.data?.system)throw Error('BRAIN');const r=await fetch('http://127.0.0.1:11435/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:brain.data.model||'llama3.1:8b',stream:false,keep_alive:'15m',messages:[{role:'system',content:brain.data.system},{role:'user',content:brain.data.prompt}],options:{temperature:.35,num_ctx:1536,num_predict:96}})});const j=await r.json();const reply=String(j?.message?.content||'').trim();if(!reply)throw Error('EMPTY');$('messages').insertAdjacentHTML('beforeend','<div class="msg agentmsg">'+esc(reply)+'</div>');await core().functions.invoke('zhi-agent-brain',{body:{mode:'save_reply',agent_id:selected.id,message:msg,reply},headers:{Authorization:'Bearer '+session.access_token}})}catch(e){$('messages').insertAdjacentHTML('beforeend','<div class="sub">Brain Bridge 暂时无法连接。</div>')}busy=false}

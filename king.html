@@ -408,7 +408,7 @@ function buildPalaceInteriors(){
 buildPalaceInteriors();
 function buildAplusEducationCenter(){
   const g=new THREE.Group(); g.name='APLUS ACHIEVER Education Center';
-  const cx=350,cz=100,w=120,d=105,h=13;
+  // DB 世界坐标 (350,100) 映射到 Three.js 场景坐标 (-650,-900)。\n  // 所有智能人坐标都统一使用 DB 0..2000m → Three.js -1000..1000m。\n  const cx=-650,cz=-900,w=120,d=105,h=13;
   const matBody=new THREE.MeshStandardMaterial({color:0xe9e2d4,roughness:.72});
   const matGlass=new THREE.MeshStandardMaterial({color:0x8bd7ff,metalness:.2,roughness:.2,transparent:true,opacity:.7});
   const matDark=new THREE.MeshStandardMaterial({color:0x27242a,roughness:.6});
@@ -846,7 +846,7 @@ function makeAgentMesh(a){
 const agentMeshes=new Map();
 const jewelryByAgent=new Map();
 const educationSessions=new Map();
-function educationSeat(seatNo){const n=Math.max(1,Number(seatNo)||1);return {x:350+(Math.min(8,(n-1)%9)-4)*10.5,y:100+30-Math.floor((n-1)/9)*10.5};}
+function educationSeat(seatNo){const n=Math.max(1,Number(seatNo)||1);return {x:-650+(Math.min(8,(n-1)%9)-4)*10.5,y:-900+30-Math.floor((n-1)/9)*10.5};}
 function educationProgress(s){if(!s||s.status!=='learning'||!s.started_at||!s.ends_at)return 0;const a=new Date(s.started_at).getTime(),b=new Date(s.ends_at).getTime(),n=Date.now();return Math.max(0,Math.min(100,((n-a)/Math.max(1,b-a))*100));}
 function updateEducationScreen(rows){const el=document.querySelector('#educationScreenLive');if(!el)return;const learning=(rows||[]).filter(s=>s.status==='learning');const progress=learning.length?Math.round(learning.reduce((sum,s)=>sum+educationProgress(s),0)/learning.length):0;const program=learning[0]?.metadata?.upgrade_program||'2026.10.01';el.textContent=learning.length?'升级程序 '+program+' · 学习中 '+progress+'% → 100% · '+learning.length+'/73':'升级程序 '+program+' · 本周学习完成';}
 function renderAgents(){const byId=new Map(positions.map(p=>[p.agent_id,p]));
@@ -1047,7 +1047,7 @@ setInterval(worldTick,2000);
 let controlMode=false;
 function updateEducationScreenOverlay(){
   const el=document.querySelector('#educationScreenLive');if(!el)return;
-  const v=new THREE.Vector3(350-1000,11.2,100-45-1000).project(camera);
+  const v=new THREE.Vector3(-650,11.2,-945).project(camera);
   const visible=v.z>-1&&v.z<1&&v.x>-1.2&&v.x<1.2&&v.y>-1.2&&v.y<1.2;
   el.style.display=visible?'block':'none';
   if(visible){el.style.left=((v.x*.5+.5)*innerWidth)+'px';el.style.top=((-v.y*.5+.5)*innerHeight)+'px';}

@@ -994,4 +994,39 @@ window.__zhiKingStart=async()=>{try{await init()}catch(e){console.error('[ZHI KI
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)})
 })();
 </script>
+
+<style>
+#royalLifePanel{position:absolute;z-index:68;left:18px;top:92px;width:min(360px,calc(100vw - 36px));background:#100a18ee;border:1px solid #ffd76a66;border-radius:14px;padding:10px 12px;box-shadow:0 12px 45px #0009;pointer-events:none;backdrop-filter:blur(10px)}
+#royalLifePanel b{color:#ffe890}.royalLifeRow{display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid #ffffff0d}.royalLifeRow:last-child{border-bottom:0}.royalLifeMeta{color:#cdbfd2;font-size:11px}
+</style>
+<div id="royalLifePanel" class="hidden"><div><b>👑 皇家夫妻寝宫 · AI 生活</b></div><div id="royalLifeRows" class="royalLifeMeta">正在读取…</div></div>
+<script>
+(function(){
+  const panel=document.getElementById('royalLifePanel'),rows=document.getElementById('royalLifeRows');
+  async function refreshRoyalLife(){
+    try{
+      if(!window.zhiCoreSupabase||!window.zhiCoreSupabase.from)return;
+      const c=window.zhiCoreSupabase;
+      const {data:king}=await c.from('zhi_agents').select('id,name').ilike('name','king').eq('active',true).maybeSingle();
+      if(!king)return;
+      const {data:marriages}=await c.from('zhi_agent_marriages').select('female_agent_id').eq('male_agent_id',king.id).eq('status','married');
+      if(!marriages||!marriages.length){panel.classList.add('hidden');return}
+      const ids=marriages.map(x=>x.female_agent_id);
+      const {data:agents}=await c.from('zhi_agents').select('id,name').in('id',ids);
+      const {data:acts}=await c.from('zhi_agent_activities').select('agent_id,activity_type,location_name,ends_at,metadata').in('agent_id',[king.id,...ids]).order('ends_at',{ascending:false});
+      const map=new Map();
+      (acts||[]).forEach(a=>{if(!map.has(a.agent_id)&&(!a.ends_at||new Date(a.ends_at)>new Date()))map.set(a.agent_id,a)});
+      rows.innerHTML=(agents||[]).map(a=>{
+        const x=map.get(a.id);
+        return '<div class="royalLifeRow"><span>👑 '+a.name+'</span><span>'+((x&&x.activity_type)||'自主活动')+' · '+((x&&x.location_name)||'皇家区域')+'</span></div>';
+      }).join('');
+      const ka=map.get(king.id);
+      rows.innerHTML='<div class="royalLifeRow"><span>👑 KING</span><span>'+((ka&&ka.activity_type)||'自主活动')+' · '+((ka&&ka.location_name)||'当前世界')+'</span></div>'+rows.innerHTML;
+      panel.classList.remove('hidden');
+    }catch(e){console.warn('[ZHI royal life]',e)}
+  }
+  setTimeout(refreshRoyalLife,1500); setInterval(refreshRoyalLife,15000);
+})();
+</script>
+
 </body></html>

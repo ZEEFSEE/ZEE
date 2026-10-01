@@ -245,9 +245,19 @@ try{
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;
 // Unified color management: all world materials/light are rendered in sRGB with ACES tonemapping.
 renderer.outputColorSpace=THREE.SRGBColorSpace;
-renderer.toneMapping=THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure=1.05;
-renderer.physicallyCorrectLights=true;
+// Agent visibility hardening: do not let color management, fog or canvas stacking hide the world.
+renderer.toneMapping=THREE.NoToneMapping;
+renderer.toneMappingExposure=1;
+renderer.physicallyCorrectLights=false;
+renderer.setClearColor(0x86b8dc,1);
+renderer.domElement.style.position='fixed';
+renderer.domElement.style.inset='0';
+renderer.domElement.style.width='100vw';
+renderer.domElement.style.height='100vh';
+renderer.domElement.style.display='block';
+renderer.domElement.style.visibility='visible';
+renderer.domElement.style.opacity='1';
+renderer.domElement.style.zIndex='1';
 $('game').prepend(renderer.domElement);
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x86b8dc);
@@ -262,6 +272,9 @@ agentRenderRoot.name='ZHI_AGENT_3D_RENDER_ROOT';
 agentRenderRoot.visible=true;
 agentRenderRoot.frustumCulled=false;
 scene.add(agentRenderRoot);
+// Guaranteed 3D pipeline probe: attached to the camera, so world coordinates cannot affect visibility.
+const renderProbe=new THREE.Mesh(new THREE.SphereGeometry(1.2,16,12),new THREE.MeshBasicMaterial({color:0xffd76a,depthTest:false,depthWrite:false}));
+renderProbe.position.set(0,1,-8);renderProbe.visible=true;renderProbe.frustumCulled=false;renderProbe.renderOrder=10000;camera.add(renderProbe);
 const hemi=new THREE.HemisphereLight(0xb9d9f5,0x3f6048,1.65);scene.add(hemi);
 const ambient=new THREE.AmbientLight(0x7896ad,0.72);scene.add(ambient);
 // Softer Singapore sun: enough definition without blowing out the sky/ground.
@@ -1109,7 +1122,7 @@ function updateAgentFallbackLayer(){
 }
 function renderPipelineDiagnostics(){
   const d=document.getElementById('zhi3dDiag');
-  if(d){d.textContent='3D '+(renderer?.domElement?.width||0)+'×'+(renderer?.domElement?.height||0)+' · scene='+scene.children.length+' · agents='+agentMeshes.size+' · root='+agentRenderRoot.children.length+' · calls='+(renderer?.info?.render?.calls||0);}
+  if(d){const c=renderer?.domElement,cs=c?getComputedStyle(c):null,r=c?.getBoundingClientRect?.();d.textContent='3D '+(c?.width||0)+'×'+(c?.height||0)+' · scene='+scene.children.length+' · agents='+agentMeshes.size+' · root='+agentRenderRoot.children.length+' · calls='+(renderer?.info?.render?.calls||0)+' · canvas='+(cs?.display||'?')+'/'+(Math.round(r?.width||0))+'×'+(Math.round(r?.height||0))+' · probe=ON';}
   window.__zhiRenderDiagnostics={
     canvasW:renderer?.domElement?.width||0,canvasH:renderer?.domElement?.height||0,
     sceneChildren:scene?.children?.length||0,agentMeshes:agentMeshes.size,
@@ -1506,6 +1519,8 @@ function animate(){
     o.updateMatrixWorld(true);
   }
   if(kingGuaranteedMarker){kingGuaranteedMarker.visible=true;kingGuaranteedMarker.frustumCulled=false;kingGuaranteedMarker.updateMatrixWorld(true)}
+  renderProbe.visible=true;
+  renderProbe.updateMatrixWorld(true);
 
   updateAgentFallbackLayer();
   renderPipelineDiagnostics();

@@ -963,6 +963,7 @@ function updateKingFollowCamera(){
     updateFullWorldCamera();
     return true;
   }
+  if(scene.fog===null)scene.fog=new THREE.Fog(0x86b8dc,40,2200);
   // KING 同步视角：镜头始终跟随 KING，但保持约 22m 后方 + 10m 高度的观察距离。
   // 第三人称跟随：镜头固定在 KING 后方约 18m、上空 5m，轻微俯视 KING。
   // KING 本体保持可见，镜头不再进入第一视角。
@@ -984,17 +985,17 @@ function updateKingFollowCamera(){
   return true;
 }
 function updateFullWorldCamera(){
-  // 全体3D观察：不改变任何人的真实坐标，只把 2km × 2km 世界完整放入同一视锥。
+  // 全体3D观察：真实坐标不变；使用斜上方广角，把整个 2km × 2km 世界稳定放入视野。
   const size=2000;
-  const viewHeight=1080;
-  const viewDepth=1080;
-  camera.position.set(0,viewHeight,viewDepth);
+  camera.position.set(0,1450,1450);
   camera.rotation.order='YXZ';
-  camera.fov=78;
+  camera.fov=100;
   camera.near=.1;
   camera.far=5000;
   camera.updateProjectionMatrix();
   camera.lookAt(0,0,0);
+  // 全体模式下关闭远景雾效，避免真实坐标的人物因距离被雾化到看不见。
+  scene.fog=null;
   window.__zhiWorld3DView={
     mode:'full-world',
     worldSize:size,

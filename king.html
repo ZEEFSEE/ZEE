@@ -714,12 +714,14 @@ function applyKingBodyAndEyes(p){
   const x=Number(p.x),z=Number(p.y),h=kingForwardHeading(p);
   if(!Number.isFinite(x)||!Number.isFinite(z)||!Number.isFinite(h))return false;
   const km=agentMeshes.get(king.id);
-  if(km){km.rotation.y=h;km.userData.worldX=x;km.userData.worldY=z;}
+  if(km){km.rotation.y=h;km.userData.worldX=x;km.userData.worldY=z;km.visible=false;}
   yaw=h;
-  camera.position.set(x-1000,6.1,z-1000);
-  camera.rotation.order='YXZ';
-  camera.rotation.y=h;
-  camera.rotation.x=0;
+  // Do not hard-reset the camera here. refresh() runs every few seconds;
+  // resetting camera position here makes the first-person view snap backward.
+  // updateKingFollowCamera() is the single owner of the camera transform.
+  if(!Number.isFinite(Number(window.__kingCameraWorldX))||!Number.isFinite(Number(window.__kingCameraWorldZ))){
+    window.__kingCameraWorldX=x;window.__kingCameraWorldZ=z;
+  }
   return true;
 }
 function syncKingCameraFromDB(){

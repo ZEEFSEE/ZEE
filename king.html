@@ -279,29 +279,44 @@ agentRenderRoot.frustumCulled=false;
 scene.add(agentRenderRoot);
 
 // ZHI AGENT RENDER BRIDGE:
-// 仅用于把真实 active agents 强制落到 KING 周围的 3D 可视区域。
-// 不修改 Supabase 坐标、不修改镜头、不修改 WebGL；只是渲染层的可见性兜底。
+// 视觉兜底仍使用“原有人形 makeAgentMesh”，不再使用整齐胶囊方阵。
+// 仅用于把真实 active agents 放到 KING 周围的可见区域；不写回 Supabase，不改亮度/镜头/WebGL。
 const agentRenderBridge=new THREE.Group();
 agentRenderBridge.name='ZHI_AGENT_RENDER_BRIDGE';
 agentRenderBridge.visible=true;
 agentRenderBridge.frustumCulled=false;
 scene.add(agentRenderBridge);
 const agentBridgeItems=new Map();
-function makeAgentBridgeItem(a,index){
-  const g=new THREE.Group();
-  const bodyMat=new THREE.MeshBasicMaterial({color:a?.name==='King'?0xffd76a:0x5ee7ff,depthTest:false,depthWrite:false});
-  const skinMat=new THREE.MeshBasicMaterial({color:0xffd2b0,depthTest:false,depthWrite:false});
-  const body=new THREE.Mesh(new THREE.CapsuleGeometry(1.35,3.8,5,10),bodyMat);
-  body.position.y=3.1; g.add(body);
-  const head=new THREE.Mesh(new THREE.SphereGeometry(1.25,14,10),skinMat);
-  head.position.y=6.9; g.add(head);
-  const label=makeLabel('👤 '+(a?.name||'智能人'),a?.name==='King');
-  label.position.y=9.5; label.scale.set(8,2,1); g.add(label);
+
+function bridgeJitter(id){
+  let h=0;
+  for(const ch of String(id||'')) h=((h*33)+ch.charCodeAt(0))|0;
+  h=Math.abs(h);
+  const angle=(h%360)*Math.PI/180;
+  const radius=18+(h%620)/10; // 18..80m
+  const side=((h>>8)%3)-1;
+  const forward=((h>>11)%3)-1;
+  return {
+    x:Math.cos(angle)*radius + side*3.5,
+    z:Math.sin(angle)*radius + forward*3.5,
+    yaw:angle+Math.PI
+  };
+}
+
+function makeAgentBridgeItem(a){
+  // 关键：桥接层直接复用原来的人形生成器，不再绘制简化人形。
+  const g=makeAgentMesh(a);
   g.userData.agentId=a.id;
-  g.visible=true; g.frustumCulled=false; g.renderOrder=4000;
-  g.traverse(ch=>{if(ch.isMesh){ch.visible=true;ch.frustumCulled=false;ch.renderOrder=4000;}});
+  g.userData.isRenderBridge=true;
+  g.visible=true;
+  g.frustumCulled=false;
+  g.renderOrder=30;
+  g.traverse(ch=>{
+    if(ch.isMesh){ch.visible=true;ch.frustumCulled=false;ch.renderOrder=30;}
+  });
   return g;
 }
+
 function updateAgentRenderBridge(){
   if(!agentRenderBridge||!king)return;
   const active=agents.filter(a=>a.active);
@@ -309,25 +324,39 @@ function updateAgentRenderBridge(){
   if(!kp)return;
   const kw=dbToWorld(Number(kp.x),Number(kp.y));
   const others=active.filter(a=>a.id!==king.id);
-  const slots=[...others].sort((a,b)=>String(a.id).localeCompare(String(b.id)));
+
   for(const [id,o] of [...agentBridgeItems]){
-    if(!active.some(a=>a.id===id)){agentRenderBridge.remove(o);agentBridgeItems.delete(id);}
+    if(!active.some(a=>a.id===id)){
+      agentRenderBridge.remove(o);
+      agentBridgeItems.delete(id);
+    }
   }
-  const cols=8, spacing=8;
-  for(let i=0;i<slots.length;i++){
-    const a=slots[i];
+
+  // 不再使用 cols/row 方阵。每个人都有稳定但不规则的自然位置。
+  for(const a of others){
     let o=agentBridgeItems.get(a.id);
-    if(!o){o=makeAgentBridgeItem(a,i);agentRenderBridge.add(o);agentBridgeItems.set(a.id,o);}
-    const row=Math.floor(i/cols),col=i%cols;
-    const ox=(col-(cols-1)/2)*spacing;
-    const oz=(row+1)*spacing+10;
-    // 在 KING 的真实世界坐标附近形成可见的人群；这是纯渲染位置，不写回数据库。
-    o.position.set(kw.x+ox,0,kw.z+oz);
-    o.visible=true;o.frustumCulled=false;o.updateMatrixWorld(true);
+    if(!o){
+      try{o=makeAgentBridgeItem(a);}
+      catch(e){console.warn('[ZHI bridge original human render failed]',a?.name,e);continue;}
+      agentRenderBridge.add(o);
+      agentBridgeItems.set(a.id,o);
+    }
+    const j=bridgeJitter(a.id);
+    o.position.set(kw.x+j.x,0,kw.z+j.z);
+    o.rotation.y=j.yaw;
+    o.visible=true;
+    o.frustumCulled=false;
+    o.updateMatrixWorld(true);
   }
+
   agentRenderBridge.visible=true;
   agentRenderBridge.frustumCulled=false;
-  window.__zhiAgentRenderBridge={active:active.length,rendered:agentBridgeItems.size,dbBacked:true};
+  window.__zhiAgentRenderBridge={
+    active:active.length,
+    rendered:agentBridgeItems.size,
+    dbBacked:true,
+    visualMode:'original-human-scattered'
+  };
 }
 // Guaranteed 3D pipeline probe: attached to the camera, so world coordinates cannot affect visibility.
 const renderProbe=new THREE.Mesh(new THREE.SphereGeometry(2.5,20,16),new THREE.MeshBasicMaterial({color:0xffd76a,depthTest:false,depthWrite:false}));

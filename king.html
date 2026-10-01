@@ -778,9 +778,23 @@ function bindWorldZoomWheel(){
     canvas.__zhiZoomWheelBound=true;
   }
 }
+// 捕获阶段监听：HUD、按钮、canvas 等覆盖层存在时，滚轮仍能可靠控制全体3D缩放。
+document.addEventListener('wheel',e=>{
+  if(!window.__zhiWorld3DMode)return;
+  const target=e.target;
+  if(target?.closest?.('#chat,#info'))return;
+  e.preventDefault();
+  e.stopPropagation();
+  const factor=e.deltaY>0?0.8:1.25;
+  fullWorldZoom=Math.max(.1,Math.min(10,fullWorldZoom*factor));
+  updateFullWorldCamera();
+  const s=document.getElementById('state');
+  if(s)s.textContent='🌐 全体3D · 缩放 '+Math.round(fullWorldZoom*100)+'% · 真实坐标';
+},{capture:true,passive:false});
+
 addEventListener('wheel',e=>{
   if(e.target.closest?.('#chat,#info'))return;
-  if(window.__zhiWorld3DMode){handleWorldWheel(e);return;}
+  if(window.__zhiWorld3DMode)return;
   e.preventDefault();
   overviewHeight=Math.max(180,Math.min(1400,overviewHeight+(e.deltaY>0?70:-70)));
   if(overviewMode)updateOverviewCamera();

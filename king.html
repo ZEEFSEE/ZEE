@@ -706,19 +706,27 @@ function syncKingCameraFromDB(){
   return true;
 }
 function updateKingFollowCamera(){
-  if(!king)return;
-  const km=agentMeshes.get(king.id);if(!km)return;
-  const x=Number(km.userData.worldX),z=Number(km.userData.worldY);
-  if(!Number.isFinite(x)||!Number.isFinite(z))return;
-  // 真正的 KING 第一视角：相机就是 KING 的眼睛位置，而不是第三人称跟拍。
-  // 隐藏 KING 自己的身体，避免相机进入模型后看到自己的身体/王冠。
-  km.visible=false;
-  const targetYaw=Number.isFinite(km.rotation.y)?km.rotation.y+Math.PI:yaw;
-  yaw=targetYaw;
+  if(!king)return false;
+  // 每一帧直接以数据库同步后的 KING 世界坐标为唯一真源。
+  // 绝不使用中央广场/相机当前位置作为 KING 的默认位置。
+  const p=positions.find(x=>x.agent_id===king.id);
+  const km=agentMeshes.get(king.id);
+  if(!p)return false;
+  const x=Number(p.x),z=Number(p.y),h=Number(p.heading_rad);
+  if(!Number.isFinite(x)||!Number.isFinite(z))return false;
+  if(km){
+    km.visible=false;
+    km.userData.worldX=x;
+    km.userData.worldY=z;
+    if(Number.isFinite(h))km.rotation.y=h;
+  }
+  if(Number.isFinite(h))yaw=h+Math.PI;
   camera.position.set(x-1000,6.1,z-1000);
   camera.rotation.order='YXZ';
   camera.rotation.y=yaw;
   camera.rotation.x=0;
+  window.__zhiKingFirstPerson={x,z,heading:yaw,source:'db',at:Date.now()};
+  return true;
 }
 function makeLabel(text,isKing){
   const c=document.createElement('canvas');c.width=320;c.height=80;const x=c.getContext('2d');
@@ -886,8 +894,9 @@ async function init(){
   // 登录后的第一帧必须直接来自 KING 当下真实坐标与朝向；不重置位置、不重置镜头。
   controlMode=false;
   $('start').classList.add('hidden');
-  updateKingFollowCamera();
   const kp=positions.find(x=>x.agent_id===king.id);
+  if(!kp){$('state').textContent='KING 世界坐标尚未同步，请稍候…';throw Error('KING_POSITION_MISSING')}
+  updateKingFollowCamera();
   $('state').textContent=kp?.walking&&kp?.destination_scene?('👁️ KING 正在前往 '+kp.destination_scene+' · 纯观察模式'):((kp?.current_scene||'未知地点')+' · 纯观察模式');
   loadPublicAssets().catch(e=>console.warn('[ZHI CDN]',e));
   setInterval(refresh,5000);animate()

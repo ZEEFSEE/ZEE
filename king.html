@@ -229,7 +229,27 @@ const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,
 // DB: 0..2000 on X/Y  ->  THREE: X/Z centered at origin. No second camera coordinate system.
 const dbToWorld=(x,y)=>({x:Number(x)-WORLD/2,z:Number(y)-WORLD/2});
 const worldToDb=(x,z)=>({x:Number(x)+WORLD/2,y:Number(z)+WORLD/2});
-const setObjectFromDb=(o,x,y,groundY=0)=>{const w=dbToWorld(x,y);o.position.set(w.x,groundY,w.z);return w;};
+const setObjectFromDb=(o,x,y,groundY=0)=>{
+  // 唯一投射规则：Supabase X/Y → Three.js X/Z，1 DB 米 = 1 世界米。
+  const w=dbToWorld(x,y);
+  o.position.set(w.x,groundY,w.z);
+  o.userData.dbX=Number(x);
+  o.userData.dbY=Number(y);
+  o.userData.projected3D=true;
+  return w;
+};
+// ZHI 3D 坐标投射：每个 active agent 都必须拥有唯一的人形 3D 对象，
+// 其位置直接来自 zhi_agent_world_positions，不再使用 KING 周围的视觉偏移。
+function projectAgentCoordinate3D(o,x,y,groundY=0){
+  if(!o)return false;
+  const nx=Number(x),ny=Number(y);
+  if(!Number.isFinite(nx)||!Number.isFinite(ny))return false;
+  setObjectFromDb(o,nx,ny,groundY);
+  o.visible=true;
+  o.frustumCulled=false;
+  o.updateMatrixWorld(true);
+  return true;
+}
 function toast(s){$('toast').textContent=s;$('toast').style.display='block';setTimeout(()=>$('toast').style.display='none',2200)}
 function sceneCenter(scene){const map={'🏟️竞技场':[-650,350],'🌸中央广场':[0,0],'🌲探索森林':[650,350],'🏪商业街':[-520,-500],'🎡娱乐区':[520,-500],'🏠公寓区':[0,-620]};return map[scene]||[0,0]}
 if(!window.THREE){throw new Error('THREE.js 未加载：CDN 不可用');}
@@ -1260,7 +1280,7 @@ function renderAgents(){
       // 不再人为把人物挪到 KING 周围；否则会造成“数据库位置”和“画面位置”不一致。
       const anchorX=Number(o.userData.worldX),anchorY=Number(o.userData.worldY);
       if(Number.isFinite(anchorX)&&Number.isFinite(anchorY)){
-        setObjectFromDb(o,anchorX,anchorY,0);
+        projectAgentCoordinate3D(o,anchorX,anchorY,0);
       }
       o.visible=true;
       // 正式画面只使用原有人形，不显示坐标诊断球。

@@ -432,7 +432,16 @@ function buildAplusEducationCenter(){
   }
   // teacher podium + upgrade screen
   box(cx,2.7,cz-39,12,1.5,6,deskMat);
-  const screen=new THREE.Mesh(new THREE.BoxGeometry(34,13,.8),new THREE.MeshStandardMaterial({color:0x06131d,emissive:0x0b7fa0,emissiveIntensity:1.6,roughness:.25}));
+  const screenCanvas=document.createElement('canvas');screenCanvas.width=1024;screenCanvas.height=390;
+  const screenCtx=screenCanvas.getContext('2d');screenCtx.fillStyle='#06131d';screenCtx.fillRect(0,0,1024,390);
+  screenCtx.fillStyle='#39d9ff';screenCtx.font='900 42px Arial';screenCtx.textAlign='center';screenCtx.fillText('APLUS ACHIEVER · ZHI WEEKLY UPGRADE',512,72);
+  screenCtx.fillStyle='#ffe890';screenCtx.font='900 34px Arial';screenCtx.fillText('升级程序 2026.10.01 · 全面智能升级',512,145);
+  screenCtx.fillStyle='#b9f1ff';screenCtx.font='700 28px Arial';screenCtx.fillText('学习智能 · 预测 · 经济 · 社交 · 行为 · 记忆 · 自主进化',512,205);
+  screenCtx.fillStyle='#72ffb0';screenCtx.font='900 31px Arial';screenCtx.fillText('73 AGENTS · CONTINUOUS LEARNING 10 MINUTES',512,275);
+  screenCtx.fillStyle='#ffffff';screenCtx.font='700 24px Arial';screenCtx.fillText('UPGRADE PROGRAM IN PROGRESS',512,335);
+  const screenTexture=new THREE.CanvasTexture(screenCanvas);screenTexture.needsUpdate=true;
+  const screenMat=new THREE.MeshStandardMaterial({map:screenTexture,color:0xffffff,emissive:0x073c52,emissiveIntensity:1.2,roughness:.25});
+  const screen=new THREE.Mesh(new THREE.BoxGeometry(34,13,.8),screenMat);
   screen.position.set(cx,11.2,cz-d/2-.65);g.add(screen);
   const label=document.createElement('div');label.id='educationScreenLive';label.textContent='升级程序 2026.10.01 · 学习中 0% → 100%';label.style.cssText='position:absolute;z-index:66;left:50%;top:72px;transform:translateX(-50%);padding:7px 14px;border:1px solid #65d9ff66;border-radius:999px;background:#06131dcc;color:#b9f1ff;font-weight:900;display:none;pointer-events:none';document.body.appendChild(label);
   const centerLabel=document.createElement('div');centerLabel.textContent='🏫 APLUS ACHIEVER 教育中心 · 73 SEATS';centerLabel.style.cssText='position:absolute;z-index:66;left:50%;top:112px;transform:translateX(-50%);padding:6px 12px;border-radius:999px;background:#100a18dd;border:1px solid #ffd76a66;color:#ffe890;font-weight:900;display:none;pointer-events:none';document.body.appendChild(centerLabel);

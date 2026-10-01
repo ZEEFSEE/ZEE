@@ -278,8 +278,8 @@ agentRenderRoot.visible=true;
 agentRenderRoot.frustumCulled=false;
 scene.add(agentRenderRoot);
 // Guaranteed 3D pipeline probe: attached to the camera, so world coordinates cannot affect visibility.
-const renderProbe=new THREE.Mesh(new THREE.SphereGeometry(1.2,16,12),new THREE.MeshBasicMaterial({color:0xffd76a,depthTest:false,depthWrite:false}));
-renderProbe.position.set(0,1,-8);renderProbe.visible=true;renderProbe.frustumCulled=false;renderProbe.renderOrder=10000;camera.add(renderProbe);
+const renderProbe=new THREE.Mesh(new THREE.SphereGeometry(2.5,20,16),new THREE.MeshBasicMaterial({color:0xffd76a,depthTest:false,depthWrite:false}));
+renderProbe.name='ZHI_SCENE_RENDER_PROBE';renderProbe.visible=true;renderProbe.frustumCulled=false;renderProbe.renderOrder=10000;scene.add(renderProbe);
 const hemi=new THREE.HemisphereLight(0xb9d9f5,0x3f6048,1.65);scene.add(hemi);
 const ambient=new THREE.AmbientLight(0x7896ad,0.72);scene.add(ambient);
 // Softer Singapore sun: enough definition without blowing out the sky/ground.
@@ -1094,6 +1094,33 @@ function makeKingGuaranteedMarker(a){
   const label=makeLabel('👑 KING · LIVE',true);label.position.y=19;label.scale.set(14,3.5,1);g.add(label);
   g.renderOrder=2000;g.traverse(ch=>{if(ch.isMesh){ch.frustumCulled=false;ch.renderOrder=2000;}});return g;
 }
+function updateSceneRenderProbe(){
+  if(!renderProbe||!camera)return;
+  // Put the probe 8m in front of the active camera in THREE world coordinates.
+  const dir=new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion).normalize();
+  renderProbe.position.copy(camera.position).addScaledVector(dir,8);
+  renderProbe.position.y=Math.max(2,renderProbe.position.y);
+  renderProbe.visible=true;renderProbe.updateMatrixWorld(true);
+}
+function ensureAgentScenePresence(a,o){
+  if(!o)return;
+  // A scene-level clone is deliberately NOT used: the actual agent object remains the only person mesh.
+  // This marker only confirms that the real agent's DB coordinate reaches the render scene.
+  let m=o.userData.sceneAnchorMarker;
+  if(!m){
+    m=new THREE.Mesh(new THREE.SphereGeometry(0.75,12,8),new THREE.MeshBasicMaterial({
+      color:a?.name==='King'?0xffd76a:0x7ee7ff,depthTest:false,depthWrite:false
+    }));
+    m.name='ZHI_AGENT_SCENE_ANCHOR';
+    m.renderOrder=9000;m.frustumCulled=false;
+    agentRenderRoot.add(m);o.userData.sceneAnchorMarker=m;
+  }
+  const x=Number(o.userData.worldX),y=Number(o.userData.worldY);
+  if(Number.isFinite(x)&&Number.isFinite(y)){
+    setObjectFromDb(m,x,y,5);
+    m.visible=true;m.frustumCulled=false;m.updateMatrixWorld(true);
+  }
+}
 function makeAgentPresenceBeacon(a){
   const g=new THREE.Group();
   const ring=new THREE.Mesh(new THREE.RingGeometry(2.2,2.8,24),new THREE.MeshBasicMaterial({color:0x7ee7ff,transparent:true,opacity:.95,side:THREE.DoubleSide,depthTest:false,depthWrite:false}));
@@ -1116,7 +1143,7 @@ function updateAgentFallbackLayer(){
     const o=agentMeshes.get(a.id); if(!o||!o.visible)continue;
     const wx=Number(o.userData.worldX), wz=Number(o.userData.worldY);
     if(!Number.isFinite(wx)||!Number.isFinite(wz))continue;
-    v.set(wx-1000,6,wz-1000).project(camera);
+    const ww=dbToWorld(wx,wz); v.set(ww.x,6,ww.z).project(camera);
     const onScreen=v.z>-1&&v.z<1&&v.x>-1.05&&v.x<1.05&&v.y>-1.05&&v.y<1.05;
     if(!onScreen)continue;
     let el=document.getElementById('zhi-fallback-'+a.id);
@@ -1151,7 +1178,7 @@ function renderAgents(){
   $('worldCount').textContent='🌍 智能人：'+active.length;
   let created=0,failed=0;
   for(const [id,obj] of [...agentMeshes]){
-    if(!active.some(a=>a.id===id)){agentRenderRoot.remove(obj);scene.remove(obj);agentMeshes.delete(id)}
+    if(!active.some(a=>a.id===id)){if(obj.userData?.sceneAnchorMarker)agentRenderRoot.remove(obj.userData.sceneAnchorMarker);agentRenderRoot.remove(obj);scene.remove(obj);agentMeshes.delete(id)}
   }
   for(const a of active){
     try{
@@ -1199,6 +1226,7 @@ function renderAgents(){
       }else{o.userData.visualCrowdOffset=null}
       setObjectFromDb(o,(a.id!==king?.id&&o.userData.visualCrowdOffset?vx:anchorX),(a.id!==king?.id&&o.userData.visualCrowdOffset?vy:anchorY),0);
       o.visible=true;
+      ensureAgentScenePresence(a,o);
 
       // 独立于人物模型的“存在层”：即使模型被建筑/材质/渲染异常遮挡，也能直接看到智能人的位置与姓名。
       let b=o.userData.presenceBeacon;
@@ -1527,8 +1555,7 @@ function animate(){
     o.updateMatrixWorld(true);
   }
   if(kingGuaranteedMarker){kingGuaranteedMarker.visible=true;kingGuaranteedMarker.frustumCulled=false;kingGuaranteedMarker.updateMatrixWorld(true)}
-  renderProbe.visible=true;
-  renderProbe.updateMatrixWorld(true);
+  updateSceneRenderProbe();
 
   updateAgentFallbackLayer();
   renderPipelineDiagnostics();

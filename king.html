@@ -866,12 +866,16 @@ function updateKingFollowCamera(){
   // KING 同步视角：镜头始终跟随 KING，但保持约 22m 后方 + 10m 高度的观察距离。
   // 第三人称跟随：镜头固定在 KING 后方约 18m、上空 5m，轻微俯视 KING。
   // KING 本体保持可见，镜头不再进入第一视角。
-  const backX=Math.sin(h)*18;
-  const backZ=Math.cos(h)*18;
-  const cameraHeight=11.5;
+  const backX=Math.sin(h)*20;
+  const backZ=Math.cos(h)*20;
+  // 镜头保持在 KING 后方、略高于 KING，并把视线放到 KING 前方约 10m。
+  // 这样 KING 本体 + 同区域智能人都会落入主视野，而不是只盯着 KING 身体。
+  const cameraHeight=15.0;
   camera.position.set(x-1000+backX,cameraHeight,z-1000+backZ);
   camera.rotation.order='YXZ';
-  const lookX=x-1000-Math.sin(h)*2, lookY=4.0, lookZ=z-1000-Math.cos(h)*2;
+  camera.fov=82;
+  camera.updateProjectionMatrix();
+  const lookX=x-1000-Math.sin(h)*10, lookY=4.8, lookZ=z-1000-Math.cos(h)*10;
   camera.lookAt(lookX,lookY,lookZ);
   window.__zhiKingFirstPerson={x,z,heading:yaw,source:'db-travel-timeline',at:Date.now()};
   return true;
@@ -1028,7 +1032,7 @@ function makeAgentMesh(a){
   const label=makeLabel((female?'♀ ':'♂ ')+(a.name||'智能人'),isKing);
   label.position.set(0,headY+(isKing?4.6:3.5),0);grp.add(label);
   // 统一为接近真实人的比例：King 视线高度约 6m 时，智能人的眼睛处于平视范围，避免聊天时仰视。
-  grp.scale.setScalar(isKing?0.7:0.72);
+  grp.scale.setScalar(isKing?0.95:1.0);
   grp.userData.parts={legL,legR,armL,armR};
   return grp;
 }
@@ -1058,7 +1062,7 @@ function makeAgentPresenceBeacon(a){
   pole.position.y=3.5; g.add(pole);
   const dot=new THREE.Mesh(new THREE.SphereGeometry(.55,10,8),new THREE.MeshBasicMaterial({color:0xffffff,depthTest:false,depthWrite:false}));
   dot.position.y=7.1; g.add(dot);
-  const label=makeLabel('👤 '+(a?.name||'智能人'),a?.name==='King'); label.position.y=10; label.scale.set(8,2,1); g.add(label);
+  const label=makeLabel('👤 '+(a?.name||'智能人'),a?.name==='King'); label.position.y=10; label.scale.set(11,2.75,1); g.add(label);
   g.userData.isPresenceBeacon=true;
   g.renderOrder=999;
   g.traverse(ch=>{if(ch.isMesh){ch.frustumCulled=false;ch.renderOrder=999;}});
@@ -1083,6 +1087,7 @@ function renderAgents(){
         o.userData.agent=a;o.userData.royalSpouse=royalSpouseIds.has(a.id);
         o.userData.pos={x:Number(p.x),y:Number(p.y)};o.userData.target={x:Number(p.x),y:Number(p.y)};
         o.visible=true;o.frustumCulled=false;o.renderOrder=30;
+        o.scale.setScalar(a.id===king?.id?0.95:1.0);
         o.traverse(ch=>{if(ch.isMesh){ch.frustumCulled=false;ch.renderOrder=30;}});
         scene.add(o);agentMeshes.set(a.id,o);created++;
       }else{o.visible=true;o.frustumCulled=false;}

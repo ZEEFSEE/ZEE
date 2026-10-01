@@ -183,10 +183,16 @@ try{
     throw new Error('WebGL 初始化失败：'+(secondError?.message||firstError?.message||'无法创建 3D 渲染器'));
   }
 }
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;$('game').prepend(renderer.domElement);
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=0.9;
+$('game').prepend(renderer.domElement);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x07111b);scene.fog=new THREE.Fog(0x07111b,120,950);
 const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.1,2500);camera.position.set(0,6,40);
-const hemi=new THREE.HemisphereLight(0x8fc7ff,0x18321e,1.7);scene.add(hemi);const sun=new THREE.DirectionalLight(0xffe5b0,2.1);sun.position.set(-300,500,200);sun.castShadow=true;scene.add(sun);
+const hemi=new THREE.HemisphereLight(0x9fcfff,0x35543d,2.15);scene.add(hemi);
+const ambient=new THREE.AmbientLight(0x7890a8,0.55);scene.add(ambient);
+const sun=new THREE.DirectionalLight(0xffe5b0,1.55);sun.position.set(-300,500,200);sun.castShadow=true;scene.add(sun);
 function updateSingaporeDaylight(){
   const now=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Singapore'}));
   const h=now.getHours()+now.getMinutes()/60+now.getSeconds()/3600;
@@ -194,9 +200,10 @@ function updateSingaporeDaylight(){
   const key=[[0,0.20,0.06],[5.5,0.20,0.08],[6.5,0.62,0.34],[8,1.00,0.72],[12,1.18,1.00],[15,1.02,0.78],[17.5,0.72,0.48],[18.5,0.38,0.20],[19.5,0.22,0.10],[24,0.20,0.06]];
   let a=key[key.length-2],b=key[key.length-1]; for(let i=0;i<key.length-1;i++){if(h>=key[i][0]&&h<key[i+1][0]){a=key[i];b=key[i+1];break}}
   const t=Math.max(0,Math.min(1,(h-a[0])/(b[0]-a[0]||1))),light=a[1]+(b[1]-a[1])*t,warm=a[2]+(b[2]-a[2])*t;
-  const sky=new THREE.Color(); sky.setHSL(.58,.52,.035+.11*light);
+  const sky=new THREE.Color();
+sky.setHSL(.58,.48,.055+.075*light);
   scene.background=sky; scene.fog.color.copy(sky);
-  hemi.intensity=.35+1.35*light; sun.intensity=.15+2.05*light;
+  hemi.intensity=.75+1.15*light; sun.intensity=.12+1.45*light; ambient.intensity=.32+.42*light;
   sun.color.setHSL(.11,.72,.55+.35*warm);
   const angle=(h-6)/12*Math.PI; sun.position.set(Math.cos(angle)*450,Math.max(40,Math.sin(angle)*520),180);
   window.__zhiSingaporeTime={hour:h,phase:h<6.5?'🌅 黎明':h<10?'☀️ 早晨':h<14?'🌞 中午':h<17.5?'🌤️ 下午':h<19?'🌇 傍晚':'🌙 晚上',brightness:light};

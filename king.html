@@ -323,9 +323,8 @@ function updateAgentRenderBridge(){
   if(agentRenderBridge)agentRenderBridge.visible=false;
   window.__zhiAgentRenderBridge={active:agents.filter(a=>a.active).length,rendered:0,disabled:true,visualMode:'single-formal-render-root'};
 }
-// Guaranteed 3D pipeline probe: attached to the camera, so world coordinates cannot affect visibility.
-const renderProbe=new THREE.Mesh(new THREE.SphereGeometry(2.5,20,16),new THREE.MeshBasicMaterial({color:0xffd76a,depthTest:false,depthWrite:false}));
-renderProbe.name='ZHI_SCENE_RENDER_PROBE';renderProbe.visible=true;renderProbe.frustumCulled=false;renderProbe.renderOrder=10000;scene.add(renderProbe);
+// ZHI 正式世界不显示任何诊断球；智能人只使用原有人形模型。
+const renderProbe=null;
 const hemi=new THREE.HemisphereLight(0xb9d9f5,0x3f6048,1.65);scene.add(hemi);
 const ambient=new THREE.AmbientLight(0x7896ad,0.72);scene.add(ambient);
 // Softer Singapore sun: enough definition without blowing out the sky/ground.
@@ -1142,14 +1141,7 @@ function makeKingGuaranteedMarker(a){
   g.name='ZHI_KING_LEGACY_DIAGNOSTIC_MARKER';
   return g;
 }
-function updateSceneRenderProbe(){
-  if(!renderProbe||!camera)return;
-  // Put the probe 8m in front of the active camera in THREE world coordinates.
-  const dir=new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion).normalize();
-  renderProbe.position.copy(camera.position).addScaledVector(dir,8);
-  renderProbe.position.y=Math.max(2,renderProbe.position.y);
-  renderProbe.visible=true;renderProbe.updateMatrixWorld(true);
-}
+function updateSceneRenderProbe(){ /* diagnostics disabled in production world */ }
 function ensureAgentScenePresence(a,o){
   if(!o)return;
   // A scene-level clone is deliberately NOT used: the actual agent object remains the only person mesh.
@@ -1271,12 +1263,9 @@ function renderAgents(){
         setObjectFromDb(o,anchorX,anchorY,0);
       }
       o.visible=true;
-      ensureAgentScenePresence(a,o);
+      // 正式画面只使用原有人形，不显示坐标诊断球。
 
-      // 独立于人物模型的“存在层”：即使模型被建筑/材质/渲染异常遮挡，也能直接看到智能人的位置与姓名。
-      let b=o.userData.presenceBeacon;
-      if(!b){b=makeAgentPresenceBeacon(a);o.userData.presenceBeacon=b;scene.add(b)}
-      setObjectFromDb(b,anchorX,anchorY,.02);b.visible=true;
+      // 正式画面只显示原有人形模型；不再生成诊断用光柱/圆环。
     }catch(e){
       failed++;console.error('[ZHI render agent]',a?.name,e);
     }
@@ -1630,7 +1619,6 @@ function animate(){
   }
   // 不再显示诊断用黄色 KING 球；正式 KING 使用原有人形渲染。
   if(kingGuaranteedMarker){kingGuaranteedMarker.visible=false;kingGuaranteedMarker.removeFromParent();}
-  updateSceneRenderProbe();
   updateAgentRenderBridge();
 
   updateAgentFallbackLayer();

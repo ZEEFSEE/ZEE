@@ -999,37 +999,42 @@ renderer.domElement.addEventListener('click',e=>{const rect=renderer.domElement.
 async function selectAgent(id){const a=agents.find(x=>x.id===id);if(!a)return;selected=a;const p=positions.find(x=>x.agent_id===id)||{};const speed=Number(p.speed_mps||0);const moving=Boolean(p.walking);const dest=p.destination_scene||'—';$('infoTitle').textContent='👤 '+a.name;$('infoBody').innerHTML='<div class="infoRow"><span>性别</span><b>'+esc(a.gender||'—')+'</b></div><div class="infoRow"><span>人格</span><b>'+esc(a.personality||'—')+'</b></div><div class="infoRow"><span>生命状态</span><b>'+esc(a.life_status||'—')+'</b></div><div class="infoRow"><span>当前位置</span><b>'+esc(p.current_scene||'—')+'</b></div><div class="infoRow"><span>坐标</span><b>'+Math.round(Number(p.x||0))+'m / '+Math.round(Number(p.y||0))+'m</b></div><div class="infoRow"><span>行动</span><b>'+ (moving?'🚶 行走中':'🧍 停留中') +'</b></div><div class="infoRow"><span>速度</span><b>'+speed.toFixed(1)+' m/s</b></div><div class="infoRow"><span>下一地点</span><b>'+esc(dest)+'</b></div>';$('info').classList.remove('hidden');$('overview')?.classList.add('agent-selected')}
 async function refresh(){
   if(!king)return;
-  const safe=async(label,fn,fallback)=>{try{const r=await fn();if(r?.error){console.warn('[ZHI '+label+']',r.error);return fallback}return r}catch(e){console.warn('[ZHI '+label+']',e);return fallback}};
+  const safe=async(label,fn,fallback)=>{try{const r=await fn();if(r?.error){const e=r.error;const item={label,message:e?.message||String(e),code:e?.code||null,at:new Date().toISOString()};window.__zhiCoreReadErrors=window.__zhiCoreReadErrors||[];window.__zhiCoreReadErrors.push(item);window.__zhiCoreReadErrors=window.__zhiCoreReadErrors.slice(-20);console.warn('[ZHI '+label+']',e);return {data:fallback,error:e}}return r}catch(e){const item={label,message:e?.message||String(e),code:e?.code||null,at:new Date().toISOString()};window.__zhiCoreReadErrors=window.__zhiCoreReadErrors||[];window.__zhiCoreReadErrors.push(item);window.__zhiCoreReadErrors=window.__zhiCoreReadErrors.slice(-20);console.warn('[ZHI '+label+']',e);return {data:fallback,error:e}}};
   const w=await safe('wallet',()=>finance().from('wallets').select('balance').eq('user_id',ADMIN_ID).maybeSingle(),{data:null});
-  const p0=await safe('king position rpc',()=>core().rpc('zhi_get_world_agent_positions'),{data:[]});
+  const p0=await safe('king position rpc',()=>core().rpc('zhi_get_world_agent_positions'),[]);
   const pRows=Array.isArray(p0.data)?p0.data:[];
   const kingPos=pRows.find(x=>x.agent_id===king.id)||null;
   const p={data:kingPos};
-  const km=await safe('king status rpc',()=>core().rpc('zhi_get_king_status',{p_agent_id:king.id}),{data:null});
+  const km=await safe('king status rpc',()=>core().rpc('zhi_get_king_status',{p_agent_id:king.id}),null);
   let kingStatus=Array.isArray(km.data)?(km.data[0]||null):(km.data||null);
   // RPC is preferred, but keep the KING panel alive if the browser cannot execute the RPC.
   if(!kingStatus){
-    const mf=await safe('king mind fallback',()=>core().from('zhi_agent_minds').select('mood,energy,curiosity,current_goal,stress,confidence,last_thought').eq('agent_id',king.id).maybeSingle(),{data:null});
+    const mf=await safe('king mind fallback',()=>core().from('zhi_agent_minds').select('mood,energy,curiosity,current_goal,stress,confidence,last_thought').eq('agent_id',king.id).maybeSingle(),null);
     kingStatus=mf.data||null;
   }
   const m={data:kingStatus};
   const a={data:kingStatus};
-  const ar=await safe('agents',()=>core().from('zhi_agents').select('id,name,gender,personality,life_status,active').eq('active',true).order('name'),{data:[]});
-  const pr=await safe('positions rpc',()=>core().rpc('zhi_get_world_agent_positions'),{data:[]});
-  const fr=await safe('facilities',()=>core().rpc('zhi_get_world_facilities'),{data:[]});
-  const an=await safe('animals',()=>core().rpc('zhi_get_world_animals'),{data:[]});
+  const ar=await safe('agents',()=>core().from('zhi_agents').select('id,name,gender,personality,life_status,active').eq('active',true).order('name'),[]);
+  const pr=await safe('positions rpc',()=>core().rpc('zhi_get_world_agent_positions'),[]);
+  const fr=await safe('facilities',()=>core().rpc('zhi_get_world_facilities'),[]);
+  const an=await safe('animals',()=>core().rpc('zhi_get_world_animals'),[]);
   const ev=await safe('events',()=>core().from('zhi_fortune_events').select('id,location_code,location_name,activity_type,reward_pool,status,created_at,target_count,claimed_count').in('status',['open','running']),{data:[]});
   const rm=await safe('marriages',()=>core().from('zhi_agent_marriages').select('female_agent_id').eq('male_agent_id',king.id).eq('status','married'),{data:[]});
   const ji=await safe('jewelry',()=>core().from('zhi_agent_jewelry_inventory').select('agent_id,quantity,equipped,zhi_jewelry_products(product_name,slot,product_code)').eq('equipped',true),{data:[]});
   const ed=await safe('education',()=>core().from('zhi_agent_education_sessions').select('agent_id,program_id,status,started_at,ends_at,upgraded_at,metadata').order('week_start',{ascending:false}),{data:[]});
 
-  agents=ar.data||[]; positions=pr.data||[]; facilities=fr.data||[]; animals=an.data||[];
+  if(Array.isArray(ar.data)&&ar.data.length) agents=ar.data; else if(!agents.length) agents=[];
+  if(Array.isArray(pr.data)&&pr.data.length) positions=pr.data; else if(!positions.length) positions=[];
+  if(Array.isArray(fr.data)&&fr.data.length) facilities=fr.data; else if(!facilities.length) facilities=[];
+  if(Array.isArray(an.data)&&an.data.length) animals=an.data; else if(!animals.length) animals=[];
+  window.__zhiKingLastGoodStatus=kingStatus||window.__zhiKingLastGoodStatus||null;
+  if(!kingStatus&&window.__zhiKingLastGoodStatus) kingStatus=window.__zhiKingLastGoodStatus;
   jewelryByAgent.clear(); for(const row of (ji.data||[])){const jp=row.zhi_jewelry_products;if(jp)jewelryByAgent.set(row.agent_id,[...(jewelryByAgent.get(row.agent_id)||[]),{...jp,quantity:row.quantity,equipped:row.equipped}]);}
   royalSpouseIds.clear(); for(const row of (rm.data||[]))royalSpouseIds.add(row.female_agent_id);
   educationSessions.clear(); for(const row of (ed.data||[])){if(!educationSessions.has(row.agent_id))educationSessions.set(row.agent_id,row);}
   updateEducationScreen(ed.data||[]); renderFortuneDrops(ev.data||[]); renderAnimals(); drawOverview();
 
-  $('overviewMeta').textContent=positions.length?'🟠 智能人 '+positions.length+' · 🏢 设施 '+facilities.length+' · 数据已连接':'⚠️ 暂无位置数据';
+  $('overviewMeta').textContent=positions.length?'🟢 智能人 '+positions.length+' · 🏢 设施 '+facilities.length+' · Core 数据已连接':'⚠️ Core 暂无位置数据';
   if(!positions.length){const errs=(window.__zhiCoreReadErrors||[]).slice(-3);$('overviewMeta').textContent='⚠️ 位置读取失败 · '+(errs.map(x=>x.label+': '+x.message).join(' | ')||'等待 Core 数据');}
   if(!m.data){const errs=(window.__zhiCoreReadErrors||[]).slice(-5);$('thought').textContent='⚠️ KING 状态读取失败 · '+(errs.find(x=>/king/i.test(x.label))?.message||'等待 Core 数据');}
   if(w.data)$('balance').textContent='💰 '+Number(w.data.balance||0).toLocaleString()+' ZHI';
@@ -1064,6 +1069,8 @@ async function init(){
   if(!king){$('loginmsg').textContent='King 尚未创建。';return}
   $('loginmsg').textContent='King 已连接，正在加载 3D 城市…';
   $('login').classList.add('hidden');$('game').classList.remove('hidden');
+  $('kingBoard')?.classList.remove('hidden'); $('overview')?.classList.remove('hidden');
+  if($('kingBoardBody')){}
   try{await refresh()}catch(e){console.warn('[ZHI refresh]',e);$('state').textContent='世界已启动，部分资料读取失败'}
   // 登录后的第一帧必须直接来自 KING 当下真实坐标与朝向；不重置位置、不重置镜头。
   controlMode=false;

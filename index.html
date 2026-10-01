@@ -211,7 +211,7 @@ async function loadAgentFinanceBoard(){
    rr=await fetch('https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-agent-finance-board',{
     method:'GET',
     headers:{
-      Authorization:'Bearer '+token,
+      Authorization:'Bearer '+accessToken,
       apikey:window.zhiCoreSupabase.rest.headers.apikey
     },
     signal:controller.signal

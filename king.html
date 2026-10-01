@@ -41,7 +41,7 @@ button{font:inherit;cursor:pointer}.hidden{display:none!important}
 <style id="zhi-agent-fallback-css">#zhiAgentFallbackLayer{position:fixed;inset:0;z-index:19;pointer-events:none}.zhi-agent-fallback{position:absolute;transform:translate(-50%,-100%);padding:4px 7px;border-radius:999px;background:rgba(10,20,28,.92);border:1px solid rgba(255,255,255,.8);color:#fff;font:900 12px system-ui,sans-serif;white-space:nowrap;text-shadow:0 1px 2px #000;box-shadow:0 2px 10px #0009}.zhi-agent-fallback.king{font-size:15px;border-color:#ffd76a;color:#ffd76a;background:rgba(35,20,0,.95)}</style></head>
 <body>
 <div id="login"><div class="loginbox"><h1>👑 ZHI · KING MODE</h1><p>进入 2 km × 2 km 的 ZHI 第一视角虚拟世界。</p><p class="sub">King 与管理员账号统一身份。</p><button id="enter">进入虚拟世界</button><div id="loginmsg" class="sub" style="margin-top:10px"></div></div></div>
-<div id="game" class="hidden"><div id="zhiAgentFallbackLayer"></div>
+<div id="game" class="hidden"><div id="zhiAgentFallbackLayer"><div id="zhi3dDiag" style="position:fixed;right:12px;bottom:12px;z-index:9998;background:#05070eee;color:#fff;padding:8px 10px;border:1px solid #ffd76a88;border-radius:8px;font:11px monospace;pointer-events:none;max-width:360px">3D：初始化…</div></div>
 <script>
 window.zhiForceEnterKing=function(){
   var s=document.getElementById('start');
@@ -249,8 +249,19 @@ renderer.toneMapping=THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure=1.05;
 renderer.physicallyCorrectLights=true;
 $('game').prepend(renderer.domElement);
-const scene=new THREE.Scene();scene.background=new THREE.Color(0x07111b);scene.fog=new THREE.Fog(0x07111b,120,950);
-const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.1,2500);camera.position.set(0,6,40);
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x86b8dc);
+scene.fog=new THREE.Fog(0x86b8dc,40,2200);
+const camera=new THREE.PerspectiveCamera(82,innerWidth/innerHeight,.1,5000);
+camera.position.set(0,12,40);
+camera.lookAt(0,4.5,0);
+
+// 独立 Agent 3D 渲染根节点：所有智能人只进入这一层，避免被场景其他逻辑误处理。
+const agentRenderRoot=new THREE.Group();
+agentRenderRoot.name='ZHI_AGENT_3D_RENDER_ROOT';
+agentRenderRoot.visible=true;
+agentRenderRoot.frustumCulled=false;
+scene.add(agentRenderRoot);
 const hemi=new THREE.HemisphereLight(0xb9d9f5,0x3f6048,1.65);scene.add(hemi);
 const ambient=new THREE.AmbientLight(0x7896ad,0.72);scene.add(ambient);
 // Softer Singapore sun: enough definition without blowing out the sky/ground.
@@ -1097,6 +1108,8 @@ function updateAgentFallbackLayer(){
   [...layer.children].forEach(el=>{if(!seen.has(el.id))el.style.display='none'});
 }
 function renderPipelineDiagnostics(){
+  const d=document.getElementById('zhi3dDiag');
+  if(d){d.textContent='3D '+(renderer?.domElement?.width||0)+'×'+(renderer?.domElement?.height||0)+' · scene='+scene.children.length+' · agents='+agentMeshes.size+' · root='+agentRenderRoot.children.length+' · calls='+(renderer?.info?.render?.calls||0);}
   window.__zhiRenderDiagnostics={
     canvasW:renderer?.domElement?.width||0,canvasH:renderer?.domElement?.height||0,
     sceneChildren:scene?.children?.length||0,agentMeshes:agentMeshes.size,
@@ -1119,7 +1132,7 @@ function renderAgents(){
   $('worldCount').textContent='🌍 智能人：'+active.length;
   let created=0,failed=0;
   for(const [id,obj] of [...agentMeshes]){
-    if(!active.some(a=>a.id===id)){scene.remove(obj);agentMeshes.delete(id)}
+    if(!active.some(a=>a.id===id)){agentRenderRoot.remove(obj);scene.remove(obj);agentMeshes.delete(id)}
   }
   for(const a of active){
     try{
@@ -1134,7 +1147,7 @@ function renderAgents(){
         o.visible=true;o.frustumCulled=false;o.renderOrder=30;
         o.scale.setScalar(a.id===king?.id?0.95:1.0);
         o.traverse(ch=>{if(ch.isMesh){ch.frustumCulled=false;ch.renderOrder=30;}});
-        scene.add(o);agentMeshes.set(a.id,o);created++;
+        agentRenderRoot.add(o);agentMeshes.set(a.id,o);created++;
       }else{o.visible=true;o.frustumCulled=false;}
       const tx=Number(p.x),tz=Number(p.y);
       const edu=educationSessions.get(a.id);
@@ -1483,11 +1496,20 @@ function animate(){
   updateAnimalVisuals(dt);
   updateEducationScreenOverlay();
   updateKingFollowCamera();
+
+  // 3D Agent 渲染锁：每一帧确保根节点、人物、相机都处于可渲染状态。
+  agentRenderRoot.visible=true;
+  agentRenderRoot.frustumCulled=false;
+  for(const o of agentMeshes.values()){
+    o.visible=true;
+    o.frustumCulled=false;
+    o.updateMatrixWorld(true);
+  }
+  if(kingGuaranteedMarker){kingGuaranteedMarker.visible=true;kingGuaranteedMarker.frustumCulled=false;kingGuaranteedMarker.updateMatrixWorld(true)}
+
   updateAgentFallbackLayer();
   renderPipelineDiagnostics();
-  if(!$('start').classList.contains('hidden')||!controlMode){renderer.render(scene,camera);return}
-  if(!overviewMode)updatePlayer(dt);
-  renderer.render(scene,camera)
+  renderer.render(scene,camera);
 }
 // KING 世界为纯观察模式：管理员永远不能驾驶、转向或接管 KING。
 controlMode=false;

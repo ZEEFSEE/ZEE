@@ -225,6 +225,11 @@ function royalPointBlocked(x,y,pad=2){if(x<ROYAL_BEDROOM.minX+pad||x>ROYAL_BEDRO
 function nearestRoyalFreePoint(x,y){x=Math.max(ROYAL_BEDROOM.minX+3,Math.min(ROYAL_BEDROOM.maxX-3,x));y=Math.max(ROYAL_BEDROOM.minY+3,Math.min(ROYAL_BEDROOM.maxY-3,y));if(!royalPointBlocked(x,y,1.5))return{x,y};for(let r=4;r<=28;r+=4)for(let i=0;i<16;i++){const a=i*Math.PI/8,px=x+Math.cos(a)*r,py=y+Math.sin(a)*r;if(!royalPointBlocked(px,py,1.5))return{x:px,y:py}}return{x:1108,y:220}}
 function royalSpouseTarget(index=0){const s=[{x:1107,y:220},{x:1143,y:220},{x:1150,y:258}][index%3];return nearestRoyalFreePoint(s.x+(Math.random()-.5)*6,s.y+(Math.random()-.5)*6)}
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+// ZHI SINGLE WORLD COORDINATE SYSTEM: Supabase DB coordinates are the only source of truth.
+// DB: 0..2000 on X/Y  ->  THREE: X/Z centered at origin. No second camera coordinate system.
+const dbToWorld=(x,y)=>({x:Number(x)-WORLD/2,z:Number(y)-WORLD/2});
+const worldToDb=(x,z)=>({x:Number(x)+WORLD/2,y:Number(z)+WORLD/2});
+const setObjectFromDb=(o,x,y,groundY=0)=>{const w=dbToWorld(x,y);o.position.set(w.x,groundY,w.z);return w;};
 function toast(s){$('toast').textContent=s;$('toast').style.display='block';setTimeout(()=>$('toast').style.display='none',2200)}
 function sceneCenter(scene){const map={'🏟️竞技场':[-650,350],'🌸中央广场':[0,0],'🌲探索森林':[650,350],'🏪商业街':[-520,-500],'🎡娱乐区':[520,-500],'🏠公寓区':[0,-620]};return map[scene]||[0,0]}
 if(!window.THREE){throw new Error('THREE.js 未加载：CDN 不可用');}
@@ -896,13 +901,14 @@ function updateKingFollowCamera(){
   // 镜头保持在 KING 后方、略高于 KING，并把视线放到 KING 前方约 10m。
   // 这样 KING 本体 + 同区域智能人都会落入主视野，而不是只盯着 KING 身体。
   const cameraHeight=12.0;
-  camera.position.set(x-1000+backX,cameraHeight,z-1000+backZ);
+  const kingWorld=dbToWorld(x,z);
+  camera.position.set(kingWorld.x+backX,cameraHeight,kingWorld.z+backZ);
   camera.rotation.order='YXZ';
   camera.fov=82;
   camera.updateProjectionMatrix();
-  const lookX=x-1000, lookY=4.5, lookZ=z-1000;
+  const lookX=kingWorld.x, lookY=4.5, lookZ=kingWorld.z;
   camera.lookAt(lookX,lookY,lookZ);
-  window.__zhiKingFirstPerson={x,z,heading:yaw,source:'db-travel-timeline',at:Date.now()};
+  window.__zhiKingWorld={dbX:x,dbY:z,threeX:kingWorld.x,threeZ:kingWorld.z,heading:yaw,source:'single-coordinate-system',at:Date.now()};
   return true;
 }
 function makeLabel(text,isKing){
@@ -1138,7 +1144,7 @@ function renderAgents(){
   if(king){
     if(!kingGuaranteedMarker){kingGuaranteedMarker=makeKingGuaranteedMarker(king);scene.add(kingGuaranteedMarker);}
     const kp=positions.find(p=>p.agent_id===king.id);
-    if(kp&&Number.isFinite(Number(kp.x))&&Number.isFinite(Number(kp.y))){kingGuaranteedMarker.position.set(Number(kp.x)-1000,.05,Number(kp.y)-1000);kingGuaranteedMarker.visible=true;}
+    if(kp&&Number.isFinite(Number(kp.x))&&Number.isFinite(Number(kp.y))){setObjectFromDb(kingGuaranteedMarker,Number(kp.x),Number(kp.y),.05);kingGuaranteedMarker.visible=true;}
   }
   const byId=new Map(positions.map(p=>[p.agent_id,p]));
   const active=agents.filter(a=>a.active);
@@ -1167,7 +1173,7 @@ function renderAgents(){
       if(edu?.status==='learning'){
         const seat=educationSeat(edu.metadata?.seat_no);
         o.userData.target={x:seat.x,y:seat.y};o.userData.pos={...p,x:seat.x,y:seat.y,walking:false,speed_mps:0.1};
-        o.userData.worldX=seat.x;o.userData.worldY=seat.y;o.position.set(seat.x-1000,0,seat.y-1000);o.rotation.y=Math.PI;o.userData.educationSeated=true;
+        o.userData.worldX=seat.x;o.userData.worldY=seat.y;setObjectFromDb(o,seat.x,seat.y,0);o.rotation.y=Math.PI;o.userData.educationSeated=true;
       }else{
         o.userData.educationSeated=false;
         const moving=Boolean(p.walking)&&p.destination_x!=null&&p.destination_y!=null;
@@ -1191,13 +1197,13 @@ function renderAgents(){
         const radius=10+Math.min(18,Math.floor(slot/8)*5),angle=(slot%8)*(Math.PI*2/8)+(Math.floor(slot/8)%2)*Math.PI/8;
         vx=anchorX+Math.cos(angle)*radius;vy=anchorY+Math.sin(angle)*radius;o.userData.visualCrowdOffset={x:vx,y:vy};
       }else{o.userData.visualCrowdOffset=null}
-      o.position.set((a.id!==king?.id&&o.userData.visualCrowdOffset?vx:anchorX)-1000,0,(a.id!==king?.id&&o.userData.visualCrowdOffset?vy:anchorY)-1000);
+      setObjectFromDb(o,(a.id!==king?.id&&o.userData.visualCrowdOffset?vx:anchorX),(a.id!==king?.id&&o.userData.visualCrowdOffset?vy:anchorY),0);
       o.visible=true;
 
       // 独立于人物模型的“存在层”：即使模型被建筑/材质/渲染异常遮挡，也能直接看到智能人的位置与姓名。
       let b=o.userData.presenceBeacon;
       if(!b){b=makeAgentPresenceBeacon(a);o.userData.presenceBeacon=b;scene.add(b)}
-      b.position.set(anchorX-1000,.02,anchorY-1000);b.visible=true;
+      setObjectFromDb(b,anchorX,anchorY,.02);b.visible=true;
     }catch(e){
       failed++;console.error('[ZHI render agent]',a?.name,e);
     }
@@ -1365,8 +1371,9 @@ function startAgentChatApproach(){
   // 看起来像“消失”。让对方停在 King 视线前方约 8m 的位置，保持真实可见的交流距离。
   const meetingDistance=8;
   const forwardX=-Math.sin(yaw),forwardY=-Math.cos(yaw);
-  const targetWorldX=Math.max(0,Math.min(WORLD,camera.position.x+1000+forwardX*meetingDistance));
-  const targetWorldY=Math.max(0,Math.min(WORLD,camera.position.z+1000+forwardY*meetingDistance));
+  const meetingDb=worldToDb(camera.position.x+forwardX*meetingDistance,camera.position.z+forwardY*meetingDistance);
+  const targetWorldX=Math.max(0,Math.min(WORLD,meetingDb.x));
+  const targetWorldY=Math.max(0,Math.min(WORLD,meetingDb.y));
   const currentWorldX=Number(o.userData.worldX??o.userData.pos?.x??0);
   const currentWorldY=Number(o.userData.worldY??o.userData.pos?.y??0);
   const distance=Math.hypot(targetWorldX-currentWorldX,targetWorldY-currentWorldY);
@@ -1389,7 +1396,7 @@ function openAgentConversation(){
   if(o){
     o.userData.conversationApproach=false;
     o.userData.talking=true;
-    o.userData.talkTarget={x:camera.position.x+1000,y:camera.position.z+1000};
+    const cameraDb=worldToDb(camera.position.x,camera.position.z); o.userData.talkTarget={x:cameraDb.x,y:cameraDb.y};
   }
   zhiConversationApproach=false;
   zhiConversationActive=true;
@@ -1408,7 +1415,7 @@ function setAgentConversationState(active){
     const o=agentMeshes.get(selected.id);
     if(o){
       o.userData.talking=true;
-      o.userData.talkTarget={x:camera.position.x+1000,y:camera.position.z+1000};
+      const cameraDb=worldToDb(camera.position.x,camera.position.z); o.userData.talkTarget={x:cameraDb.x,y:cameraDb.y};
       o.userData.departurePending=false;
       o.userData.wasWalking=Boolean(o.userData.pos?.walking);
     }
@@ -1432,7 +1439,8 @@ function updateAgentVisuals(dt){
     if(o.userData.educationSeated){const seat=educationSeat(educationSessions.get(o.userData.agent?.id)?.metadata?.seat_no);o.userData.worldX=seat.x;o.userData.worldY=seat.y;o.position.set(seat.x-1000,0,seat.y-1000);const pt=o.userData.parts;if(pt){pt.legL.rotation.x=0;pt.legR.rotation.x=0;pt.armL.rotation.x=0;pt.armR.rotation.x=0;}continue;}
     const speed=Math.min(Number(p.speed_mps)||1.2,MAX_AGENT_SPEED_MPS);
     if(o.userData.conversationApproach){
-      const at=o.userData.approachTarget||{x:camera.position.x+1000,y:camera.position.z+1000};
+      const cameraDb=worldToDb(camera.position.x,camera.position.z);
+      const at=o.userData.approachTarget||{x:cameraDb.x,y:cameraDb.y};
       if(o.userData.royalSpouse&&royalPointBlocked(at.x,at.y,1.8)){const safe=royalSpouseTarget(royalSpouseIndex(o.userData.agent?.id));at.x=safe.x;at.y=safe.y;o.userData.approachTarget=at}
       const wx=o.userData.worldX??Number(p.x||0),wy=o.userData.worldY??Number(p.y||0);
       const fx=at.x-wx,fz=at.y-wy;
@@ -1440,7 +1448,7 @@ function updateAgentVisuals(dt){
       if(distToTarget>0.01)o.rotation.y=Math.atan2(fx,fz);
       if(distToTarget<=ZHI_CHAT_APPROACH_DISTANCE){
         o.userData.worldX=at.x;o.userData.worldY=at.y;
-        o.position.set(at.x-1000,0,at.y-1000);
+        setObjectFromDb(o,at.x,at.y,0);
         o.userData.conversationApproach=false;
         openAgentConversation();
       }else if(performance.now()-zhiConversationApproachStartedAt>120000){
@@ -1453,13 +1461,13 @@ function updateAgentVisuals(dt){
         const step=Math.min(distToTarget,speed*dt);
         o.userData.worldX=wx+(fx/distToTarget)*step;
         o.userData.worldY=wy+(fz/distToTarget)*step;
-        o.position.set(o.userData.worldX-1000,0,o.userData.worldY-1000);
+        setObjectFromDb(o,o.userData.worldX,o.userData.worldY,0);
         const pt=o.userData.parts;if(pt){const w=Math.sin(performance.now()*.006)*.6;pt.legL.rotation.x=w;pt.legR.rotation.x=-w;pt.armL.rotation.x=-w;pt.armR.rotation.x=w}
         continue;
       }
     }
     if(o.userData.talking){
-      let tx=camera.position.x+1000,tz=camera.position.z+1000;
+      const cameraDb=worldToDb(camera.position.x,camera.position.z); let tx=cameraDb.x,tz=cameraDb.y;
       if(o.userData.royalSpouse&&royalPointBlocked(tx,tz,1.8)){const safe=nearestRoyalFreePoint(tx,tz);tx=safe.x;tz=safe.y}
       const fx=tx-(o.userData.worldX??Number(p.x||0)),fz=tz-(o.userData.worldY??Number(p.y||0));
       if(Math.hypot(fx,fz)>0.01)o.rotation.y=Math.atan2(fx,fz);

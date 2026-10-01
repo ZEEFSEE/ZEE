@@ -701,7 +701,7 @@ function syncKingCameraFromDB(){
   km.userData.target={x:Number(p.destination_x??x),y:Number(p.destination_y??z)};
   km.position.set(x-1000,0,z-1000); km.visible=false;
   if(Number.isFinite(h))km.rotation.y=h;
-  yaw=Number.isFinite(h)?h+Math.PI:yaw;
+  yaw=Number.isFinite(h)?h:yaw;
   camera.position.set(x-1000,6.1,z-1000);
   camera.rotation.order='YXZ'; camera.rotation.y=yaw; camera.rotation.x=0;
   window.__zhiKingSync={x,y:z,heading:yaw,at:Date.now()};
@@ -722,7 +722,7 @@ function updateKingFollowCamera(){
     km.userData.worldY=z;
     if(Number.isFinite(h))km.rotation.y=h;
   }
-  if(Number.isFinite(h))yaw=h+Math.PI;
+  if(Number.isFinite(h))yaw=h;
   camera.position.set(x-1000,6.1,z-1000);
   camera.rotation.order='YXZ';
   camera.rotation.y=yaw;

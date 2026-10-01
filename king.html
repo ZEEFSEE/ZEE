@@ -1560,6 +1560,34 @@ function finishAgentConversation(){
   zhiConversationAgentId=null;
 }
 function royalSpouseIndex(id){return Math.max(0,[...royalSpouseIds].indexOf(id))}
+// ZHI 人际避让：所有智能人保持至少 1m 中心距，优先沿最小偏移方向分离；不改变亮度、镜头或 WebGL。 
+const ZHI_MIN_AGENT_DISTANCE=1.0;
+function enforceAgentSeparation(){
+  const list=[...agentMeshes.values()].filter(o=>o?.visible&&o?.userData?.agent?.active!==false);
+  for(let i=0;i<list.length;i++){
+    for(let j=i+1;j<list.length;j++){
+      const a=list[i],b=list[j];
+      let ax=Number(a.userData.worldX), ay=Number(a.userData.worldY);
+      let bx=Number(b.userData.worldX), by=Number(b.userData.worldY);
+      if(!Number.isFinite(ax)||!Number.isFinite(ay)||!Number.isFinite(bx)||!Number.isFinite(by))continue;
+      let dx=bx-ax,dy=by-ay,dist=Math.hypot(dx,dy);
+      if(dist>=ZHI_MIN_AGENT_DISTANCE)continue;
+      if(dist<0.0001){
+        const seed=(i*92821+j*68917)%6283;
+        dx=Math.cos(seed/1000);dy=Math.sin(seed/1000);dist=1;
+      }
+      const push=(ZHI_MIN_AGENT_DISTANCE-dist)/2;
+      const nx=dx/dist,ny=dy/dist;
+      ax-=nx*push;ay-=ny*push;bx+=nx*push;by+=ny*push;
+      ax=Math.max(0,Math.min(WORLD,ax));ay=Math.max(0,Math.min(WORLD,ay));
+      bx=Math.max(0,Math.min(WORLD,bx));by=Math.max(0,Math.min(WORLD,by));
+      a.userData.worldX=ax;a.userData.worldY=ay;
+      b.userData.worldX=bx;b.userData.worldY=by;
+      setObjectFromDb(a,ax,ay,0);setObjectFromDb(b,bx,by,0);
+    }
+  }
+}
+
 function updateAgentVisuals(dt){
   for(const o of agentMeshes.values()){
     const p=o.userData.pos||{};const t=o.userData.target||p;
@@ -1641,6 +1669,7 @@ function animate(){
   const now=performance.now(),dt=Math.min(.05,(now-last)/1000);last=now;
   updateSingaporeDaylight();
   updateAgentVisuals(dt);
+  enforceAgentSeparation();
   updateAnimalVisuals(dt);
   updateEducationScreenOverlay();
   updateKingFollowCamera();

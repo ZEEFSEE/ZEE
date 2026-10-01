@@ -766,7 +766,7 @@ addEventListener('wheel',e=>{
   if(e.target.closest?.('#chat,#info'))return;
   if(window.__zhiWorld3DMode){
     e.preventDefault();
-    fullWorldZoom=Math.max(.25,Math.min(4,fullWorldZoom*(e.deltaY>0?.88:1.136)));
+    fullWorldZoom=Math.max(.1,Math.min(10,fullWorldZoom*(e.deltaY>0?.8:1.25)));
     updateFullWorldCamera();
     return;
   }
@@ -1706,9 +1706,9 @@ $('world3DView').onclick=()=>{
   }
 };
 window.__zhiWorld3DMode=false;
-function setFullWorldZoom(z){fullWorldZoom=Math.max(.25,Math.min(4,Number(z)||1));if(window.__zhiWorld3DMode)updateFullWorldCamera();}
-$('worldZoomIn').onclick=()=>setFullWorldZoom(fullWorldZoom*1.25);
-$('worldZoomOut').onclick=()=>setFullWorldZoom(fullWorldZoom/1.25);
+function setFullWorldZoom(z){fullWorldZoom=Math.max(.1,Math.min(10,Number(z)||1));if(window.__zhiWorld3DMode){updateFullWorldCamera();$('state').textContent='🌐 全体3D · 缩放 '+Math.round(fullWorldZoom*100)+'% · 真实坐标';}}
+$('worldZoomIn').onclick=()=>setFullWorldZoom(fullWorldZoom*1.6);
+$('worldZoomOut').onclick=()=>setFullWorldZoom(fullWorldZoom/1.6);
 $('worldZoomReset').onclick=()=>setFullWorldZoom(1);
 $('closeInfo').onclick=()=>{if(zhiConversationApproach){const o=selected?agentMeshes.get(selected.id):null;if(o)o.userData.conversationApproach=false;zhiConversationApproach=false;$('infoChat').disabled=false;$('infoChat').textContent='🚶 邀请 TA 过来聊天'}$('info').classList.add('hidden')};$('closeChat').onclick=()=>{if(zhiConversationActive){$('messages').insertAdjacentHTML('beforeend','<div class="msg agentmsg">我有事情要离开了。</div>');finishAgentConversation()}$('chat').classList.add('hidden')};$('back').onclick=()=>location.href='index.html';$('infoChat').onclick=()=>{if(selected&&!zhiConversationApproach&&!zhiConversationActive){startAgentChatApproach()}};
 $('send').onclick=send;$('input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});

@@ -759,58 +759,33 @@ park(650,0,260,220);park(-650,0,260,220);park(0,700,300,180);
 
 
 const keys=new Set();const WALK_SPEED_MPS=MAX_PLAYER_SPEED_MPS;let yaw=0,pitch=0,velocity=0,last=performance.now(),overviewMode=false,overviewHeight=520;
-let fullWorldZoom=1;
+let fullWorldZoom=1;let viewZoom=1;
 
 addEventListener('keyup',e=>keys.delete(e.code));
-function handleWorldWheel(e){
-  if(!window.__zhiWorld3DMode)return;
-  e.preventDefault();
-  e.stopPropagation();
-  const factor=e.deltaY>0?.82:1.22;
-  fullWorldZoom=Math.max(.1,Math.min(10,fullWorldZoom*factor));
-  updateFullWorldCamera();
-}
-// 同时绑定到 canvas 和 window，确保 Chrome/触控板/鼠标滚轮都能触发。
-function bindWorldZoomWheel(){
-  const canvas=renderer?.domElement;
-  if(canvas&&!canvas.__zhiZoomWheelBound){
-    canvas.addEventListener('wheel',handleWorldWheel,{passive:false});
-    canvas.__zhiZoomWheelBound=true;
-  }
-}
-// 捕获阶段监听：HUD、按钮、canvas 等覆盖层存在时，滚轮仍能可靠控制全体3D缩放。
-function applyFullWorldWheelZoom(e){
-  if(!window.__zhiWorld3DMode)return false;
+function applyWheelZoom(e){
   const dy=Number(e.deltaY||0);
   if(!dy)return false;
-  const factor=dy>0?.72:1.38;
-  fullWorldZoom=Math.max(.1,Math.min(10,fullWorldZoom*factor));
-  updateFullWorldCamera();
-  const s=document.getElementById('state');
-  if(s)s.textContent='🌐 全体3D · 缩放 '+Math.round(fullWorldZoom*100)+'% · 真实坐标';
+  const factor=dy<0?1.3:.77;
+  if(window.__zhiWorld3DMode){
+    fullWorldZoom=Math.max(.1,Math.min(12,fullWorldZoom*factor));
+    updateFullWorldCamera();
+    const s=document.getElementById('state');
+    if(s)s.textContent='🌐 全体3D · 缩放 '+Math.round(fullWorldZoom*100)+'% · 真实坐标';
+  }else{
+    viewZoom=Math.max(.35,Math.min(5,viewZoom*factor));
+    updateKingFollowCamera();
+    const s=document.getElementById('state');
+    if(s)s.textContent='👁️ KING 跟随 · 缩放 '+Math.round(viewZoom*100)+'%';
+  }
   return true;
 }
-// 最底层捕获：不依赖鼠标当前悬停在哪个 HUD / Canvas 元素上。
 document.addEventListener('wheel',e=>{
-  if(applyFullWorldWheelZoom(e)){
+  if(e.target?.closest?.('#chat,#info'))return;
+  if(applyWheelZoom(e)){
     e.preventDefault();
     e.stopImmediatePropagation();
   }
 },true);
-// 同时提供键盘缩放，便于确认缩放状态是否正常。
-document.addEventListener('keydown',e=>{
-  if(!window.__zhiWorld3DMode)return;
-  if(e.key==='+'||e.key==='='){e.preventDefault();setFullWorldZoom(fullWorldZoom*1.5);}
-  if(e.key==='-'||e.key==='_'){e.preventDefault();setFullWorldZoom(fullWorldZoom/1.5);}
-},true);
-
-addEventListener('wheel',e=>{
-  if(e.target.closest?.('#chat,#info'))return;
-  if(window.__zhiWorld3DMode)return;
-  e.preventDefault();
-  overviewHeight=Math.max(180,Math.min(1400,overviewHeight+(e.deltaY>0?70:-70)));
-  if(overviewMode)updateOverviewCamera();
-},{passive:false});
 
 let savedFirstPersonPosition=null;
 function updateOverviewCamera(){
@@ -1018,11 +993,11 @@ function updateKingFollowCamera(){
   // KING 本体保持可见，镜头不再进入第一视角。
   // 第三人称观察：镜头必须在 KING 背后，而不是站到 KING 面前。
   // KING 的正面朝向为 (+sin(h), +cos(h))，因此镜头放在其反方向。
-  const backX=-Math.sin(h)*20;
-  const backZ=-Math.cos(h)*20;
+  const backX=-Math.sin(h)*20*viewZoom;
+  const backZ=-Math.cos(h)*20*viewZoom;
   // 镜头保持在 KING 后方、略高于 KING，并把视线放到 KING 前方约 10m。
   // 这样 KING 本体 + 同区域智能人都会落入主视野，而不是只盯着 KING 身体。
-  const cameraHeight=12.0;
+  const cameraHeight=12.0+Math.max(0,viewZoom-1)*4;
   const kingWorld=dbToWorld(x,z);
   camera.position.set(kingWorld.x+backX,cameraHeight,kingWorld.z+backZ);
   camera.rotation.order='YXZ';
@@ -1737,6 +1712,7 @@ $('world3DView').onclick=()=>{
   const b=$('world3DView');
   if(b)b.textContent=window.__zhiWorld3DMode?'👑 跟随 KING':'🌐 全体3D';
   if(window.__zhiWorld3DMode){
+    updateFullWorldCamera();
     $('state').textContent='🌐 全体3D坐标投射 · 73个智能人按真实世界坐标显示';
   }else{
     updateKingFollowCamera();
@@ -1744,7 +1720,7 @@ $('world3DView').onclick=()=>{
   }
 };
 window.__zhiWorld3DMode=false;
-function setFullWorldZoom(z){fullWorldZoom=Math.max(.1,Math.min(10,Number(z)||1));if(window.__zhiWorld3DMode){updateFullWorldCamera();$('state').textContent='🌐 全体3D · 缩放 '+Math.round(fullWorldZoom*100)+'% · 真实坐标';}}
+function setFullWorldZoom(z){fullWorldZoom=Math.max(.1,Math.min(12,Number(z)||1));if(window.__zhiWorld3DMode){updateFullWorldCamera();$('state').textContent='🌐 全体3D · 缩放 '+Math.round(fullWorldZoom*100)+'% · 真实坐标';}}
 $('worldZoomIn').onclick=()=>setFullWorldZoom(fullWorldZoom*1.6);
 $('worldZoomOut').onclick=()=>setFullWorldZoom(fullWorldZoom/1.6);
 $('worldZoomReset').onclick=()=>setFullWorldZoom(1);

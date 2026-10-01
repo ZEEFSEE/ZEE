@@ -453,7 +453,7 @@ function buildJewelryShop(){
   const ring=new THREE.Mesh(new THREE.TorusGeometry(1.3,.22,12,32),gold);ring.rotation.x=Math.PI/2;ring.position.set(cx+10,4,cz-3);g.add(ring);
   const plaque=makeLabel('🌲 原料：探索森林金矿',false);plaque.scale.set(5,1.3,1);plaque.position.set(cx,4.2,cz-d/2-.55);g.add(plaque);
   scene.add(g);
-  if(typeof enterables!=='undefined') enterables.push({x:cx,z:cz-d/2,door:g,userData:{sceneName:'💎 ZHI 珠宝铺'}});
+  window.zhiPendingEnterable={x:cx,z:cz-d/2,door:g,userData:{sceneName:'💎 ZHI 珠宝铺'}};
 }
 buildJewelryShop();
 
@@ -517,6 +517,7 @@ function car(x,z,rot=0){
 }
 for(const p of [[-120,22,0],[160,-22,Math.PI],[560,22,0],[-560,-22,Math.PI]])car(p[0],p[1],p[2]);
 const enterables=[];
+if(window.zhiPendingEnterable){enterables.push(window.zhiPendingEnterable);delete window.zhiPendingEnterable;}
 function makeDoor(x,z,w=6){
   const door=new THREE.Mesh(new THREE.BoxGeometry(w,6,.35),new THREE.MeshStandardMaterial({color:0x2b1d16,roughness:.7}));
   door.position.set(x,3,z);scene.add(door);enterables.push({x,z,door});

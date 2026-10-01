@@ -276,7 +276,7 @@ function updateSingaporeDaylight(){
     eternalDaylight:true
   };
 }
-const ground=new THREE.Mesh(new THREE.PlaneGeometry(WORLD,WORLD),new THREE.MeshStandardMaterial({color:0x16331f,roughness:1}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(WORLD,WORLD),new THREE.MeshStandardMaterial({color:0x3f7047,roughness:.88,metalness:0,emissive:0x102512,emissiveIntensity:.22}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
 const grid=new THREE.GridHelper(WORLD,40,0x52705a,0x263d31);grid.position.y=.02;scene.add(grid);
 function addRoad(x,z,w,d){const m=new THREE.Mesh(new THREE.BoxGeometry(w,.12,d),new THREE.MeshStandardMaterial({color:0x3b3b39,roughness:1}));m.position.set(x,.07,z);scene.add(m)}
 addRoad(0,0,70,2000);addRoad(0,0,2000,70);addRoad(-600,0,35,1600);addRoad(600,0,35,1600);addRoad(0,-560,1250,35);

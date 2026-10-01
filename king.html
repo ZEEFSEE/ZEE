@@ -255,39 +255,25 @@ const ambient=new THREE.AmbientLight(0x7896ad,0.72);scene.add(ambient);
 // Softer Singapore sun: enough definition without blowing out the sky/ground.
 const sun=new THREE.DirectionalLight(0xffdfad,0.92);sun.position.set(-300,500,200);sun.castShadow=true;sun.shadow.bias=-0.0005;scene.add(sun);
 function updateSingaporeDaylight(){
-  const now=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Singapore'}));
-  const h=now.getHours()+now.getMinutes()/60+now.getSeconds()/3600;
-  // Singapore: dawn → morning → noon → afternoon → sunset → night.
-  // Curves are deliberately compressed at noon to prevent overexposure.
-  const key=[
-    [0,0.12,0.02],[5.5,0.12,0.04],[6.5,0.30,0.18],[7.5,0.52,0.38],
-    [9,0.78,0.62],[12,0.92,0.78],[14,0.88,0.72],[16.5,0.70,0.58],
-    [17.5,0.54,0.72],[18.5,0.30,0.88],[19.5,0.15,0.34],[24,0.12,0.02]
-  ];
-  let a=key[key.length-2],b=key[key.length-1];
-  for(let i=0;i<key.length-1;i++){if(h>=key[i][0]&&h<key[i+1][0]){a=key[i];b=key[i+1];break}}
-  const t=Math.max(0,Math.min(1,(h-a[0])/(b[0]-a[0]||1)));
-  const smooth=t*t*(3-2*t);
-  const light=a[1]+(b[1]-a[1])*smooth;
-  const warm=a[2]+(b[2]-a[2])*smooth;
-  const sky=new THREE.Color();
-  // Sky remains readable during daytime and never becomes a white slab.
-  sky.setHSL(0.59,0.42,0.035+0.070*light+0.012*warm);
+  // ZHI WORLD VISUAL MASTER RULE:
+  // ETERNAL DAYLIGHT · CONSTANT HIGH BRIGHTNESS · 24/7.
+  // World time may continue for agent behavior, but NEVER controls scene lighting.
+  const daylightBrightness=1.0;
+  const sky=new THREE.Color(0x86b8dc);
   scene.background=sky;
-  // Fog follows the sky but is slightly darker so depth does not disappear.
-  scene.fog.color.copy(sky).multiplyScalar(0.82);
-  scene.fog.near=140;
-  scene.fog.far=1100+260*light;
-  hemi.intensity=0.72+0.92*light;
-  ambient.intensity=0.38+0.42*light;
-  sun.intensity=0.08+0.72*light;
-  sun.color.setHSL(0.105,0.62,0.54+0.18*warm);
-  const angle=(h-6)/12*Math.PI;
-  sun.position.set(Math.cos(angle)*450,Math.max(35,Math.sin(angle)*500),180);
+  scene.fog.color.set(0x86b8dc);
+  scene.fog.near=180;
+  scene.fog.far=1500;
+  hemi.intensity=2.25;
+  ambient.intensity=1.25;
+  sun.intensity=1.35;
+  sun.color.set(0xfff4d6);
+  sun.position.set(-300,650,220);
   window.__zhiSingaporeTime={
-    hour:h,
-    phase:h<6.5?'🌅 黎明':h<10?'☀️ 早晨':h<14?'🌞 中午':h<17.5?'🌤️ 下午':h<19?'🌇 傍晚':'🌙 晚上',
-    brightness:light
+    hour:new Date().getHours()+new Date().getMinutes()/60+new Date().getSeconds()/3600,
+    phase:'☀️ 永恒白昼',
+    brightness:daylightBrightness,
+    eternalDaylight:true
   };
 }
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(WORLD,WORLD),new THREE.MeshStandardMaterial({color:0x16331f,roughness:1}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);

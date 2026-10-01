@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ZHI · King Virtual World · FPS v20261001-01</title>
+<title>ZHI · King Virtual World · FPS v20261001-02</title>
 <style>
 :root{--gold:#ffd76a;--panel:#100a18eF;--line:#ffd76a66;--text:#fff5cf}
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#05070a;color:#fff;font:14px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
@@ -847,7 +847,7 @@ const tx=Number(p.x),tz=Number(p.y);
 const edu=educationSessions.get(a.id);
 if(edu?.status==='learning'){const seat=educationSeat(edu.metadata?.seat_no);o.userData.target={x:seat.x,y:seat.y};o.userData.pos={...p,x:seat.x,y:seat.y,walking:false,speed_mps:0.1};o.userData.worldX=seat.x;o.userData.worldY=seat.y;o.position.set(seat.x-1000,0,seat.y-1000);o.rotation.y=Math.PI;o.userData.educationSeated=true;}else{o.userData.educationSeated=false;o.userData.target={x:tx,y:tz};o.userData.pos=p;}
 o.userData.agent=a;applyJewelryVisuals(o,jewelryByAgent.get(a.id)||[]);
-if(a.id===king?.id){const h=Number(p.heading_rad);if(Number.isFinite(h))o.rotation.y=h;else if(p.destination_x!=null&&p.destination_y!=null)o.rotation.y=Math.atan2(Number(p.destination_x)-tx,Number(p.destination_y)-tz);}
+if(a.id===king?.id){o.userData.worldX=tx;o.userData.worldY=tz;o.userData.target={x:Number(p.destination_x??tx),y:Number(p.destination_y??tz)};o.userData.pos=p;const h=Number(p.heading_rad);if(Number.isFinite(h))o.rotation.y=h;else if(p.destination_x!=null&&p.destination_y!=null)o.rotation.y=Math.atan2(Number(p.destination_x)-tx,Number(p.destination_y)-tz);}
 if(!Number.isFinite(Number(o.userData.worldX)))o.userData.worldX=tx;
 if(!Number.isFinite(Number(o.userData.worldY)))o.userData.worldY=tz;
 o.position.set(o.userData.worldX-1000,0,o.userData.worldY-1000);

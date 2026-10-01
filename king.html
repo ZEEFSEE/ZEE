@@ -62,6 +62,44 @@ window.zhiForceEnterKing=function(){
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-client.js?v=20261001-06"></script>
 <script>
+<script>
+(function(){
+  const KING_ID='0a96754c-7232-4531-890b-e3648b63f887';
+  const CORE_URL='https://jozrslgdjreepxplicen.supabase.co';
+  const CORE_KEY='sb_publishable_MOVcpW2XoLdHbUVp6f-nrw_e_HY1Bav';
+  async function kingDirect(fn,body){
+    const r=await fetch(CORE_URL+'/rest/v1/rpc/'+fn,{method:'POST',headers:{apikey:CORE_KEY,Authorization:'Bearer '+CORE_KEY,'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(body||{})});
+    const t=await r.text(); let d=null; try{d=t?JSON.parse(t):null}catch{}
+    if(!r.ok) throw new Error('HTTP '+r.status+' '+(d?.message||t||r.statusText));
+    return d;
+  }
+  function set(id,v){const e=document.getElementById(id);if(e)e.textContent=v==null?'—':String(v);}
+  async function loadKingPanelDirect(){
+    try{
+      set('state','🟢 Core REST 直连中');
+      const d=await kingDirect('zhi_get_king_status',{p_agent_id:KING_ID});
+      const m=Array.isArray(d)?d[0]:d;
+      if(!m) throw new Error('zhi_get_king_status 返回空数据');
+      set('mood',m.mood);set('energy',m.energy);set('curiosity',m.curiosity);set('goal',m.current_goal);set('stress',m.stress);set('confidence',m.confidence);
+      set('thought','💭 '+(m.last_thought||'正在观察周围世界…'));
+      set('state',(m.location_name||'皇宫')+' · '+(m.activity_type||'观察')+' · 🟢 Core REST');
+      window.__zhiIndependentKingStatus=m;
+    }catch(e){set('state','🔴 KING 数据读取失败 · '+(e.message||e));set('thought','🔴 '+(e.message||e));}
+  }
+  async function loadPositionsDirect(){
+    try{
+      const d=await kingDirect('zhi_get_world_agent_positions',{});
+      const rows=Array.isArray(d)?d:[];
+      set('overviewMeta','🟢 Core REST · 智能人 '+rows.length);
+      const list=document.getElementById('overviewList');
+      if(list)list.innerHTML=rows.slice(0,12).map((p,i)=>'<div style="padding:3px 4px;border-bottom:1px solid rgba(255,255,255,.08)">'+(i+1)+'. '+String(p.current_scene||'未知地点')+' · '+Math.round(Number(p.x)||0)+'m / '+Math.round(Number(p.y)||0)+'m'+(p.walking?' · 🚶':'')+'</div>').join('');
+      window.__zhiIndependentPositions=rows;
+    }catch(e){set('overviewMeta','🔴 位置读取失败 · '+(e.message||e));}
+  }
+  window.__zhiIndependentPanelStart=function(){loadKingPanelDirect();loadPositionsDirect();if(window.__zhiIndependentTimer)clearInterval(window.__zhiIndependentTimer);window.__zhiIndependentTimer=setInterval(function(){loadKingPanelDirect();loadPositionsDirect()},2000);};
+  window.__zhiIndependentPanelStart();
+})();
+</script>
 window.__zhiKingBooted=false;
 (function(){
   const overview=document.getElementById('overview');

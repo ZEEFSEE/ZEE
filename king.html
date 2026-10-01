@@ -453,7 +453,7 @@ function buildJewelryShop(){
   const ring=new THREE.Mesh(new THREE.TorusGeometry(1.3,.22,12,32),gold);ring.rotation.x=Math.PI/2;ring.position.set(cx+10,4,cz-3);g.add(ring);
   const plaque=makeLabel('🌲 原料：探索森林金矿',false);plaque.scale.set(5,1.3,1);plaque.position.set(cx,4.2,cz-d/2-.55);g.add(plaque);
   scene.add(g);
-  enterables.push({x:cx,z:cz-d/2,door:g,userData:{sceneName:'💎 ZHI 珠宝铺'}});
+  if(typeof enterables!=='undefined') enterables.push({x:cx,z:cz-d/2,door:g,userData:{sceneName:'💎 ZHI 珠宝铺'}});
 }
 buildJewelryShop();
 

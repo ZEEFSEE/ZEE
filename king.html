@@ -968,12 +968,12 @@ async function refresh(){
   if(!king)return;
   const safe=async(label,fn,fallback)=>{try{const r=await fn();if(r?.error){console.warn('[ZHI '+label+']',r.error);return fallback}return r}catch(e){console.warn('[ZHI '+label+']',e);return fallback}};
   const w=await safe('wallet',()=>finance().from('wallets').select('balance').eq('user_id',ADMIN_ID).maybeSingle(),{data:null});
-  const p=await safe('king position',()=>core().from('zhi_agent_world_positions').select('*').eq('agent_id',king.id).maybeSingle(),{data:null});
-  const km=await safe('king status',()=>core().rpc('zhi_get_king_status',{p_agent_id:king.id}).maybeSingle(),{data:null});
-  const m={data:km.data||null};
-  const a={data:km.data||null};
+  const p=await safe('king position',()=>core().from('zhi_agent_world_positions').select('agent_id,x,y,current_scene,walking,speed_mps,destination_x,destination_y,destination_scene,heading_rad').eq('agent_id',king.id).maybeSingle(),{data:null});
+  const km=await safe('king status',()=>core().rpc('zhi_get_king_status',{p_agent_id:king.id}),{data:null});
+  const m={data:Array.isArray(km.data)?(km.data[0]||null):(km.data||null)};
+  const a={data:m.data||null};
   const ar=await safe('agents',()=>core().from('zhi_agents').select('id,name,gender,personality,life_status,active').eq('active',true).order('name'),{data:[]});
-  const pr=await safe('positions',()=>core().from('zhi_agent_world_positions').select('agent_id,x,y,current_scene,walking,speed_mps,destination_x,destination_y,heading_rad').order('agent_id'),{data:[]});
+  const pr=await safe('positions',()=>core().from('zhi_agent_world_positions').select('agent_id,x,y,current_scene,walking,speed_mps,destination_x,destination_y,destination_scene,heading_rad').order('agent_id'),{data:[]});
   const fr=await safe('facilities',()=>core().rpc('zhi_get_world_facilities'),{data:[]});
   const an=await safe('animals',()=>core().rpc('zhi_get_world_animals'),{data:[]});
   const ev=await safe('events',()=>core().from('zhi_fortune_events').select('id,location_code,location_name,activity_type,reward_pool,status,created_at,target_count,claimed_count').in('status',['open','running']),{data:[]});

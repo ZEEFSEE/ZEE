@@ -969,8 +969,9 @@ async function refresh(){
   const safe=async(label,fn,fallback)=>{try{const r=await fn();if(r?.error){console.warn('[ZHI '+label+']',r.error);return fallback}return r}catch(e){console.warn('[ZHI '+label+']',e);return fallback}};
   const w=await safe('wallet',()=>finance().from('wallets').select('balance').eq('user_id',ADMIN_ID).maybeSingle(),{data:null});
   const p=await safe('king position',()=>core().from('zhi_agent_world_positions').select('*').eq('agent_id',king.id).maybeSingle(),{data:null});
-  const m=await safe('king mind',()=>core().from('zhi_agent_minds').select('mood,energy,curiosity,stress,confidence,current_goal,last_thought').eq('agent_id',king.id).maybeSingle(),{data:null});
-  const a=await safe('king activity',()=>core().from('zhi_agent_activities').select('activity_type,status,location_name,ends_at,started_at').eq('agent_id',king.id).eq('status','busy').order('ends_at',{ascending:false}).limit(1).maybeSingle(),{data:null});
+  const km=await safe('king status',()=>core().rpc('zhi_get_king_status',{p_agent_id:king.id}).maybeSingle(),{data:null});
+  const m={data:km.data||null};
+  const a={data:km.data||null};
   const ar=await safe('agents',()=>core().from('zhi_agents').select('id,name,gender,personality,life_status,active').eq('active',true).order('name'),{data:[]});
   const pr=await safe('positions',()=>core().rpc('zhi_get_world_agent_positions'),{data:[]});
   const fr=await safe('facilities',()=>core().rpc('zhi_get_world_facilities'),{data:[]});

@@ -406,6 +406,40 @@ function buildPalaceInteriors(){
   buildRoyalBedroomLuxury();
 }
 buildPalaceInteriors();
+function buildAplusEducationCenter(){
+  const g=new THREE.Group(); g.name='APLUS ACHIEVER Education Center';
+  const cx=350,cz=100,w=120,d=105,h=13;
+  const matBody=new THREE.MeshStandardMaterial({color:0xe9e2d4,roughness:.72});
+  const matGlass=new THREE.MeshStandardMaterial({color:0x8bd7ff,metalness:.2,roughness:.2,transparent:true,opacity:.7});
+  const matDark=new THREE.MeshStandardMaterial({color:0x27242a,roughness:.6});
+  const matWood=new THREE.MeshStandardMaterial({color:0x6b4226,roughness:.65});
+  function box(x,y,z,a,b,dd,m=matBody){const q=new THREE.Mesh(new THREE.BoxGeometry(a,b,dd),m);q.position.set(x,y,z);q.castShadow=true;q.receiveShadow=true;g.add(q);return q}
+  box(cx,h/2,cz,w,h,d); box(cx,1.1,cz,w+5,2,d+5,matDark);
+  box(cx,9,cz-d/2-.8,w-8,5,1.4,matGlass);
+  box(cx,9,cz+d/2+.8,w-8,5,1.4,matGlass);
+  box(cx-w/2-.8,9,cz,1.4,5,d-8,matGlass); box(cx+w/2+.8,9,cz,1.4,5,d-8,matGlass);
+  // classroom floor and 73 individual seats
+  box(cx,1.8,cz,w-10,.35,d-10,matWood);
+  const seatMat=new THREE.MeshStandardMaterial({color:0x3d5570,roughness:.7});
+  const deskMat=new THREE.MeshStandardMaterial({color:0x9a7048,roughness:.65});
+  for(let i=0;i<73;i++){
+    const row=Math.floor(i/9),col=i%9;
+    const x=cx+(col-4)*10.5, z=cz+30-row*10.5;
+    const desk=new THREE.Mesh(new THREE.BoxGeometry(7,1.2,4),deskMat);desk.position.set(x,3,z);desk.castShadow=true;g.add(desk);
+    const seat=new THREE.Mesh(new THREE.BoxGeometry(5,2.2,4),seatMat);seat.position.set(x,2.1,z+4.2);seat.castShadow=true;g.add(seat);
+  }
+  // teacher podium + upgrade screen
+  box(cx,2.7,cz-39,12,1.5,6,deskMat);
+  const screen=new THREE.Mesh(new THREE.BoxGeometry(34,13,.8),new THREE.MeshStandardMaterial({color:0x06131d,emissive:0x0b7fa0,emissiveIntensity:1.6,roughness:.25}));
+  screen.position.set(cx,11.2,cz-45);g.add(screen);
+  const label=document.createElement('div');label.textContent='APLUS ACHIEVER · 学习程序升级中';label.style.cssText='position:absolute;z-index:66;left:50%;top:72px;transform:translateX(-50%);padding:7px 14px;border:1px solid #65d9ff66;border-radius:999px;background:#06131dcc;color:#b9f1ff;font-weight:900;display:none;pointer-events:none';document.body.appendChild(label);
+  const centerLabel=document.createElement('div');centerLabel.textContent='🏫 APLUS ACHIEVER 教育中心 · 73 SEATS';centerLabel.style.cssText='position:absolute;z-index:66;left:50%;top:112px;transform:translateX(-50%);padding:6px 12px;border-radius:999px;background:#100a18dd;border:1px solid #ffd76a66;color:#ffe890;font-weight:900;display:none;pointer-events:none';document.body.appendChild(centerLabel);
+  g.userData.screen=screen;g.userData.upgradeLabel=label;g.userData.centerLabel=centerLabel;
+  scene.add(g);
+  const phase={t:0}; function animateScreen(){phase.t+=.04;screen.material.emissiveIntensity=1.1+Math.sin(phase.t)*.5;requestAnimationFrame(animateScreen)} animateScreen();
+}
+buildAplusEducationCenter();
+
 
 
 for(let x=-900;x<=900;x+=90){tree(x,-850,.8+((x+900)%180)/450);tree(x,850,.7+((x+90)%180)/500);}

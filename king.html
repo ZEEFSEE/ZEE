@@ -1187,7 +1187,7 @@ function makeEmergencyAgentMesh(a){
   return g;
 }
 function makeKingGuaranteedMarker(a){
-  // Legacy diagnostic marker retained for compatibility but hidden from the world.
+  // Legacy marker fully disabled: KING is represented only by the original human model.
   const g=new THREE.Group();
   g.visible=false;
   g.name='ZHI_KING_LEGACY_DIAGNOSTIC_MARKER';
@@ -1654,7 +1654,7 @@ function animate(){
     o.updateMatrixWorld(true);
   }
   // 不再显示诊断用黄色 KING 球；正式 KING 使用原有人形渲染。
-  if(kingGuaranteedMarker){kingGuaranteedMarker.visible=false;}
+  if(kingGuaranteedMarker){kingGuaranteedMarker.visible=false;kingGuaranteedMarker.removeFromParent();}
   updateSceneRenderProbe();
   updateAgentRenderBridge();
 

@@ -864,11 +864,14 @@ function updateKingFollowCamera(){
   }
   yaw=h;
   // KING 同步视角：镜头始终跟随 KING，但保持约 22m 后方 + 10m 高度的观察距离。
-  const backX=Math.sin(h)*22;
-  const backZ=Math.cos(h)*22;
-  camera.position.set(x-1000+backX,10.5,z-1000+backZ);
+  // 第三人称跟随：镜头固定在 KING 后方约 18m、上空 5m，轻微俯视 KING。
+  // KING 本体保持可见，镜头不再进入第一视角。
+  const backX=Math.sin(h)*18;
+  const backZ=Math.cos(h)*18;
+  const cameraHeight=11.5;
+  camera.position.set(x-1000+backX,cameraHeight,z-1000+backZ);
   camera.rotation.order='YXZ';
-  const lookX=x-1000-Math.sin(h)*8, lookY=5.5, lookZ=z-1000-Math.cos(h)*8;
+  const lookX=x-1000-Math.sin(h)*2, lookY=4.0, lookZ=z-1000-Math.cos(h)*2;
   camera.lookAt(lookX,lookY,lookZ);
   window.__zhiKingFirstPerson={x,z,heading:yaw,source:'db-travel-timeline',at:Date.now()};
   return true;

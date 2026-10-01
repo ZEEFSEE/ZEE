@@ -803,12 +803,17 @@ function makeAnimalMesh(a){
   for(const s of [-1,1]){const eye=new THREE.Mesh(new THREE.SphereGeometry(.055,8,6),dark);eye.position.set(s*.18,1.45,1.04);g.add(eye);}
   g.userData.animal=a;g.userData.worldX=Number(a.x);g.userData.worldY=Number(a.y);g.userData.target={x:Number(a.destination_x??a.x),y:Number(a.destination_y??a.y)};return g;
 }
+function addAnimalLabel(o,a){
+  if(o.userData.label)return;
+  const cvs=document.createElement('canvas');cvs.width=256;cvs.height=64;const ctx=cvs.getContext('2d');ctx.font='bold 26px sans-serif';ctx.textAlign='center';ctx.fillStyle='rgba(255,255,255,.92)';ctx.strokeStyle='rgba(0,0,0,.8)';ctx.lineWidth=5;ctx.strokeText(a.name||a.animal_type,128,40);ctx.fillText(a.name||a.animal_type,128,40);
+  const tex=new THREE.CanvasTexture(cvs);const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false}));sp.scale.set(4.5,1.1,1);sp.position.y=2.5;o.add(sp);o.userData.label=sp;
+}
 function renderAnimals(){
   const active=animals.filter(a=>a.active&&a.outdoor_only);
   for(const [id,obj] of animalMeshes){if(!active.some(a=>a.id===id)){scene.remove(obj);animalMeshes.delete(id)}}
   for(const a of active){
     let o=animalMeshes.get(a.id);
-    if(!o){o=makeAnimalMesh(a);scene.add(o);animalMeshes.set(a.id,o);}
+    if(!o){o=makeAnimalMesh(a);addAnimalLabel(o,a);scene.add(o);animalMeshes.set(a.id,o);}
     const x=Number(a.x),y=Number(a.y);if(!Number.isFinite(x)||!Number.isFinite(y))continue;
     if(!Number.isFinite(Number(o.userData.worldX))||Math.hypot(Number(o.userData.worldX)-x,Number(o.userData.worldY)-y)>40){o.userData.worldX=x;o.userData.worldY=y;}
     o.userData.target={x:Number(a.destination_x??x),y:Number(a.destination_y??y)};o.userData.pos=a;

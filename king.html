@@ -37,10 +37,11 @@ button{font:inherit;cursor:pointer}.hidden{display:none!important}
 #kingSleepOverlay.active{display:flex}
 #kingSleepOverlay div{font-size:54px;opacity:.16;filter:grayscale(1)}
 .overviewAgentRow{display:block;width:100%;border:0;border-bottom:1px solid rgba(255,255,255,.07);background:rgba(0,0,0,.16);color:#fff;text-align:left;padding:4px 6px;margin:0;cursor:pointer;font:10px system-ui}.overviewAgentRow:hover{background:rgba(255,215,106,.16);color:#ffe890}.overviewPanel.agent-selected{box-shadow:0 0 0 1px rgba(255,215,106,.4),0 10px 35px rgba(0,0,0,.55)}</style>
-</head>
+
+<style id="zhi-agent-fallback-css">#zhiAgentFallbackLayer{position:fixed;inset:0;z-index:19;pointer-events:none}.zhi-agent-fallback{position:absolute;transform:translate(-50%,-100%);padding:4px 7px;border-radius:999px;background:rgba(10,20,28,.92);border:1px solid rgba(255,255,255,.8);color:#fff;font:900 12px system-ui,sans-serif;white-space:nowrap;text-shadow:0 1px 2px #000;box-shadow:0 2px 10px #0009}.zhi-agent-fallback.king{font-size:15px;border-color:#ffd76a;color:#ffd76a;background:rgba(35,20,0,.95)}</style></head>
 <body>
 <div id="login"><div class="loginbox"><h1>👑 ZHI · KING MODE</h1><p>进入 2 km × 2 km 的 ZHI 第一视角虚拟世界。</p><p class="sub">King 与管理员账号统一身份。</p><button id="enter">进入虚拟世界</button><div id="loginmsg" class="sub" style="margin-top:10px"></div></div></div>
-<div id="game" class="hidden">
+<div id="game" class="hidden"><div id="zhiAgentFallbackLayer"></div>
 <script>
 window.zhiForceEnterKing=function(){
   var s=document.getElementById('start');
@@ -1077,6 +1078,35 @@ function makeAgentPresenceBeacon(a){
   g.traverse(ch=>{if(ch.isMesh){ch.frustumCulled=false;ch.renderOrder=999;}});
   return g;
 }
+function updateAgentFallbackLayer(){
+  const layer=$('zhiAgentFallbackLayer'); if(!layer||!camera)return;
+  const active=agents.filter(a=>a.active), seen=new Set();
+  const v=new THREE.Vector3();
+  for(const a of active){
+    const o=agentMeshes.get(a.id); if(!o||!o.visible)continue;
+    const wx=Number(o.userData.worldX), wz=Number(o.userData.worldY);
+    if(!Number.isFinite(wx)||!Number.isFinite(wz))continue;
+    v.set(wx-1000,6,wz-1000).project(camera);
+    const onScreen=v.z>-1&&v.z<1&&v.x>-1.05&&v.x<1.05&&v.y>-1.05&&v.y<1.05;
+    if(!onScreen)continue;
+    let el=document.getElementById('zhi-fallback-'+a.id);
+    if(!el){el=document.createElement('div');el.id='zhi-fallback-'+a.id;el.className='zhi-agent-fallback';layer.appendChild(el)}
+    el.classList.toggle('king',a.id===king?.id);el.textContent=(a.id===king?.id?'👑 ':'👤 ')+(a.name||'智能人');
+    el.style.left=((v.x+1)*50)+'%';el.style.top=((1-v.y)*50)+'%';el.style.display='block';seen.add(el.id);
+  }
+  [...layer.children].forEach(el=>{if(!seen.has(el.id))el.style.display='none'});
+}
+function renderPipelineDiagnostics(){
+  window.__zhiRenderDiagnostics={
+    canvasW:renderer?.domElement?.width||0,canvasH:renderer?.domElement?.height||0,
+    sceneChildren:scene?.children?.length||0,agentMeshes:agentMeshes.size,
+    kingVisible:!!agentMeshes.get(king?.id)?.visible,
+    kingWorldX:agentMeshes.get(king?.id)?.userData?.worldX,
+    kingWorldY:agentMeshes.get(king?.id)?.userData?.worldY,
+    cameraX:camera?.position?.x,cameraY:camera?.position?.y,cameraZ:camera?.position?.z,
+    renderCalls:renderer?.info?.render?.calls||0
+  };
+}
 function renderAgents(){
   // 永久可见保护层：KING 不依赖人物模型即可被确认存在。
   if(king){
@@ -1453,6 +1483,8 @@ function animate(){
   updateAnimalVisuals(dt);
   updateEducationScreenOverlay();
   updateKingFollowCamera();
+  updateAgentFallbackLayer();
+  renderPipelineDiagnostics();
   if(!$('start').classList.contains('hidden')||!controlMode){renderer.render(scene,camera);return}
   if(!overviewMode)updatePlayer(dt);
   renderer.render(scene,camera)

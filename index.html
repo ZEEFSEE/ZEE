@@ -217,6 +217,7 @@ async function loadAgentFinanceBoard(){
     signal:controller.signal
    });
    }finally{clearTimeout(timer)}
+   return rr;
   }
   let rr=await callFinanceBoard(token);
   if(rr.status===401){

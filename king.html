@@ -1159,11 +1159,10 @@ function updateAgentVisuals(dt){
 }
 
 function worldTick(){
+  // KING 的自主决策只由后台 AI Life Engine 负责。
+  // 前端不再拥有决策权，避免“网页 + cron”双重驱动造成重复目标。
   if(controlMode)return;
-  core().rpc('zhi_king_autonomy_tick')
-    .then(()=>core().rpc('zhi_world_tick'))
-    .then(()=>refresh())
-    .catch(e=>console.warn('[ZHI world tick]',e));
+  refresh().catch(e=>console.warn('[ZHI world refresh]',e));
 }
 setInterval(worldTick,5000);
 let controlMode=false;

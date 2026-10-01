@@ -973,7 +973,7 @@ async function refresh(){
   const m={data:km.data||null};
   const a={data:km.data||null};
   const ar=await safe('agents',()=>core().from('zhi_agents').select('id,name,gender,personality,life_status,active').eq('active',true).order('name'),{data:[]});
-  const pr=await safe('positions',()=>core().rpc('zhi_get_world_agent_positions'),{data:[]});
+  const pr=await safe('positions',()=>core().from('zhi_agent_world_positions').select('agent_id,x,y,current_scene,walking,speed_mps,destination_x,destination_y,heading_rad').order('agent_id'),{data:[]});
   const fr=await safe('facilities',()=>core().rpc('zhi_get_world_facilities'),{data:[]});
   const an=await safe('animals',()=>core().rpc('zhi_get_world_animals'),{data:[]});
   const ev=await safe('events',()=>core().from('zhi_fortune_events').select('id,location_code,location_name,activity_type,reward_pool,status,created_at,target_count,claimed_count').in('status',['open','running']),{data:[]});

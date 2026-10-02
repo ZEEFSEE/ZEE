@@ -1,4 +1,4 @@
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-client.js"></script><script src="settlement.js"></script><script>const sb=window.zhiSupabase;let user=null,wallet=null;
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-client.js"></script><script>const sb=window.zhiSupabase;let user=null,wallet=null;
 const money=n=>Number(n||0).toLocaleString(),$=id=>document.getElementById(id);
 function showErr(s){const e=$('authError');if(e)e.textContent=s||''}
 function showSavingsMsg(text,type='success'){const e=$('savingsMsg');if(!e)return;e.textContent=text;e.className='savings-msg show '+type;clearTimeout(window.__savingsMsgTimer);window.__savingsMsgTimer=setTimeout(()=>e.classList.remove('show'),5000)}

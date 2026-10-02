@@ -171,20 +171,10 @@ async function loadAgentFinanceBoard(force=false){if(__agentFinanceBoardLoading)
     fortune_earned:Number(x.fortune_earned||0)
   }));
 
-  const [mr,ar]=await Promise.all([
-   core.from('zhi_agent_marriages').select('male_agent_id,female_agent_id,status').eq('status','married'),
-   core.from('zhi_agents').select('id,name')
-  ]);
-  if(mr.error)console.warn('[ZHI finance] marriage read failed',mr.error);
-  if(ar.error)console.warn('[ZHI finance] agent name read failed',ar.error);
-
-  const nameMap=new Map((ar.data||[]).map(x=>[x.id,x.name]));
-  const spouseMap=new Map();
-  (mr.data||[]).forEach(m=>{
-   spouseMap.set(m.male_agent_id,nameMap.get(m.female_agent_id)||'');
-   spouseMap.set(m.female_agent_id,nameMap.get(m.male_agent_id)||'');
-  });
-  rows.forEach(x=>x.spouse=spouseMap.get(x.id)||'');
+  // The Finance Board response is self-contained. Do not make extra Core REST
+  // schema-cache calls here: one stale PostgREST cache must not blank the whole Board.
+  // Spouse data is optional and can be added by the backend later without blocking finance.
+  rows.forEach(x=>x.spouse=x.spouse||'');
   rows.sort((a,b)=>b.balance-a.balance);
 
   const alive=rows.filter(x=>x.life_status==='alive');

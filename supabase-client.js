@@ -19,8 +19,6 @@ const ZHI_AUTH_OPTIONS = {
 
 const ZHI_CORE_AUTH_OPTIONS = {
   auth: {
-    // Core reads are intentionally anonymous. The user's Finance session
-    // belongs to a different Supabase project and must never be reused here.
     persistSession: false,
     autoRefreshToken: false,
     detectSessionInUrl: false
@@ -43,9 +41,8 @@ window.zhiCoreSupabase = window.supabase.createClient(
   ZHI_CORE_PUBLISHABLE_KEY,
   ZHI_CORE_AUTH_OPTIONS
 );
+window.zhiCorePublishableKey = ZHI_CORE_PUBLISHABLE_KEY;
 
-// Frontend read diagnostics. Every KING/world read can report its exact
-// source and error without exposing privileged credentials.
 window.__zhiCoreReadErrors = window.__zhiCoreReadErrors || [];
 window.zhiCoreRead = async function(label, operation, fallback = null) {
   try {

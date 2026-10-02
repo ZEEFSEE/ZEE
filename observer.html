@@ -70,7 +70,7 @@ input{min-width:220px}.table{overflow:auto}.row{display:grid;grid-template-colum
     if(!session){$('status').innerHTML='<span class="error">请先登录 ZHI 管理员账号。</span>';return false}
     $('status').textContent='正在读取只读观测数据…';
     try{
-      const r=await fetch(endpoint,{headers:{Authorization:'Bearer '+session.access_token,apikey:window.zhiCorePublishableKey}});
+      const r=await fetch(endpoint,{headers:{Authorization:'Bearer '+session.access_token}});
       const d=await r.json().catch(()=>({}));
       if(r.status===403)throw new Error('当前账号不是管理员');
       if(!r.ok||!d.ok)throw new Error(d.error||('HTTP '+r.status));

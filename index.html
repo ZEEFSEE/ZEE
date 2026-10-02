@@ -362,7 +362,7 @@ async function loadEcoAgents(){
   core.from('zhi_agents').select('id,name,gender,personality,life_status,active').order('name'),
   core.from('zhi_agent_wallets').select('agent_id,balance'),
   core.from('zhi_agent_activities').select('agent_id,activity_type,status,location_name,started_at,ends_at'),
-  core.from('zhi_agent_world_positions').select('agent_id,x,y,current_scene,destination_scene,destination_x,destination_y,walking,walk_started_at,walk_arrive_at')
+  core.from('zhi_agent_world_positions').select('agent_id,current_scene')
  ]);
  console.log('[ZHI] agent query', {agents:ar.data?.length||0,wallets:wr.data?.length||0,activities:ac.data?.length||0,positions:pr.data?.length||0,agentError:ar.error?.message||null});
  if(!agentLayer){console.error('[ZHI] ecoAgentsLayer missing');return;}
@@ -421,9 +421,7 @@ async function loadEcoAgents(){
  });
  // 生态园里的智能人会自己移动，不再整齐排列
  function wanderAgents(){
-   // 数据库 walking=true 是跨场景移动的唯一权威状态。
-   // 前端按 walk_started_at -> walk_arrive_at 做连续插值，因此用户能看到智能体真实走向目的地，而不是瞬移。
-   const stageRect=stage?.getBoundingClientRect(); if(!stageRect)return;
+      const stageRect=stage?.getBoundingClientRect(); if(!stageRect)return;
    const bounds={
      '竞技场':[4,31,22,55],
      '中央广场':[40,26,66,58],
@@ -442,82 +440,16 @@ async function loadEcoAgents(){
      el.style.setProperty('visibility','visible','important');
      el.style.setProperty('opacity','1','important');
 
-     const isWalking=pos.walking===true || String(pos.walking)==='true';
-     if(isWalking && pos.destination_x!=null && pos.destination_y!=null){
-       let state=el.__zhiMotion;
-       const targetX=worldToStagePercent(pos.destination_x), targetY=worldToStagePercent(pos.destination_y);
-       const dbX=worldToStagePercent(pos.x), dbY=worldToStagePercent(pos.y);
-       const started=Date.parse(pos.walk_started_at||'');
-       const arrive=Date.parse(pos.walk_arrive_at||'');
-       const now=Date.now();
-
-       if(!state || state.mode!=='walking' || state.targetX!==targetX || state.targetY!==targetY){
-         const sx=Number.isFinite(dbX)?dbX:(parseFloat(el.style.left)||50);
-         const sy=Number.isFinite(dbY)?dbY:(parseFloat(el.style.top)||50);
-         state={
-           mode:'walking',
-           x:sx,y:sy,
-           targetX,targetY,
-           last:performance.now(),
-           started:Number.isFinite(started)?started:now,
-           arrive:Number.isFinite(arrive)&&arrive>now?arrive:now+180000
-         };
-         el.__zhiMotion=state;
-         el.classList.add('is-walking');
-         el.style.left=state.x+'%';
-         el.style.top=state.y+'%';
-       } else {
-         // 后端每分钟也会刷新 x/y；只在发生明显漂移时校准，避免画面跳动。
-         if(Number.isFinite(dbX)&&Math.abs(dbX-state.x)>8)state.x=dbX;
-         if(Number.isFinite(dbY)&&Math.abs(dbY-state.y)>8)state.y=dbY;
-       }
-
-       const remain=Math.max(1,state.arrive-now);
-       const dt=Math.min(0.25,(performance.now()-state.last)/1000);
-       state.last=performance.now();
-       const dx=state.targetX-state.x,dy=state.targetY-state.y;
-       const distance=Math.hypot(dx*stageRect.width/100,dy*stageRect.height/100);
-       if(remain<=0 || distance<0.5){
-         state.x=state.targetX; state.y=state.targetY;
-       }else{
-         // 以剩余时间为基准前进，保证无论刷新频率如何都会按时抵达。
-         const speed=distance/(remain/1000);
-         const step=Math.min(distance,speed*dt);
-         state.x+=dx/distance*step*100/stageRect.width;
-         state.y+=dy/distance*step*100/stageRect.height;
-       }
-       el.style.left=state.x+'%';
-       el.style.top=state.y+'%';
-       el.style.setProperty('--walk-duration','120ms');
-       el.dataset.walking='true';
-       el.querySelector('.status')?.replaceChildren(document.createTextNode('🚶 前往 '+String(pos.destination_scene||'目的地')));
-       return;
-     }
-
-     if(el.__zhiMotion?.mode==='walking'){
-       const targetScene=String(pos.current_scene||'');
-       el.__zhiMotion={mode:'arrived',x:(worldToStagePercent(pos.x)??parseFloat(el.style.left)??50),y:(worldToStagePercent(pos.y)??parseFloat(el.style.top)??50),scene:targetScene,last:performance.now()};
-       el.style.left=el.__zhiMotion.x+'%';
-       el.style.top=el.__zhiMotion.y+'%';
-     }
-
-     const scene=String(pos.current_scene||'中央广场');
-     const b=bounds[scene]||bounds['中央广场'];
-     const sleeping=act?.status==='busy' && /休息|睡觉|sleep/i.test(String(act.activity_type||'')) && String(act.location_name||'').includes('公寓');
-     if(sleeping){
-       el.classList.add('sleeping');
-       el.dataset.walking='false';
+     el.dataset.walking='false';
        el.style.setProperty('--walk-duration','1ms');
        return;
      }
      el.classList.remove('sleeping');
-     // 任务进行中时不做额外随机走动；只有数据库明确 walking=true 才显示跨场景移动。
+     // 前端不读取或同步智能人的实时位置；仅按当前场景显示。
      if(act?.status==='busy'){
        // 有任务也必须保持生态园可见活动；仅睡觉中的智能体暂停移动。
        const busyScene=scene;
-       if(!el.__zhiMotion || el.__zhiMotion.scene!==busyScene){
-         el.__zhiMotion={mode:'local',x:worldToStagePercent(pos.x)??((b[0]+b[2])/2),y:worldToStagePercent(pos.y)??((b[1]+b[3])/2),targetX:b[0]+Math.random()*(b[2]-b[0]),targetY:b[1]+Math.random()*(b[3]-b[1]),last:performance.now(),scene:busyScene};
-       }
+       if(!el.__zhiMotion || el.__zhiMotion.scene!==busyScene){ el.__zhiMotion={mode:'local',x:(b[0]+b[2])/2,y:(b[1]+b[3])/2,targetX:b[0]+Math.random()*(b[2]-b[0]),targetY:b[1]+Math.random()*(b[3]-b[1]),last:performance.now(),scene:busyScene}; }
        el.querySelector('.status')?.replaceChildren(document.createTextNode('🔴 '+String(act.activity_type||'活动')));
      }
 

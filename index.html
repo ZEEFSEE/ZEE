@@ -132,15 +132,12 @@ async function loadAgentFinanceBoard(force=false){if(__agentFinanceBoardLoading)
 
   async function callFinanceBoard(accessToken){
    const controller=new AbortController();
-   const timer=setTimeout(()=>controller.abort(),20000);
+   const timer=setTimeout(()=>controller.abort(),45000);
   let rr;
   try{
    rr=await fetch('https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-agent-finance-board',{
     method:'GET',
-    headers:{
-      Authorization:'Bearer '+accessToken,
-      apikey:window.zhiCoreSupabase.rest.headers.apikey
-    },
+    headers:{Authorization:'Bearer '+accessToken},
     signal:controller.signal
    });
    }finally{clearTimeout(timer)}

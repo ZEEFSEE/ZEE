@@ -26,7 +26,7 @@ input{min-width:220px}.table{overflow:auto}.row{display:grid;grid-template-colum
     <div><h1>🔭 ZHI · Agent Observatory</h1><div class="meta">只读观测 · 不控制智能体 · 约每 5 秒刷新</div></div>
     <div><button id="refresh">立即刷新</button> <button id="logout">退出登录</button></div>
   </div>
-  <div id="status" class="card" style="margin-top:12px">正在验证管理员会话…</div>
+  <div id="status" class="card" style="margin-top:12px">正在启动只读观测…</div>
   <div id="content" class="hidden">
     <div class="stats">
       <div class="card stat"><div class="meta">智能体</div><strong id="total">0</strong></div>
@@ -65,8 +65,20 @@ input{min-width:220px}.table{overflow:auto}.row{display:grid;grid-template-colum
   const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const dt=v=>v?new Date(v).toLocaleString():'--';
 
+  const timeout=(promise,ms,label)=>Promise.race([
+    promise,
+    new Promise((_,reject)=>setTimeout(()=>reject(new Error(label)),ms))
+  ]);
   async function load(){
-    const session=(await finance.auth.getSession()).data.session;
+    if(!finance){$('status').innerHTML='<span class="error">❌ Supabase 客户端未启动，请检查浏览器脚本加载。</span>';return false}
+    let session;
+    try{
+      const gs=await timeout(finance.auth.getSession(),6000,'管理员会话读取超时（6秒）');
+      session=gs?.data?.session||null;
+    }catch(e){
+      $('status').innerHTML='<span class="error">❌ '+esc(e?.message||'无法读取管理员会话')+'</span>';
+      return false;
+    }
     if(!session){$('status').innerHTML='<span class="error">请先登录 ZHI 管理员账号。</span>';return false}
     $('status').textContent='正在读取只读观测数据…';
     try{
@@ -124,9 +136,18 @@ input{min-width:220px}.table{overflow:auto}.row{display:grid;grid-template-colum
     $('eventsList').innerHTML=(payload.events||[]).slice(0,60).map(x=>'<div class="item"><b>'+esc(names.get(x.agent_id)||'未知智能体')+'</b> · '+esc(x.event_type||'活动')+' <span class="meta">'+dt(x.created_at)+'</span><br>'+esc(x.message||'')+(x.reward!=null?' · <b>奖励 '+money(x.reward)+' ZHI</b>':'')+'</div>').join('')||'<div class="item">暂无数据</div>';
     $('financeList').innerHTML=(payload.finance||[]).slice(0,80).map(x=>'<div class="item"><b>'+esc(names.get(x.agent_id)||'未知智能体')+'</b> · '+esc(x.entry_type||'')+' · '+esc(x.category||'')+' · <b>'+money(x.amount)+' ZHI</b><br><span class="meta">'+dt(x.created_at)+'</span> · '+esc(x.description||'')+'</div>').join('')||'<div class="item">暂无数据</div>';
   }
+  window.addEventListener('error',e=>{
+    const msg=e?.error?.message||e?.message||'前端脚本错误';
+    $('status').innerHTML='<span class="error">❌ 前端启动错误：'+esc(msg)+'</span>';
+  });
+  window.addEventListener('unhandledrejection',e=>{
+    const msg=e?.reason?.message||String(e?.reason||'Promise 错误');
+    $('status').innerHTML='<span class="error">❌ 前端请求错误：'+esc(msg)+'</span>';
+  });
   $('refresh').onclick=load;$('filter').oninput=renderAgents;$('sort').onchange=renderAgents;
-  $('logout').onclick=async()=>{await finance.auth.signOut();location.href='index.html'};
-  load();setInterval(()=>{if(document.visibilityState==='visible')load()},5000);
+  $('logout').onclick=async()=>{try{await finance.auth.signOut()}finally{location.href='index.html'}};
+  setTimeout(()=>load(),0);
+  setInterval(()=>{if(document.visibilityState==='visible')load()},5000);
 })();
 </script>
 </body></html>

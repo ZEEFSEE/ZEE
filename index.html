@@ -1,239 +1,62 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ZHI 社区</title><style>
-:root{--gold:#ffd76a;--gold2:#ffb300;--deep:#130b20;--purple:#32105c;--pink:#ff3f91;--cyan:#31e7ff}
-*{box-sizing:border-box}body{margin:0;font:15px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#fff;background:radial-gradient(circle at 20% 10%,#5a187d 0,#210b42 32%,#090611 78%);min-height:100vh}body:before{content:"";position:fixed;inset:0;pointer-events:none;background:linear-gradient(120deg,#ffffff08 1px,transparent 1px),linear-gradient(60deg,#ffffff06 1px,transparent 1px);background-size:38px 38px;mask-image:linear-gradient(to bottom,#000,transparent 85%)}button,input,select{font:inherit}button{cursor:pointer}.hidden{display:none!important}.wrap{max-width:1080px;margin:auto;padding:28px 20px 60px}.card{background:linear-gradient(145deg,#241044eF,#12091feF);border:1px solid #ffd76a55;border-radius:20px;padding:20px;margin:16px 0;box-shadow:0 12px 40px #0008,inset 0 1px #fff1}.auth{max-width:430px;margin:12vh auto}.brand{text-align:center}.brand h1{font-size:54px;letter-spacing:8px;margin:0;background:linear-gradient(180deg,#fff6b0,#ffd34d,#ff8a00);-webkit-background-clip:text;color:transparent;text-shadow:0 0 28px #ffb30066}.brand div{color:#ffe9a0;font-weight:800}.auth h2{text-align:center;color:#fff;margin:22px 0}.field{margin:13px 0}.field label{display:block;font-weight:800;color:#ffe7a1;margin-bottom:6px}.field input,.actions input,.actions select{width:100%;padding:12px;color:#fff;background:#0c0717;border:1px solid #ffd76a55;border-radius:11px;outline:none}.field input:focus,.actions input:focus{border-color:var(--gold);box-shadow:0 0 18px #ffd76a33}.primary{width:100%;padding:13px;border:1px solid #fff5a0;border-radius:11px;background:linear-gradient(135deg,#fff08a,#ffb300 45%,#ff5a00);color:#2b1000;font-weight:1000;box-shadow:0 0 24px #ff9d003d}.error{color:#ff8fae;min-height:20px;margin:8px 0}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.top h1{font-size:36px;letter-spacing:2px;background:linear-gradient(180deg,#fffde7 0%,#fff59d 20%,#ffe500 48%,#ffc400 72%,#ff9800 100%);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 8px #fff176,0 0 18px #ffd600,0 0 38px #ffb300,0 0 70px #ff8f00;font-weight:1000;filter:brightness(1.35) drop-shadow(0 0 10px #ffd600);}.balance{font-size:44px;font-weight:1000;color:#ffe06b;text-shadow:0 0 22px #ffb30055}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:15px}.actions{display:flex;gap:8px;flex-wrap:wrap}.actions>*{flex:1;min-width:105px}.actions button,.logout,.secondary{padding:11px 14px;border:1px solid #ffd76a66;background:linear-gradient(135deg,#3c1762,#24103e);color:#fff;border-radius:10px;font-weight:850}.actions button:hover,.logout:hover,.secondary:hover{border-color:var(--gold);box-shadow:0 0 18px #ffb3002e}.pill{display:inline-block;padding:6px 11px;border-radius:999px;margin:4px 3px;background:linear-gradient(135deg,#5d267f,#29114e);border:1px solid #ffd76a44;color:#ffe9a4;font-weight:750}.meta{font-size:12px;color:#cbbde0}.row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #ffffff12}.notice{padding:10px;color:#d8cce8}.savings-msg{display:none;margin-top:9px}.savings-msg.show{display:block}.gift-details{display:none}.gift-details.open{display:block}.lang{position:fixed;right:14px;top:14px;z-index:9;background:#160b28eF;border:1px solid #ffd76a66;border-radius:999px;padding:6px 10px;box-shadow:0 6px 22px #0007}.lang a{text-decoration:none;margin:0 4px;font-size:12px;font-weight:900;color:#ffe99a}.section-title{color:#ffe6a0}.card h2{color:#ffe6a0}.card b{color:#fff1a6}
- .hidden{display:none!important}</style><style>
-/* ZHI premium entertainment polish */
-.logo-glow{position:relative}.logo-glow:after{content:"";position:absolute;left:50%;top:50%;width:240px;height:80px;transform:translate(-50%,-50%);background:#ffb30022;filter:blur(28px);z-index:-1}
-.vip-strip{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}.vip-chip{padding:9px 14px;border-radius:999px;background:linear-gradient(135deg,#fff0a6,#ffc43d,#ff7a00);color:#3a1700;font-weight:1000;box-shadow:0 4px 18px #ff9d0040}.money-card{position:relative;overflow:hidden}.money-card:before{content:"";position:absolute;right:-35px;top:-45px;width:130px;height:130px;border-radius:50%;background:#ffd76a18;box-shadow:0 0 70px #ffb30025}.money-card>*{position:relative}.action-hot{background:linear-gradient(135deg,#ffdd63,#ff9d00 50%,#ff4d6d)!important;color:#2b1000!important;border-color:#fff0a0!important;box-shadow:0 0 22px #ff8c0038}.section-kicker{font-size:11px;letter-spacing:2px;color:#ff83c4;font-weight:1000;text-transform:uppercase}.gold-line{height:1px;background:linear-gradient(90deg,transparent,#ffd76a,transparent);margin:14px 0}
-</style><style>
-/* ZHI premium UI v3 */
-body{background:radial-gradient(circle at 50% -10%,#8b2378 0,#35105e 30%,#11091d 68%,#07040c 100%)}
-.wrap{padding-top:38px}.card{backdrop-filter:blur(10px);transition:transform .2s,box-shadow .2s,border-color .2s}.card:hover{transform:translateY(-2px);box-shadow:0 16px 50px #000a,0 0 28px #ffb30012;border-color:#ffd76a88}
-.top{padding:8px 0 2px}.top h1{font-size:32px;letter-spacing:2px;background:linear-gradient(180deg,#fff9c4 0%,#ffe66d 28%,#ffc107 58%,#ff9800 100%);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 12px #ffd54a66,0 0 28px #ff980044;font-weight:1000}
-.top .logout{background:linear-gradient(135deg,#3b165c,#170b28)}
-.section-title{display:flex;align-items:center;gap:8px;font-size:20px}
-.section-title:before{content:"";width:5px;height:22px;border-radius:5px;background:linear-gradient(#fff0a0,#ff8a00);box-shadow:0 0 12px #ffb300}
-.card h2{margin-top:4px}
-.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:12px}
-.stat{padding:13px;border-radius:14px;background:#08050f88;border:1px solid #ffd76a22}.stat .meta{margin-bottom:4px}.stat strong{font-size:20px;color:#ffe08a}
-@keyframes shimmer{0%{background-position:-300px 0}100%{background-position:300px 0}}
-.balance{background:linear-gradient(90deg,#fff1a6,#ffd34d,#fff5bf,#ffae00);background-size:300px 100%;-webkit-background-clip:text;color:transparent;animation:shimmer 4s linear infinite}
-</style><style>
-.top h1:after{content:"";position:absolute;inset:-8px -18px;z-index:-1;border-radius:18px;background:radial-gradient(ellipse,#ffd6002e 0%,#ffb30012 42%,transparent 72%);filter:blur(8px)}
-.top h1{position:relative}
-</style><style>
-/* Compact activity-first layout */
-.wrap{max-width:1180px;padding:24px 18px 42px}
-.wrap>.card:not(:first-child),#app>.card:not(:first-child){margin:8px 0;padding:12px 14px;border-radius:13px}
-.grid{gap:8px}.card h2{font-size:16px;margin:2px 0 7px}.section-title{font-size:16px}.section-title:before{height:17px;width:4px}
-.actions{gap:6px}.actions input,.actions select,.actions button,.secondary,.logout{padding:8px 10px;min-height:36px}
-.row{padding:7px 0}.pill{padding:4px 8px;margin:2px;font-size:12px}
-.meta{font-size:11px}.stat-grid{gap:6px}.stat{padding:8px 10px}
-#historyDetails{max-height:240px;overflow:auto}
-#adminPanel>.card{margin:7px 0;padding:11px 13px}
-#adminPanel .grid{gap:6px}
-#adminPanel .grid>div{font-size:12px}
-#adminPanel h2{font-size:15px}
-.collapsed-panel{display:none!important}.collapsed-panel.open{display:block!important}
-</style>
-<style id="zhi-agent-finance-board-ui">
-#agentFinanceBoard .stat-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
-#agentFinanceBoard #agentFinanceRows .row{padding:10px 12px;border:1px solid #ffffff12;border-radius:12px;margin-bottom:6px;background:linear-gradient(90deg,#ffffff06,#ffffff02)}
-#agentFinanceBoard #agentFinanceRows .row>span:first-child{font-size:14px}
-#agentFinanceBoard .agent-gender{font-size:13px;font-weight:800;margin-left:4px}
-#agentFinanceBoard .agent-spouse{display:inline-flex;align-items:center;margin-left:6px;padding:3px 8px;border-radius:999px;border:1px solid #ffd76a55;background:#ffd76a12;color:#ffe9a3;font-size:12px;font-weight:800}
-@media(max-width:800px){#agentFinanceBoard .stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-</style></head><body><section id="authScreen" class="auth card"><div class="brand"><h1>ZHI</h1><div>ZHI 智能体游戏社区</div></div><h2>登录 ZHI</h2><div class="field"><label>用户名</label><input id="authUsername" autocomplete="username" placeholder="请输入用户名"></div><div class="field"><label>密码</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="请输入密码"></div><div id="authError" class="error"></div><button id="authSubmit" class="primary">登录</button><p class="meta" style="text-align:center">智能体自运转娱乐系统</p></section>
-<main id="app" class="hidden"><div class="wrap"><div class="top"><div><h1 style="margin:0">ZHI 社区</h1><div class="meta"><span id="topUsername">--</span> · <span id="topZId">--</span></div></div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><button id="logout" class="logout">退出登录</button></div></div>
-
-<div class="card" id="agentFinanceBoard"><div class="top"><h2>💰 智能体财务 Board</h2><button id="agentFinanceToggle" class="secondary" type="button">展开</button><span class="pill">LIVE · ZHI 财富</span></div><div id="agentFinanceDetails" class="hidden"><div class="stat-grid"><div class="stat"><div class="meta">智能体总资产</div><strong id="agentTotalBalance">0 ZHI</strong></div><div class="stat"><div class="meta">存活</div><strong id="agentAliveCount">0</strong></div><div class="stat"><div class="meta">死亡</div><strong id="agentDeadCount">0</strong></div><div class="stat"><div class="meta">当前奖池</div><strong id="agentPrizePool">0 ZHI</strong></div></div><div id="agentFinanceLegend" class="meta" style="margin:10px 0 4px">👥 人物信息：姓名 · 性别 · 性格 · 婚姻关系</div><div id="agentFinanceRows" style="margin-top:10px"></div></div></div><div class="card" id="fortuneAdminCard"><div class="top"><h2>🧧 财神爷撒币</h2><span class="pill">管理员专用</span></div><div class="actions"><input id="fortuneAmount" type="number" min="1" step="1" placeholder="撒币数量 ZHI"><select id="fortuneLocation"><option>🌳 探索森林</option><option>🏟️ 竞技场</option><option>🌸 中央广场</option><option>🏪 商业街</option><option>🎡 娱乐区</option><option>🎁 隐藏宝箱区</option></select><input id="fortuneActivity" placeholder="活动名称（可选）"><button id="fortuneDropBtn" class="action-hot">🧧 立即撒币</button></div><div id="fortuneMsg" class="notice"></div><div id="fortuneDrops"></div><div class="card logo-glow" style="text-align:center;border-color:#ffd76a88"><div style="font-size:12px;color:#ff8ed0;font-weight:900;letter-spacing:2px">✨ 智能体自运转娱乐系统 ✨</div><div style="font-size:26px;font-weight:1000;color:#fff;margin:6px 0">财富 · 娱乐 · 激情 · 自由流转</div><div class="vip-strip"><span class="vip-chip">💰 ZHI 财富</span><span class="vip-chip">🔥 热力社区</span><span class="vip-chip">✨ 智能体自运转</span></div><div class="meta">欢迎进入 ZHI 多金娱乐社区，尽情体验你的 ZHI 世界</div><button id="zhiAdminChatHeroBtn" type="button" class="secondary" style="margin-top:12px;padding:10px 20px;border-radius:999px;background:linear-gradient(135deg,#fff08a,#ffb300 48%,#ff5a00);color:#2b1000;border:1px solid #ffe38a;font-weight:1000;box-shadow:0 6px 20px #0007;display:none">💬 与智能人交流</button></div><div class="card money-card"><div class="section-kicker">💎 VIP WEALTH · ZHI CLUB</div><div class="meta">我的 ZHI 余额</div><div id="balance" class="balance">0</div><span class="pill">💰 钱包</span><span class="pill">🎁 转赠</span><span class="pill">🏦 存储</span><span class="pill">💳 贷款</span></div>
-<div class="grid"><div class="card"><h2>🎁 ZHI 转赠</h2><div class="actions"><input id="transferUsername" placeholder="收赠用户名"><input id="transferAmount" type="number" min="1" placeholder="数量"><button id="transferBtn" class="action-hot">转赠</button></div><div id="transferError" class="error"></div></div>
-<div class="card"><h2>🏦 ZHI 存储</h2><div class="actions"><input id="saveAmount" type="number" min="1" placeholder="存入数量"><button id="saveBtn" class="action-hot">存入</button></div><div class="actions"><input id="withdrawAmount" type="number" min="1" placeholder="取出数量"><button id="withdrawBtn">取出</button><button id="claimBtn">领取利息</button></div><div id="savingsMsg" class="savings-msg"></div></div>
-<div class="card"><h2>💳 ZHI 贷款</h2><div id="loanLimit" class="meta">最高可贷 -- ZHI</div><div class="actions"><input id="loanAmount" type="number" min="1" placeholder="金额"><button id="loanBtn" class="action-hot">贷款</button><button id="repayBtn">还款</button></div><div id="loanMsg" class="notice"></div></div></div>
-<div class="card"><h2>📊 我的金融中心</h2><div class="grid"><div>钱包<br><b id="financeWallet">0 ZHI</b></div><div>存储<br><b id="financeSavings">0 ZHI</b></div><div>贷款<br><b id="financeLoan">0 ZHI</b></div><div>应计利息<br><b id="financeInterest">0 ZHI</b></div><div>贷款利率<br><b id="financeRate">--</b></div><div>贷款额度<br><b id="financeLimit">0 ZHI</b></div></div></div>
-<div id="giftNotice" class="card hidden"></div>
-<div class="card" id="historyCard">
- <div class="top"><h2>📒 ZHI 流水</h2><button id="historyToggle" class="secondary" type="button">展开</button></div>
- <div id="historyDetails" class="hidden"><div id="history"></div></div>
-</div>
-<div id="adminPanel" class="hidden"><div class="card"><div class="top"><h2>🔭 智能体观测</h2><a class="secondary" href="agent-observatory.html?v=20261002-live" style="text-decoration:none;display:inline-block">打开 Agent Observatory</a></div><div class="meta">只读观测 · 不控制智能体</div></div><div class="card"><h2>🏦 财神爷金融中心</h2><div class="grid"><div>财神爷总余额<br><b id="tfTotal">0 ZHI</b></div><div>可用余额<br><b id="tfAvailable">0 ZHI</b></div><div>用户存储<br><b id="tfSavings">0 ZHI</b></div><div>用户贷款<br><b id="tfLoans">0 ZHI</b></div><div>待收贷款利息<br><b id="tfLoanInterest">0 ZHI</b></div><div>已付存储利息<br><b id="tfSavingsInterest">0 ZHI</b></div><div>发行模式<br><b id="tfSupply">弹性发行</b></div></div></div>
-<div class="card"><div class="top"><h2>👥 用户资金</h2><button id="adminUserFundsToggle" class="secondary" type="button">展开</button></div><div id="adminUserFundsDetails" class="collapsed-panel"><div id="adminUsers"></div></div></div>
-<div class="card"><div class="top"><h2>📒 资金流水</h2><button id="adminFundFlowsToggle" class="secondary" type="button">展开</button></div><div id="adminFundFlowsDetails" class="collapsed-panel"><div class="actions"><input id="afUser" placeholder="用户名筛选"><select id="afFilter"><option value="all">全部</option><option value="credit">收入</option><option value="debit">支出</option></select><button id="afRefresh">刷新</button></div><div class="grid"><div>总流入<br><b id="afIn">0 ZHI</b></div><div>总流出<br><b id="afOut">0 ZHI</b></div><div>净额<br><b id="afNet">0 ZHI</b></div></div><div id="afList"></div></div></div></div></main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-client.js?v=20260930-05"></script><script>
-(function(){
-  function bindZHIAdminLogin(){
-    if(window.__zhiLoginBound)return true;
-    const btn=document.getElementById('authSubmit'),u=document.getElementById('authUsername'),p=document.getElementById('authPassword'),err=document.getElementById('authError');
-    if(!btn||!u||!p||!window.zhiSupabase)return false;
-    window.__zhiLoginBound=true;
-    const show=s=>{if(err)err.textContent=s||''};
-    btn.addEventListener('click',async function(e){
-      e.preventDefault(); if(btn.disabled)return;
-      const username=u.value.trim(),password=p.value;
-      if(!/^[a-zA-Z0-9_]{2,24}$/.test(username))return show('用户名只能用 2-24 位英文字母、数字或下划线');
-      if(password.length<6)return show('密码至少6位');
-      btn.disabled=true;show('');
-      try{
-        const {data,error}=await window.zhiSupabase.auth.signInWithPassword({email:username.toLowerCase()+'@zhi-demo.com',password});
-        if(error)throw error;
-        if(!data?.user)throw new Error('登录成功但没有取得用户会话');
-        document.getElementById('authScreen')?.classList.add('hidden');
-        document.getElementById('app')?.classList.remove('hidden');
-        if(typeof window.loadZHIAfterLogin==='function')await window.loadZHIAfterLogin(data.user);
-        else if(typeof window.load==='function')await window.load(data.user);
-      }catch(e){show(e?.message||'登录失败')}
-      finally{btn.disabled=false}
-    },{capture:true});
-    return true;
-  }
-  if(!bindZHIAdminLogin())document.addEventListener('DOMContentLoaded',bindZHIAdminLogin,{once:true});
-})();
-</script><script>const sb=window.zhiSupabase;let user=null,wallet=null;
-const money=n=>Number(n||0).toLocaleString(),$=id=>document.getElementById(id);
-function showErr(s){const e=$('authError');if(e)e.textContent=s||''}
-function showSavingsMsg(text,type='success'){const e=$('savingsMsg');if(!e)return;e.textContent=text;e.className='savings-msg show '+type;clearTimeout(window.__savingsMsgTimer);window.__savingsMsgTimer=setTimeout(()=>e.classList.remove('show'),5000)}
-async function loadLoanLimit(){const r=await sb.rpc('get_loan_limit');if(!r.error&&$('loanLimit'))$('loanLimit').textContent='最高可贷 '+money(r.data?.max_loan||0)+' ZHI'}
-async function loadFinancePanel(){
- const w=await sb.from('wallets').select('balance').eq('user_id',user.id).maybeSingle();
- const s=await sb.from('zhi_savings').select('principal').eq('user_id',user.id).maybeSingle();
- const l=await sb.from('zhi_loans').select('outstanding,accrued_interest,annual_rate').eq('user_id',user.id).gt('outstanding',0);
- const lim=await sb.rpc('get_loan_limit');const rows=l.data||[];
- if($('financeWallet'))$('financeWallet').textContent=money(w.data?.balance||0)+' ZHI';
- if($('financeSavings'))$('financeSavings').textContent=money(s.data?.principal||0)+' ZHI';
- if($('financeLoan'))$('financeLoan').textContent=money(rows.reduce((a,x)=>a+Number(x.outstanding||0),0))+' ZHI';
- if($('financeInterest'))$('financeInterest').textContent=money(rows.reduce((a,x)=>a+Number(x.accrued_interest||0),0))+' ZHI';
- if($('financeRate'))$('financeRate').textContent=(rows[0]?.annual_rate||8)+'%';
- if($('financeLimit'))$('financeLimit').textContent=money(lim.data?.max_loan||0)+' ZHI';
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ZHI Community</title>
+<style>
+:root{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#172033;background:#f5f7fa}
+*{box-sizing:border-box}body{margin:0}.shell{max-width:1100px;margin:auto;padding:24px 16px 48px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px}
+.logo{font-size:30px;font-weight:900;letter-spacing:2px}.sub{font-size:13px;color:#687386}
+button{border:1px solid #d9dee7;background:#fff;border-radius:10px;padding:9px 14px;cursor:pointer;font-weight:700}
+button:hover{background:#f0f3f7}.card{background:#fff;border:1px solid #e1e6ee;border-radius:14px;padding:18px;margin:12px 0;box-shadow:0 3px 16px #17203308}
+.auth{max-width:400px;margin:12vh auto}.auth h1{text-align:center;font-size:44px;margin:0}.auth h2{text-align:center}
+.field{margin:12px 0}.field label{display:block;font-weight:700;margin-bottom:6px}.field input{width:100%;padding:12px;border:1px solid #d9dee7;border-radius:9px;font:inherit}
+.primary{width:100%;background:#172033;color:white;border-color:#172033}.error{color:#c62828;min-height:20px;margin:8px 0}.hidden{display:none!important}
+.status{padding:10px 12px;border-radius:9px;background:#f1f4f8;color:#596579;font-size:13px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.stat{padding:14px;background:#f7f9fb;border-radius:10px}.stat span{display:block;color:#718096;font-size:12px}.stat strong{display:block;font-size:24px;margin-top:4px}
+.section-head{display:flex;justify-content:space-between;align-items:center;gap:10px}.section-head h2{margin:0;font-size:18px}
+.agent{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:10px;padding:12px 0;border-top:1px solid #edf0f4;font-size:14px}.agent:first-child{border-top:0}
+.muted{color:#718096;font-size:12px}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#36a269;margin-right:6px}.empty{padding:24px;text-align:center;color:#718096}
+@media(max-width:700px){.stats{grid-template-columns:repeat(2,1fr)}.agent{grid-template-columns:1fr 1fr}.wide{grid-column:1/-1}}
+</style></head><body>
+<section id="login" class="card auth"><h1>ZHI</h1><div class="sub" style="text-align:center">Community · 智能人社区</div><h2>登录</h2>
+<div class="field"><label>用户名</label><input id="username" autocomplete="username"></div>
+<div class="field"><label>密码</label><input id="password" type="password" autocomplete="current-password"></div>
+<div id="loginError" class="error"></div><button id="loginBtn" class="primary">登录</button></section>
+<main id="app" class="shell hidden"><header><div><div class="logo">ZHI Community</div><div class="sub">只读社区观察 · 数据来自现有数据库</div></div><button id="logout">退出登录</button></header>
+<div id="status" class="status">正在连接社区…</div>
+<section class="card"><div class="stats">
+<div class="stat"><span>智能人</span><strong id="total">—</strong></div><div class="stat"><span>活跃</span><strong id="active">—</strong></div><div class="stat"><span>存活</span><strong id="alive">—</strong></div><div class="stat"><span>近 1 小时活动</span><strong id="events">—</strong></div>
+</div></section>
+<section class="card"><div class="section-head"><h2>社区智能人</h2><span class="muted" id="updated">—</span></div><div id="agents" style="margin-top:10px"></div></section>
+<section class="card"><div class="section-head"><h2>最近发生</h2><span class="muted">只读</span></div><div id="activity" style="margin-top:10px"></div></section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-client.js?v=20261003-simple"></script>
+<script>
+const sb=window.zhiSupabase,$=id=>document.getElementById(id),money=n=>Number(n||0).toLocaleString();
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+async function login(){
+ const u=$("username").value.trim(),p=$("password").value;$("loginError").textContent="";
+ if(!/^[a-zA-Z0-9_]{2,24}$/.test(u))return $("loginError").textContent="请输入有效用户名";
+ if(p.length<6)return $("loginError").textContent="密码至少 6 位";
+ $("loginBtn").disabled=true;
+ try{const r=await sb.auth.signInWithPassword({email:u.toLowerCase()+"@zhi-demo.com",password:p});if(r.error)throw r.error;await start(r.data.user)}
+ catch(e){$("loginError").textContent=e?.message||"登录失败"}finally{$("loginBtn").disabled=false}
 }
-async function takeLoan(){const a=Math.floor(Number($('loanAmount')?.value));if(!Number.isFinite(a)||a<1)return alert('请输入至少 1 ZHI');const r=await sb.rpc('take_zhi_loan',{p_amount:a});if(r.error)return alert(r.error.message);$('loanAmount').value='';if($('loanMsg'))$('loanMsg').textContent='贷款 '+money(a)+' ZHI 已到账';await loadFinancePanel();await load()}
-async function repayLoan(){const a=Math.floor(Number($('loanAmount')?.value));if(!Number.isFinite(a)||a<1)return alert('请输入还款金额');const r=await sb.rpc('repay_zhi_loan',{p_amount:a});if(r.error)return alert(r.error.message);$('loanAmount').value='';if($('loanMsg'))$('loanMsg').textContent='已还款 '+money(r.data?.repaid||a)+' ZHI';await loadFinancePanel();await load()}
-async function saveZhi(){const a=Math.floor(Number($('saveAmount')?.value));if(!Number.isFinite(a)||a<1)return showSavingsMsg('请输入至少 1 ZHI','error');const r=await sb.rpc('save_zhi',{p_amount:a});if(r.error)return showSavingsMsg('存入失败：'+r.error.message,'error');$('saveAmount').value='';showSavingsMsg('✅ 已成功存入 '+money(a)+' ZHI 到财神爷','success');await load()}
-async function withdrawZhi(){const a=Math.floor(Number($('withdrawAmount')?.value));if(!Number.isFinite(a)||a<1)return showSavingsMsg('请输入取款金额','error');const r=await sb.rpc('withdraw_zhi',{p_amount:a});if(r.error)return showSavingsMsg('取款失败：'+r.error.message,'error');$('withdrawAmount').value='';showSavingsMsg('✅ 已成功取出 '+money(a)+' ZHI，已回到钱包','success');await load()}
-async function claimSavings(){const r=await sb.rpc('claim_zhi_savings');if(r.error)return showSavingsMsg('领取利息失败：'+r.error.message,'error');const n=Number(r.data?.interest||0);showSavingsMsg(n>0?'💰 已成功领取 '+money(n)+' ZHI 利息':'目前还没有可领取的整数利息',n>0?'success':'error');await load()}
-async function loadGiftNotice(){
- const r=await sb.from('transactions').select('id,amount,description,metadata,created_at,read_at').eq('user_id',user.id).eq('type','transfer_in').order('created_at',{ascending:false}).limit(20);const box=$('giftNotice'),btn=$('giftNoticeBtn'),count=$('giftNoticeCount');if(!box||!btn||!count)return;
- if(r.error||!r.data?.length){btn.style.display='none';box.classList.add('hidden');return}const data=r.data,unread=data.filter(x=>!x.read_at),visible=(unread.length?unread:data).slice(0,5);count.textContent=unread.length;btn.style.display='block';box.classList.remove('hidden');
- box.innerHTML='<div class="gift-toggle" id="giftToggle"><span>🎁 <b>'+(unread.length?'未读转赠 / Unread gifts':'转赠记录 / Gift history')+'</b></span><span class="gift-arrow" id="giftArrow">▼</span></div><div class="gift-details" id="giftDetails">'+visible.map(x=>'<div class="gift-row"><b>'+String(x.metadata?.from_username||'用户 / User')+'</b> 赠送了 <b>'+money(x.amount)+' ZHI</b><br><span style="color:#999">'+new Date(x.created_at).toLocaleString()+'</span></div>').join('')+'</div>';
- const t=$('giftToggle'),d=$('giftDetails'),a=$('giftArrow');t.onclick=()=>{d.classList.toggle('open');a.classList.toggle('open')}
+async function fetchCommunity(){
+ const s=(await sb.auth.getSession()).data?.session;if(!s)throw new Error("登录状态已失效，请重新登录");
+ const c=new AbortController(),t=setTimeout(()=>c.abort(),12000);
+ try{const r=await fetch("https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-agent-observer",{headers:{Authorization:"Bearer "+s.access_token},signal:c.signal});
+ const d=await r.json().catch(()=>({}));if(r.status===401)throw new Error("登录状态已失效，请重新登录");if(r.status===403)throw new Error("当前账号没有社区观察权限");if(!r.ok||!d.ok)throw new Error(d.error||"社区数据读取失败");return d}
+ finally{clearTimeout(t)}
 }
-async function markGiftNotificationsRead(){const r=await sb.rpc('mark_transfer_notifications_read');if(r.error)return alert(r.error.message);await loadGiftNotice()}
-async function transferZHI(){const u=$('transferUsername')?.value.trim(),a=Math.floor(Number($('transferAmount')?.value));if(!u)return $('transferError').textContent='请输入收赠用户名';if(!Number.isFinite(a)||a<1)return $('transferError').textContent='请输入有效数量';if(a>Number(wallet?.balance||0))return $('transferError').textContent='余额不足';if(!confirm('确定转赠 '+money(a)+' ZHI 给 '+u+'？'))return;$('transferBtn').disabled=true;try{const core=window.zhiCoreSupabase;let virtual=null;if(core){const qr=await core.from('zhi_agents').select('id,name,active,life_status').ilike('name',u).limit(10);if(qr.error)throw qr.error;const matches=(qr.data||[]).filter(x=>x.active===true&&String(x.life_status||'').toLowerCase()==='alive');if(matches.length>1)throw new Error('虚拟人名字重复，请联系管理员');if(matches.length===1)virtual=matches[0]}if(virtual){const sr=await sb.auth.getSession();const token=sr.data?.session?.access_token;if(!token)throw new Error('登录状态已失效，请重新登录');const r=await fetch('https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-admin-sponsor',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token,'apikey':window.zhiSupabase.rest.headers.apikey},body:JSON.stringify({agent_id:virtual.id,amount:a,note:'管理员通过转赠功能转赠给虚拟人 '+virtual.name})});const data=await r.json().catch(()=>({}));if(!r.ok||data.ok===false)throw new Error(data.error||data.message||'虚拟人转赠失败');}else{const r=await sb.rpc('transfer_zhi',{p_to_username:u,p_amount:a});if(r.error)throw r.error}$('transferUsername').value='';$('transferAmount').value='';alert('转赠成功 / Transfer sent');await load()}catch(e){$('transferError').textContent=e.message||'转赠失败'}finally{$('transferBtn').disabled=false}}
-async function releaseFortune(){const a=Math.floor(Number($('fortuneAmount')?.value));const loc=$('fortuneLocation')?.value||'中央广场';const activity=($('fortuneActivity')?.value||'财神爷撒币').trim();const msg=$('fortuneMsg');if(!Number.isFinite(a)||a<1){if(msg)msg.textContent='请输入至少 1 ZHI';return}if(!confirm('确定从你的管理员账户撒出 '+money(a)+' ZHI？'))return;const b=$('fortuneDropBtn');if(b)b.disabled=true;try{const r=await sb.rpc('admin_release_fortune',{p_amount:a,p_location:loc,p_activity:activity});if(r.error)throw r.error;$('fortuneAmount').value='';$('fortuneActivity').value='';if(msg)msg.textContent='🧧 已撒出 '+money(a)+' ZHI 到 '+loc+'，活动：'+activity+'；管理员余额已扣除 '+money(a)+' ZHI';await load();await loadFortuneDrops()}catch(e){if(msg)msg.textContent='撒币失败：'+(e.message||'未知错误')}finally{if(b)b.disabled=false}}
-let __agentFinanceBoardLoading=false;let __agentFinanceBoardLastAt=0;
-async function loadAgentFinanceBoard(force=false){if(__agentFinanceBoardLoading)return;const details=$('agentFinanceDetails');if(!force&&details?.classList.contains('hidden'))return;if(!force&&Date.now()-__agentFinanceBoardLastAt<20000)return;__agentFinanceBoardLoading=true;__agentFinanceBoardLastAt=Date.now();
- const core=window.zhiCoreSupabase,finance=window.zhiSupabase;
- if(!core||!finance)return;
- const box=$('agentFinanceRows');
- const setMsg=(msg)=>{if(box)box.innerHTML='<div class="notice">'+msg+'</div>'};
- try{
-  const sr=await finance.auth.getSession();
-  const session=sr?.data?.session;
-  let token=session?.access_token;
-  if(!token){setMsg('请先登录管理员账号后查看智能体财务 / Please sign in as admin');return}
-
-  async function callFinanceBoard(accessToken){
-   const controller=new AbortController();
-   const timer=setTimeout(()=>controller.abort(),45000);
-  let rr;
-  try{
-   rr=await fetch('https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-agent-finance-board',{
-    method:'GET',
-    headers:{Authorization:'Bearer '+accessToken},
-    signal:controller.signal
-   });
-   }finally{clearTimeout(timer)}
-   return rr;
-  }
-  let rr=await callFinanceBoard(token);
-  if(!rr || typeof rr.status!=='number'){
-   throw new Error('财务 Board 请求没有返回有效 HTTP 响应，请刷新页面后重试');
-  }
-  if(rr.status===401){
-   const refreshed=await finance.auth.refreshSession();
-   const fresh=refreshed?.data?.session;
-   if(fresh?.access_token){
-    token=fresh.access_token;
-    rr=await callFinanceBoard(token);
-    if(!rr || typeof rr.status!=='number')throw new Error('刷新登录状态后财务 Board 没有返回有效响应');
-   }
-  }
-
-  const payload=await rr.json().catch(()=>({}));
-  if(!rr.ok||payload.error)throw new Error(payload.error||('HTTP '+rr.status));
-
-  const rows=(payload.rows||[]).map(x=>({
-    ...x,
-    balance:Number(x.balance||0),
-    total_earned:Number(x.total_earned||0),
-    total_spent:Number(x.total_spent||0),
-    fortune_earned:Number(x.fortune_earned||0)
-  }));
-
-  // The Finance Board response is self-contained. Do not make extra Core REST
-  // schema-cache calls here: one stale PostgREST cache must not blank the whole Board.
-  // Spouse data is optional and can be added by the backend later without blocking finance.
-  rows.forEach(x=>x.spouse=x.spouse||'');
-  rows.sort((a,b)=>b.balance-a.balance);
-
-  const alive=rows.filter(x=>x.life_status==='alive');
-  const dead=rows.filter(x=>x.life_status==='dead');
-  const total=rows.reduce((s,x)=>s+x.balance,0);
-
-  if($('agentTotalBalance'))$('agentTotalBalance').textContent=money(total)+' ZHI';
-  if($('agentAliveCount'))$('agentAliveCount').textContent=alive.length;
-  if($('agentDeadCount'))$('agentDeadCount').textContent=dead.length;
-  if($('agentPrizePool'))$('agentPrizePool').textContent=money(Number(payload.prize_pool||0))+' ZHI';
-  if(!box)return;
-
-  const safe=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-  const gi=x=>String(x.gender||'').includes('女')?'♀️':'♂️';
-  box.innerHTML=rows.length?rows.map((x,i)=>
-   '<div class="row agent-finance-row" style="gap:10px;align-items:center;flex-wrap:wrap">'+
-    '<span class="agent-finance-name"><b>'+String(i+1)+'. '+safe(x.name)+'</b> <span class="meta">'+gi(x)+' '+safe(x.personality||'')+'</span>'+
-    (x.spouse?'<span class="agent-spouse">💍 '+safe(x.spouse)+'</span>':'')+
-    '</span>'+
-    '<span><span class="meta">余额</span> <b>'+money(x.balance)+' ZHI</b></span>'+
-    '<span><span class="meta">累计赚取</span> <b>'+money(x.total_earned)+' ZHI</b></span>'+
-    '<span class="fortune-income"><span class="meta">🎁 撒币获得</span> <b>'+money(x.fortune_earned)+' ZHI</b></span>'+
-    '<span><span class="meta">累计消费</span> <b>'+money(x.total_spent)+' ZHI</b></span>'+
-    '<span class="pill">'+(x.life_status==='alive'?'🟢 存活':'☠️ 已死亡')+'</span>'+
-   '</div>'
-  ).join(''):'<div class="notice">暂无智能体财务数据 / No agent finance data</div>';
- }catch(e){
-  console.error('[ZHI agent finance board]',e);
-  const msg=e?.name==='AbortError'?'财务 Board 读取超时，请稍后刷新':'财务 Board 读取失败：'+(e?.message||'未知错误');
-  setMsg(msg);
- }
+function render(d){
+ const s=d.summary||{};$("total").textContent=s.total??0;$("active").textContent=s.active??0;$("alive").textContent=s.alive??0;$("events").textContent=s.events_1h??0;$("updated").textContent=d.generated_at?new Date(d.generated_at).toLocaleString():"—";
+ const a=d.agents||[];$("agents").innerHTML=a.length?a.map(x=>'<div class="agent"><div><b>'+esc(x.name)+'</b><div class="muted">'+esc(x.personality||"未设置性格")+'</div></div><div>'+(x.active===true?'<span class="dot"></span>活跃':'○ 空闲')+'</div><div>'+((String(x.life_status||"").toLowerCase()==="alive")?"🟢 存活":"—")+'</div><div>'+money(x.balance)+' ZHI</div></div>').join(""):'<div class="empty">暂无智能人数据</div>';
+ const e=d.events||[];$("activity").innerHTML=e.length?e.slice(0,30).map(x=>'<div class="agent"><div><b>'+esc(x.event_type||"社区事件")+'</b><div class="muted">'+esc(x.message||"")+'</div></div><div class="wide muted">'+(x.created_at?new Date(x.created_at).toLocaleString():"—")+'</div><div>'+((x.reward)?money(x.reward)+" ZHI":"")+'</div></div>').join(""):'<div class="empty">暂无最近活动</div>';
 }
-async function loadAdminUsers(){
- const box=$('adminUsers');if(!box)return;box.innerHTML='<div class="notice">加载中 / Loading...</div>';const r=await sb.rpc('admin_get_user_overview');if(r.error){box.innerHTML='<div class="notice">加载失败 / Failed: '+r.error.message+'</div>';return}
- box.innerHTML=(r.data||[]).map(x=>'<div style="padding:12px 0;border-bottom:1px solid #eee"><div style="display:flex;justify-content:space-between"><b>'+x.username+'</b><b>'+money(x.balance)+' ZHI</b></div><div class="meta">钱包 / Wallet: '+money(x.balance)+' ZHI · 锁定 / Locked: '+money(x.locked_balance||0)+' ZHI</div></div>').join('')||'<div class="notice">暂无用户 / No users yet</div>';
-}
-async function loadAdminFundFlows(){
- const box=$('afList');if(!box)return;box.innerHTML='<div class="notice">加载中 / Loading...</div>';const r=await sb.rpc('admin_get_fund_flows',{p_limit:500});if(r.error){box.innerHTML='<div class="notice">加载失败 / Failed: '+r.error.message+'</div>';return}
- const d=r.data||{},filter=$('afFilter')?.value||'all',uf=($('afUser')?.value||'').trim().toLowerCase(),rows=(d.rows||[]).filter(x=>(filter==='all'||x.flow_type===filter)&&(!uf||String(x.username||'').toLowerCase().includes(uf)));
- if($('afIn'))$('afIn').textContent=money(d.total_inflow||0)+' ZHI';if($('afOut'))$('afOut').textContent=money(d.total_outflow||0)+' ZHI';if($('afNet'))$('afNet').textContent=(Number(d.net||0)>=0?'+':'')+money(d.net||0)+' ZHI';if($('afCount'))$('afCount').textContent=rows.length;
- const labels={savings_deposit:'🏦 存入',savings_withdrawal:'↩️ 取出',loan_disbursement:'💳 贷款发放',savings_interest:'📈 存款利息',loan_interest_accrual:'📊 贷款计息',loan_repayment:'↩️ 还款',transfer_out:'🎁 转赠',transfer_in:'🎁 收到转赠',signup_bonus:'🎁 注册奖励'};
- box.innerHTML=rows.slice(0,200).map(x=>'<div style="padding:10px 0;border-bottom:1px solid #eee"><div style="display:flex;justify-content:space-between"><b>'+String(x.username||'系统')+'</b><b>'+(Number(x.amount)>=0?'+':'')+money(x.amount)+' ZHI</b></div><div class="meta">'+(labels[x.flow_type]||labels[x.type]||x.type||'流水')+' · '+new Date(x.created_at).toLocaleString()+'</div><div style="font-size:12px">'+String(x.description||'')+'</div></div>').join('')||'<div class="notice">暂无匹配流水 / No matching flows</div>';
-}
-function renderHistory(list){const e=$('history');if(!e)return;e.innerHTML=(list||[]).map(x=>'<div class="row"><span>'+String(x.description||x.type||'流水')+'</span><b>'+(Number(x.amount)>=0?'+':'')+money(x.amount)+' ZHI</b></div>').join('')||'暂无记录'}
-async function load(passedUser=null){
- try{if(passedUser)user=passedUser;else{const r=await sb.auth.getSession();if(r.error){console.warn('[ZHI auth] session read failed',r.error);if(user)return;return}const sessionUser=r.data?.session?.user||null;if(sessionUser)user=sessionUser}}catch(e){console.warn('[ZHI auth] session read exception',e);if(user)return;return}
- if(!user){$('authScreen').classList.remove('hidden');$('app').classList.add('hidden');return}
- $('authScreen').classList.add('hidden');$('app').classList.remove('hidden');
- const [w,t,profile]=await Promise.all([sb.from('wallets').select('*').eq('user_id',user.id).single(),sb.from('transactions').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(30),sb.from('profiles').select('username,z_id').eq('id',user.id).maybeSingle()]);
- wallet=w.data;if($('balance'))$('balance').textContent=money(wallet?.balance||0);if($('topUsername'))$('topUsername').textContent=profile.data?.username||user.user_metadata?.username||user.email?.split('@')[0]||'--';if($('topZId'))$('topZId').textContent=profile.data?.z_id?'ID: ZHI-'+String(profile.data.z_id).padStart(12,'0'):'ID: ZHI-000000000000';renderHistory(t.data||[]);
- await loadGiftNotice();await loadFinancePanel();await loadLoanLimit();
- const admin=user.app_metadata?.role==='admin';if($('adminPanel'))$('adminPanel').classList.toggle('hidden',!admin);if(admin){await loadAdminUsers();await loadAdminFundFlows();await loadTreasuryFinance();await loadFortuneDrops()}if($('fortuneAdminCard'))$('fortuneAdminCard').classList.toggle('hidden',!admin);
-}
-async function loadTreasuryFinance(){const r=await sb.rpc('get_treasury_finance');if(r.error)return;const d=r.data||{};[['tfTotal',d.total_treasury],['tfAvailable',d.available_balance],['tfSavings',d.user_savings],['tfLoans',d.user_loans],['tfLoanInterest',d.loan_interest_due],['tfSavingsInterest',d.savings_interest_paid]].forEach(([id,v])=>{if($(id))$(id).textContent=money(v||0)+' ZHI'});if($('tfSupply'))$('tfSupply').textContent='弹性发行'}
-$('transferBtn').onclick=transferZHI;
-if(!window.__zhiLoginBound)$('authSubmit').onclick=async()=>{const u=$('authUsername').value.trim(),p=$('authPassword').value;if(!/^[a-zA-Z0-9_]{2,24}$/.test(u))return showErr('用户名只能用 2-24 位英文字母、数字或下划线');if(p.length<6)return showErr('密码至少6位');showErr('');$('authSubmit').disabled=true;try{const {data,error}=await sb.auth.signInWithPassword({email:u.toLowerCase()+'@zhi-demo.com',password:p});if(error)throw error;if(!data?.user)throw new Error('登录成功但没有取得用户会话');$('authScreen').classList.add('hidden');$('app').classList.remove('hidden');await load(data.user)}catch(e){showErr(e.message||'登录失败')}finally{$('authSubmit').disabled=false}};
-$('logout').onclick=async()=>{await sb.auth.signOut();location.reload()};
-if($('saveBtn'))$('saveBtn').onclick=saveZhi;if($('claimBtn'))$('claimBtn').onclick=claimSavings;if($('withdrawBtn'))$('withdrawBtn').onclick=withdrawZhi;if($('loanBtn'))$('loanBtn').onclick=takeLoan;if($('repayBtn'))$('repayBtn').onclick=repayLoan;if($('giftNoticeBtn'))$('giftNoticeBtn').onclick=markGiftNotificationsRead;if($('adminFundFlowsToggle'))$('adminFundFlowsToggle').onclick=()=>{const d=$('adminFundFlowsDetails'),b=$('adminFundFlowsToggle');const open=d?.classList.toggle('open');if(b)b.textContent=open?'收起':'展开'};if($('adminUserFundsToggle'))$('adminUserFundsToggle').onclick=()=>{const d=$('adminUserFundsDetails'),b=$('adminUserFundsToggle');const open=d?.classList.toggle('open');if(b)b.textContent=open?'收起':'展开'};if($('afRefresh'))$('afRefresh').onclick=loadAdminFundFlows;if($('fortuneDropBtn'))$('fortuneDropBtn').onclick=releaseFortune;if($('afFilter'))$('afFilter').onchange=loadAdminFundFlows;
-load();setInterval(()=>{if(!document.getElementById('app')?.classList.contains('hidden')&&!$('agentFinanceDetails')?.classList.contains('hidden'))loadAgentFinanceBoard()},30000);const agentFinanceToggle=$('agentFinanceToggle'),agentFinanceDetails=$('agentFinanceDetails');if(agentFinanceToggle&&agentFinanceDetails){agentFinanceToggle.onclick=async(e)=>{e.preventDefault();e.stopPropagation();const opening=agentFinanceDetails.classList.contains('hidden');agentFinanceDetails.classList.toggle('hidden',!opening);agentFinanceToggle.textContent=opening?'收起':'展开';if(opening){agentFinanceToggle.disabled=true;try{await loadAgentFinanceBoard(true)}finally{agentFinanceToggle.disabled=false}}}}</script><script>
-document.addEventListener('DOMContentLoaded',()=>{
- const b=document.getElementById('historyToggle'),d=document.getElementById('historyDetails');
- if(b&&d)b.onclick=()=>{const closed=d.classList.toggle('hidden');b.textContent=closed?'展开':'收起';};
-});
-</script>
-</body></html>
+async function refresh(){$("status").textContent="正在读取社区数据…";try{render(await fetchCommunity());$("status").textContent="✓ 社区连接正常 · 只读模式"}catch(e){$("status").textContent=e?.message||"社区读取失败"}}
+async function start(){ $("login").classList.add("hidden");$("app").classList.remove("hidden");await refresh();if(window.__timer)clearInterval(window.__timer);window.__timer=setInterval(refresh,10000)}
+$("loginBtn").addEventListener("click",login);$("password").addEventListener("keydown",e=>{if(e.key==="Enter")login()});
+$("logout").addEventListener("click",async()=>{if(window.__timer)clearInterval(window.__timer);await sb.auth.signOut();location.reload()});
+(async()=>{try{if((await sb.auth.getSession()).data?.session)await start()}catch(e){$("loginError").textContent="无法读取登录状态"}})();
+</script></body></html>

@@ -23,17 +23,17 @@ h1{margin:0;font-size:25px}.sub{color:#6b7480;font-size:13px;margin-top:4px}
 <section id="agents" class="grid"></section>
 </main>
 <script>
-const endpoint='https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-agent-observer';
+const endpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/rpc/zhi_observe_agents';
+const apiKey='sb_publishable_MOVcpW2XoLdHbUVp6f-nrw_e_HY1Bav';
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const dt=v=>v?new Date(v).toLocaleString():'—';
 async function load(){
   try{
-    const r=await fetch(endpoint,{cache:'no-store'});
-    const d=await r.json().catch(()=>({}));
-    if(r.status===401)throw new Error('登录状态已失效');
-    if(r.status===403)throw new Error('当前账号没有观察权限');
-    if(!r.ok||!d.ok)throw new Error(d.error||'观察数据读取失败');
+    const r=await fetch(endpoint,{method:'POST',headers:{'apikey':apiKey,'Content-Type':'application/json'},body:'{}',cache:'no-store'});
+    const rows=await r.json().catch(()=>[]);
+    const d={ok:r.ok,generated_at:new Date().toISOString(),agents:Array.isArray(rows)?rows.map(x=>({...x,activity_type:null,decision_type:null,location_name:null})):[]};
+    if(!r.ok||!d.ok)throw new Error('观察数据读取失败（HTTP '+r.status+'）');
     render(d);
     $("status").textContent='● 实时只读观察 · 更新：'+dt(d.generated_at);
   }catch(e){$("status").innerHTML='<span class="error">观察连接失败：'+esc(e?.message||'未知错误')+'</span>'}

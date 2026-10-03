@@ -32,9 +32,7 @@ const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&
 const dt=v=>v?new Date(v).toLocaleString():'—';
 async function load(){
   try{
-    const session=(await sb.auth.getSession()).data?.session;
-    if(!session){$("status").innerHTML='<span class="error">观察窗口需要已登录的管理员会话。</span>';return}
-    const r=await fetch(endpoint,{headers:{Authorization:'Bearer '+session.access_token},cache:'no-store'});
+    const r=await fetch(endpoint,{cache:'no-store'});
     const d=await r.json().catch(()=>({}));
     if(r.status===401)throw new Error('登录状态已失效');
     if(r.status===403)throw new Error('当前账号没有观察权限');

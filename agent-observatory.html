@@ -12,7 +12,7 @@ h1{margin:0;font-size:25px}.sub{color:#6b7480;font-size:13px;margin-top:4px}
 .card{background:#fff;border:1px solid #e1e5ea;border-radius:12px;padding:14px}
 .name{font-weight:800;font-size:16px}.muted{color:#77818d;font-size:12px}.state{margin-top:8px;font-size:13px}
 .activity{margin-top:9px;padding-top:9px;border-top:1px solid #edf0f3;font-size:13px;line-height:1.5}
-.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#38a169;margin-right:6px}.idle{color:#7a838d}.error{color:#b42318}
+.reason{margin-top:5px;color:#4f5965;font-size:12px}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#38a169;margin-right:6px}.walk{color:#2563eb}.idle{color:#7a838d}.error{color:#b42318}
 .empty{text-align:center;padding:40px;color:#7a838d;background:#fff;border:1px solid #e1e5ea;border-radius:12px}
 </style>
 </head>
@@ -28,22 +28,26 @@ const apiKey='sb_publishable_MOVcpW2XoLdHbUVp6f-nrw_e_HY1Bav';
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const dt=v=>v?new Date(v).toLocaleString():'—';
+const labels={work:'工作',rest:'休息',adventure:'探索',entertainment_consume:'娱乐',eat:'进食',social:'社交'};
+const label=v=>labels[v]||v||'—';
 async function load(){
   try{
     const r=await fetch(endpoint,{method:'POST',headers:{'apikey':apiKey,'Content-Type':'application/json'},body:'{}',cache:'no-store'});
     const rows=await r.json().catch(()=>[]);
-    const d={ok:r.ok,generated_at:new Date().toISOString(),agents:Array.isArray(rows)?rows.map(x=>({...x,activity_type:null,decision_type:null,location_name:null})):[]};
-    if(!r.ok||!d.ok)throw new Error('观察数据读取失败（HTTP '+r.status+'）');
-    render(d);
-    $("status").textContent='● 实时只读观察 · 更新：'+dt(d.generated_at);
+    if(!r.ok)throw new Error('观察数据读取失败（HTTP '+r.status+'）');
+    render(Array.isArray(rows)?rows:[]);
+    $("status").textContent='● 实时只读观察 · '+rows.length+' 名智能人 · 更新：'+dt(new Date());
   }catch(e){$("status").innerHTML='<span class="error">观察连接失败：'+esc(e?.message||'未知错误')+'</span>'}
 }
-function render(d){
-  const rows=d.agents||[];
+function render(rows){
   $("agents").innerHTML=rows.length?rows.map(x=>{
     const alive=String(x.life_status||'').toLowerCase()==='alive', active=x.active===true;
     const state=alive?(active?'<span class="dot"></span>正在活动':'<span class="idle">○ 当前空闲</span>'):'<span class="idle">— '+esc(x.life_status||'未知状态')+'</span>';
-    return '<article class="card"><div class="name">'+esc(x.name||'未命名智能人')+'</div><div class="muted">'+esc(x.personality||'未设置性格')+'</div><div class="state">'+state+'</div><div class="activity"><b>当前观察</b><br>'+esc(x.activity_type||x.decision_type||'暂无新的活动记录')+'<br><span class="muted">'+esc(x.location_name||'位置未记录')+' · '+dt(x.last_decision_at)+'</span></div></article>';
+    const moving=x.walking===true;
+    const activity=label(x.activity_type||x.decision_type);
+    const scene=x.current_scene||x.location_name||'位置未记录';
+    const destination=x.destination_scene&&x.destination_scene!==scene?' → '+x.destination_scene:'';
+    return '<article class="card"><div class="name">'+esc(x.name||'未命名智能人')+'</div><div class="muted">'+esc(x.personality||'未设置性格')+'</div><div class="state">'+state+(moving?' <span class="walk">· 正在前往目的地</span>':'')+'</div><div class="activity"><b>当前活动</b><br>'+esc(activity)+'<br><span class="muted">位置：'+esc(scene)+esc(destination)+' · 决策：'+dt(x.last_activity_at||x.last_decision_at)+'</span>'+(x.reason?'<div class="reason">'+esc(x.reason)+'</div>':'')+'</div></article>';
   }).join(''):'<div class="empty">暂无智能人数据</div>';
 }
 load();setInterval(()=>{if(document.visibilityState==='visible')load()},5000);

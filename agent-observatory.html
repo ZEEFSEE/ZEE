@@ -22,10 +22,7 @@ h1{margin:0;font-size:25px}.sub{color:#6b7480;font-size:13px;margin-top:4px}
 <div id="status" class="status">正在连接观察数据…</div>
 <section id="agents" class="grid"></section>
 </main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-client.js?v=20261003-observe-only"></script>
 <script>
-const sb=window.zhiSupabase;
 const endpoint='https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-agent-observer';
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));

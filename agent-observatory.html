@@ -12,7 +12,7 @@ h1{margin:0;font-size:25px}.sub{color:#6b7480;font-size:13px;margin-top:4px}
 .card{background:#fff;border:1px solid #e1e5ea;border-radius:12px;padding:14px}
 .name{font-weight:800;font-size:16px}.muted{color:#77818d;font-size:12px}.state{margin-top:8px;font-size:13px}
 .activity{margin-top:9px;padding-top:9px;border-top:1px solid #edf0f3;font-size:13px;line-height:1.5}
-.reason{margin-top:5px;color:#4f5965;font-size:12px}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#38a169;margin-right:6px}.walk{color:#2563eb}.idle{color:#7a838d}.error{color:#b42318}
+.reason{margin-top:5px;color:#4f5965;font-size:12px}.balance{margin-top:10px;padding-top:10px;border-top:1px solid #edf0f3;font-size:13px}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#38a169;margin-right:6px}.walk{color:#2563eb}.idle{color:#7a838d}.error{color:#b42318}
 .empty{text-align:center;padding:40px;color:#7a838d;background:#fff;border:1px solid #e1e5ea;border-radius:12px}
 </style>
 </head>
@@ -47,7 +47,9 @@ function render(rows){
     const activity=label(x.activity_type||x.decision_type);
     const scene=x.current_scene||x.location_name||'位置未记录';
     const destination=x.destination_scene&&x.destination_scene!==scene?' → '+x.destination_scene:'';
-    return '<article class="card"><div class="name">'+esc(x.name||'未命名智能人')+'</div><div class="muted">'+esc(x.personality||'未设置性格')+'</div><div class="state">'+state+(moving?' <span class="walk">· 正在前往目的地</span>':'')+'</div><div class="activity"><b>当前活动</b><br>'+esc(activity)+'<br><span class="muted">位置：'+esc(scene)+esc(destination)+' · 决策：'+dt(x.last_activity_at||x.last_decision_at)+'</span>'+(x.reason?'<div class="reason">'+esc(x.reason)+'</div>':'')+'</div></article>';
+    const balance=Number(x.balance??0);
+    const balanceText=Number.isFinite(balance)?balance.toLocaleString(undefined,{maximumFractionDigits:8}):'—';
+    return '<article class="card"><div class="name">'+esc(x.name||'未命名智能人')+'</div><div class="muted">'+esc(x.personality||'未设置性格')+'</div><div class="state">'+state+(moving?' <span class="walk">· 正在前往目的地</span>':'')+'</div><div class="activity"><b>当前活动</b><br>'+esc(activity)+'<br><span class="muted">位置：'+esc(scene)+esc(destination)+' · 决策：'+dt(x.last_activity_at||x.last_decision_at)+'</span>'+(x.reason?'<div class="reason">'+esc(x.reason)+'</div>':'')+'</div><div class="balance">余额：<b>'+balanceText+' ZHI</b></div></article>';
   }).join(''):'<div class="empty">暂无智能人数据</div>';
 }
 load();setInterval(()=>{if(document.visibilityState==='visible')load()},5000);

@@ -2,152 +2,56 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ZHI · Agent Observatory · Live</title>
+<title>ZHI · 智能人观察窗口</title>
 <style>
-:root{--gold:#ffd76a;--deep:#0b0712;--card:#181025;--line:#ffffff16;--muted:#b9adca}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% -10%,#5b1b68,#160b24 48%,#07040b);color:#fff;font:14px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-.wrap{max-width:1200px;margin:auto;padding:24px 16px 48px}.top{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
-h1{margin:0;color:#ffe27b;font-size:28px}.meta{color:var(--muted);font-size:12px}
-button{cursor:pointer;border:1px solid #ffd76a55;background:#24143a;color:#fff;border-radius:9px;padding:9px 12px;font-weight:800}
-button:hover{border-color:var(--gold)}.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:14px 0}
-.card{background:#130c20dd;border:1px solid var(--line);border-radius:14px;padding:13px;box-shadow:0 8px 28px #0007}
-.stat strong{display:block;font-size:22px;color:#ffe18a;margin-top:3px}
-.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
-input,select{background:#0b0712;color:#fff;border:1px solid #ffd76a44;border-radius:8px;padding:9px;outline:none}
-input{min-width:220px}.table{overflow:auto}.row{display:grid;grid-template-columns:170px 85px 1fr 150px 150px;gap:10px;align-items:center;padding:10px 8px;border-bottom:1px solid var(--line);min-width:760px}
-.head{color:#d9cde6;font-size:11px;text-transform:uppercase}.name{font-weight:900}.alive{color:#7dffad}.dead{color:#ff8b9f}.activity{color:#ffe8a4;font-weight:750}.detail{margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.list{max-height:340px;overflow:auto}.item{padding:9px 0;border-bottom:1px solid var(--line)}.item b{color:#ffe49a}.error{color:#ff8fae;padding:12px}.ok{color:#8dffba}
-@media(max-width:800px){.stats{grid-template-columns:repeat(2,1fr)}.detail{grid-template-columns:1fr}}
+:root{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#18202b;background:#f4f6f8}
+*{box-sizing:border-box}body{margin:0}.wrap{max-width:1200px;margin:auto;padding:22px 16px 40px}
+h1{margin:0;font-size:25px}.sub{color:#6b7480;font-size:13px;margin-top:4px}
+.status{margin:16px 0;padding:10px 13px;border:1px solid #e1e5ea;border-radius:10px;background:#fff;color:#68727e}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.card{background:#fff;border:1px solid #e1e5ea;border-radius:12px;padding:14px}
+.name{font-weight:800;font-size:16px}.muted{color:#77818d;font-size:12px}.state{margin-top:8px;font-size:13px}
+.activity{margin-top:9px;padding-top:9px;border-top:1px solid #edf0f3;font-size:13px;line-height:1.5}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#38a169;margin-right:6px}.idle{color:#7a838d}.error{color:#b42318}
+.empty{text-align:center;padding:40px;color:#7a838d;background:#fff;border:1px solid #e1e5ea;border-radius:12px}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="top">
-    <div><h1>🔭 ZHI · Agent Observatory</h1><div class="meta">只读观测 · 不控制智能体 · 约每 5 秒刷新</div></div>
-    <div><button id="refresh">立即刷新</button> <button id="logout">退出登录</button></div>
-  </div>
-  <div id="status" class="card" style="margin-top:12px">正在启动只读观测…</div>
-  <div id="content" class="hidden">
-    <div class="stats">
-      <div class="card stat"><div class="meta">智能体</div><strong id="total">0</strong></div>
-      <div class="card stat"><div class="meta">活跃</div><strong id="active">0</strong></div>
-      <div class="card stat"><div class="meta">存活</div><strong id="alive">0</strong></div>
-      <div class="card stat"><div class="meta">最近 1 小时决策</div><strong id="decisions">0</strong></div>
-      <div class="card stat"><div class="meta">最近 1 小时活动</div><strong id="events">0</strong></div>
-    </div>
-    <div class="card">
-      <div class="toolbar">
-        <input id="filter" placeholder="搜索姓名 / 性格">
-        <select id="sort"><option value="name">姓名</option><option value="balance">余额</option><option value="decision">最近决策</option></select>
-        <span id="updated" class="meta"></span>
-      </div>
-      <div class="table">
-        <div class="row head"><span>智能体</span><span>状态</span><span>性格</span><span>余额</span><span>最近决策</span></div>
-        <div id="agents"></div>
-      </div>
-    </div>
-    <div class="detail">
-      <div class="card"><h3>🧠 最近决策</h3><div id="decisionsList" class="list"></div></div>
-      <div class="card"><h3>📜 最近活动</h3><div id="eventsList" class="list"></div></div>
-    </div>
-    <div class="card" style="margin-top:10px"><h3>💰 最近财务活动</h3><div id="financeList" class="list"></div></div>
-  </div>
-</div>
+<main class="wrap">
+<header><h1>🔭 ZHI · 智能人观察窗口</h1><div class="sub">只读观察 · 不控制智能人 · 数据来自现有数据库</div></header>
+<div id="status" class="status">正在连接观察数据…</div>
+<section id="agents" class="grid"></section>
+</main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-client.js?v=20261002-observer"></script>
+<script src="supabase-client.js?v=20261003-observe-only"></script>
 <script>
-(function(){
-  const finance=window.zhiSupabase;
-  const endpoint='https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-agent-observer';
-  let payload=null;
-  const $=id=>document.getElementById(id);
-  const money=n=>Number(n||0).toLocaleString();
-  const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-  const dt=v=>v?new Date(v).toLocaleString():'--';
-
-  const timeout=(promise,ms,label)=>Promise.race([
-    promise,
-    new Promise((_,reject)=>setTimeout(()=>reject(new Error(label)),ms))
-  ]);
-  async function load(){
-    if(!finance){$('status').innerHTML='<span class="error">❌ Supabase 客户端未启动，请检查浏览器脚本加载。</span>';return false}
-    let session;
-    try{
-      const gs=await timeout(finance.auth.getSession(),6000,'管理员会话读取超时（6秒）');
-      session=gs?.data?.session||null;
-    }catch(e){
-      $('status').innerHTML='<span class="error">❌ '+esc(e?.message||'无法读取管理员会话')+'</span>';
-      return false;
-    }
-    if(!session){$('status').innerHTML='<span class="error">请先登录 ZHI 管理员账号。</span>';return false}
-    $('status').textContent='正在读取只读观测数据…';
-    try{
-      let token=session.access_token;
-      const controller=new AbortController();
-      const timer=setTimeout(()=>controller.abort(),12000);
-      let r;
-      try{
-        r=await fetch(endpoint,{method:'GET',headers:{Authorization:'Bearer '+token},signal:controller.signal,cache:'no-store'});
-      }finally{clearTimeout(timer)}
-      if(r.status===401){
-        const refreshed=await finance.auth.refreshSession();
-        const fresh=refreshed?.data?.session;
-        if(fresh?.access_token){
-          token=fresh.access_token;
-          const c2=new AbortController();
-          const t2=setTimeout(()=>c2.abort(),12000);
-          try{r=await fetch(endpoint,{method:'GET',headers:{Authorization:'Bearer '+token},signal:c2.signal,cache:'no-store'});}
-          finally{clearTimeout(t2)}
-        }
-      }
-      const d=await r.json().catch(()=>({}));
-      if(r.status===403)throw new Error('当前账号不是管理员');
-      if(!r.ok||!d.ok)throw new Error(d.error||('HTTP '+r.status));
-      payload=d;$('status').innerHTML='<span class="ok">✓ 观测连接正常 · 只读模式</span>';
-      $('content').classList.remove('hidden');
-      render();
-      return true;
-    }catch(e){
-      const msg=e?.name==='AbortError'?'观测接口请求超时（12秒），请检查 Supabase Edge Function。':(e?.message||'读取失败');
-      $('status').innerHTML='<span class="error">❌ '+esc(msg)+'</span>';
-      return false
-    }
-  }
-  function render(){
-    const s=payload.summary||{};
-    $('total').textContent=s.total??0;$('active').textContent=s.active??0;$('alive').textContent=s.alive??0;
-    $('decisions').textContent=s.decisions_1h??0;$('events').textContent=s.events_1h??0;
-    $('updated').textContent='更新：'+dt(payload.generated_at);
-    renderAgents();renderLists();
-  }
-  function renderAgents(){
-    const q=($('filter').value||'').trim().toLowerCase(), mode=$('sort').value;
-    let rows=(payload.agents||[]).filter(x=>!q||String(x.name||'').toLowerCase().includes(q)||String(x.personality||'').toLowerCase().includes(q));
-    rows.sort((a,b)=>{
-      if(mode==='balance')return Number(b.balance||0)-Number(a.balance||0);
-      if(mode==='decision')return new Date(b.last_decision_at||0)-new Date(a.last_decision_at||0);
-      return String(a.name||'').localeCompare(String(b.name||''),'zh-CN');
-    });
-    $('agents').innerHTML=rows.map(x=>'<div class="row"><span class="name">'+esc(x.name)+'</span><span class="'+(String(x.life_status).toLowerCase()==='alive'?'alive':'dead')+'">'+(String(x.life_status).toLowerCase()==='alive'?'🟢 存活':'☠️ '+esc(x.life_status||'未知'))+'</span><span>'+esc(x.personality||'--')+'</span><span>'+money(x.balance)+' ZHI</span><span class="meta">'+dt(x.last_decision_at)+'</span></div>').join('')||'<div class="item">没有匹配的智能体。</div>';
-  }
-  function renderLists(){
-    const names=new Map((payload.agents||[]).map(x=>[x.id,x.name]));
-    $('decisionsList').innerHTML=(payload.decisions||[]).slice(0,60).map(x=>'<div class="item"><b>'+esc(names.get(x.agent_id)||'未知智能体')+'</b> · '+esc(x.decision_type||'决策')+' · '+esc(x.activity_type||'')+'<br><span class="activity">'+esc(x.location_name||'')+'</span> <span class="meta">'+dt(x.created_at)+'</span><br><span class="meta">'+esc(x.reason||'')+'</span></div>').join('')||'<div class="item">暂无数据</div>';
-    $('eventsList').innerHTML=(payload.events||[]).slice(0,60).map(x=>'<div class="item"><b>'+esc(names.get(x.agent_id)||'未知智能体')+'</b> · '+esc(x.event_type||'活动')+' <span class="meta">'+dt(x.created_at)+'</span><br>'+esc(x.message||'')+(x.reward!=null?' · <b>奖励 '+money(x.reward)+' ZHI</b>':'')+'</div>').join('')||'<div class="item">暂无数据</div>';
-    $('financeList').innerHTML=(payload.finance||[]).slice(0,80).map(x=>'<div class="item"><b>'+esc(names.get(x.agent_id)||'未知智能体')+'</b> · '+esc(x.entry_type||'')+' · '+esc(x.category||'')+' · <b>'+money(x.amount)+' ZHI</b><br><span class="meta">'+dt(x.created_at)+'</span> · '+esc(x.description||'')+'</div>').join('')||'<div class="item">暂无数据</div>';
-  }
-  window.addEventListener('error',e=>{
-    const msg=e?.error?.message||e?.message||'前端脚本错误';
-    $('status').innerHTML='<span class="error">❌ 前端启动错误：'+esc(msg)+'</span>';
-  });
-  window.addEventListener('unhandledrejection',e=>{
-    const msg=e?.reason?.message||String(e?.reason||'Promise 错误');
-    $('status').innerHTML='<span class="error">❌ 前端请求错误：'+esc(msg)+'</span>';
-  });
-  $('refresh').onclick=load;$('filter').oninput=renderAgents;$('sort').onchange=renderAgents;
-  $('logout').onclick=async()=>{try{await finance.auth.signOut()}finally{location.href='index.html'}};
-  setTimeout(()=>load(),0);
-  setInterval(()=>{if(document.visibilityState==='visible')load()},5000);
-})();
+const sb=window.zhiSupabase;
+const endpoint='https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-agent-observer';
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const dt=v=>v?new Date(v).toLocaleString():'—';
+async function load(){
+  try{
+    const session=(await sb.auth.getSession()).data?.session;
+    if(!session){$("status").innerHTML='<span class="error">观察窗口需要已登录的管理员会话。</span>';return}
+    const r=await fetch(endpoint,{headers:{Authorization:'Bearer '+session.access_token},cache:'no-store'});
+    const d=await r.json().catch(()=>({}));
+    if(r.status===401)throw new Error('登录状态已失效');
+    if(r.status===403)throw new Error('当前账号没有观察权限');
+    if(!r.ok||!d.ok)throw new Error(d.error||'观察数据读取失败');
+    render(d);
+    $("status").textContent='● 实时只读观察 · 更新：'+dt(d.generated_at);
+  }catch(e){$("status").innerHTML='<span class="error">观察连接失败：'+esc(e?.message||'未知错误')+'</span>'}
+}
+function render(d){
+  const rows=d.agents||[];
+  $("agents").innerHTML=rows.length?rows.map(x=>{
+    const alive=String(x.life_status||'').toLowerCase()==='alive', active=x.active===true;
+    const state=alive?(active?'<span class="dot"></span>正在活动':'<span class="idle">○ 当前空闲</span>'):'<span class="idle">— '+esc(x.life_status||'未知状态')+'</span>';
+    return '<article class="card"><div class="name">'+esc(x.name||'未命名智能人')+'</div><div class="muted">'+esc(x.personality||'未设置性格')+'</div><div class="state">'+state+'</div><div class="activity"><b>当前观察</b><br>'+esc(x.activity_type||x.decision_type||'暂无新的活动记录')+'<br><span class="muted">'+esc(x.location_name||'位置未记录')+' · '+dt(x.last_decision_at)+'</span></div></article>';
+  }).join(''):'<div class="empty">暂无智能人数据</div>';
+}
+load();setInterval(()=>{if(document.visibilityState==='visible')load()},5000);
 </script>
-</body></html>
+</body>
+</html>

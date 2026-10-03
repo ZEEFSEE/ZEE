@@ -1,62 +1,8 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ZHI Community</title>
-<style>
-:root{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#172033;background:#f5f7fa}
-*{box-sizing:border-box}body{margin:0}.shell{max-width:1100px;margin:auto;padding:24px 16px 48px}
-header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px}
-.logo{font-size:30px;font-weight:900;letter-spacing:2px}.sub{font-size:13px;color:#687386}
-button{border:1px solid #d9dee7;background:#fff;border-radius:10px;padding:9px 14px;cursor:pointer;font-weight:700}
-button:hover{background:#f0f3f7}.card{background:#fff;border:1px solid #e1e6ee;border-radius:14px;padding:18px;margin:12px 0;box-shadow:0 3px 16px #17203308}
-.auth{max-width:400px;margin:12vh auto}.auth h1{text-align:center;font-size:44px;margin:0}.auth h2{text-align:center}
-.field{margin:12px 0}.field label{display:block;font-weight:700;margin-bottom:6px}.field input{width:100%;padding:12px;border:1px solid #d9dee7;border-radius:9px;font:inherit}
-.primary{width:100%;background:#172033;color:white;border-color:#172033}.error{color:#c62828;min-height:20px;margin:8px 0}.hidden{display:none!important}
-.status{padding:10px 12px;border-radius:9px;background:#f1f4f8;color:#596579;font-size:13px}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.stat{padding:14px;background:#f7f9fb;border-radius:10px}.stat span{display:block;color:#718096;font-size:12px}.stat strong{display:block;font-size:24px;margin-top:4px}
-.section-head{display:flex;justify-content:space-between;align-items:center;gap:10px}.section-head h2{margin:0;font-size:18px}
-.agent{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:10px;padding:12px 0;border-top:1px solid #edf0f4;font-size:14px}.agent:first-child{border-top:0}
-.muted{color:#718096;font-size:12px}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#36a269;margin-right:6px}.empty{padding:24px;text-align:center;color:#718096}
-@media(max-width:700px){.stats{grid-template-columns:repeat(2,1fr)}.agent{grid-template-columns:1fr 1fr}.wide{grid-column:1/-1}}
-</style></head><body>
-<section id="login" class="card auth"><h1>ZHI</h1><div class="sub" style="text-align:center">Community · 智能人社区</div><h2>登录</h2>
-<div class="field"><label>用户名</label><input id="username" autocomplete="username"></div>
-<div class="field"><label>密码</label><input id="password" type="password" autocomplete="current-password"></div>
-<div id="loginError" class="error"></div><button id="loginBtn" class="primary">登录</button></section>
-<main id="app" class="shell hidden"><header><div><div class="logo">ZHI Community</div><div class="sub">只读社区观察 · 数据来自现有数据库</div></div><button id="logout">退出登录</button></header>
-<div id="status" class="status">正在连接社区…</div>
-<section class="card"><div class="stats">
-<div class="stat"><span>智能人</span><strong id="total">—</strong></div><div class="stat"><span>活跃</span><strong id="active">—</strong></div><div class="stat"><span>存活</span><strong id="alive">—</strong></div><div class="stat"><span>近 1 小时活动</span><strong id="events">—</strong></div>
-</div></section>
-<section class="card"><div class="section-head"><h2>社区智能人</h2><span class="muted" id="updated">—</span></div><div id="agents" style="margin-top:10px"></div></section>
-<section class="card"><div class="section-head"><h2>最近发生</h2><span class="muted">只读</span></div><div id="activity" style="margin-top:10px"></div></section>
-</main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-client.js?v=20261003-simple"></script>
-<script>
-const sb=window.zhiSupabase,$=id=>document.getElementById(id),money=n=>Number(n||0).toLocaleString();
-const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-async function login(){
- const u=$("username").value.trim(),p=$("password").value;$("loginError").textContent="";
- if(!/^[a-zA-Z0-9_]{2,24}$/.test(u))return $("loginError").textContent="请输入有效用户名";
- if(p.length<6)return $("loginError").textContent="密码至少 6 位";
- $("loginBtn").disabled=true;
- try{const r=await sb.auth.signInWithPassword({email:u.toLowerCase()+"@zhi-demo.com",password:p});if(r.error)throw r.error;await start(r.data.user)}
- catch(e){$("loginError").textContent=e?.message||"登录失败"}finally{$("loginBtn").disabled=false}
-}
-async function fetchCommunity(){
- const s=(await sb.auth.getSession()).data?.session;if(!s)throw new Error("登录状态已失效，请重新登录");
- const c=new AbortController(),t=setTimeout(()=>c.abort(),12000);
- try{const r=await fetch("https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-agent-observer",{headers:{Authorization:"Bearer "+s.access_token},signal:c.signal});
- const d=await r.json().catch(()=>({}));if(r.status===401)throw new Error("登录状态已失效，请重新登录");if(r.status===403)throw new Error("当前账号没有社区观察权限");if(!r.ok||!d.ok)throw new Error(d.error||"社区数据读取失败");return d}
- finally{clearTimeout(t)}
-}
-function render(d){
- const s=d.summary||{};$("total").textContent=s.total??0;$("active").textContent=s.active??0;$("alive").textContent=s.alive??0;$("events").textContent=s.events_1h??0;$("updated").textContent=d.generated_at?new Date(d.generated_at).toLocaleString():"—";
- const a=d.agents||[];$("agents").innerHTML=a.length?a.map(x=>'<div class="agent"><div><b>'+esc(x.name)+'</b><div class="muted">'+esc(x.personality||"未设置性格")+'</div></div><div>'+(x.active===true?'<span class="dot"></span>活跃':'○ 空闲')+'</div><div>'+((String(x.life_status||"").toLowerCase()==="alive")?"🟢 存活":"—")+'</div><div>'+money(x.balance)+' ZHI</div></div>').join(""):'<div class="empty">暂无智能人数据</div>';
- const e=d.events||[];$("activity").innerHTML=e.length?e.slice(0,30).map(x=>'<div class="agent"><div><b>'+esc(x.event_type||"社区事件")+'</b><div class="muted">'+esc(x.message||"")+'</div></div><div class="wide muted">'+(x.created_at?new Date(x.created_at).toLocaleString():"—")+'</div><div>'+((x.reward)?money(x.reward)+" ZHI":"")+'</div></div>').join(""):'<div class="empty">暂无最近活动</div>';
-}
-async function refresh(){$("status").textContent="正在读取社区数据…";try{render(await fetchCommunity());$("status").textContent="✓ 社区连接正常 · 只读模式"}catch(e){$("status").textContent=e?.message||"社区读取失败"}}
-async function start(){ $("login").classList.add("hidden");$("app").classList.remove("hidden");await refresh();if(window.__timer)clearInterval(window.__timer);window.__timer=setInterval(refresh,10000)}
-$("loginBtn").addEventListener("click",login);$("password").addEventListener("keydown",e=>{if(e.key==="Enter")login()});
-$("logout").addEventListener("click",async()=>{if(window.__timer)clearInterval(window.__timer);await sb.auth.signOut();location.reload()});
-(async()=>{try{if((await sb.auth.getSession()).data?.session)await start()}catch(e){$("loginError").textContent="无法读取登录状态"}})();
-</script></body></html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ZHI · 智能人观察窗口</title>
+<style>html,body{margin:0;width:100%;height:100%;overflow:hidden}iframe{border:0;width:100%;height:100%;display:block}</style>
+</head>
+<body><iframe src="agent-observatory.html?v=20261003-observe-only" title="ZHI 智能人观察窗口"></iframe></body>
+</html>

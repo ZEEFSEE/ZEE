@@ -1,76 +1,8 @@
 <!doctype html>
 <html lang="zh-CN">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ZHI · 发布链路诊断</title>
-<style>
-:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#0b0d12;color:#eef2f7}
-*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#0b0d12}
-main{max-width:760px;margin:0 auto;padding:28px 18px 40px}
-h1{font-size:24px;margin:0 0 6px}.sub{color:#8f99aa;font-size:13px;margin-bottom:22px}
-.status{padding:12px 14px;border:1px solid #ffffff14;border-radius:10px;background:#11151d;margin-bottom:12px}
-.row{display:grid;grid-template-columns:190px 1fr;gap:12px;padding:11px 0;border-bottom:1px solid #ffffff0b}
-.row:last-child{border-bottom:0}.k{color:#9da7b7;font-size:13px}.v{font-weight:700;word-break:break-word}
-.ok{color:#65e6a0}.bad{color:#ff7b86}.warn{color:#ffd166}.muted{color:#9da7b7}
-.small{font-size:11px;color:#6f7888;margin-top:16px;line-height:1.6}
-button{margin-top:16px;background:#171c26;color:#fff;border:1px solid #ffffff1a;border-radius:8px;padding:9px 13px;font-weight:700;cursor:pointer}
-code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px}
-</style>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ZHI · 智能人观察窗口</title>
+<style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#07080d}iframe{border:0;width:100%;height:100%;display:block}</style>
 </head>
-<body>
-<main>
-<h1>🔎 ZHI · 发布链路诊断</h1>
-<div class="sub">极轻量模式：不启动智能人、不读取关系/情绪、不轮询，只检查发布层 + 1 次 Supabase RPC。</div>
-<div class="status">
-<div class="row"><div class="k">Pages 版本 SHA</div><div class="v" id="pages">检查中…</div></div>
-<div class="row"><div class="k">HTML 版本</div><div class="v ok" id="html">2026-10-04 · diagnostic-v1</div></div>
-<div class="row"><div class="k">Supabase 请求 HTTP 状态</div><div class="v" id="http">检查中…</div></div>
-<div class="row"><div class="k">RPC 返回数量</div><div class="v" id="count">检查中…</div></div>
-<div class="row"><div class="k">JS 是否执行</div><div class="v ok" id="js">YES · JavaScript 已执行</div></div>
-<div class="row"><div class="k">CORS / 网络错误</div><div class="v" id="net">检查中…</div></div>
-</div>
-<div class="small">
-只执行两类前端读取：GitHub Pages 的 main 分支 SHA + <code>zhi_observe_agents()</code> 一次。
-不会调用任何智能人 tick、关系、情绪、财务、Realtime 或后台任务。
-</div>
-<button onclick="location.reload()">重新诊断</button>
-</main>
-<script>
-const RPC='https://jozrslgdjreepxplicen.supabase.co/rest/v1/rpc/zhi_observe_agents';
-const KEY='sb_publishable_MOVcpW2XoLdHbUVp6f-nrw_e_HY1Bav';
-const set=(id,text,cls)=>{const e=document.getElementById(id);e.textContent=text;e.className='v '+(cls||'')};
-
-async function checkPages(){
- try{
-  const r=await fetch('https://api.github.com/repos/ZEEFSEE/ZEE/commits/main',{headers:{Accept:'application/vnd.github+json'},cache:'no-store'});
-  if(!r.ok)throw new Error('HTTP '+r.status);
-  const j=await r.json();
-  set('pages',j.sha||'unknown','ok');
- }catch(e){set('pages','读取失败 · '+(e.message||'network error'),'bad')}
-}
-
-async function checkRPC(){
- try{
-  const r=await fetch(RPC,{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:'{}',cache:'no-store'});
-  set('http',r.status+' '+r.statusText,r.ok?'ok':'bad');
-  const text=await r.text();
-  let data;
-  try{data=JSON.parse(text)}catch{data=null}
-  if(Array.isArray(data))set('count',String(data.length),data.length?'ok':'warn');
-  else if(data&&typeof data==='object'&&data.message)set('count','RPC 错误 · '+data.message,'bad');
-  else set('count','无法解析返回体','bad');
-  set('net','NO · 请求已到达并返回 HTTP '+r.status,r.ok?'ok':'warn');
- }catch(e){
-  const msg=e&&e.message?e.message:'network error';
-  const cors=/cors|cross-origin|failed to fetch|network/i.test(msg);
-  set('http','请求未获得 HTTP 响应','bad');
-  set('count','—','bad');
-  set('net',(cors?'可能是 CORS / 浏览器网络错误 · ':'网络错误 · ')+msg,'bad');
- }
-}
-
-(async()=>{await Promise.all([checkPages(),checkRPC()])})();
-</script>
-</body>
+<body><iframe src="agent-observatory.html?v=20261004-observer-v1" title="ZHI 智能人观察窗口"></iframe></body>
 </html>

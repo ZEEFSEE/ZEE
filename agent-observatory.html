@@ -2,72 +2,123 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ZHI · 智能人观察窗口</title>
+<title>ZHI · 智能人世界</title>
 <style>
-:root{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#18202b;background:#f4f6f8}
-*{box-sizing:border-box}body{margin:0}.wrap{max-width:1200px;margin:auto;padding:22px 16px 40px}
-h1{margin:0;font-size:25px}.sub{color:#6b7480;font-size:13px;margin-top:4px}
-.status{margin:16px 0;padding:10px 13px;border:1px solid #e1e5ea;border-radius:10px;background:#fff;color:#68727e}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
-.card{background:#fff;border:1px solid #e1e5ea;border-radius:12px;padding:14px}
-.name{font-weight:800;font-size:16px}.muted{color:#77818d;font-size:12px}.state{margin-top:8px;font-size:13px}
-.emotion{margin-top:9px;padding:9px;border-radius:9px;background:#f7f8fa;font-size:12px;line-height:1.55}.activity{margin-top:9px;padding-top:9px;border-top:1px solid #edf0f3;font-size:13px;line-height:1.5}
-.reason{margin-top:5px;color:#4f5965;font-size:12px}.balance{margin-top:10px;padding-top:10px;border-top:1px solid #edf0f3;font-size:13px}.relation{margin-top:10px;padding-top:10px;border-top:1px solid #edf0f3;font-size:12px;line-height:1.5}.relation .muted{font-size:11px}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#38a169;margin-right:6px}.walk{color:#2563eb}.idle{color:#7a838d}.error{color:#b42318}
-.empty{text-align:center;padding:40px;color:#7a838d;background:#fff;border:1px solid #e1e5ea;border-radius:12px}
+:root{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#f7f7fb;background:#07080d;--gold:#ffd66b;--pink:#ff6fae;--cyan:#54d8ff;--card:#11141d;--line:#ffffff12;--muted:#9ba3b5}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% -15%,#38205b 0,#121324 34%,#07080d 72%);min-height:100vh}
+.wrap{max-width:1400px;margin:auto;padding:18px 16px 50px}.hero{display:flex;justify-content:space-between;gap:18px;align-items:end;flex-wrap:wrap}.brand{font-size:30px;font-weight:950;letter-spacing:-1px}.brand b{color:var(--gold)}.tag{display:inline-block;margin-left:8px;padding:5px 9px;border-radius:999px;background:#ffcf5a18;border:1px solid #ffcf5a44;color:#ffe39b;font-size:11px;vertical-align:middle}.sub{color:var(--muted);margin-top:6px;font-size:13px}.live{padding:9px 13px;border:1px solid #ffffff14;border-radius:999px;background:#ffffff08;font-size:12px}.pulse{display:inline-block;width:8px;height:8px;border-radius:50%;background:#55ef9b;box-shadow:0 0 14px #55ef9b;margin-right:7px}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:18px 0}.stat{background:linear-gradient(145deg,#171a25,#0e1017);border:1px solid var(--line);border-radius:15px;padding:15px}.stat .k{font-size:11px;color:var(--muted)}.stat strong{display:block;font-size:24px;margin-top:4px;color:#fff}.stat em{font-style:normal;color:#79e6ff;font-size:11px}
+.layout{display:grid;grid-template-columns:1.65fr .75fr;gap:12px}.panel{background:#0e1118eF;border:1px solid var(--line);border-radius:17px;padding:14px;box-shadow:0 16px 45px #0005}.panel h2{margin:0 0 4px;font-size:17px}.panel .hint{color:var(--muted);font-size:11px;margin-bottom:12px}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}input,select{background:#080a10;color:#fff;border:1px solid #ffffff18;border-radius:9px;padding:9px 10px;outline:none}input{min-width:230px}button{background:#171a24;color:#fff;border:1px solid #ffffff1c;border-radius:9px;padding:9px 12px;font-weight:800;cursor:pointer}button:hover{border-color:#ffd66b66}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(265px,1fr));gap:10px}.agent{position:relative;overflow:hidden;background:linear-gradient(160deg,#171a23,#0d1016);border:1px solid #ffffff12;border-radius:15px;padding:14px;transition:.2s}.agent:hover{transform:translateY(-2px);border-color:#ffd66b55;box-shadow:0 12px 28px #0007}.agent.hot{border-color:#ff6fae66}.agent .top{display:flex;justify-content:space-between;gap:8px}.name{font-weight:900;font-size:17px}.personality{color:#9ba3b5;font-size:11px;margin-top:2px}.badge{padding:4px 7px;border-radius:999px;background:#ffffff0b;font-size:10px;color:#dce2ef;white-space:nowrap}.state{margin-top:9px;font-size:12px}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#55ef9b;margin-right:5px}.walk{color:#63dfff}.idle{color:#8d95a6}.emotion{margin-top:10px;padding:10px;border-radius:11px;background:#090b11;border:1px solid #ffffff0d;font-size:12px;line-height:1.6}.emotion b{color:#ffe19a}.bar{height:5px;background:#ffffff0b;border-radius:99px;overflow:hidden;margin-top:5px}.bar i{display:block;height:100%;background:linear-gradient(90deg,#54d8ff,#ff6fae);border-radius:99px}.activity{margin-top:10px;padding-top:9px;border-top:1px solid #ffffff0d;font-size:12px;line-height:1.55}.reason{color:#c6ccda;margin-top:4px}.balance{margin-top:10px;color:#b9c0cf;font-size:11px}.balance b{color:#ffd66b;font-size:14px}.relation{margin-top:9px;padding:8px;border-radius:9px;background:#ff6fae08;color:#d7bfd0;font-size:11px}.empty{text-align:center;padding:40px;color:#8f97a7}
+.feed{display:flex;flex-direction:column;gap:8px;max-height:690px;overflow:auto}.feeditem{padding:10px;border-radius:11px;background:#090b11;border:1px solid #ffffff0d;font-size:12px;line-height:1.5}.feeditem b{color:#ffe09a}.feeditem .time{color:#727b8d;font-size:10px}.spark{color:#ff86b8}.success{color:#72edaf}.quiet{color:#6d7687}
+.sectionbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:4px 0 10px}.sectionbar span{font-size:11px;color:var(--muted)}
+.footer{text-align:center;color:#697184;font-size:10px;margin-top:18px}
+@media(max-width:950px){.layout{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.stats{grid-template-columns:1fr 1fr}.brand{font-size:24px}}
 </style>
 </head>
 <body>
 <main class="wrap">
-<header><h1>🔭 ZHI · 智能人观察窗口</h1><div class="sub">只读观察 · 不控制智能人 · 数据来自现有数据库</div></header>
-<div id="status" class="status">正在连接观察数据…</div>
-<section id="agents" class="grid"></section>
+<header class="hero">
+<div><div class="brand">🌍 <b>ZHI</b> · 智能人世界 <span class="tag">LIVE WORLD</span></div><div class="sub">不是游戏角色。这里的人会工作、吃饭、恋爱、赚钱、失望、开心，然后继续做自己的选择。</div></div>
+<div class="live"><span class="pulse"></span><span id="liveText">正在连接真实世界数据…</span></div>
+</header>
+
+<section class="stats">
+<div class="stat"><div class="k">正在生活</div><strong id="total">—</strong><em>个智能人</em></div>
+<div class="stat"><div class="k">正在移动</div><strong id="moving">—</strong><em>真实目的地</em></div>
+<div class="stat"><div class="k">正在社交</div><strong id="social">—</strong><em>关系正在变化</em></div>
+<div class="stat"><div class="k">高情绪事件</div><strong id="hot">—</strong><em>值得围观</em></div>
+<div class="stat"><div class="k">世界更新</div><strong id="updated">—</strong><em>每 5 秒</em></div>
+</section>
+
+<div class="layout">
+<section class="panel">
+<div class="sectionbar"><div><h2>🎬 现在正在发生什么</h2><span>每个人都有自己的欲望、情绪和目的</span></div></div>
+<div class="toolbar"><input id="filter" placeholder="搜索智能人 / 性格 / 活动"><select id="mode"><option value="hot">🔥 最值得看</option><option value="moving">🚶 正在移动</option><option value="social">💗 正在社交</option><option value="money">💰 财富</option><option value="all">👥 全部</option></select><button id="refresh">↻ 刷新</button></div>
+<div id="agents" class="grid"></div>
+</section>
+
+<aside class="panel">
+<h2>📡 世界直播</h2><div class="hint">把数据库里的真实行为，变成观众可以追的“连续剧情”。</div>
+<div id="feed" class="feed"></div>
+</aside>
+</div>
+<div class="footer">ZHI · Eternal Daylight · Autonomous People · Read-only public observation</div>
 </main>
+
 <script>
 const endpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/rpc/zhi_observe_agents';
 const relationEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/rpc/zhi_observe_relationship_events';
 const emotionEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/rpc/zhi_observe_agent_emotions';
 const apiKey='sb_publishable_MOVcpW2XoLdHbUVp6f-nrw_e_HY1Bav';
-const $=id=>document.getElementById(id);
-const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-const dt=v=>v?new Date(v).toLocaleString():'—';
-const labels={work:'工作',rest:'休息',adventure:'探索',entertainment_consume:'娱乐',eat:'进食',social:'社交'};
-const label=v=>labels[v]||v||'—';
+const $=id=>document.getElementById(id), esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const dt=v=>v?new Date(v).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}):'—');
+const labels={work:'工作',rest:'休息',adventure:'探索',entertainment_consume:'娱乐',eat:'进食',social:'社交',competition:'竞争'};
+const label=v=>labels[v]||v||'观察中';
+let cache={rows:[],relations:[],emotions:[]};
+
 async function load(){
-  try{
-    const [r,rr,er]=await Promise.all([
-      fetch(endpoint,{method:'POST',headers:{'apikey':apiKey,'Content-Type':'application/json'},body:'{}',cache:'no-store'}),
-      fetch(relationEndpoint,{method:'POST',headers:{'apikey':apiKey,'Content-Type':'application/json'},body:'{}',cache:'no-store'}),
-      fetch(emotionEndpoint,{method:'POST',headers:{'apikey':apiKey,'Content-Type':'application/json'},body:'{}',cache:'no-store'})
-    ]);
-    const rows=await r.json().catch(()=>[]);
-    const relations=await rr.json().catch(()=>[]);
-    const emotions=await er.json().catch(()=>[]);
-    if(!r.ok)throw new Error('观察数据读取失败（HTTP '+r.status+'）');
-    if(!rr.ok)throw new Error('关系动态读取失败（HTTP '+rr.status+'）');
-    if(!er.ok)throw new Error('情绪数据读取失败（HTTP '+er.status+'）');
-    render(Array.isArray(rows)?rows:[],Array.isArray(relations)?relations:[],Array.isArray(emotions)?emotions:[]);
-    $("status").textContent='● 实时只读观察 · '+rows.length+' 名智能人 · 更新：'+dt(new Date());
-  }catch(e){$("status").innerHTML='<span class="error">观察连接失败：'+esc(e?.message||'未知错误')+'</span>'}
+ try{
+  const [r,rr,er]=await Promise.all([
+   fetch(endpoint,{method:'POST',headers:{apikey:apiKey,'Content-Type':'application/json'},body:'{}',cache:'no-store'}),
+   fetch(relationEndpoint,{method:'POST',headers:{apikey:apiKey,'Content-Type':'application/json'},body:'{}',cache:'no-store'}),
+   fetch(emotionEndpoint,{method:'POST',headers:{apikey:apiKey,'Content-Type':'application/json'},body:'{}',cache:'no-store'})
+  ]);
+  const rows=await r.json().catch(()=>[]), relations=await rr.json().catch(()=>[]), emotions=await er.json().catch(()=>[]);
+  if(!r.ok||!rr.ok||!er.ok)throw new Error('实时数据读取失败');
+  cache={rows:Array.isArray(rows)?rows:[],relations:Array.isArray(relations)?relations:[],emotions:Array.isArray(emotions)?emotions:[]};
+  render(); $('liveText').textContent='LIVE · '+cache.rows.length+' 名智能人正在生活'; $('updated').textContent=new Date().toLocaleTimeString();
+ }catch(e){$('liveText').textContent='连接异常 · '+(e.message||'请稍后刷新')}
 }
-function render(rows,relations,emotions){
-  const emotionMap=new Map((emotions||[]).map(x=>[x.agent_id,x]));
-  const relationMap=new Map((relations||[]).map(x=>[x.agent_id,x]));
-  $("agents").innerHTML=rows.length?rows.map(x=>{
-    const alive=String(x.life_status||'').toLowerCase()==='alive', active=x.active===true;
-    const state=alive?(active?'<span class="dot"></span>正在活动':'<span class="idle">○ 当前空闲</span>'):'<span class="idle">— '+esc(x.life_status||'未知状态')+'</span>';
-    const moving=x.walking===true;
-    const activity=label(x.activity_type||x.decision_type);
-    const scene=x.current_scene||x.location_name||'位置未记录';
-    const destination=x.destination_scene&&x.destination_scene!==scene?' → '+x.destination_scene:'';
-    const rel=relationMap.get(x.id);
-    const emo=emotionMap.get(x.id)||{};
-    const emotionLabel=Number(emo.mood)>=80?"愉快":Number(emo.mood)>=60?"平稳":Number(emo.mood)>=40?"低落":"难过";
-    const stressLabel=Number(emo.stress)>=70?"高压力":Number(emo.stress)>=45?"有压力":"放松";
-    const balance=Number(x.balance??0);
-    const balanceText=Number.isFinite(balance)?balance.toLocaleString(undefined,{maximumFractionDigits:8}):'—';
-    return '<article class="card"><div class="name">'+esc(x.name||'未命名智能人')+'</div><div class="muted">'+esc(x.personality||'未设置性格')+'</div><div class="state">'+state+(moving?' <span class="walk">· 正在前往目的地</span>':'')+'</div><div class="emotion"><b>情绪状态</b><br>心情 '+esc(emo.mood??'—')+' · '+emotionLabel+' · 压力 '+esc(emo.stress??'—')+' · '+stressLabel+'<br><span class="muted">信心 '+esc(emo.confidence??'—')+' · 怨气 '+esc(emo.resentment??'—')+' · 生存压力 '+esc(emo.survival_pressure??'—')+' · 精力 '+esc(emo.energy??'—')+'</span></div><div class="activity"><b>当前活动</b><br>'+esc(activity)+'<br><span class="muted">位置：'+esc(scene)+esc(destination)+' · 决策：'+dt(x.last_activity_at||x.last_decision_at)+'</span>'+(x.reason?'<div class="reason">'+esc(x.reason)+'</div>':'')+'</div>'+(rel?'<div class="relation"><b>人际关系</b><br>与 '+esc(rel.partner_name||'另一位智能人')+' · '+esc(rel.status||'关系记录')+(rel.last_interaction_type?' · '+esc(rel.last_interaction_type):'')+'<br><span class="muted">熟悉 '+esc(rel.familiarity??'—')+' · 好感 '+esc(rel.affection??'—')+' · 信任 '+esc(rel.trust??'—')+' · 冲突 '+esc(rel.conflict??'—')+' · 互动 '+esc(rel.interactions??'—')+' 次'+(rel.last_social_at?' · 最近互动 '+dt(rel.last_social_at):'')+'</span></div>':'')+'<div class="balance">余额：<b>'+balanceText+' ZHI</b></div></article>';
-  }).join(''):'<div class="empty">暂无智能人数据</div>';
+function render(){
+ const {rows,relations,emotions}=cache, em=new Map(emotions.map(x=>[x.agent_id,x])), rel=new Map(relations.map(x=>[x.agent_id,x]));
+ const q=($('filter').value||'').toLowerCase().trim(), mode=$('mode').value;
+ let list=rows.filter(x=>{const s=[x.name,x.personality,x.activity_type,x.decision_type,x.current_scene,x.location_name].join(' ').toLowerCase();return !q||s.includes(q)});
+ list.sort((a,b)=>score(b,em,rel)-score(a,em,rel));
+ if(mode==='moving')list=list.filter(x=>x.walking===true);
+ if(mode==='social')list=list.filter(x=>(x.activity_type||x.decision_type)==='social'||rel.has(x.id));
+ if(mode==='money')list.sort((a,b)=>Number(b.balance||0)-Number(a.balance||0));
+ if(mode==='hot')list=list.filter(x=>score(x,em,rel)>=3);
+ $('total').textContent=rows.length;
+ $('moving').textContent=rows.filter(x=>x.walking===true).length;
+ $('social').textContent=rows.filter(x=>(x.activity_type||x.decision_type)==='social'||rel.has(x.id)).length;
+ $('hot').textContent=rows.filter(x=>score(x,em,rel)>=3).length;
+ $('agents').innerHTML=list.length?list.map(x=>card(x,em.get(x.id)||{},rel.get(x.id))).join(''):'<div class="empty">暂时没有符合条件的剧情。</div>';
+ renderFeed(rows,em,rel);
 }
+function score(x,em,rel){
+ const e=em.get(x.id)||{}, m=Number(e.mood??60), s=Number(e.stress??20), c=Number(e.confidence??60), r=Number(e.resentment??0);
+ let n=0;if(x.walking)n++;if(rel.has(x.id))n++;if(m<45||s>65||r>25)n+=3;if(c<35)n+=2;if((x.activity_type||x.decision_type)==='social')n+=2;if(Number(x.balance||0)>100000)n++;
+ return n;
+}
+function card(x,e,r){
+ const alive=String(x.life_status||'').toLowerCase()==='alive', moving=x.walking===true, activity=x.activity_type||x.decision_type;
+ const mood=Number(e.mood??0), stress=Number(e.stress??0), confidence=Number(e.confidence??0);
+ const moodText=mood>=80?'开心':mood>=60?'平稳':mood>=40?'低落':'难过', stressText=stress>=70?'压力很大':stress>=45?'有压力':'轻松';
+ const scene=x.current_scene||x.location_name||'未知地点', dest=x.destination_scene&&x.destination_scene!==scene?' → '+x.destination_scene:'';
+ const balance=Number(x.balance??0).toLocaleString(undefined,{maximumFractionDigits:2});
+ const hot=score(x,new Map([[x.id,e]]),new Map(r?[[x.id,r]]:[]))>=4;
+ return '<article class="agent '+(hot?'hot':'')+'"><div class="top"><div><div class="name">'+esc(x.name||'未命名')+'</div><div class="personality">'+esc(x.personality||'独立人格')+'</div></div><span class="badge">'+label(activity)+'</span></div>'+
+ '<div class="state">'+(alive?'<span class="dot"></span>':'☠️ ')+(moving?'<span class="walk">正在前往 '+esc(x.destination_scene||'某处')+'</span>':'<span class="idle">当前停留 · '+esc(scene)+'</span>')+'</div>'+
+ '<div class="emotion"><b>❤️ '+moodText+'</b> · '+mood+'　 <span>压力 '+stress+' · '+stressText+'</span><div class="bar"><i style="width:'+Math.max(0,Math.min(100,mood))+'%"></i></div><div class="muted">信心 '+confidence+' · 怨气 '+Number(e.resentment??0)+' · 生存压力 '+Number(e.survival_pressure??0)+' · 精力 '+Number(e.energy??0)+'</div></div>'+
+ '<div class="activity"><b>'+esc(label(activity))+'</b> · '+esc(scene)+esc(dest)+(x.reason?'<div class="reason">'+esc(x.reason)+'</div>':'')+'</div>'+
+ (r?'<div class="relation">💗 与 <b>'+esc(r.partner_name||'另一位智能人')+'</b> · '+esc(r.status||'关系变化')+' · 好感 '+esc(r.affection??'—')+' · 信任 '+esc(r.trust??'—')+'</div>':'')+
+ '<div class="balance">ZHI 财富 <b>'+balance+'</b> · '+dt(x.last_activity_at||x.last_decision_at)+'</div></article>';
+}
+function renderFeed(rows,em,rel){
+ const events=rows.map(x=>{const e=em.get(x.id)||{}, r=rel.get(x.id), m=Number(e.mood??60), s=Number(e.stress??20);
+  let text='', cls='quiet';
+  if(r){text='正在与 '+(r.partner_name||'另一位智能人')+' 产生关系变化';cls='spark'}
+  else if(x.walking){text='正在前往 '+(x.destination_scene||'新的地方')+' · '+label(x.activity_type||x.decision_type);cls='success'}
+  else if(s>=70){text='压力正在上升 · 可能正在经历困难';cls='spark'}
+  else if(m<45){text='心情低落 · 可能刚刚经历了不如意';cls='spark'}
+  else{text='正在'+label(x.activity_type||x.decision_type)+' · '+(x.current_scene||x.location_name||'世界中')}
+  return {time:x.last_activity_at||x.last_decision_at||new Date(0),name:x.name,text,cls};
+ }).sort((a,b)=>new Date(b.time)-new Date(a.time)).slice(0,24);
+ $('feed').innerHTML=events.map(e=>'<div class="feeditem"><b>'+esc(e.name)+'</b> <span class="'+e.cls+'">· '+esc(e.text)+'</span><div class="time">'+dt(e.time)+'</div></div>').join('');
+}
+$('filter').oninput=render;$('mode').onchange=render;$('refresh').onclick=load;
 load();setInterval(()=>{if(document.visibilityState==='visible')load()},5000);
 </script>
 </body>

@@ -29,7 +29,7 @@
 <div class="stat"><div class="k">正在移动</div><strong id="moving">—</strong><em>真实目的地</em></div>
 <div class="stat"><div class="k">正在社交</div><strong id="social">—</strong><em>关系正在变化</em></div>
 <div class="stat"><div class="k">高情绪事件</div><strong id="hot">—</strong><em>值得围观</em></div>
-<div class="stat"><div class="k">世界更新</div><strong id="updated">—</strong><em>每 5 秒</em></div>
+<div class="stat"><div class="k">世界更新</div><strong id="updated">—</strong><em>每 15 秒</em></div>
 </section>
 
 <div class="layout">
@@ -119,7 +119,7 @@ function renderFeed(rows,em,rel){
  $('feed').innerHTML=events.map(e=>'<div class="feeditem"><b>'+esc(e.name)+'</b> <span class="'+e.cls+'">· '+esc(e.text)+'</span><div class="time">'+dt(e.time)+'</div></div>').join('');
 }
 $('filter').oninput=render;$('mode').onchange=render;$('refresh').onclick=load;
-load();setInterval(()=>{if(document.visibilityState==='visible')load()},5000);
+let timer=null;function startPolling(){if(timer===null)timer=setInterval(()=>{if(document.visibilityState==='visible')load()},15000)}load();startPolling();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){load();startPolling()}else if(timer){clearInterval(timer);timer=null}});
 </script>
 </body>
 </html>

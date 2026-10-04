@@ -49,89 +49,66 @@
 
 <script>
 const endpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/rpc/zhi_observe_agents';
-const relationEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/rpc/zhi_observe_relationship_events';
-const emotionEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/rpc/zhi_observe_agent_emotions';
 const apiKey='sb_publishable_MOVcpW2XoLdHbUVp6f-nrw_e_HY1Bav';
-const $=id=>document.getElementById(id), esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-const dt=v=>v?new Date(v).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}):'—');
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const dt=v=>v?new Date(v).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}):'—';
 const labels={work:'工作',rest:'休息',adventure:'探索',entertainment_consume:'娱乐',eat:'进食',social:'社交',competition:'竞争'};
 const label=v=>labels[v]||v||'观察中';
-let cache={rows:[],relations:[],emotions:[]};
 
-async function load(){
- try{
-  const r=await fetch(endpoint,{method:'POST',headers:{apikey:apiKey,'Content-Type':'application/json'},body:'{}',cache:'no-store'});
-  const rows=await r.json();
-  if(!r.ok) throw new Error('HTTP '+r.status);
-  if(!Array.isArray(rows)) throw new Error('RPC 返回格式不是数组');
-  if(!rows.length) throw new Error('RPC 返回 0 名智能人');
-  cache.rows=rows;
-  render();
-  $('liveText').textContent='LIVE · '+rows.length+' 名智能人正在生活';
-  $('updated').textContent=new Date().toLocaleTimeString();
-  // 关系/情绪只作为增强显示；它们失败不会阻塞人物渲染。
-  Promise.allSettled([
-   fetch(relationEndpoint,{method:'POST',headers:{apikey:apiKey,'Content-Type':'application/json'},body:'{}',cache:'no-store'}).then(x=>x.json()),
-   fetch(emotionEndpoint,{method:'POST',headers:{apikey:apiKey,'Content-Type':'application/json'},body:'{}',cache:'no-store'}).then(x=>x.json())
-  ]).then(([rr,er])=>{
-    cache.relations=rr.status==='fulfilled'&&Array.isArray(rr.value)?rr.value:[];
-    cache.emotions=er.status==='fulfilled'&&Array.isArray(er.value)?er.value:[];
-    render();
-  });
- }catch(e){
-  $('liveText').textContent='连接异常 · '+(e.message||'请稍后刷新');
-  $('agents').innerHTML='<div class="empty">智能人数据读取失败：'+esc(e.message||'未知错误')+'<br><br>请点击“↻ 刷新”重试。</div>';
- }
-}
-function render(){
- const {rows,relations,emotions}=cache, em=new Map(emotions.map(x=>[x.agent_id,x])), rel=new Map(relations.map(x=>[x.agent_id,x]));
- const q=($('filter').value||'').toLowerCase().trim(), mode=$('mode').value;
- let list=rows.filter(x=>{const s=[x.name,x.personality,x.activity_type,x.decision_type,x.current_scene,x.location_name].join(' ').toLowerCase();return !q||s.includes(q)});
- list.sort((a,b)=>score(b,em,rel)-score(a,em,rel));
- if(mode==='moving')list=list.filter(x=>x.walking===true);
- if(mode==='social')list=list.filter(x=>(x.activity_type||x.decision_type)==='social'||rel.has(x.id));
- if(mode==='money')list.sort((a,b)=>Number(b.balance||0)-Number(a.balance||0));
- if(mode==='hot')list=list.filter(x=>score(x,em,rel)>=3);
+function render(rows){
  $('total').textContent=rows.length;
  $('moving').textContent=rows.filter(x=>x.walking===true).length;
- $('social').textContent=rows.filter(x=>(x.activity_type||x.decision_type)==='social'||rel.has(x.id)).length;
- $('hot').textContent=rows.filter(x=>score(x,em,rel)>=3).length;
- $('agents').innerHTML=list.length?list.map(x=>card(x,em.get(x.id)||{},rel.get(x.id))).join(''):'<div class="empty">暂时没有符合条件的剧情。</div>';
- renderFeed(rows,em,rel);
+ $('social').textContent=rows.filter(x=>(x.activity_type||x.decision_type)==='social').length;
+ $('hot').textContent='—';
+ const q=($('filter').value||'').toLowerCase().trim();
+ const mode=$('mode').value;
+ let list=rows.filter(x=>{
+   const s=[x.name,x.personality,x.activity_type,x.decision_type,x.current_scene,x.location_name,x.destination_scene].join(' ').toLowerCase();
+   return !q||s.includes(q);
+ });
+ if(mode==='moving') list=list.filter(x=>x.walking===true);
+ if(mode==='social') list=list.filter(x=>(x.activity_type||x.decision_type)==='social');
+ if(mode==='money') list=[...list].sort((a,b)=>Number(b.balance||0)-Number(a.balance||0));
+ if(mode==='hot') list=[...list].slice(0,24);
+ $('agents').innerHTML=list.length?list.map(card).join(''):'<div class="empty">暂时没有符合条件的智能人。</div>';
+ $('feed').innerHTML=rows.slice(0,24).map(x=>'<div class="feeditem"><b>'+esc(x.name||'未命名')+'</b> · '+esc(label(x.activity_type||x.decision_type))+' · '+esc(x.current_scene||x.location_name||'世界中')+'<div class="time">'+dt(x.last_activity_at||x.last_decision_at)+'</div></div>').join('');
 }
-function score(x,em,rel){
- const e=em.get(x.id)||{}, m=Number(e.mood??60), s=Number(e.stress??20), c=Number(e.confidence??60), r=Number(e.resentment??0);
- let n=0;if(x.walking)n++;if(rel.has(x.id))n++;if(m<45||s>65||r>25)n+=3;if(c<35)n+=2;if((x.activity_type||x.decision_type)==='social')n+=2;if(Number(x.balance||0)>100000)n++;
- return n;
-}
-function card(x,e,r){
- const alive=String(x.life_status||'').toLowerCase()==='alive', moving=x.walking===true, activity=x.activity_type||x.decision_type;
- const mood=Number(e.mood??0), stress=Number(e.stress??0), confidence=Number(e.confidence??0);
- const moodText=mood>=80?'开心':mood>=60?'平稳':mood>=40?'低落':'难过', stressText=stress>=70?'压力很大':stress>=45?'有压力':'轻松';
- const scene=x.current_scene||x.location_name||'未知地点', dest=x.destination_scene&&x.destination_scene!==scene?' → '+x.destination_scene:'';
- const balance=Number(x.balance??0).toLocaleString(undefined,{maximumFractionDigits:2});
- const hot=score(x,new Map([[x.id,e]]),new Map(r?[[x.id,r]]:[]))>=4;
- return '<article class="agent '+(hot?'hot':'')+'"><div class="top"><div><div class="name">'+esc(x.name||'未命名')+'</div><div class="personality">'+esc(x.personality||'独立人格')+'</div></div><span class="badge">'+label(activity)+'</span></div>'+
- '<div class="state">'+(alive?'<span class="dot"></span>':'☠️ ')+(moving?'<span class="walk">正在前往 '+esc(x.destination_scene||'某处')+'</span>':'<span class="idle">当前停留 · '+esc(scene)+'</span>')+'</div>'+
- '<div class="emotion"><b>❤️ '+moodText+'</b> · '+mood+'　 <span>压力 '+stress+' · '+stressText+'</span><div class="bar"><i style="width:'+Math.max(0,Math.min(100,mood))+'%"></i></div><div class="muted">信心 '+confidence+' · 怨气 '+Number(e.resentment??0)+' · 生存压力 '+Number(e.survival_pressure??0)+' · 精力 '+Number(e.energy??0)+'</div></div>'+
- '<div class="activity"><b>'+esc(label(activity))+'</b> · '+esc(scene)+esc(dest)+(x.reason?'<div class="reason">'+esc(x.reason)+'</div>':'')+'</div>'+
- (r?'<div class="relation">💗 与 <b>'+esc(r.partner_name||'另一位智能人')+'</b> · '+esc(r.status||'关系变化')+' · 好感 '+esc(r.affection??'—')+' · 信任 '+esc(r.trust??'—')+'</div>':'')+
+
+function card(x){
+ const moving=x.walking===true;
+ const scene=x.current_scene||x.location_name||'未知地点';
+ const dest=x.destination_scene&&x.destination_scene!==scene?' → '+x.destination_scene:'';
+ const balance=Number(x.balance||0).toLocaleString(undefined,{maximumFractionDigits:2});
+ return '<article class="agent"><div class="top"><div><div class="name">'+esc(x.name||'未命名')+'</div><div class="personality">'+esc(x.personality||'独立人格')+'</div></div><span class="badge">'+esc(label(x.activity_type||x.decision_type))+'</span></div>'+
+ '<div class="state">'+(moving?'<span class="walk">🚶 正在前往 '+esc(x.destination_scene||'新的地方')+'</span>':'<span class="idle">● 当前停留 · '+esc(scene)+'</span>')+'</div>'+
+ '<div class="activity"><b>'+esc(label(x.activity_type||x.decision_type))+'</b> · '+esc(scene)+esc(dest)+(x.reason?'<div class="reason">'+esc(x.reason)+'</div>':'')+'</div>'+
  '<div class="balance">ZHI 财富 <b>'+balance+'</b> · '+dt(x.last_activity_at||x.last_decision_at)+'</div></article>';
 }
-function renderFeed(rows,em,rel){
- const events=rows.map(x=>{const e=em.get(x.id)||{}, r=rel.get(x.id), m=Number(e.mood??60), s=Number(e.stress??20);
-  let text='', cls='quiet';
-  if(r){text='正在与 '+(r.partner_name||'另一位智能人')+' 产生关系变化';cls='spark'}
-  else if(x.walking){text='正在前往 '+(x.destination_scene||'新的地方')+' · '+label(x.activity_type||x.decision_type);cls='success'}
-  else if(s>=70){text='压力正在上升 · 可能正在经历困难';cls='spark'}
-  else if(m<45){text='心情低落 · 可能刚刚经历了不如意';cls='spark'}
-  else{text='正在'+label(x.activity_type||x.decision_type)+' · '+(x.current_scene||x.location_name||'世界中')}
-  return {time:x.last_activity_at||x.last_decision_at||new Date(0),name:x.name,text,cls};
- }).sort((a,b)=>new Date(b.time)-new Date(a.time)).slice(0,24);
- $('feed').innerHTML=events.map(e=>'<div class="feeditem"><b>'+esc(e.name)+'</b> <span class="'+e.cls+'">· '+esc(e.text)+'</span><div class="time">'+dt(e.time)+'</div></div>').join('');
+
+async function load(){
+ $('liveText').textContent='正在读取智能人…';
+ try{
+   const r=await fetch(endpoint,{method:'POST',headers:{apikey:apiKey,'Content-Type':'application/json'},body:'{}',cache:'no-store'});
+   const text=await r.text();
+   if(!r.ok) throw new Error('HTTP '+r.status+' · '+text.slice(0,160));
+   let rows;
+   try{rows=JSON.parse(text)}catch(e){throw new Error('返回内容不是 JSON')}
+   if(!Array.isArray(rows)) throw new Error('RPC 返回格式不是数组');
+   if(!rows.length) throw new Error('RPC 返回 0 名智能人');
+   $('liveText').textContent='LIVE · '+rows.length+' 名智能人正在生活';
+   $('updated').textContent=new Date().toLocaleTimeString();
+   render(rows);
+ }catch(e){
+   $('liveText').textContent='连接异常';
+   $('agents').innerHTML='<div class="empty">智能人数据读取失败：'+esc(e.message||'未知错误')+'<br><br>请点击“↻ 刷新”重试。</div>';
+   $('feed').innerHTML='';
+   console.error('ZHI observer:',e);
+ }
 }
-$('filter').oninput=render;$('mode').onchange=render;$('refresh').onclick=load;
-let timer=null;function startPolling(){if(timer===null)timer=setInterval(()=>{if(document.visibilityState==='visible')load()},15000)}load();startPolling();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){load();startPolling()}else if(timer){clearInterval(timer);timer=null}});
-</script>
-</body>
+$('filter').oninput=()=>load().catch(console.error);
+$('mode').onchange=()=>load().catch(console.error);
+$('refresh').onclick=load;
+load();
+</script></body>
 </html>

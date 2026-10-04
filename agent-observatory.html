@@ -161,11 +161,11 @@ async function load(){
      window.__socialRelationshipChanges=(Array.isArray(encounters)?encounters:[]).filter(e=>truthy(e.interaction_occurred)&&truthy(e.relationship_changed)).length;
      window.__encounterStatus='ok';
    } else { window.__encounterStatus='HTTP '+encRes.status; }
+   let relationshipCounts={};
    if(relRes.ok){
      const rels=await relRes.json();
      const names=new Map(rows.map(x=>[String(x.id),x.name||'未命名']));
      const byAgent=new Map();
-     const relationshipCounts={};
      (Array.isArray(rels)?rels:[]).forEach(r=>{
        const sk=stageOf(r); relationshipCounts[sk]=(relationshipCounts[sk]||0)+1;
        const a=String(r.male_agent_id), b=String(r.female_agent_id);
@@ -178,7 +178,7 @@ async function load(){
      rows=rows.map(x=>({...x,relationships:(byAgent.get(String(x.id))||[]).sort((a,b)=>b.score-a.score).slice(0,3)}));
    }
    window.__relationshipCounts=relationshipCounts;
-     window.__rows=rows;
+   window.__rows=rows;
    $('liveText').textContent='实时 · '+rows.length+' 名智能人正在生活';
    $('updated').textContent=new Date().toLocaleTimeString();
    render(rows);

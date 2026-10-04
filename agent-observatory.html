@@ -88,12 +88,13 @@ function render(rows){
 function card(x){
  const moving=x.walking===true;
  const scene=x.current_scene||x.location_name||'未知地点';
- const dest=x.destination_scene&&x.destination_scene!==scene?' → '+x.destination_scene:'';
+ const activity=x.activity_type||x.decision_type;
  const balance=Number(x.balance||0).toLocaleString(undefined,{maximumFractionDigits:2});
- return '<article class="agent '+(moving?'moving':'')+'"><div class="top"><div class="identity"><span class="avatar">'+esc(initials(x.name))+'</span><div><div class="name">'+esc(x.name||'未命名')+'</div><div class="personality">'+esc(x.personality||'独立人格')+'</div></div><span class="badge">'+icon(x.activity_type||x.decision_type)+' '+esc(label(x.activity_type||x.decision_type))+'</span></div><div class="meta"><span class="mini">'+(moving?'🟢 移动中':'⚪ 停留')+'</span><span class="mini">📍 '+esc(scene)+'</span></div>'+
- '<div class="state">'+(moving?'<span class="walk">🚶 正在前往 '+esc(x.destination_scene||'新的地方')+'</span>':'<span class="idle">● 当前停留 · '+esc(scene)+'</span>')+'</div>'+
- '<div class="activity"><b>'+icon(x.activity_type||x.decision_type)+' '+esc(label(x.activity_type||x.decision_type))+'</b> · '+esc(scene)+esc(dest)+(x.reason?'<div class="reason">'+esc(x.reason)+'</div>':'')+'</div><div class="story">◈ <b>'+esc(story(x))+'</b></div>'+
- '<div class="balance">ZHI 财富 <b>'+balance+'</b> · '+dt(x.last_activity_at||x.last_decision_at)+'</div></article>';
+ const status=moving?'正在前往 '+(x.destination_scene||'新的地方'):'停留在 '+scene;
+ return '<article class="agent '+(moving?'moving':'')+'"><div class="top"><div class="identity"><span class="avatar">'+esc(initials(x.name))+'</span><div><div class="name">'+esc(x.name||'未命名')+'</div><div class="personality">'+esc(x.personality||'独立人格')+'</div></div></div><span class="badge">'+icon(activity)+' '+esc(label(activity))+'</span></div>'+
+ '<div class="state">'+(moving?'<span class="walk">🚶 '+esc(status)+'</span>':'<span class="idle">● '+esc(status)+'</span>')+'</div>'+
+ (x.reason?'<div class="activity"><div class="reason">'+esc(x.reason)+'</div></div>':'')+
+ '<div class="balance">💰 ZHI 财富 <b>'+balance+'</b> · 🕐 '+dt(x.last_activity_at||x.last_decision_at)+'</div></article>';
 }
 
 async function load(){

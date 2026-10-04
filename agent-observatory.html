@@ -60,13 +60,14 @@ let cache={rows:[],relations:[],emotions:[]};
 
 async function load(){
  try{
-  const [r,rr,er]=await Promise.all([
+  const [r,rr,er]=await Promise.allSettled([
    fetch(endpoint,{method:'POST',headers:{apikey:apiKey,'Content-Type':'application/json'},body:'{}',cache:'no-store'}),
    fetch(relationEndpoint,{method:'POST',headers:{apikey:apiKey,'Content-Type':'application/json'},body:'{}',cache:'no-store'}),
    fetch(emotionEndpoint,{method:'POST',headers:{apikey:apiKey,'Content-Type':'application/json'},body:'{}',cache:'no-store'})
   ]);
-  const rows=await r.json().catch(()=>[]), relations=await rr.json().catch(()=>[]), emotions=await er.json().catch(()=>[]);
-  if(!r.ok||!rr.ok||!er.ok)throw new Error('实时数据读取失败');
+  const read=async x=>x&&x.status==='fulfilled'?await x.value.json().catch(()=>[]):[];
+  const rows=await read(r), relations=await read(rr), emotions=await read(er);
+  if(!rows.length)throw new Error('智能人数据读取失败');
   cache={rows:Array.isArray(rows)?rows:[],relations:Array.isArray(relations)?relations:[],emotions:Array.isArray(emotions)?emotions:[]};
   render(); $('liveText').textContent='LIVE · '+cache.rows.length+' 名智能人正在生活'; $('updated').textContent=new Date().toLocaleTimeString();
  }catch(e){$('liveText').textContent='连接异常 · '+(e.message||'请稍后刷新')}

@@ -50,6 +50,7 @@
 <script>
 const endpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/rpc/zhi_observe_agents';
 const psychologyEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_agent_minds?select=agent_id,mood,confidence,stress,curiosity';
+const relationshipEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_agent_social_relationships?select=male_agent_id,female_agent_id,status,familiarity,affection,trust,conflict,interactions,last_interaction_type,last_social_at&order=updated_at.desc';
 const apiKey='sb_publishable_MOVcpW2XoLdHbUVp6f-nrw_e_HY1Bav';
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -76,7 +77,7 @@ function render(rows){
  const q=($('filter').value||'').toLowerCase().trim();
  const mode=$('mode').value;
  let list=rows.filter(x=>{
-   const s=[x.name,x.personality,x.activity_type,x.decision_type,x.current_scene,x.location_name,x.destination_scene,x.reason,x.emotion,x.mood,x.current_emotion,x.desire,x.current_desire,x.dominant_desire,x.mood,x.confidence,x.stress,x.curiosity].join(' ').toLowerCase();
+   const s=[x.name,x.personality,x.activity_type,x.decision_type,x.current_scene,x.location_name,x.destination_scene,x.reason,x.emotion,x.mood,x.current_emotion,x.desire,x.current_desire,x.dominant_desire,x.mood,x.confidence,x.stress,x.curiosity,...relationshipOf(x).map(relationText)].join(' ').toLowerCase();
    return !q||s.includes(q);
  });
  if(mode==='moving') list=list.filter(x=>x.walking===true);
@@ -113,9 +114,10 @@ function card(x){
 async function load(){
  $('liveText').textContent='正在读取智能人…';
  try{
-   const [worldRes,mindRes]=await Promise.all([
+   const [worldRes,mindRes,relRes]=await Promise.all([
      fetch(endpoint,{method:'POST',headers:{apikey:apiKey,'Content-Type':'application/json'},body:'{}',cache:'no-store'}),
-     fetch(psychologyEndpoint,{headers:{apikey:apiKey},cache:'no-store'})
+     fetch(psychologyEndpoint,{headers:{apikey:apiKey},cache:'no-store'}),
+     fetch(relationshipEndpoint,{headers:{apikey:apiKey},cache:'no-store'})
    ]);
    const worldText=await worldRes.text();
    if(!worldRes.ok) throw new Error('世界数据 HTTP '+worldRes.status+' · '+worldText.slice(0,160));
@@ -127,6 +129,20 @@ async function load(){
      const minds=await mindRes.json();
      const byId=new Map((Array.isArray(minds)?minds:[]).map(m=>[String(m.agent_id),m]));
      rows=rows.map(x=>{const m=byId.get(String(x.id));return m?{...x,mood:m.mood,confidence:m.confidence,stress:m.stress,curiosity:m.curiosity}:x});
+   }
+   if(relRes.ok){
+     const rels=await relRes.json();
+     const names=new Map(rows.map(x=>[String(x.id),x.name||'未命名']));
+     const byAgent=new Map();
+     (Array.isArray(rels)?rels:[]).forEach(r=>{
+       const a=String(r.male_agent_id), b=String(r.female_agent_id);
+       const score=Math.max(0,Math.min(100,Math.round((Number(r.familiarity||0)+Number(r.affection||0)+Number(r.trust||0))/3)));
+       const itemA={name:names.get(b)||'某人',status:r.status,score,last_interaction_type:r.last_interaction_type};
+       const itemB={name:names.get(a)||'某人',status:r.status,score,last_interaction_type:r.last_interaction_type};
+       if(!byAgent.has(a))byAgent.set(a,[]); if(!byAgent.has(b))byAgent.set(b,[]);
+       byAgent.get(a).push(itemA); byAgent.get(b).push(itemB);
+     });
+     rows=rows.map(x=>({...x,relationships:(byAgent.get(String(x.id))||[]).sort((a,b)=>b.score-a.score).slice(0,3)}));
    }
    window.__rows=rows;
    $('liveText').textContent='实时 · '+rows.length+' 名智能人正在生活';

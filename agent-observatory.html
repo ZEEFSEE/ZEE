@@ -27,7 +27,7 @@
 <section class="stats">
 <div class="stat"><div class="k">正在生活</div><strong id="total">—</strong><em>个智能人</em></div>
 <div class="stat"><div class="k">正在移动</div><strong id="moving">—</strong><em>真实目的地</em></div>
-<div class="stat"><div class="k">正在社交</div><strong id="social">—</strong><em>关系正在变化</em></div>
+<div class="stat"><div class="k">正在社交</div><strong id="social">—</strong><em id="socialHint">关系变化读取中</em></div>
 <div class="stat"><div class="k">高情绪事件</div><strong id="hot">—</strong><em>值得围观</em></div>
 <div class="stat"><div class="k">世界更新</div><strong id="updated">—</strong><em>手动刷新 · 低负载</em></div>
 </section>
@@ -73,7 +73,7 @@ function render(rows){
  const moving=rows.filter(x=>x.walking===true);
  const social=rows.filter(x=>['social','socialize','socialising','socializing'].includes(String(x.activity_type||x.decision_type||'').toLowerCase()));
  $('moving').textContent=moving.length;
- $('social').textContent=window.__socialRelationshipChanges??social.length;
+ $('social').textContent=social.length;
  $('hot').textContent=moving.length+social.length;
  const q=($('filter').value||'').toLowerCase().trim();
  const mode=$('mode').value;
@@ -127,7 +127,8 @@ async function load(){
    try{rows=JSON.parse(worldText)}catch(e){throw new Error('世界数据格式异常')}
    if(!Array.isArray(rows)) throw new Error('世界数据格式异常');
    if(!rows.length) throw new Error('没有读取到智能人');
-   window.__socialRelationshipChanges=window.__socialRelationshipChanges??0;
+   window.__socialRelationshipChanges=null;
+   window.__encounterStatus='读取中';
    if(mindRes.ok){
      const minds=await mindRes.json();
      const byId=new Map((Array.isArray(minds)?minds:[]).map(m=>[String(m.agent_id),m]));
@@ -135,8 +136,10 @@ async function load(){
    }
    if(encRes.ok){
      const encounters=await encRes.json();
-     window.__socialRelationshipChanges=(Array.isArray(encounters)?encounters:[]).filter(e=>e.interaction_occurred===true && e.relationship_changed===true).length;
-   } else { window.__socialRelationshipChanges=0; }
+     const truthy=v=>v===true||v==='true'||v===1||v==='1';
+     window.__socialRelationshipChanges=(Array.isArray(encounters)?encounters:[]).filter(e=>truthy(e.interaction_occurred)&&truthy(e.relationship_changed)).length;
+     window.__encounterStatus='ok';
+   } else { window.__encounterStatus='HTTP '+encRes.status; }
    if(relRes.ok){
      const rels=await relRes.json();
      const names=new Map(rows.map(x=>[String(x.id),x.name||'未命名']));
@@ -155,6 +158,7 @@ async function load(){
    $('liveText').textContent='实时 · '+rows.length+' 名智能人正在生活';
    $('updated').textContent=new Date().toLocaleTimeString();
    render(rows);
+   $('socialHint').textContent=window.__encounterStatus==='ok'?'最近30分钟关系变化 '+window.__socialRelationshipChanges+' 次':'关系变化读取失败';
  }catch(e){
    $('liveText').textContent='连接异常';
    $('agents').innerHTML='<div class="empty">智能人数据读取失败：'+esc(e.message||'未知错误')+'<br><br>请点击“↻ 刷新”重试。</div>';

@@ -35,7 +35,7 @@
 <div class="layout">
 <section class="panel">
 <div class="sectionbar"><div><h2>🎬 现在正在发生什么</h2><span>每个人都有自己的欲望、情绪和目的</span></div></div>
-<div class="toolbar"><input id="filter" placeholder="搜索智能人 / 性格 / 活动"><select id="mode"><option value="hot">🔥 最值得看</option><option value="moving">🚶 正在移动</option><option value="social">💗 正在社交</option><option value="money">💰 财富</option><option value="all">👥 全部</option></select><button id="refresh">↻ 刷新</button></div>
+<div class="toolbar"><input id="filter" placeholder="搜索智能人 / 性格 / 活动"><select id="mode"><option value="all">👥 全部</option><option value="hot">🔥 最值得看</option><option value="moving">🚶 正在移动</option><option value="social">💗 正在社交</option><option value="money">💰 财富</option></select><button id="refresh">↻ 刷新</button></div>
 <div id="agents" class="grid"></div>
 </section>
 
@@ -60,17 +60,28 @@ let cache={rows:[],relations:[],emotions:[]};
 
 async function load(){
  try{
-  const [r,rr,er]=await Promise.allSettled([
-   fetch(endpoint,{method:'POST',headers:{apikey:apiKey,'Content-Type':'application/json'},body:'{}',cache:'no-store'}),
-   fetch(relationEndpoint,{method:'POST',headers:{apikey:apiKey,'Content-Type':'application/json'},body:'{}',cache:'no-store'}),
-   fetch(emotionEndpoint,{method:'POST',headers:{apikey:apiKey,'Content-Type':'application/json'},body:'{}',cache:'no-store'})
-  ]);
-  const read=async x=>x&&x.status==='fulfilled'?await x.value.json().catch(()=>[]):[];
-  const rows=await read(r), relations=await read(rr), emotions=await read(er);
-  if(!rows.length)throw new Error('智能人数据读取失败');
-  cache={rows:Array.isArray(rows)?rows:[],relations:Array.isArray(relations)?relations:[],emotions:Array.isArray(emotions)?emotions:[]};
-  render(); $('liveText').textContent='LIVE · '+cache.rows.length+' 名智能人正在生活'; $('updated').textContent=new Date().toLocaleTimeString();
- }catch(e){$('liveText').textContent='连接异常 · '+(e.message||'请稍后刷新')}
+  const r=await fetch(endpoint,{method:'POST',headers:{apikey:apiKey,'Content-Type':'application/json'},body:'{}',cache:'no-store'});
+  const rows=await r.json();
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  if(!Array.isArray(rows)) throw new Error('RPC 返回格式不是数组');
+  if(!rows.length) throw new Error('RPC 返回 0 名智能人');
+  cache.rows=rows;
+  render();
+  $('liveText').textContent='LIVE · '+rows.length+' 名智能人正在生活';
+  $('updated').textContent=new Date().toLocaleTimeString();
+  // 关系/情绪只作为增强显示；它们失败不会阻塞人物渲染。
+  Promise.allSettled([
+   fetch(relationEndpoint,{method:'POST',headers:{apikey:apiKey,'Content-Type':'application/json'},body:'{}',cache:'no-store'}).then(x=>x.json()),
+   fetch(emotionEndpoint,{method:'POST',headers:{apikey:apiKey,'Content-Type':'application/json'},body:'{}',cache:'no-store'}).then(x=>x.json())
+  ]).then(([rr,er])=>{
+    cache.relations=rr.status==='fulfilled'&&Array.isArray(rr.value)?rr.value:[];
+    cache.emotions=er.status==='fulfilled'&&Array.isArray(er.value)?er.value:[];
+    render();
+  });
+ }catch(e){
+  $('liveText').textContent='连接异常 · '+(e.message||'请稍后刷新');
+  $('agents').innerHTML='<div class="empty">智能人数据读取失败：'+esc(e.message||'未知错误')+'<br><br>请点击“↻ 刷新”重试。</div>';
+ }
 }
 function render(){
  const {rows,relations,emotions}=cache, em=new Map(emotions.map(x=>[x.agent_id,x])), rel=new Map(relations.map(x=>[x.agent_id,x]));

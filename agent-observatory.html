@@ -20,8 +20,8 @@
 <body>
 <main class="wrap">
 <header class="hero">
-<div><div class="brand">🌍 <b>ZHI</b> · 智能人世界 <span class="tag">LIVE WORLD</span></div><div class="sub">不是游戏角色。这里的人会工作、吃饭、恋爱、赚钱、失望、开心，然后继续做自己的选择。</div></div>
-<div class="live"><span class="pulse"></span><span id="liveText">正在连接真实世界数据…</span></div>
+<div><div class="brand">🌍 <b>ZHI</b> · 智能人世界 <span class="tag">实时世界</span></div><div class="sub">不是游戏角色。这里的人会工作、吃饭、恋爱、赚钱、失望、开心，然后继续做自己的选择。</div></div>
+<div class="live"><span class="pulse"></span><span id="liveText">正在连接世界数据…</span></div>
 </header>
 
 <section class="stats">
@@ -44,7 +44,7 @@
 <div id="feed" class="feed"></div>
 </aside>
 </div>
-<div class="footer">ZHI · Eternal Daylight · Autonomous People · Read-only public observation</div>
+<div class="footer">ZHI · 永恒白昼 · 自主智能人 · 只读公开观察</div>
 </main>
 
 <script>
@@ -53,7 +53,7 @@ const apiKey='sb_publishable_MOVcpW2XoLdHbUVp6f-nrw_e_HY1Bav';
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const dt=v=>v?new Date(v).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}):'—';
-const labels={work:'工作',rest:'休息',adventure:'探索',entertainment_consume:'娱乐',eat:'进食',social:'社交',competition:'竞争'};
+const labels={work:'工作',rest:'休息',adventure:'探索',entertainment_consume:'娱乐',eat:'进食',social:'社交',socialize:'社交',socialising:'社交',socializing:'社交',competition:'竞争',workout:'锻炼',shopping:'购物',travel:'旅行',study:'学习',sleep:'睡眠',dining:'用餐'};
 const label=v=>labels[v]||v||'观察中';
 const icons={work:'💼',rest:'🛋️',adventure:'🧭',entertainment_consume:'🎭',eat:'🍜',social:'💬',competition:'⚔️'};
 const icon=v=>icons[v]||'✨';
@@ -103,11 +103,11 @@ async function load(){
    const text=await r.text();
    if(!r.ok) throw new Error('HTTP '+r.status+' · '+text.slice(0,160));
    let rows;
-   try{rows=JSON.parse(text)}catch(e){throw new Error('返回内容不是 JSON')}
-   if(!Array.isArray(rows)) throw new Error('RPC 返回格式不是数组');
-   if(!rows.length) throw new Error('RPC 返回 0 名智能人');
+   try{rows=JSON.parse(text)}catch(e){throw new Error('数据格式异常')}
+   if(!Array.isArray(rows)) throw new Error('数据格式异常');
+   if(!rows.length) throw new Error('没有读取到智能人');
    window.__rows=rows;
-   $('liveText').textContent='LIVE · '+rows.length+' 名智能人正在生活';
+   $('liveText').textContent='实时 · '+rows.length+' 名智能人正在生活';
    $('updated').textContent=new Date().toLocaleTimeString();
    render(rows);
  }catch(e){

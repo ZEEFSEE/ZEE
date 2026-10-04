@@ -49,6 +49,7 @@
 
 <script>
 const endpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/rpc/zhi_observe_agents';
+const psychologyEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_agent_minds?select=agent_id,mood,confidence,stress,curiosity';
 const apiKey='sb_publishable_MOVcpW2XoLdHbUVp6f-nrw_e_HY1Bav';
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -59,7 +60,7 @@ const icons={work:'💼',rest:'🛋️',adventure:'🧭',entertainment_consume:'
 const icon=v=>icons[v]||'✨';
 const initials=v=>String(v||'Z').trim().slice(0,2).toUpperCase();
 const emotionMap={happy:['😊','愉快'],excited:['🤩','兴奋'],sad:['😔','低落'],angry:['😠','生气'],afraid:['😨','紧张'],love:['❤️','喜欢'],disgust:['😒','反感'],desire:['✨','期待'],calm:['😌','平静'],neutral:['🙂','平稳']};
-const emotionOf=x=>{const raw=String(x.emotion||x.mood||x.current_emotion||'neutral').toLowerCase();return emotionMap[raw]||['🙂',x.emotion||x.mood||'平稳']};
+const emotionOf=x=>{const raw=x.emotion??x.current_emotion??x.mood??'neutral';if(typeof raw==='number'||(typeof raw==='string'&&raw.trim()!==''&&Number.isFinite(Number(raw)))){const n=Math.max(0,Math.min(100,Number(raw)));return n<=20?['😔','低落']:n<=45?['😌','平稳']:n<=70?['😊','愉快']:['🤩','兴奋']}const key=String(raw).toLowerCase();return emotionMap[key]||['🙂',String(raw)||'平稳']};
 const relationshipOf=x=>Array.isArray(x.relationships)?x.relationships:Array.isArray(x.relations)?x.relations:[];
 const relationText=r=>{if(typeof r==='string')return r;const n=r?.name||r?.target_name||r?.agent_name||'某人';const t=r?.type||r?.relation||r?.relationship||'认识';return n+' · '+t};
 const val=(x,...ks)=>{for(const k of ks){if(x[k]!==undefined&&x[k]!==null&&x[k]!=='')return x[k]}return null};
@@ -75,7 +76,7 @@ function render(rows){
  const q=($('filter').value||'').toLowerCase().trim();
  const mode=$('mode').value;
  let list=rows.filter(x=>{
-   const s=[x.name,x.personality,x.activity_type,x.decision_type,x.current_scene,x.location_name,x.destination_scene,x.reason,x.emotion,x.mood,x.current_emotion,x.desire,x.current_desire,x.dominant_desire].join(' ').toLowerCase();
+   const s=[x.name,x.personality,x.activity_type,x.decision_type,x.current_scene,x.location_name,x.destination_scene,x.reason,x.emotion,x.mood,x.current_emotion,x.desire,x.current_desire,x.dominant_desire,x.mood,x.confidence,x.stress,x.curiosity].join(' ').toLowerCase();
    return !q||s.includes(q);
  });
  if(mode==='moving') list=list.filter(x=>x.walking===true);
@@ -112,13 +113,21 @@ function card(x){
 async function load(){
  $('liveText').textContent='正在读取智能人…';
  try{
-   const r=await fetch(endpoint,{method:'POST',headers:{apikey:apiKey,'Content-Type':'application/json'},body:'{}',cache:'no-store'});
-   const text=await r.text();
-   if(!r.ok) throw new Error('HTTP '+r.status+' · '+text.slice(0,160));
+   const [worldRes,mindRes]=await Promise.all([
+     fetch(endpoint,{method:'POST',headers:{apikey:apiKey,'Content-Type':'application/json'},body:'{}',cache:'no-store'}),
+     fetch(psychologyEndpoint,{headers:{apikey:apiKey},cache:'no-store'})
+   ]);
+   const worldText=await worldRes.text();
+   if(!worldRes.ok) throw new Error('世界数据 HTTP '+worldRes.status+' · '+worldText.slice(0,160));
    let rows;
-   try{rows=JSON.parse(text)}catch(e){throw new Error('数据格式异常')}
-   if(!Array.isArray(rows)) throw new Error('数据格式异常');
+   try{rows=JSON.parse(worldText)}catch(e){throw new Error('世界数据格式异常')}
+   if(!Array.isArray(rows)) throw new Error('世界数据格式异常');
    if(!rows.length) throw new Error('没有读取到智能人');
+   if(mindRes.ok){
+     const minds=await mindRes.json();
+     const byId=new Map((Array.isArray(minds)?minds:[]).map(m=>[String(m.agent_id),m]));
+     rows=rows.map(x=>{const m=byId.get(String(x.id));return m?{...x,mood:m.mood,confidence:m.confidence,stress:m.stress,curiosity:m.curiosity}:x});
+   }
    window.__rows=rows;
    $('liveText').textContent='实时 · '+rows.length+' 名智能人正在生活';
    $('updated').textContent=new Date().toLocaleTimeString();

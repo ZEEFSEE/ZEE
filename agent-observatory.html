@@ -147,11 +147,12 @@ async function load(){
  $('liveText').textContent='正在读取智能人…';
  try{
    const worldRes=await fetch(endpoint,{method:'POST',headers:{apikey:apiKey,'Content-Type':'application/json'},body:'{}',cache:'no-store'});
-   const [mindRes,relRes,encRes]=await Promise.allSettled([
+   let mindRes,relRes,encRes;
+   try{[mindRes,relRes,encRes]=await Promise.allSettled([
      fetch(psychologyEndpoint,{headers:{apikey:apiKey},cache:'no-store'}),
      fetch(relationshipEndpoint,{headers:{apikey:apiKey},cache:'no-store'}),
      fetch(encounterEndpoint,{headers:{apikey:apiKey},cache:'no-store'})
-   ]);
+   ]);}catch(_e){}
    const worldText=await worldRes.text();
    if(!worldRes.ok) throw new Error('世界数据 HTTP '+worldRes.status+' · '+worldText.slice(0,160));
    let rows;
@@ -161,22 +162,19 @@ async function load(){
    window.__socialRelationshipChanges=null;
    window.__encounterStatus='读取中';
    if(mindRes.status==='fulfilled'&&mindRes.value.ok){
-     mindRes=mindRes.value;
-     const minds=await mindRes.json();
+     const minds=await mindRes.value.json();
      const byId=new Map((Array.isArray(minds)?minds:[]).map(m=>[String(m.agent_id),m]));
      rows=rows.map(x=>{const m=byId.get(String(x.id));return m?{...x,mood:m.mood,confidence:m.confidence,stress:m.stress,curiosity:m.curiosity}:x});
    }
    if(encRes.status==='fulfilled'&&encRes.value.ok){
-     encRes=encRes.value;
-     const encounters=await encRes.json();
+     const encounters=await encRes.value.json();
      const truthy=v=>v===true||v==='true'||v===1||v==='1';
      window.__socialRelationshipChanges=(Array.isArray(encounters)?encounters:[]).filter(e=>truthy(e.interaction_occurred)&&truthy(e.relationship_changed)).length;
      window.__encounterStatus='ok';
    } else { window.__encounterStatus='HTTP '+encRes.status; }
    let relationshipCounts={};
    if(relRes.status==='fulfilled'&&relRes.value.ok){
-     relRes=relRes.value;
-     const rels=await relRes.json();
+     const rels=await relRes.value.json();
      const names=new Map(rows.map(x=>[String(x.id),x.name||'未命名']));
      const byAgent=new Map();
      (Array.isArray(rels)?rels:[]).forEach(r=>{

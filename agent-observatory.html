@@ -20,7 +20,7 @@
 <body>
 <main class="wrap">
 <header class="hero">
-<div><div class="brand">🌍 <b>ZHI</b> · 智能人世界 <span class="tag">实时世界</span></div><div class="sub">不是游戏角色。这里的人会工作、吃饭、恋爱、赚钱、失望、开心，然后继续做自己的选择。</div></div>
+<div><div class="brand">🌍 <b>ZHI</b> · 智能人世界 <span class="tag">实时世界</span> <span class="tag" id="worldAge">成长 0 天</span></div><div class="sub">不是游戏角色。这里的人会工作、吃饭、恋爱、赚钱、失望、开心，然后继续做自己的选择。</div></div>
 <div class="live"><span class="pulse"></span><span id="liveText">正在连接世界数据…</span></div>
 </header>
 
@@ -52,7 +52,13 @@ const endpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/rpc/zhi_observe
 const psychologyEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_agent_minds?select=agent_id,mood,confidence,stress,curiosity';
 const relationshipEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_agent_social_relationships?select=male_agent_id,female_agent_id,status,relationship_stage,familiarity,affection,trust,conflict,interactions,last_interaction_type,last_social_at&order=updated_at.desc';
 const encounterEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_agent_encounters?select=id,agent_a_id,agent_b_id,interaction_occurred,relationship_changed,interaction_type,occurred_at&occurred_at=gte.'+encodeURIComponent(new Date(Date.now()-30*60*1000).toISOString())+'&order=occurred_at.desc';
-const apiKey='sb_publishable_MOVcpW2XoLdHbUVp6f-nrw_e_HY1Bav';
+const apiKey='sb_publishable_MOVcpW2XoLdHbUVp6f-nrw_e_HY1Bav';\nconst ZHI_SYSTEM_START='2026-09-26T22:01:14Z';
+function updateWorldAge(){
+ const days=Math.max(0,Math.floor((Date.now()-new Date(ZHI_SYSTEM_START).getTime())/86400000));
+ const el=$('worldAge');
+ if(el) el.textContent='成长 '+days+' 天';
+}
+
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const dt=v=>v?new Date(v).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}):'—';

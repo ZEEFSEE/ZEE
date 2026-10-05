@@ -60,6 +60,8 @@ function updateWorldAge(){
 }
 
 const $=id=>document.getElementById(id);
+updateWorldAge();
+setInterval(updateWorldAge,60000);
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const dt=v=>v?new Date(v).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}):'—';
 const labels={work:'工作',rest:'休息',adventure:'探索',entertainment_consume:'娱乐',eat:'进食',social:'社交',socialize:'社交',socialising:'社交',socializing:'社交',competition:'竞争',workout:'锻炼',shopping:'购物',travel:'旅行',study:'学习',sleep:'睡眠',dining:'用餐'};

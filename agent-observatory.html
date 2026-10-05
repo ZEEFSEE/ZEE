@@ -63,6 +63,7 @@ function updateWorldAge(){
 const $=id=>document.getElementById(id);
 updateWorldAge();
 setInterval(updateWorldAge,60000);
+const displayScene=v=>{const s=String(v??'');return s.replaceAll('APLUS ACHIEVER 教育中心','教育中心')};
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const dt=v=>v?new Date(v).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}):'—';
 const labels={work:'工作',rest:'休息',adventure:'探索',entertainment_consume:'娱乐',eat:'进食',social:'社交',socialize:'社交',socialising:'社交',socializing:'社交',competition:'竞争',workout:'锻炼',shopping:'购物',travel:'旅行',study:'学习',sleep:'睡眠',dining:'用餐'};
@@ -113,18 +114,18 @@ function render(rows){
  if(mode==='relationship') list=[...list].sort((a,b)=>{const ar=Math.max(0,...relationshipOf(a).map(r=>stageMeta(r).rank));const br=Math.max(0,...relationshipOf(b).map(r=>stageMeta(r).rank));return br-ar});
  if(mode==='hot') list=[...list].filter(x=>x.walking===true||(x.activity_type||x.decision_type)==='social').slice(0,24);
  $('visibleCount').textContent='显示 '+list.length+' / '+rows.length;
- const scenes={}; rows.forEach(x=>{const s=x.current_scene||x.location_name||'世界中';scenes[s]=(scenes[s]||0)+1});
+ const scenes={}; rows.forEach(x=>{const s=displayScene(x.current_scene||x.location_name||'世界中');scenes[s]=(scenes[s]||0)+1});
  const rc=window.__relationshipCounts||{}; 
  $('relationshipStrip').innerHTML=Object.entries(relationshipStages).map(([key,m])=>'<span class="relationship-pill '+(isRomantic({relationship_stage:key})?'romantic':isRelationshipConflict({relationship_stage:key})?'conflict':'')+'">'+m.icon+' <b>'+esc(m.label)+'</b> '+Number(rc[key]||0)+'</span>').join('');
  $('sceneStrip').innerHTML=Object.entries(scenes).sort((a,b)=>b[1]-a[1]).slice(0,12).map(([s,n])=>'<span class="scene-pill '+(n>1?'live':'')+'"><i></i><b>'+n+'</b>'+esc(s)+'</span>').join('');
  $('agents').innerHTML=list.length?list.map(card).join(''):'<div class="empty">暂时没有符合条件的智能人。</div>';
  const feed=[...rows].sort((a,b)=>new Date(b.last_activity_at||b.last_decision_at||0)-new Date(a.last_activity_at||a.last_decision_at||0)).slice(0,24);
- $('feed').innerHTML=feed.map(x=>'<div class="feeditem"><b>'+esc(x.name||'未命名')+'</b> · '+emotionOf(x)[0]+' '+esc(emotionOf(x)[1])+' · '+esc(label(x.activity_type||x.decision_type))+' · '+esc(x.current_scene||x.location_name||'世界中')+(x.walking&&x.destination_scene?' → '+esc(x.destination_scene):'')+'<div class="time">'+dt(x.last_activity_at||x.last_decision_at)+'</div></div>').join('');
+ $('feed').innerHTML=feed.map(x=>'<div class="feeditem"><b>'+esc(x.name||'未命名')+'</b> · '+emotionOf(x)[0]+' '+esc(emotionOf(x)[1])+' · '+esc(label(x.activity_type||x.decision_type))+' · '+esc(displayScene(x.current_scene||x.location_name||'世界中'))+(x.walking&&x.destination_scene?' → '+esc(displayScene(x.destination_scene)):'')+'<div class="time">'+dt(x.last_activity_at||x.last_decision_at)+'</div></div>').join('');
 }
 
 function card(x){
  const moving=x.walking===true;
- const scene=x.current_scene||x.location_name||'未知地点';
+ const scene=displayScene(x.current_scene||x.location_name||'未知地点');
  const activity=x.activity_type||x.decision_type;
  const balance=Number(x.balance||0).toLocaleString(undefined,{maximumFractionDigits:2});
  const emo=emotionOf(x);

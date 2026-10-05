@@ -52,6 +52,7 @@ const endpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/rpc/zhi_observe
 const psychologyEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_agent_minds?select=agent_id,mood,confidence,stress,curiosity';
 const relationshipEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_agent_social_relationships?select=male_agent_id,female_agent_id,status,relationship_stage,familiarity,affection,trust,conflict,interactions,last_interaction_type,last_social_at&order=updated_at.desc';
 const encounterEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_agent_encounters?select=id,agent_a_id,agent_b_id,interaction_occurred,relationship_changed,interaction_type,occurred_at&occurred_at=gte.'+encodeURIComponent(new Date(Date.now()-30*60*1000).toISOString())+'&order=occurred_at.desc';
+const familyEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_agent_family?select=child_agent_id,father_agent_id,mother_agent_id,born_at&order=born_at.desc';
 const apiKey='sb_publishable_MOVcpW2XoLdHbUVp6f-nrw_e_HY1Bav';
 const ZHI_SYSTEM_START='2026-09-26T22:01:14Z';
 function updateWorldAge(){
@@ -120,7 +121,7 @@ function render(rows){
  $('sceneStrip').innerHTML=Object.entries(scenes).sort((a,b)=>b[1]-a[1]).slice(0,12).map(([s,n])=>'<span class="scene-pill '+(n>1?'live':'')+'"><i></i><b>'+n+'</b>'+esc(s)+'</span>').join('');
  $('agents').innerHTML=list.length?list.map(card).join(''):'<div class="empty">暂时没有符合条件的智能人。</div>';
  const feed=[...rows].sort((a,b)=>new Date(b.last_activity_at||b.last_decision_at||0)-new Date(a.last_activity_at||a.last_decision_at||0)).slice(0,24);
- $('feed').innerHTML=feed.map(x=>'<div class="feeditem"><b>'+esc(x.name||'未命名')+'</b> · '+emotionOf(x)[0]+' '+esc(emotionOf(x)[1])+' · '+esc(label(x.activity_type||x.decision_type))+' · '+esc(displayScene(x.current_scene||x.location_name||'世界中'))+(x.walking&&x.destination_scene?' → '+esc(displayScene(x.destination_scene)):'')+'<div class="time">'+dt(x.last_activity_at||x.last_decision_at)+'</div></div>').join('');
+ $('feed').innerHTML=feed.map(x=>'<div class="feeditem"><b>'+esc(x.name||'未命名')+(x.family_parents?'（父：'+esc(x.family_parents.father)+' · 母：'+esc(x.family_parents.mother)+'）':'')+'</b> · '+emotionOf(x)[0]+' '+esc(emotionOf(x)[1])+' · '+esc(label(x.activity_type||x.decision_type))+' · '+esc(displayScene(x.current_scene||x.location_name||'世界中'))+(x.walking&&x.destination_scene?' → '+esc(displayScene(x.destination_scene)):'')+'<div class="time">'+dt(x.last_activity_at||x.last_decision_at)+'</div></div>').join('');
 }
 
 function card(x){
@@ -136,7 +137,8 @@ function card(x){
  const curiosity=pct(val(x,'curiosity','curiosity_score'));
  const desire=val(x,'desire','current_desire','dominant_desire');
  const status=moving?'正在前往 '+(x.destination_scene||'新的地方'):'停留在 '+scene;
- return '<article class="agent '+(moving?'moving':'')+'"><div class="top"><div class="identity"><span class="avatar">'+esc(initials(x.name))+'</span><div><div class="name">'+esc(x.name||'未命名')+'</div><div class="personality">'+esc(x.personality||'独立人格')+'</div></div></div><span class="badge">'+icon(activity)+' '+esc(label(activity))+'</span></div>'+
+ const displayName=x.family_parents?esc(x.name||'未命名')+' <span style="font-size:10px;color:#9ba3b5;font-weight:700">（父：'+esc(x.family_parents.father)+' · 母：'+esc(x.family_parents.mother)+'）</span>':esc(x.name||'未命名');
+ return '<article class="agent '+(moving?'moving':'')+'"><div class="top"><div class="identity"><span class="avatar">'+esc(initials(x.name))+'</span><div><div class="name">'+displayName+'</div><div class="personality">'+esc(x.personality||'独立人格')+'</div></div></div><span class="badge">'+icon(activity)+' '+esc(label(activity))+'</span></div>'+
  '<div class="state">'+(love?'<div class="love-state">'+stageMeta(love).icon+' <b>'+esc(stageMeta(love).label)+'</b> · 与 '+esc(love.name||'某人')+' 的关系正在发展</div>':'')+(moving?'<span class="walk">🚶 '+esc(status)+'</span>':'<span class="idle">● '+esc(status)+'</span>')+'</div>'+
  (x.reason?'<div class="activity"><div class="reason">'+esc(x.reason)+'</div></div>':'')+
  '<div class="emotion">'+emo[0]+' <strong>心情</strong> · '+esc(emo[1])+(rels.length?'<div class="relation-list">'+rels.map(r=>'<span class="relation-chip '+(isRomantic(r)?'romantic':isRelationshipConflict(r)?'conflict':'')+'">'+stageMeta(r).icon+' '+esc(relationText(r))+'</span>').join('')+'</div>':'')+'</div>'+((confidence!==null||stress!==null||curiosity!==null)?'<div class="mind">'+(confidence!==null?'<span>信心<b>'+confidence+'%</b></span>':'')+(stress!==null?'<span>压力<b>'+stress+'%</b></span>':'')+(curiosity!==null?'<span>好奇心<b>'+curiosity+'%</b></span>':'')+'</div>':'')+(desire?'<details class="detail"><summary>查看内在状态</summary><div class="detailbox">当前欲望：'+esc(desire)+(rels.length?'<br>正在关注：'+esc(rels.map(relationText).join('、')):'')+'</div></details>':'')+
@@ -147,11 +149,12 @@ async function load(){
  $('liveText').textContent='正在读取智能人…';
  try{
    const worldRes=await fetch(endpoint,{method:'POST',headers:{apikey:apiKey,'Content-Type':'application/json'},body:'{}',cache:'no-store'});
-   let mindRes,relRes,encRes;
+   let mindRes,relRes,encRes,famRes;
    try{[mindRes,relRes,encRes]=await Promise.allSettled([
      fetch(psychologyEndpoint,{headers:{apikey:apiKey},cache:'no-store'}),
      fetch(relationshipEndpoint,{headers:{apikey:apiKey},cache:'no-store'}),
-     fetch(encounterEndpoint,{headers:{apikey:apiKey},cache:'no-store'})
+     fetch(encounterEndpoint,{headers:{apikey:apiKey},cache:'no-store'}),
+     fetch(familyEndpoint,{headers:{apikey:apiKey},cache:'no-store'})
    ]);}catch(_e){}
    const worldText=await worldRes.text();
    if(!worldRes.ok) throw new Error('世界数据 HTTP '+worldRes.status+' · '+worldText.slice(0,160));
@@ -165,6 +168,13 @@ async function load(){
      const minds=await mindRes.value.json();
      const byId=new Map((Array.isArray(minds)?minds:[]).map(m=>[String(m.agent_id),m]));
      rows=rows.map(x=>{const m=byId.get(String(x.id));return m?{...x,mood:m.mood,confidence:m.confidence,stress:m.stress,curiosity:m.curiosity}:x});
+   }
+   if(famRes?.status==='fulfilled'&&famRes.value.ok){
+     const fam=await famRes.value.json();
+     const names=new Map(rows.map(x=>[String(x.id),x.name||'未命名']));
+     const familyByChild=new Map();
+     (Array.isArray(fam)?fam:[]).forEach(f=>familyByChild.set(String(f.child_agent_id),{father:names.get(String(f.father_agent_id))||'未知',mother:names.get(String(f.mother_agent_id))||'未知',born_at:f.born_at}));
+     rows=rows.map(x=>{const p=familyByChild.get(String(x.id));return p?{...x,family_parents:p}:x});
    }
    if(encRes?.status==='fulfilled'&&encRes.value.ok){
      const encounters=await encRes.value.json();

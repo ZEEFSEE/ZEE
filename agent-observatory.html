@@ -52,7 +52,8 @@ const endpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/rpc/zhi_observe
 const psychologyEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_agent_minds?select=agent_id,mood,confidence,stress,curiosity';
 const relationshipEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_agent_social_relationships?select=male_agent_id,female_agent_id,status,relationship_stage,familiarity,affection,trust,conflict,interactions,last_interaction_type,last_social_at&order=updated_at.desc';
 const encounterEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_agent_encounters?select=id,agent_a_id,agent_b_id,interaction_occurred,relationship_changed,interaction_type,occurred_at&occurred_at=gte.'+encodeURIComponent(new Date(Date.now()-30*60*1000).toISOString())+'&order=occurred_at.desc';
-const apiKey='sb_publishable_MOVcpW2XoLdHbUVp6f-nrw_e_HY1Bav';\nconst ZHI_SYSTEM_START='2026-09-26T22:01:14Z';
+const apiKey='sb_publishable_MOVcpW2XoLdHbUVp6f-nrw_e_HY1Bav';
+const ZHI_SYSTEM_START='2026-09-26T22:01:14Z';
 function updateWorldAge(){
  const days=Math.max(0,Math.floor((Date.now()-new Date(ZHI_SYSTEM_START).getTime())/86400000));
  const el=$('worldAge');

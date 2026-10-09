@@ -50,7 +50,7 @@ button{min-height:40px;touch-action:manipulation}
 <div class="stat"><div class="k">正在移动</div><strong id="moving">—</strong><em>真实目的地</em></div>
 <div class="stat"><div class="k">正在社交</div><strong id="social">—</strong><em id="socialHint">关系变化读取中</em></div>
 <div class="stat"><div class="k">正在恋爱</div><strong id="romance">—</strong><em>双方产生感情</em></div>
-<div class="stat"><div class="k">世界更新</div><strong id="updated">—</strong><em>手动刷新 · 低负载</em></div>
+<div class="stat"><div class="k">世界更新</div><strong id="updated">—</strong><em>每30秒自动同步</em></div>
 </section>
 
 <div class="layout">
@@ -276,5 +276,6 @@ $('filter').oninput=()=>{if(window.__rows)render(window.__rows)};
 $('mode').onchange=()=>{if(window.__rows)render(window.__rows)};
 $('refresh').onclick=load;
 load();
+setInterval(()=>{if(document.visibilityState==='visible')load()},30000);
 </script></body>
 </html>

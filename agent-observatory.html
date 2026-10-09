@@ -254,7 +254,12 @@ async function load(){
          return {...m,male_name:names.get(String(m.male_agent_id))||'未知智能人',female_name:names.get(String(m.female_agent_id))||'未知智能人',child_name:child||null,family_verified:!!(family&&String(family.father_agent_id)===String(m.male_agent_id)&&String(family.mother_agent_id)===String(m.female_agent_id))};
        });
        window.__marriageReadStatus='ok';
+       // The marriage counter must come from the authoritative marriage table,
+       // not the social-relationship stage, which may lag behind marriage events.
+       relationshipCounts.married=marriages.filter(m=>m.status==='married').length;
+       window.__relationshipCounts=relationshipCounts;
        renderMarriages();
+       if(window.__rows) render(window.__rows);
      }
    }else{
      $('marriageSummary').textContent='读取失败';

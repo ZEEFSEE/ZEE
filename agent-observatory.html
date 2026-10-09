@@ -189,7 +189,7 @@ async function load(){
  try{
    const worldRes=await fetch(endpoint,{method:'POST',headers:{apikey:apiKey,'Content-Type':'application/json'},body:'{}',cache:'no-store'});
    let mindRes,relRes,encRes,famRes,marRes;
-   try{[mindRes,relRes,encRes]=await Promise.allSettled([
+   try{[mindRes,relRes,encRes,famRes,marRes]=await Promise.allSettled([
      fetch(psychologyEndpoint,{headers:{apikey:apiKey},cache:'no-store'}),
      fetch(relationshipEndpoint,{headers:{apikey:apiKey},cache:'no-store'}),
      fetch(encounterEndpoint,{headers:{apikey:apiKey},cache:'no-store'}),
@@ -202,6 +202,7 @@ async function load(){
    try{rows=JSON.parse(worldText)}catch(e){throw new Error('世界数据格式异常')}
    if(!Array.isArray(rows)) throw new Error('世界数据格式异常');
    if(!rows.length) throw new Error('没有读取到智能人');
+   window.__familyRows=[];
    window.__socialRelationshipChanges=null;
    window.__encounterStatus='读取中';
    if(mindRes?.status==='fulfilled'&&mindRes.value.ok){
@@ -211,6 +212,7 @@ async function load(){
    }
    if(famRes?.status==='fulfilled'&&famRes.value.ok){
      const fam=await famRes.value.json();
+     window.__familyRows=Array.isArray(fam)?fam:[];
      const names=new Map(rows.map(x=>[String(x.id),x.name||'未命名']));
      const familyByChild=new Map();
      (Array.isArray(fam)?fam:[]).forEach(f=>familyByChild.set(String(f.child_agent_id),{father:names.get(String(f.father_agent_id))||'未知',mother:names.get(String(f.mother_agent_id))||'未知',born_at:f.born_at}));
@@ -245,11 +247,7 @@ async function load(){
      const marriages=await marRes.value.json();
      if(Array.isArray(marriages)){
        const names=new Map(rows.map(x=>[String(x.id),x.name||'未命名']));
-       const familyByChild=new Map();
-       if(famRes?.status==='fulfilled'&&famRes.value.ok){
-         const famRows=await famRes.value.clone().json().catch(()=>[]);
-         (Array.isArray(famRows)?famRows:[]).forEach(f=>familyByChild.set(String(f.child_agent_id),f));
-       }
+       const familyByChild=new Map((window.__familyRows||[]).map(f=>[String(f.child_agent_id),f]));
        window.__marriageRows=marriages.map(m=>{
          const child=m.child_agent_id?names.get(String(m.child_agent_id)):null;
          const family=m.child_agent_id?familyByChild.get(String(m.child_agent_id)):null;

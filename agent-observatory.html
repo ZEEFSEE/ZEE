@@ -97,6 +97,7 @@ const icon=v=>icons[v]||'✨';
 const initials=v=>String(v||'Z').trim().slice(0,2).toUpperCase();
 const genderLabel=v=>v==='男'?'♂ 男':v==='女'?'♀ 女':v==='待自主选择'?'◉ 性别待自主选择':'⚧ 性别未读取';
 const genderClass=v=>v==='男'?'gender-male':v==='女'?'gender-female':'gender-pending';
+async function fetchWithRetry(url,options={},attempts=3){let lastError;for(let i=0;i<attempts;i++){try{return await fetch(url,options)}catch(e){lastError=e;if(i<attempts-1)await new Promise(resolve=>setTimeout(resolve,700*(i+1)))}}throw lastError||new Error('网络请求失败')}
 const emotionMap={happy:['😊','愉快'],excited:['🤩','兴奋'],sad:['😔','低落'],angry:['😠','生气'],afraid:['😨','紧张'],love:['❤️','喜欢'],disgust:['😒','反感'],desire:['✨','期待'],calm:['😌','平静'],neutral:['🙂','平稳']};
 const emotionOf=x=>{const raw=x.emotion??x.current_emotion??x.mood??'neutral';if(typeof raw==='number'||(typeof raw==='string'&&raw.trim()!==''&&Number.isFinite(Number(raw)))){const n=Math.max(0,Math.min(100,Number(raw)));return n<=20?['😔','低落']:n<=45?['😌','平稳']:n<=70?['😊','愉快']:['🤩','兴奋']}const key=String(raw).toLowerCase();return emotionMap[key]||['🙂',String(raw)||'平稳']};
 const relationshipOf=x=>Array.isArray(x.relationships)?x.relationships:Array.isArray(x.relations)?x.relations:[];
@@ -190,7 +191,7 @@ function card(x){
 async function load(){
  $('liveText').textContent='正在读取智能人…';
  try{
-   const worldRes=await fetch(endpoint,{method:'POST',headers:{apikey:apiKey,'Content-Type':'application/json'},body:'{}',cache:'no-store'});
+   const worldRes=await fetchWithRetry(endpoint,{method:'POST',headers:{apikey:apiKey,'Content-Type':'application/json'},body:'{}',cache:'no-store'},3);
    let mindRes,relRes,encRes,famRes,marRes,genderRes;
    try{[mindRes,relRes,encRes,famRes,marRes,genderRes]=await Promise.allSettled([
      fetch(psychologyEndpoint,{headers:{apikey:apiKey},cache:'no-store'}),
@@ -277,7 +278,7 @@ async function load(){
    $('socialHint').textContent=window.__encounterStatus==='ok'?'最近30分钟关系变化 '+window.__socialRelationshipChanges+' 次':'关系变化读取失败';
  }catch(e){
    $('liveText').textContent='连接异常';
-   $('agents').innerHTML='<div class="empty">智能人数据读取失败：'+esc(e.message||'未知错误')+'<br><br>请点击“↻ 刷新”重试。</div>';
+   $('agents').innerHTML='<div class="empty">智能人数据读取失败：'+esc(e.message||'未知错误')+'<br><br>已自动重试 3 次仍未成功。请检查网络后点击“↻ 刷新”。</div>';
    $('feed').innerHTML='';
    console.error('ZHI observer:',e);
  }

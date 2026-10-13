@@ -199,7 +199,7 @@ async function load(){
      fetch(encounterEndpoint,{headers:{apikey:apiKey},cache:'no-store'}),
      fetch(familyEndpoint,{headers:{apikey:apiKey},cache:'no-store'}),
      fetch(marriageEndpoint,{headers:{apikey:apiKey},cache:'no-store'}),
-     fetch(genderEndpoint,{headers:{apikey:apiKey},cache:'no-store'})
+     fetchWithRetry(genderEndpoint,{headers:{apikey:apiKey},cache:'no-store'},3)
    ]);}catch(_e){}
    const worldText=await worldRes.text();
    if(!worldRes.ok) throw new Error('世界数据 HTTP '+worldRes.status+' · '+worldText.slice(0,160));

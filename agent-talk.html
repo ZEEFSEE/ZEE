@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ZHI · 智能人讲话室</title>
+<style>
+:root{color-scheme:dark;--bg:#090710;--panel:#151020;--panel2:#1d1630;--line:#ffffff18;--gold:#ffe08a;--muted:#b8aec9;--green:#83f0b0;--red:#ff9eac}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -10%,#492456 0,#171021 44%,#090710 82%);color:#f8f5ff;font:14px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;min-height:100vh}
+.wrap{max-width:1180px;margin:auto;padding:22px 16px 40px}.top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}.brand{font-size:27px;font-weight:950;color:var(--gold)}.sub{color:var(--muted);font-size:12px;margin-top:5px}
+button,select,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #ffe08a4d;border-radius:10px;padding:10px 13px;background:#2a2038;color:#fff;font-weight:800}button:hover{border-color:var(--gold)}button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--gold);color:#21152a;border-color:var(--gold)}.secondary{background:transparent}
+.layout{display:grid;grid-template-columns:320px minmax(0,1fr);gap:14px;margin-top:18px}.panel{background:#130f1deF;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 12px 36px #0003}.panelHead{padding:15px 16px;border-bottom:1px solid var(--line);font-weight:900}.panelBody{padding:14px}.field{display:grid;gap:7px;margin-bottom:13px}.field label{font-size:12px;color:var(--muted)}select,input,textarea{width:100%;border:1px solid #ffffff24;border-radius:10px;background:#0d0a15;color:#fff;padding:11px;outline:none}select:focus,input:focus,textarea:focus{border-color:#ffe08a99}.agentList{max-height:55vh;overflow:auto}.agentOption{width:100%;text-align:left;display:block;background:transparent;border:0;border-radius:10px;padding:11px;margin-bottom:4px}.agentOption.selected{background:#3a2a4b;border:1px solid #ffe08a55}.agentOption strong{display:block;font-size:14px}.agentOption span{display:block;color:var(--muted);font-size:11px;margin-top:4px}.status{font-size:12px;color:var(--muted);line-height:1.6;white-space:pre-wrap}.status.error{color:var(--red)}.status.good{color:var(--green)}
+.chatPanel{display:flex;flex-direction:column;min-height:650px}.chatHead{padding:16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;align-items:center}.agentTitle{font-weight:950;font-size:19px;color:var(--gold)}.chatLog{padding:18px;display:flex;flex-direction:column;gap:13px;flex:1;min-height:360px;max-height:56vh;overflow:auto}.welcome{color:var(--muted);text-align:center;margin:auto;max-width:420px;line-height:1.8}.bubble{max-width:min(82%,680px);padding:12px 14px;border-radius:14px;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere}.bubble.user{align-self:flex-end;background:#493451;border:1px solid #a784b755}.bubble.agent{align-self:flex-start;background:#201a2e;border:1px solid #ffffff18}.bubble .who{font-size:11px;color:var(--gold);font-weight:900;margin-bottom:5px}.bubble .time{font-size:10px;color:var(--muted);margin-top:6px}.composer{border-top:1px solid var(--line);padding:14px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px}.composer textarea{resize:vertical;min-height:54px;max-height:180px}.footnote{font-size:11px;color:var(--muted);line-height:1.6;padding:0 15px 14px}.quick{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}.quick button{font-size:11px;padding:7px 9px;font-weight:700}.hidden{display:none!important}
+@media(max-width:800px){.wrap{padding:14px 10px 25px}.layout{grid-template-columns:1fr}.agentList{max-height:250px}.chatPanel{min-height:580px}.chatLog{max-height:48vh}.brand{font-size:22px}.bubble{max-width:94%}.composer{grid-template-columns:1fr}.composer button{width:100%}}
+</style>
+</head>
+<body>
+<main class="wrap">
+ <header class="top">
+  <div><div class="brand">💬 ZHI · 智能人讲话室</div><div class="sub">让每个智能人依据自己的性格、当前状态和真实记忆，表达独立想法</div></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="secondary" id="refresh">↻ 刷新名单</button><button class="secondary" onclick="location.href='index.html'">← 返回 ZHI</button></div>
+ </header>
+ <div class="layout">
+  <aside class="panel">
+   <div class="panelHead">👥 选择一个智能人</div>
+   <div class="panelBody">
+    <div class="field"><label for="agentSearch">搜索姓名</label><input id="agentSearch" placeholder="输入智能人姓名"></div>
+    <div id="agentStatus" class="status">正在读取智能人名单…</div>
+   </div>
+   <div id="agentList" class="agentList"></div>
+   <div class="panelBody" style="border-top:1px solid var(--line)"><div class="status">对话将调用服务端 Agnes AI。只有成功生成的回答才会显示为智能人的回复；是否保存成功会单独提示。</div></div>
+  </aside>
+  <section class="panel chatPanel">
+   <div class="chatHead"><div><div class="agentTitle" id="chatTitle">先选择一个智能人</div><div class="sub" id="agentMeta">个性化表达 · 独立观点 · 记忆关联</div></div><button id="clearChat" class="secondary">清空窗口</button></div>
+   <div id="chatLog" class="chatLog"><div class="welcome">选择左侧的智能人，向他/她提问。<br>例如：你今天在想什么？你最近有什么目标？你怎么看待社区里的事情？</div></div>
+   <div class="composer">
+    <div><div class="quick"><button data-msg="你今天在想什么？">你今天在想什么？</button><button data-msg="你最近最想完成什么目标？">最近的目标</button><button data-msg="你对社区里其他智能人有什么看法？">社区看法</button><button data-msg="最近有什么事让你开心或烦恼？">心情与烦恼</button></div><textarea id="message" placeholder="写下你想对这位智能人说的话……（Enter 发送，Shift+Enter 换行）" maxlength="2000"></textarea></div>
+    <button class="primary" id="send" disabled>发送 ↗</button>
+   </div>
+   <div class="footnote">AI 负责表达，ZHI 数据库负责真实状态与记忆。模型生成的内容不代表实际发生过的事件；若接口或权限未配置，页面会显示具体错误。</div>
+  </section>
+ </div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-client.js?v=20261015-agnes-talk"></script>
+<script>
+(function(){
+ const $=id=>document.getElementById(id), sb=window.zhiSupabase;
+ const functionUrl='https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-agnes-chat';
+ let agents=[], selected=null, busy=false;
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const stamp=()=>new Date().toLocaleTimeString('zh-SG',{hour:'2-digit',minute:'2-digit',hour12:false});
+ function status(text,kind=''){ $('agentStatus').textContent=text;$('agentStatus').className='status '+kind; }
+ function addBubble(role,text,time=stamp()){
+  const log=$('chatLog');const empty=log.querySelector('.welcome');if(empty)empty.remove();
+  const el=document.createElement('div');el.className='bubble '+(role==='user'?'user':'agent');
+  const who=document.createElement('div');who.className='who';who.textContent=role==='user'?'你':(selected?.name||'智能人');
+  const body=document.createElement('div');body.textContent=text;
+  const tm=document.createElement('div');tm.className='time';tm.textContent=time;
+  el.append(who,body,tm);log.append(el);log.scrollTop=log.scrollHeight;
+ }
+ function renderAgents(){
+  const q=$('agentSearch').value.trim().toLowerCase();
+  const rows=agents.filter(a=>!q||String(a.name||'').toLowerCase().includes(q));
+  $('agentList').innerHTML='';
+  rows.forEach(a=>{
+   const b=document.createElement('button');b.className='agentOption'+(selected?.id===a.id?' selected':'');b.type='button';
+   const strong=document.createElement('strong');strong.textContent=(String(a.gender||'').toLowerCase()==='female'?'♀ ':String(a.gender||'').toLowerCase()==='male'?'♂ ':'')+(a.name||'未命名智能人');
+   const span=document.createElement('span');span.textContent=[a.personality,a.life_status].filter(Boolean).join(' · ')||'ZHI 智能人';
+   b.append(strong,span);b.onclick=()=>choose(a);$('agentList').append(b);
+  });
+  if(!rows.length){const p=document.createElement('div');p.className='panelBody status';p.textContent='没有匹配的智能人';$('agentList').append(p);}
+ }
+ function choose(a){selected=a;renderAgents();$('chatTitle').textContent=a.name||'智能人';$('agentMeta').textContent=[a.personality,a.gender,a.life_status].filter(Boolean).join(' · ')||'独立人格 · 个性化表达';$('send').disabled=busy;}
+ async function loadAgents(){
+  if(!sb){status('Supabase 客户端未加载，请检查 supabase-client.js。','error');return;}
+  status('正在验证登录状态…');
+  try{
+   const {data:{session},error:sessionError}=await sb.auth.getSession();
+   if(sessionError)throw sessionError;
+   if(!session){status('请先登录 ZHI 管理员账号，再进入智能人讲话室。','error');return;}
+   status('正在读取智能人名单…');
+   const {data,error}=await window.zhiCoreSupabase.from('zhi_agents').select('id,name,gender,personality,life_status').order('name').limit(1000);
+   if(error)throw error;
+   agents=data||[];renderAgents();status('已读取 '+agents.length+' 位智能人。','good');
+   if(selected){const latest=agents.find(a=>String(a.id)===String(selected.id));if(latest)choose(latest);}
+  }catch(e){status('读取失败：'+(e?.message||String(e))+'\n请检查登录状态、Core 数据库读取权限及 zhi_agents 表。','error');}
+ }
+ async function send(){
+  if(busy)return;
+  if(!selected){status('请先选择一位智能人。','error');return;}
+  const message=$('message').value.trim();if(!message)return;
+  const {data:{session},error:sessionError}=await sb.auth.getSession();
+  if(sessionError||!session){status('管理员会话已失效，请重新登录。','error');return;}
+  addBubble('user',message);$('message').value='';busy=true;$('send').disabled=true;$('send').textContent='思考中…';
+  const pending=document.createElement('div');pending.className='bubble agent';pending.textContent=(selected.name||'智能人')+' 正在组织语言…';$('chatLog').append(pending);$('chatLog').scrollTop=$('chatLog').scrollHeight;
+  try{
+   const r=await fetch(functionUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,'apikey':window.zhiCorePublishableKey||''},body:JSON.stringify({agent_id:selected.id,message}),cache:'no-store'});
+   const d=await r.json().catch(()=>({}));
+   if(!r.ok||!d.ok)throw new Error(d.error||('HTTP '+r.status)+(d.upstream_status?' · Agnes upstream '+d.upstream_status:''));
+   pending.remove();addBubble('agent',d.reply||'（没有收到文字回复）');
+   status(d.saved?'Agnes AI 已回复，对话与想法已成功写入数据库。':'Agnes AI 已回复，但至少一项记忆/消息记录未能保存。',d.saved?'good':'error');
+  }catch(e){pending.remove();status('发送失败：'+(e?.message||String(e))+'\n请确认 Agnes API Key 已设置、Edge Function 已部署，并检查函数日志。','error');}
+  finally{busy=false;$('send').disabled=!selected;$('send').textContent='发送 ↗';$('message').focus();}
+ }
+ $('refresh').onclick=loadAgents;$('agentSearch').oninput=renderAgents;$('send').onclick=send;
+ $('message').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
+ $('clearChat').onclick=()=>{$('chatLog').innerHTML='<div class="welcome">对话窗口已清空。数据库中已经保存的记忆不会被删除。</div>';};
+ document.querySelectorAll('[data-msg]').forEach(b=>b.onclick=()=>{$('message').value=b.dataset.msg;$('message').focus();});
+ loadAgents();
+})();
+</script>
+</body></html>

@@ -56,15 +56,15 @@ button{min-height:40px;touch-action:manipulation}
 
 <section class="panel" style="margin:0 0 14px">
   <div class="sectionbar">
-    <div><h2>🏰 皇宫 · 实时在场名单</h2><span>当前所在位置与正在前往皇宫的人分开统计</span></div>
+    <div><h2>🏰 皇宫 · 实时在场名单</h2><span>在场名单与互动记录分区显示</span></div>
     <button id="palaceToggle" type="button">查看皇宫人员</button>
   </div>
   <div id="palacePanel" hidden>
     <div id="palaceStatus" class="hint">点击按钮后读取世界位置记录。</div>
-    <div class="detail" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:10px">
+    <div class="detail" style="display:grid;grid-template-columns:minmax(220px,.7fr) minmax(0,1.8fr);gap:10px">
       <section class="panel"><h3>📍 当前在皇宫</h3><div id="palacePresent" class="feed">等待读取…</div></section>
       <section class="panel"><h3>💬 皇宫内的互动</h3><div id="palaceInteractions" class="feed">等待读取互动记录…</div></section>
-      <section class="panel"><h3>🚶 正在前往皇宫</h3><div id="palaceIncoming" class="feed">等待读取…</div></section>
+
     </div>
   </div>
 </section>
@@ -100,7 +100,7 @@ const isPalaceScene=v=>/皇宫|palace/i.test(String(v||''));
 async function loadPalace(){
  if(palaceBusy)return;
  palaceBusy=true;
- const status=$('palaceStatus'), present=$('palacePresent'), incoming=$('palaceIncoming'), interactions=$('palaceInteractions');
+ const status=$('palaceStatus'), present=$('palacePresent'), interactions=$('palaceInteractions');
  status.textContent='正在读取皇宫人员、位置与互动记录…';
  try{
   const pair=await Promise.all([
@@ -118,12 +118,12 @@ async function loadPalace(){
   const truthy=v=>v===true||v==='true'||v===1||v==='1';
   const alive=a=>!a||String(a.life_status||'alive').toLowerCase()==='alive';
   const at=positions.filter(p=>isPalaceScene(p.current_scene)&&alive(byId.get(String(p.agent_id))));
-  const going=positions.filter(p=>p.walking&&isPalaceScene(p.destination_scene)&&!isPalaceScene(p.current_scene)&&alive(byId.get(String(p.agent_id))));
+  
   const time=v=>v?new Date(v).toLocaleString():'未知';
   const name=id=>(byId.get(String(id))||{}).name||'未知智能人';
   const row=(p,desc)=>{const a=byId.get(String(p.agent_id))||{};return '<div class="feeditem"><b>'+esc(a.name||'未知智能人')+'</b> · '+esc(a.gender||'性别未读取')+'<br><span class="hint">'+esc(desc)+' · 位置更新时间 '+esc(time(p.updated_at))+'</span></div>';};
   present.innerHTML=at.map(p=>row(p,'已记录在皇宫')).join('')||'<div class="empty">目前没有存活智能人被记录在皇宫。</div>';
-  incoming.innerHTML=going.map(p=>row(p,p.walk_arrive_at?'正在前往 · 预计抵达 '+time(p.walk_arrive_at):'正在前往皇宫 · 抵达时间未知')).join('')||'<div class="empty">目前没有智能人被记录为正在前往皇宫。</div>';
+  
   const events=encounters.filter(e=>truthy(e.interaction_occurred)&&isPalaceScene(e.scene)&&alive(byId.get(String(e.agent_a_id)))&&alive(byId.get(String(e.agent_b_id))));
   const delta=(before,after,label)=>{if(before===undefined||before===null||after===undefined||after===null||before===''||after==='')return '';const n=Number(after)-Number(before);if(!Number.isFinite(n))return '';return '<span class="hint">'+esc(label)+' '+(n>0?'<b class="success">+'+n+'</b>':n<0?'<b class="danger">'+n+'</b>':'<b>±0</b>')+'</span>';};
    const snapshotStats=(snap,agentId)=>{const root=snap||{};const pick=(generic,a,b)=>generic||((root[a]?.agent_id&&String(root[a].agent_id)===String(agentId))?root[a]:null)||((root[b]?.agent_id&&String(root[b].agent_id)===String(agentId))?root[b]:null)||root[a]||root[b]||{};const mind=pick(root.mind,'king_mind','female_mind'),rel=pick(root.relationship,'king_relationship','female_relationship'),desires=pick(root.desires,'king_desires','female_desires');return {心情:mind.mood,精力:mind.energy,压力:mind.stress,好奇心:mind.curiosity,信心:mind.confidence,好感度:rel.affection,信任度:rel.trust,熟悉度:rel.familiarity,冲突值:rel.conflict,亲密需求:desires.intimacy_desire??desires.intimacy};};
@@ -143,12 +143,12 @@ async function loadPalace(){
    }).join('');
    interactions.innerHTML='<div class="hint"><b>进入前后变化</b> · 差值按离场快照减去进入前快照计算，不使用推测值</div>'+(comparisonHtml||'<div class="empty">最近24小时没有可用的皇宫进入前后快照。</div>')+(eventHtml||'<div class="empty">最近24小时没有查到场景明确记录为皇宫的互动事件。这里不会把普通在场名单冒充成互动记录。</div>');
   const newest=positions.reduce((m,p)=>Math.max(m,p.updated_at?Date.parse(p.updated_at)||0:0),0), stale=newest>0&&Date.now()-newest>5*60*1000;
-  status.textContent='当前在场 '+at.length+' 人 · 前往中 '+going.length+' 人 · 最近24小时皇宫互动 '+events.length+' 条 · 本次查询 '+new Date().toLocaleString()+(newest?' · 最新位置记录 '+time(newest):' · 尚无位置更新时间')+(stale?' · 警告：位置记录超过 5 分钟，名单可能已过期。':'');
+  status.textContent='当前在场 '+at.length+' 人 · 最近24小时皇宫互动 '+events.length+' 条 · 本次查询 '+new Date().toLocaleString()+(newest?' · 最新位置记录 '+time(newest):' · 尚无位置更新时间')+(stale?' · 警告：位置记录超过 5 分钟，名单可能已过期。':'');
   status.style.color=stale?'#ff9eab':'';
  }catch(e){
   status.textContent='读取皇宫数据失败：'+(e?.message||String(e))+'。';
   present.innerHTML='<div class="empty">无法确认在场人员，请检查位置表的读取权限。</div>';
-  incoming.innerHTML='<div class="empty">无法确认前往人员。</div>';
+  
   interactions.innerHTML='<div class="empty">无法读取互动记录，请检查互动表的读取权限。</div>';
  }finally{palaceBusy=false;}
 }

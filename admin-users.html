@@ -25,7 +25,20 @@ body{margin:0;background:#f5f6f8;color:#171a21;font-family:-apple-system,BlinkMa
 @media (min-width:761px) and (max-width:1100px){
   .wrap{padding-left:20px;padding-right:20px}
 }
-\n</style></head>
+\n
+/* Mobile PWA ergonomics: readable controls, safe touch targets, and no iOS input zoom. */
+html{-webkit-text-size-adjust:100%;overscroll-behavior-y:contain}
+button,a,select{touch-action:manipulation}
+@media(max-width:600px){input,select,textarea{font-size:16px!important}button{scroll-margin-block:12px}}
+</style><meta name="theme-color" content="#120d20">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ZHI 世界">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./zhi-icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./zhi-icon.svg">
+</head>
 <body><main class="wrap">
 <div class="head"><div><div class="brand">🪙 ZHI · 用户管理中心</div><div class="sub">正式 ZHI 用户 + 10,000 SR 独立账户 · 实时数据库数据</div></div><button class="btn light" onclick="location.href='index.html'">← 返回 ZHI</button></div>
 <div class="card"><div class="stats">
@@ -40,4 +53,6 @@ const sb=window.zhiSupabase,$=id=>document.getElementById(id),money=n=>Number(n|
 function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 async function load(){const size=Number($('pageSize').value),q=$('search').value.trim()||null,sr=$('type').value===''?null:$('type').value==='true';$('msg').textContent='加载中…';$('rows').innerHTML='';const {data,error}=await sb.rpc('admin_get_users',{p_limit:size,p_offset:offset,p_search:q,p_sr_only:sr});if(error){$('msg').textContent='加载失败：'+error.message;$('msg').className='msg err';return}const rows=data||[];totalShown=rows.length;$('shown').textContent=rows.length.toLocaleString();$('realCount').textContent=rows.filter(x=>!x.is_sr).length.toLocaleString();$('asset').textContent=money(rows.reduce((a,x)=>a+Number(x.balance||0)+Number(x.locked_balance||0)+Number(x.savings_principal||0),0))+' ZHI';$('rows').innerHTML=rows.map(x=>'<tr><td><b>'+esc(x.username||'--')+'</b></td><td>ZHI-'+String(x.z_id??'').padStart(12,'0')+'</td><td class="'+(x.is_sr?'sr':'real')+'">'+(x.is_sr?'🤖 SR':'👤 真人')+'</td><td>'+esc(x.sr_id||'—')+'</td><td class="money">'+money(x.balance)+'</td><td class="money">'+money(x.locked_balance)+'</td><td class="money">'+money(x.savings_principal)+'</td><td class="money">'+money(x.loan_outstanding)+'</td><td class="money">'+money(x.open_bet_amount)+' ('+x.open_bet_count+')</td><td class="money">'+money(x.total_bet_amount)+' ('+x.total_bet_count+')</td><td>'+x.win_count+' / '+x.loss_count+'</td><td class="money">'+money(x.net_worth)+'</td><td>'+esc(x.behavior_profile||'--')+'</td><td>'+fmt(x.last_action_at||x.created_at)+'</td></tr>').join('')||'<tr><td colspan="11" class="empty">没有找到用户</td></tr>';$('page').textContent=(Math.floor(offset/size)+1)+' / '+(rows.length===size?'下一页可用':'最后一页');$('prev').disabled=offset===0;$('next').disabled=rows.length<size;$('msg').textContent='已从正式 ZHI 用户数据库读取。';}
 $('refresh').onclick=()=>{offset=0;load()};$('prev').onclick=()=>{const s=Number($('pageSize').value);offset=Math.max(0,offset-s);load()};$('next').onclick=()=>{offset+=Number($('pageSize').value);load()};$('pageSize').onchange=()=>{offset=0;load()};$('type').onchange=()=>{offset=0;load()};let timer; $('search').oninput=()=>{clearTimeout(timer);timer=setTimeout(()=>{offset=0;load()},300)};load();
-</script></body></html>
+</script>
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}</script>
+</body></html>

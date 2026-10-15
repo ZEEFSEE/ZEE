@@ -86,8 +86,7 @@ button,select,input,textarea{font:inherit}button{cursor:pointer;border:1px solid
    if(error)throw error;
    agents=data||[];renderAgents();status('已读取 '+agents.length+' 位智能人。','good');
    if(selected){const latest=agents.find(a=>String(a.id)===String(selected.id));if(latest)choose(latest);}
-  }catch(e){status('读取失败：'+(e?.message||String(e))+'
-请检查登录状态、Core 数据库读取权限及 zhi_agents 表。','error');}
+  }catch(e){status('读取失败：'+(e?.message||String(e))+'\n请检查登录状态、Core 数据库读取权限及 zhi_agents 表。','error');}
  }
  async function send(){
   if(busy)return;
@@ -104,8 +103,7 @@ button,select,input,textarea{font:inherit}button{cursor:pointer;border:1px solid
    if(!r.ok||!d.ok)throw new Error(d.error||('HTTP '+r.status)+(d.upstream_status?' · Agnes upstream '+d.upstream_status:''));
    pending.remove();addBubble('agent',d.reply||'（没有收到文字回复）');
    status(d.saved?'Agnes AI 已回复，对话与想法已成功写入数据库。':'Agnes AI 已回复，但至少一项记忆/消息记录未能保存。',d.saved?'good':'error');
-  }catch(e){pending.remove();status('发送失败：'+(e?.message||String(e))+'
-请确认 Agnes API Key 已设置、Edge Function 已部署，并检查函数日志。','error');}
+  }catch(e){pending.remove();status('发送失败：'+(e?.message||String(e))+'\n请确认 Agnes API Key 已设置、Edge Function 已部署，并检查函数日志。','error');}
   finally{busy=false;$('send').disabled=!selected;$('send').textContent='发送 ↗';$('message').focus();}
  }
 

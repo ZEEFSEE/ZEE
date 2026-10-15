@@ -91,6 +91,13 @@ button,select,input,textarea{font:inherit}button{cursor:pointer;border:1px solid
  let lastAutonomousPollAt=new Date(Date.now()-24*60*60*1000).toISOString();
  const seenAutonomousMessageIds=new Set();
  const autonomousInboxMessages=[];
+ const AUTONOMOUS_READ_KEY='zhi_autonomous_read_message_ids_v1';
+ const readAutonomousMessageIds=new Set((()=>{try{return JSON.parse(localStorage.getItem(AUTONOMOUS_READ_KEY)||'[]')}catch(_){return []}})().map(String));
+ function markAutonomousMessageRead(id){
+  if(id==null)return;
+  readAutonomousMessageIds.add(String(id));
+  try{localStorage.setItem(AUTONOMOUS_READ_KEY,JSON.stringify([...readAutonomousMessageIds].slice(-2000)))}catch(_){}
+ }
  let autonomousPollTimer=null, autonomousPollBusy=false, autonomousInboxInitialized=false;
 
  const CHAT_PAGE_PASSWORD='98816223';
@@ -171,23 +178,27 @@ button,select,input,textarea{font:inherit}button{cursor:pointer;border:1px solid
    if(!byPerson.has(person))byPerson.set(person,m);
   });
   const people=[...byPerson.values()];
-  count.textContent=String(people.length);
+  const unreadCount=people.filter(m=>!readAutonomousMessageIds.has(String(m.id))).length;
+  count.textContent=String(unreadCount);
+  count.title=unreadCount+' 条未读主动消息';
+  count.style.display=unreadCount?'inline-flex':'none';
   if(!people.length){
    const empty=document.createElement('div');empty.className='inboxEmpty';empty.textContent='暂时还没有智能人主动找你。后台会持续检查。';list.append(empty);return;
   }
   people.forEach(m=>{
    const b=document.createElement('button');b.type='button';b.className='inboxItem'+(String(m.id)===String(selectedAutonomousMessageId)?' selected':'');
    const top=document.createElement('div');top.className='inboxItemTop';
-   const name=document.createElement('span');name.className='inboxItemName';name.textContent='👤 '+(m.agent_name||'智能人');
+   const name=document.createElement('span');name.className='inboxItemName';name.textContent=(readAutonomousMessageIds.has(String(m.id))?'':'🔔 ')+(m.agent_name||'智能人');
    const time=document.createElement('span');time.className='inboxItemTime';time.textContent=m.created_at?new Date(m.created_at).toLocaleString('zh-SG',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}):'刚刚';
    const preview=document.createElement('div');preview.className='inboxPreview';preview.textContent=String(m.content||'').replace(/^【主动找你】\\s*/,'');
-   const hint=document.createElement('div');hint.className='inboxItemTime';hint.style.marginTop='7px';hint.textContent='查看这位智能人的最新消息';
+   const hint=document.createElement('div');hint.className='inboxItemTime';hint.style.marginTop='7px';hint.textContent=readAutonomousMessageIds.has(String(m.id))?'已读 · 点击再次查看':'未读 · 点击查看并清除提醒';
    top.append(name,time);b.append(top,preview,hint);b.onclick=()=>openAutonomousMessage(m);list.append(b);
   });
  }
  let selectedAutonomousMessageId=null;
  function openAutonomousMessage(m){
   selectedAutonomousMessageId=m.id;
+  markAutonomousMessageRead(m.id);
   const detail=$('autonomousMessageDetail');detail.classList.remove('hidden');detail.innerHTML='';
   const name=document.createElement('div');name.className='detailName';name.textContent='💬 '+(m.agent_name||'智能人')+' 的主动消息';
   const time=document.createElement('div');time.className='detailTime';time.textContent=m.created_at?new Date(m.created_at).toLocaleString('zh-SG',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}):'时间未知';

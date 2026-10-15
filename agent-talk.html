@@ -122,25 +122,33 @@ button,select,input,textarea{font:inherit}button{cursor:pointer;border:1px solid
  const feedUrl='https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-agent-chat-feed';
  function renderAutonomousInbox(){
   const list=$('autonomousInbox'),count=$('autonomousInboxCount');
-  count.textContent=String(autonomousInboxMessages.length);
   list.innerHTML='';
-  if(!autonomousInboxMessages.length){
+  // 每位智能人独立占一张卡片，只在列表显示该人的最新一条主动消息。
+  const byPerson=new Map();
+  autonomousInboxMessages.slice().sort((a,b)=>Date.parse(b.created_at||0)-Date.parse(a.created_at||0)).forEach(m=>{
+   const person=String(m.agent_id||m.agent_name||'unknown');
+   if(!byPerson.has(person))byPerson.set(person,m);
+  });
+  const people=[...byPerson.values()];
+  count.textContent=String(people.length);
+  if(!people.length){
    const empty=document.createElement('div');empty.className='inboxEmpty';empty.textContent='暂时还没有智能人主动找你。后台会持续检查。';list.append(empty);return;
   }
-  autonomousInboxMessages.slice(0,10).forEach(m=>{
+  people.forEach(m=>{
    const b=document.createElement('button');b.type='button';b.className='inboxItem'+(String(m.id)===String(selectedAutonomousMessageId)?' selected':'');
    const top=document.createElement('div');top.className='inboxItemTop';
-   const name=document.createElement('span');name.className='inboxItemName';name.textContent=m.agent_name||'智能人';
+   const name=document.createElement('span');name.className='inboxItemName';name.textContent='👤 '+(m.agent_name||'智能人');
    const time=document.createElement('span');time.className='inboxItemTime';time.textContent=m.created_at?new Date(m.created_at).toLocaleString('zh-SG',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}):'刚刚';
    const preview=document.createElement('div');preview.className='inboxPreview';preview.textContent=String(m.content||'').replace(/^【主动找你】\\s*/,'');
-   top.append(name,time);b.append(top,preview);b.onclick=()=>openAutonomousMessage(m);list.append(b);
+   const hint=document.createElement('div');hint.className='inboxItemTime';hint.style.marginTop='7px';hint.textContent='查看这位智能人的最新消息';
+   top.append(name,time);b.append(top,preview,hint);b.onclick=()=>openAutonomousMessage(m);list.append(b);
   });
  }
  let selectedAutonomousMessageId=null;
  function openAutonomousMessage(m){
   selectedAutonomousMessageId=m.id;
   const detail=$('autonomousMessageDetail');detail.classList.remove('hidden');detail.innerHTML='';
-  const name=document.createElement('div');name.className='detailName';name.textContent='💬 '+(m.agent_name||'智能人')+' 主动找你';
+  const name=document.createElement('div');name.className='detailName';name.textContent='💬 '+(m.agent_name||'智能人')+' 的主动消息';
   const time=document.createElement('div');time.className='detailTime';time.textContent=m.created_at?new Date(m.created_at).toLocaleString('zh-SG',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}):'时间未知';
   const content=document.createElement('div');content.className='detailContent';content.textContent=String(m.content||'').replace(/^【主动找你】\\s*/,'');
   const actions=document.createElement('div');actions.className='detailActions';

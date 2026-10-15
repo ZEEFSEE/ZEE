@@ -42,16 +42,19 @@ html{-webkit-text-size-adjust:100%;overscroll-behavior-y:contain}
 button,a,select{touch-action:manipulation}
 @media(max-width:600px){input,select,textarea{font-size:16px!important}button{scroll-margin-block:12px}}
 
-/* Mobile priority: keep the actual agent roster visible near the top, not below large world-summary panels. */
+/* Mobile priority: show the real agent roster immediately and retire stale cached shell versions. */
 @media(max-width:600px){
+ .stats{display:none!important}
  .layout>section.panel{display:flex;flex-direction:column;min-width:0}
- .layout>section.panel>.sectionbar{order:0}
- .layout>section.panel>.toolbar{order:1;margin-top:8px}
- .layout>section.panel>#agents{order:2;width:100%;min-height:80px}
+ .layout>section.panel>.sectionbar{order:0;margin-bottom:8px}
+ .layout>section.panel>.toolbar{order:1;margin-top:0;margin-bottom:10px}
+ .layout>section.panel>#agents{order:2;width:100%;min-height:100px}
  .layout>section.panel>#sceneStrip{order:3}
  .layout>section.panel>#relationshipStrip{order:4}
  .layout>section.panel>.marriage-panel{order:5}
  .layout>aside.panel{order:2}
+ .wrap{padding-top:10px}
+ .hero{margin-bottom:8px}
 }
 </style>
 <meta name="theme-color" content="#120d20">

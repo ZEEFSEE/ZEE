@@ -16,6 +16,35 @@ button,select,input,textarea{font:inherit}button{cursor:pointer;border:1px solid
 html{-webkit-text-size-adjust:100%;overscroll-behavior-y:contain}
 button,a,select{touch-action:manipulation}
 @media(max-width:600px){input,select,textarea{font-size:16px!important}button{scroll-margin-block:12px}}
+/* Phone chat usability: show the conversation and composer first, with a compact agent picker. */
+.mobileAgentPicker{display:none}
+@media(max-width:800px){
+ .layout{display:flex;flex-direction:column;gap:10px}
+ .layout>.chatPanel{order:0;min-height:0;height:auto}
+ .layout>aside.panel{order:1;width:100%;min-width:0}
+ .chatHead{flex-wrap:wrap;align-items:flex-start}
+ .chatHead>div:first-child{min-width:0;flex:1}
+ .mobileAgentPicker{display:grid;gap:5px;width:100%;min-width:0}
+ .mobileAgentPicker label{font-size:12px;color:var(--muted)}
+ .mobileAgentPicker select{width:100%;min-width:0;min-height:44px}
+ .chatLog{min-height:130px;max-height:34dvh;flex:1}
+ .composer{position:sticky;bottom:0;z-index:2;background:#130f1d;padding:10px;grid-template-columns:minmax(0,1fr) auto}
+ .composer .quick{gap:5px}
+ .composer .quick button{font-size:11px;padding:7px}
+ .composer textarea{min-height:50px}
+ .agentList{max-height:180px}
+ .autonomousInbox{max-height:150px}
+}
+@media(max-width:480px){
+ .wrap{padding:10px 8px 18px}
+ .chatPanel{border-radius:12px}
+ .chatHead{padding:11px}
+ .chatLog{padding:10px;max-height:30dvh}
+ .composer{grid-template-columns:minmax(0,1fr);gap:7px}
+ .composer button#send{width:100%;min-height:44px}
+ .footnote{font-size:10px;padding:0 10px 10px}
+ .bubble{max-width:96%;padding:10px 11px}
+}
 </style>
 <meta name="theme-color" content="#120d20">
 <meta name="mobile-web-app-capable" content="yes">
@@ -49,7 +78,7 @@ button,a,select{touch-action:manipulation}
    <div class="panelBody" style="border-top:1px solid var(--line)"><div class="status">对话将调用服务端 Agnes AI。只有成功生成的回答才会显示为智能人的回复；是否保存成功会单独提示。</div></div>
   </aside>
   <section class="panel chatPanel">
-   <div class="chatHead"><div><div class="agentTitle" id="chatTitle">先选择一个智能人</div><div class="sub" id="agentMeta">个性化表达 · 独立观点 · 记忆关联</div></div><button id="clearChat" class="secondary">清空窗口</button></div>
+   <div class="chatHead"><div><div class="agentTitle" id="chatTitle">先选择一个智能人</div><div class="sub" id="agentMeta">个性化表达 · 独立观点 · 记忆关联</div></div><div class="mobileAgentPicker"><label for="mobileAgentSelect">选择聊天对象</label><select id="mobileAgentSelect" aria-label="选择聊天对象"><option value="">先选择一位智能人</option></select></div><button id="clearChat" class="secondary">清空窗口</button></div>
    <div id="chatLog" class="chatLog"><div class="welcome">选择左侧的智能人，向他/她提问。<br>例如：你今天在想什么？你最近有什么目标？你怎么看待社区里的事情？</div></div>
    <div class="composer">
     <div><div class="quick"><button data-msg="你今天在想什么？">你今天在想什么？</button><button data-msg="你最近最想完成什么目标？">最近的目标</button><button data-msg="你对社区里其他智能人有什么看法？">社区看法</button><button data-msg="最近有什么事让你开心或烦恼？">心情与烦恼</button></div><textarea id="message" placeholder="写下你想对这位智能人说的话……（Enter 发送，Shift+Enter 换行）" maxlength="2000"></textarea></div>
@@ -128,6 +157,14 @@ button,a,select{touch-action:manipulation}
  function renderAgents(){
   const q=$('agentSearch').value.trim().toLowerCase();
   const rows=agents.filter(a=>!q||String(a.name||'').toLowerCase().includes(q));
+  const mobilePicker=$('mobileAgentSelect');
+  if(mobilePicker){
+   mobilePicker.innerHTML='';
+   const placeholder=document.createElement('option');placeholder.value='';placeholder.textContent='先选择一位智能人';mobilePicker.append(placeholder);
+   agents.forEach(agent=>{const option=document.createElement('option');option.value=String(agent.id);option.textContent=(String(agent.gender||'').toLowerCase()==='female'?'♀ ':String(agent.gender||'').toLowerCase()==='male'?'♂ ':'')+(agent.name||'未命名智能人');mobilePicker.append(option);});
+   mobilePicker.value=(!broadcastMode&&selected)?String(selected.id):'';
+   mobilePicker.disabled=broadcastMode;
+  }
   $('agentList').innerHTML='';
   rows.forEach(a=>{
    const b=document.createElement('button');b.className='agentOption'+(selected?.id===a.id?' selected':'');b.type='button';
@@ -140,6 +177,7 @@ button,a,select{touch-action:manipulation}
  const displayedConversationMessageIds=new Set();
  function choose(a){
   selected=a;renderAgents();
+  const mobilePicker=$('mobileAgentSelect');if(mobilePicker&&!broadcastMode)mobilePicker.value=String(a.id);
   $('chatTitle').textContent=broadcastMode?'全体智能人广播':(a.name||'智能人');
   $('agentMeta').textContent=broadcastMode?'所有人先收到并写入个人记忆，再按各自人格独立决定是否回应。':[a.personality,a.gender,a.life_status].filter(Boolean).join(' · ')||'独立人格 · 个性化表达';
   $('send').disabled=busy;
@@ -363,6 +401,7 @@ button,a,select{touch-action:manipulation}
  $('broadcastMode').onclick=()=>{broadcastMode=!broadcastMode;$('broadcastMode').textContent=broadcastMode?'↩ 返回单聊':'📢 全体广播';$('listHeading').textContent=broadcastMode?'📢 全体广播模式':'👥 选择一个智能人';$('agentSearch').disabled=broadcastMode;$('agentList').classList.toggle('hidden',broadcastMode);$('chatTitle').textContent=broadcastMode?'全体智能人广播':(selected?.name||'先选择一个智能人');$('agentMeta').textContent=broadcastMode?'所有人先收到并写入个人记忆，再按各自人格独立决定是否回应。':'个性化表达 · 独立观点 · 记忆关联';$('send').textContent=broadcastMode?'广播给所有人 ↗':'发送 ↗';$('send').disabled=busy||(!broadcastMode&&!selected);};
  function unlockChat(e){if(e)e.preventDefault();const entered=$('gatePassword').value.trim();if(entered!==CHAT_PAGE_PASSWORD){$('gateStatus').textContent='密码不正确，请重试。';$('gatePassword').focus();$('gatePassword').select();return;} $('passwordGate').style.display='none';$('chatApp').classList.remove('hidden');$('gateStatus').textContent='';$('gatePassword').value='';loadAgents();} $('gateForm').addEventListener('submit',unlockChat);$('gatePassword').addEventListener('keydown',e=>{if(e.key==='Enter'){unlockChat(e);}});
  $('autonomousInboxToggle').onclick=toggleAutonomousInbox;
+ $('mobileAgentSelect').onchange=()=>{const id=$('mobileAgentSelect').value;const agent=agents.find(a=>String(a.id)===String(id));if(!agent)return;if(broadcastMode){broadcastMode=false;$('broadcastMode').textContent='📢 全体广播';$('listHeading').textContent='👥 选择一个智能人';$('agentSearch').disabled=false;$('agentList').classList.remove('hidden');$('send').textContent='发送 ↗';}choose(agent);};
  $('refresh').onclick=loadAgents;$('agentSearch').oninput=renderAgents;$('send').onclick=send;
  $('message').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
  $('clearChat').onclick=()=>{$('chatLog').innerHTML='<div class="welcome">对话窗口已清空。数据库中已经保存的记忆不会被删除。</div>';};

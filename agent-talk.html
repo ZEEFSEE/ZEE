@@ -14,7 +14,8 @@ button,select,input,textarea{font:inherit}button{cursor:pointer;border:1px solid
 </style>
 </head>
 <body>
-<section id="passwordGate" class="gate" aria-labelledby="gateTitle"><h1 id="gateTitle">🔒 ZHI · 智能人讲话室</h1><p>这是受密码保护的聊天室。请输入访问密码后继续。</p><form id="gateForm"><div class="field"><label for="gatePassword">访问密码</label><input id="gatePassword" type="password" inputmode="numeric" autocomplete="current-password" placeholder="请输入密码" required></div><button class="primary" type="submit" style="width:100%">验证并进入</button><div id="gateStatus" class="status error" style="margin-top:12px" aria-live="polite"></div></form></section>\n<main id="chatApp" class="wrap hidden">
+<section id="passwordGate" class="gate" aria-labelledby="gateTitle"><h1 id="gateTitle">🔒 ZHI · 智能人讲话室</h1><p>这是受密码保护的聊天室。请输入访问密码后继续。</p><form id="gateForm"><div class="field"><label for="gatePassword">访问密码</label><input id="gatePassword" type="password" inputmode="numeric" autocomplete="current-password" placeholder="请输入密码" required></div><button class="primary" type="submit" style="width:100%">验证并进入</button><div id="gateStatus" class="status error" style="margin-top:12px" aria-live="polite"></div></form></section>
+<main id="chatApp" class="wrap hidden">
  <header class="top">
   <div><div class="brand">💬 ZHI · 智能人讲话室</div><div class="sub">单聊或全体广播 · 每位智能人独立记忆与判断</div></div>
   <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="secondary" id="refresh">↻ 刷新名单</button><button class="secondary" onclick="location.href='index.html'">← 返回 ZHI</button></div>
@@ -47,7 +48,8 @@ button,select,input,textarea{font:inherit}button{cursor:pointer;border:1px solid
  const $=id=>document.getElementById(id), sb=window.zhiSupabase;
  const functionUrl='https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-agnes-chat';
  const broadcastUrl='https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-agent-broadcast';
- let agents=[], selected=null, busy=false, broadcastMode=false, unlocked=false;\n const CHAT_PAGE_PASSWORD='98816223';
+ let agents=[], selected=null, busy=false, broadcastMode=false, unlocked=false;
+ const CHAT_PAGE_PASSWORD='98816223';
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const stamp=()=>new Date().toLocaleTimeString('zh-SG',{hour:'2-digit',minute:'2-digit',hour12:false});
  function status(text,kind=''){ $('agentStatus').textContent=text;$('agentStatus').className='status '+kind; }
@@ -84,7 +86,8 @@ button,select,input,textarea{font:inherit}button{cursor:pointer;border:1px solid
    if(error)throw error;
    agents=data||[];renderAgents();status('已读取 '+agents.length+' 位智能人。','good');
    if(selected){const latest=agents.find(a=>String(a.id)===String(selected.id));if(latest)choose(latest);}
-  }catch(e){status('读取失败：'+(e?.message||String(e))+'\n请检查登录状态、Core 数据库读取权限及 zhi_agents 表。','error');}
+  }catch(e){status('读取失败：'+(e?.message||String(e))+'
+请检查登录状态、Core 数据库读取权限及 zhi_agents 表。','error');}
  }
  async function send(){
   if(busy)return;
@@ -101,7 +104,8 @@ button,select,input,textarea{font:inherit}button{cursor:pointer;border:1px solid
    if(!r.ok||!d.ok)throw new Error(d.error||('HTTP '+r.status)+(d.upstream_status?' · Agnes upstream '+d.upstream_status:''));
    pending.remove();addBubble('agent',d.reply||'（没有收到文字回复）');
    status(d.saved?'Agnes AI 已回复，对话与想法已成功写入数据库。':'Agnes AI 已回复，但至少一项记忆/消息记录未能保存。',d.saved?'good':'error');
-  }catch(e){pending.remove();status('发送失败：'+(e?.message||String(e))+'\n请确认 Agnes API Key 已设置、Edge Function 已部署，并检查函数日志。','error');}
+  }catch(e){pending.remove();status('发送失败：'+(e?.message||String(e))+'
+请确认 Agnes API Key 已设置、Edge Function 已部署，并检查函数日志。','error');}
   finally{busy=false;$('send').disabled=!selected;$('send').textContent='发送 ↗';$('message').focus();}
  }
 
@@ -133,7 +137,8 @@ button,select,input,textarea{font:inherit}button{cursor:pointer;border:1px solid
  }
 
  $('broadcastMode').onclick=()=>{broadcastMode=!broadcastMode;$('broadcastMode').textContent=broadcastMode?'↩ 返回单聊':'📢 全体广播';$('listHeading').textContent=broadcastMode?'📢 全体广播模式':'👥 选择一个智能人';$('agentSearch').disabled=broadcastMode;$('agentList').classList.toggle('hidden',broadcastMode);$('chatTitle').textContent=broadcastMode?'全体智能人广播':(selected?.name||'先选择一个智能人');$('agentMeta').textContent=broadcastMode?'所有人先收到并写入个人记忆，再按各自人格独立决定是否回应。':'个性化表达 · 独立观点 · 记忆关联';$('send').textContent=broadcastMode?'广播给所有人 ↗':'发送 ↗';$('send').disabled=busy||(!broadcastMode&&!selected);};
- $('gateForm').addEventListener('submit',e=>{e.preventDefault();const entered=$('gatePassword').value;if(entered!==CHAT_PAGE_PASSWORD){$('gateStatus').textContent='密码不正确，请重试。';$('gatePassword').select();return;}unlocked=true;$('passwordGate').classList.add('hidden');$('chatApp').classList.remove('hidden');$('gateStatus').textContent='';$('gatePassword').value='';loadAgents();});\n $('refresh').onclick=loadAgents;$('agentSearch').oninput=renderAgents;$('send').onclick=send;
+ $('gateForm').addEventListener('submit',e=>{e.preventDefault();const entered=$('gatePassword').value;if(entered!==CHAT_PAGE_PASSWORD){$('gateStatus').textContent='密码不正确，请重试。';$('gatePassword').select();return;}unlocked=true;$('passwordGate').classList.add('hidden');$('chatApp').classList.remove('hidden');$('gateStatus').textContent='';$('gatePassword').value='';loadAgents();});
+ $('refresh').onclick=loadAgents;$('agentSearch').oninput=renderAgents;$('send').onclick=send;
  $('message').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
  $('clearChat').onclick=()=>{$('chatLog').innerHTML='<div class="welcome">对话窗口已清空。数据库中已经保存的记忆不会被删除。</div>';};
  document.querySelectorAll('[data-msg]').forEach(b=>b.onclick=()=>{$('message').value=b.dataset.msg;$('message').focus();});

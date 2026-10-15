@@ -175,7 +175,9 @@ button,select,input,textarea{font:inherit}button{cursor:pointer;border:1px solid
   const inboxToggle=$('autonomousInboxToggle');
   if(inboxToggle){
    inboxToggle.setAttribute('aria-expanded',String(!autonomousInboxCollapsed));
-   inboxToggle.textContent=autonomousInboxCollapsed?'展开 ▾':'收起 ▴';
+   // 只更新箭头文字，不能覆盖整个按钮，否则会删除标题和未读计数节点。
+   const chevron=$('autonomousInboxChevron');
+   if(chevron)chevron.textContent=autonomousInboxCollapsed?'展开 ▾':'收起 ▴';
   }
   list.classList.toggle('hidden',autonomousInboxCollapsed);
   $('autonomousMessageDetail').classList.toggle('hidden',autonomousInboxCollapsed||!selectedAutonomousMessageId);

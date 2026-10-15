@@ -117,7 +117,48 @@ button,select,input,textarea{font:inherit}button{cursor:pointer;border:1px solid
   });
   if(!rows.length){const p=document.createElement('div');p.className='panelBody status';p.textContent='没有匹配的智能人';$('agentList').append(p);}
  }
- function choose(a){selected=a;renderAgents();$('chatTitle').textContent=broadcastMode?'全体智能人广播':(a.name||'智能人');$('agentMeta').textContent=broadcastMode?'所有人先收到并写入个人记忆，再按各自人格独立决定是否回应。':[a.personality,a.gender,a.life_status].filter(Boolean).join(' · ')||'独立人格 · 个性化表达';$('send').disabled=busy;}
+ const displayedConversationMessageIds=new Set();
+ function choose(a){
+  selected=a;renderAgents();
+  $('chatTitle').textContent=broadcastMode?'全体智能人广播':(a.name||'智能人');
+  $('agentMeta').textContent=broadcastMode?'所有人先收到并写入个人记忆，再按各自人格独立决定是否回应。':[a.personality,a.gender,a.life_status].filter(Boolean).join(' · ')||'独立人格 · 个性化表达';
+  $('send').disabled=busy;
+  $('chatLog').innerHTML='<div class="welcome">正在读取 '+esc(a.name||'智能人')+' 的历史聊天记录…</div>';
+  displayedConversationMessageIds.clear();
+  loadConversationHistory(a);
+ }
+ const historyUrl='https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-agent-chat-history';
+ async function loadConversationHistory(agent){
+  const requestedId=String(agent.id);
+  try{
+   const {data:{session},error:sessionError}=await sb.auth.getSession();
+   if(sessionError||!session)throw new Error('管理员登录已失效，请重新登录。');
+   const r=await fetch(historyUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,'apikey':window.zhiCorePublishableKey||''},body:JSON.stringify({agent_id:requestedId}),cache:'no-store'});
+   const d=await r.json().catch(()=>({}));
+   if(!r.ok||!d.ok)throw new Error(d.error||('HTTP '+r.status));
+   if(!selected||String(selected.id)!==requestedId)return;
+   $('chatLog').innerHTML='';
+   displayedConversationMessageIds.clear();
+   const rows=d.messages||[];
+   if(!rows.length){
+    $('chatLog').innerHTML='<div class="welcome">这位智能人目前没有已保存的聊天记录。之后的对话会保存到数据库，下次进入仍可查看。</div>';
+    status((agent.name||'智能人')+' 暂无历史聊天记录。','good');
+    return;
+   }
+   rows.forEach(m=>{
+    const role=String(m.sender_type||'').toLowerCase()==='admin'?'user':'agent';
+    const time=m.created_at?new Date(m.created_at).toLocaleString('zh-SG',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}):'时间未知';
+    addBubble(role,m.content||'',time,role==='agent'?(m.agent_name||agent.name):null);
+    displayedConversationMessageIds.add(String(m.id));
+   });
+   status('已恢复 '+rows.length+' 条与 '+(agent.name||'该智能人')+' 的历史消息。','good');
+  }catch(e){
+   if(selected&&String(selected.id)===requestedId){
+    $('chatLog').innerHTML='<div class="welcome">历史记录读取失败：'+esc(e?.message||String(e))+'。请点击“刷新名单”重试。</div>';
+    status('历史聊天记录读取失败：'+(e?.message||String(e)),'error');
+   }
+  }
+ }
 
  const feedUrl='https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-agent-chat-feed';
  function renderAutonomousInbox(){
@@ -174,7 +215,10 @@ button,select,input,textarea{font:inherit}button{cursor:pointer;border:1px solid
      if(autonomousInboxMessages.length>30)autonomousInboxMessages.shift();
      if(autonomousInboxInitialized){
       const time=m.created_at?new Date(m.created_at).toLocaleTimeString('zh-SG',{hour:'2-digit',minute:'2-digit',hour12:false}):stamp();
-      addBubble('agent',String(m.content||'').replace(/^【主动找你】\\s*/,''),time,m.agent_name||'智能人');
+      if(selected&&String(selected.id)===String(m.agent_id)&&!displayedConversationMessageIds.has(String(m.id))){
+       addBubble('agent',String(m.content||'').replace(/^【主动找你】\\s*/,''),time,m.agent_name||'智能人');
+       displayedConversationMessageIds.add(String(m.id));
+      }
       if(!busy)status((m.agent_name||'有智能人')+' 主动找你聊天了。','good');
      }
     }

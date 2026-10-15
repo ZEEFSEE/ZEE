@@ -53,6 +53,7 @@ button,select,input,textarea{font:inherit}button{cursor:pointer;border:1px solid
   const agentStatus=document.getElementById('agentStatus');
   if(!gate||!form||!input||!app)return;
   const password='98816223';
+  let startupError='';
   form.addEventListener('submit',function(e){
     const entered=(input.value||'').trim();
     if(entered!==password){
@@ -65,11 +66,12 @@ button,select,input,textarea{font:inherit}button{cursor:pointer;border:1px solid
     }
     gate.style.display='none';
     app.classList.remove('hidden');
-    if(agentStatus)agentStatus.textContent='密码已通过，正在启动聊天室…';
+    if(agentStatus){agentStatus.textContent=startupError?'页面脚本启动失败：'+startupError+'。请将此提示截图发给管理员。':'密码已通过，正在启动聊天室…';if(startupError)agentStatus.className='status error';}
   },true);
   window.addEventListener('error',function(e){
+    startupError=e.message||'JavaScript 错误';
     if(agentStatus && app.classList.contains('hidden')===false){
-      agentStatus.textContent='页面脚本启动失败：'+(e.message||'JavaScript 错误')+'。请将此提示截图发给管理员。';
+      agentStatus.textContent='页面脚本启动失败：'+startupError+'。请将此提示截图发给管理员。';
       agentStatus.className='status error';
     }
   });

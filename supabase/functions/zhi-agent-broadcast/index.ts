@@ -33,7 +33,7 @@ Deno.serve(async(req:Request)=>{if(req.method==="OPTIONS")return new Response("o
    db.from("zhi_agents").select("id,name,gender,personality,life_status,leadership,social,adventure,competition,patience,randomness,diligence,desire_for_zhi,fear_of_death,resentment,survival_pressure").eq("id",agentId).single()
   ]);
   if(recR.error||agentR.error)return json({error:"Broadcast recipient or agent not found"},404);
-  const rec=recR.data,a=agentR.data;if(rec.decision_status!=="pending")return json({ok:true,status:rec.decision_status,reply:rec.reply_text||null,skipped:true});
+  const rec=recR.data,a=agentR.data;if(rec.decision_status!=="pending")return json({ok:true,status:rec.decision_status,reply:rec.reply_text||null,agent_name:rec.agent_name,skipped:true});
   const [broadcastR,mindR,memR]=await Promise.all([
    db.from("zhi_agent_broadcasts").select("message,created_at").eq("id",broadcastId).single(),
    db.from("zhi_agent_minds").select("mood,energy,stress,curiosity,confidence,current_goal,short_term_goal,long_term_goal,last_thought,goal_profile").eq("agent_id",agentId).maybeSingle(),
@@ -50,8 +50,8 @@ Deno.serve(async(req:Request)=>{if(req.method==="OPTIONS")return new Response("o
   if(reply){const [m,msg]=await Promise.all([
    db.from("zhi_agent_memories").insert({agent_id:agentId,memory_type:"conversation",importance:80,memory:`针对管理员全体广播（ID：${broadcastId}），我自主决定回应：${reply}`,source:"admin_broadcast_reply"}),
    db.from("admin_agent_messages").insert({admin_user_id:ADMIN_ID,agent_id:agentId,agent_name:a.name,sender_type:"agent",content:`【回应全体广播】${reply}`})
-  ]);if(m.error||msg.error)return json({ok:true,status:"reply",reply,saved:false,warning:"Reply decided but response memory/message save failed"});}
-  return json({ok:true,status:replyDecision?"reply":"no_reply",reply,reason:result.reason||"",saved:true});
+  ]);if(m.error||msg.error)return json({ok:true,status:"reply",reply,agent_name:a.name,saved:false,warning:"Reply decided but response memory/message save failed"});}
+  return json({ok:true,status:replyDecision?"reply":"no_reply",reply,agent_name:a.name,reason:result.reason||"",saved:true});
  }
  return json({error:"mode must be broadcast or decide"},400);
 });

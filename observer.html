@@ -18,7 +18,20 @@ input{min-width:220px}.table{overflow:auto}.row{display:grid;grid-template-colum
 .head{color:#d9cde6;font-size:11px;text-transform:uppercase}.name{font-weight:900}.alive{color:#7dffad}.dead{color:#ff8b9f}.activity{color:#ffe8a4;font-weight:750}.detail{margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .list{max-height:340px;overflow:auto}.item{padding:9px 0;border-bottom:1px solid var(--line)}.item b{color:#ffe49a}.error{color:#ff8fae;padding:12px}.ok{color:#8dffba}
 @media(max-width:800px){.stats{grid-template-columns:repeat(2,1fr)}.detail{grid-template-columns:1fr}}
+
+/* Mobile PWA ergonomics: readable controls, safe touch targets, and no iOS input zoom. */
+html{-webkit-text-size-adjust:100%;overscroll-behavior-y:contain}
+button,a,select{touch-action:manipulation}
+@media(max-width:600px){input,select,textarea{font-size:16px!important}button{scroll-margin-block:12px}}
 </style>
+<meta name="theme-color" content="#120d20">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ZHI 世界">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./zhi-icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./zhi-icon.svg">
 </head>
 <body>
 <div class="wrap">
@@ -150,4 +163,6 @@ input{min-width:220px}.table{overflow:auto}.row{display:grid;grid-template-colum
   setInterval(()=>{if(document.visibilityState==='visible')load()},5000);
 })();
 </script>
+
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}</script>
 </body></html>

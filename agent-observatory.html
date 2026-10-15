@@ -36,7 +36,20 @@ button{min-height:40px;touch-action:manipulation}
 @media(max-width:380px){.brand{font-size:21px}.tag{font-size:9px;padding:4px 6px}.stats{gap:6px}.stat{padding:9px}.stat strong{font-size:18px}.agent .top{gap:5px}.name{font-size:15px}.badge{font-size:8px;padding:4px 5px}}
 @media(pointer:coarse){button,input,select{min-height:42px}.scene-strip,.relationship-strip{scrollbar-width:none}.scene-strip::-webkit-scrollbar,.relationship-strip::-webkit-scrollbar{display:none}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}}
+
+/* Mobile PWA ergonomics: readable controls, safe touch targets, and no iOS input zoom. */
+html{-webkit-text-size-adjust:100%;overscroll-behavior-y:contain}
+button,a,select{touch-action:manipulation}
+@media(max-width:600px){input,select,textarea{font-size:16px!important}button{scroll-margin-block:12px}}
 </style>
+<meta name="theme-color" content="#120d20">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ZHI 世界">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./zhi-icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./zhi-icon.svg">
 </head>
 <body>
 <main class="wrap">
@@ -388,5 +401,7 @@ $('palaceToggle').onclick=async()=>{
 
 load();
 setInterval(()=>{if(document.visibilityState==='visible')load()},30000);
-</script></body>
+</script>
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}</script>
+</body>
 </html>

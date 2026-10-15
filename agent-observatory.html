@@ -42,17 +42,19 @@ html{-webkit-text-size-adjust:100%;overscroll-behavior-y:contain}
 button,a,select{touch-action:manipulation}
 @media(max-width:600px){input,select,textarea{font-size:16px!important}button{scroll-margin-block:12px}}
 
-/* Mobile priority: show the real agent roster immediately and retire stale cached shell versions. */
+/* Phone fix: put search + the agent roster at the top of the world panel.
+   Keep the list visible before scene, relationship, and family summaries. */
 @media(max-width:600px){
  .stats{display:none!important}
- .layout>section.panel{display:flex;flex-direction:column;min-width:0}
- .layout>section.panel>.sectionbar{order:0;margin-bottom:8px}
- .layout>section.panel>.toolbar{order:1;margin-top:0;margin-bottom:10px}
- .layout>section.panel>#agents{order:2;width:100%;min-height:100px}
- .layout>section.panel>#sceneStrip{order:3}
- .layout>section.panel>#relationshipStrip{order:4}
- .layout>section.panel>.marriage-panel{order:5}
- .layout>aside.panel{order:2}
+ .layout{display:flex!important;flex-direction:column!important;min-width:0;width:100%}
+ .layout>section.panel{display:flex!important;flex-direction:column!important;order:0!important;width:100%;min-width:0;overflow:visible}
+ .layout>section.panel>.sectionbar{order:0!important;flex:0 0 auto;margin-bottom:8px}
+ .layout>section.panel>.toolbar{order:1!important;flex:0 0 auto;margin-top:0;margin-bottom:10px}
+ .layout>section.panel>#agents{display:grid!important;order:2!important;flex:0 0 auto;width:100%;min-width:0;min-height:120px;grid-template-columns:minmax(0,1fr)}
+ .layout>section.panel>#sceneStrip{order:3!important;flex:0 0 auto}
+ .layout>section.panel>#relationshipStrip{order:4!important;flex:0 0 auto}
+ .layout>section.panel>.marriage-panel{order:5!important;flex:0 0 auto}
+ .layout>aside.panel{order:1!important;width:100%;min-width:0}
  .wrap{padding-top:10px}
  .hero{margin-bottom:8px}
 }

@@ -239,7 +239,7 @@ function render(rows){
  const q=($('filter').value||'').toLowerCase().trim();
  const mode=$('mode').value;
  let list=rows.filter(x=>{
-   const s=[x.name,x.gender,x.personality,x.activity_type,x.decision_type,x.current_scene,x.location_name,x.destination_scene,x.reason,x.emotion,x.mood,x.current_emotion,x.desire,x.current_desire,x.dominant_desire,x.mood,x.confidence,x.stress,x.curiosity,...relationshipOf(x).map(relationText)].join(' ').toLowerCase();
+   const s=[x.name,x.gender,x.personality,x.activity_type,x.decision_type,x.current_scene,x.location_name,x.destination_scene,x.reason,x.palaceStory?.memory,x.emotion,x.mood,x.current_emotion,x.desire,x.current_desire,x.dominant_desire,x.mood,x.confidence,x.stress,x.curiosity,...relationshipOf(x).map(relationText)].join(' ').toLowerCase();
    return !q||s.includes(q);
  });
  if(mode==='moving') list=list.filter(x=>x.walking===true);

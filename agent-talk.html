@@ -233,7 +233,6 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
  }
  let autonomousPollTimer=null, autonomousPollBusy=false, autonomousInboxInitialized=false;
 
- const CHAT_PAGE_PASSWORD='98816223';
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const stamp=()=>new Date().toLocaleTimeString('zh-SG',{hour:'2-digit',minute:'2-digit',hour12:false});
  function status(text,kind=''){ $('agentStatus').textContent=text;$('agentStatus').className='status '+kind; }

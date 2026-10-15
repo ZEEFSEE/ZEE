@@ -193,10 +193,28 @@ button,select,input,textarea{font:inherit}button{cursor:pointer;border:1px solid
   const time=document.createElement('div');time.className='detailTime';time.textContent=m.created_at?new Date(m.created_at).toLocaleString('zh-SG',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}):'时间未知';
   const content=document.createElement('div');content.className='detailContent';content.textContent=String(m.content||'').replace(/^【主动找你】\\s*/,'');
   const actions=document.createElement('div');actions.className='detailActions';
-  const showInChat=document.createElement('button');showInChat.type='button';showInChat.className='primary';showInChat.textContent='在聊天窗口查看';
-  showInChat.onclick=()=>{addBubble('agent',String(m.content||'').replace(/^【主动找你】\\s*/,''),m.created_at?new Date(m.created_at).toLocaleTimeString('zh-SG',{hour:'2-digit',minute:'2-digit',hour12:false}):stamp(),m.agent_name||'智能人');$('chatLog').scrollTop=$('chatLog').scrollHeight;};
+  const replyInChat=document.createElement('button');replyInChat.type='button';replyInChat.className='primary';replyInChat.textContent='回复这条消息';
+  replyInChat.onclick=()=>{
+   const agent=agents.find(a=>String(a.id)===String(m.agent_id))||agents.find(a=>String(a.name||'')===String(m.agent_name||''));
+   if(!agent){status('找不到发送这条消息的智能人，请先刷新名单。','error');return;}
+   broadcastMode=false;
+   $('broadcastMode').textContent='📢 全体广播';$('listHeading').textContent='👥 选择一个智能人';$('agentSearch').disabled=false;$('agentList').classList.remove('hidden');
+   $('send').textContent='发送 ↗';
+   choose(agent);
+   $('message').placeholder='回复 '+(agent.name||'这位智能人')+' ……';
+   $('message').focus();
+   status('已切换到 '+(agent.name||'这位智能人')+' 的单聊。输入回复后点击“发送”，消息会通过聊天接口发送并保存。','good');
+  };
+  const showInChat=document.createElement('button');showInChat.type='button';showInChat.className='secondary';showInChat.textContent='打开单聊';
+  showInChat.onclick=()=>{
+   const agent=agents.find(a=>String(a.id)===String(m.agent_id))||agents.find(a=>String(a.name||'')===String(m.agent_name||''));
+   if(!agent){status('找不到发送这条消息的智能人，请先刷新名单。','error');return;}
+   broadcastMode=false;
+   $('broadcastMode').textContent='📢 全体广播';$('listHeading').textContent='👥 选择一个智能人';$('agentSearch').disabled=false;$('agentList').classList.remove('hidden');
+   $('send').textContent='发送 ↗';choose(agent);
+  };
   const close=document.createElement('button');close.type='button';close.className='secondary';close.textContent='收起';close.onclick=()=>detail.classList.add('hidden');
-  actions.append(showInChat,close);detail.append(name,time,content,actions);renderAutonomousInbox();
+  actions.append(replyInChat,showInChat,close);detail.append(name,time,content,actions);renderAutonomousInbox();
  }
  async function pollAutonomousMessages(){
   if(autonomousPollBusy||!sb)return;

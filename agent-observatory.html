@@ -53,6 +53,21 @@ button{min-height:40px;touch-action:manipulation}
 <div class="stat"><div class="k">世界更新</div><strong id="updated">—</strong><em>每30秒自动同步</em></div>
 </section>
 
+
+<section class="panel" style="margin:0 0 14px">
+  <div class="sectionbar">
+    <div><h2>🏰 皇宫 · 实时在场名单</h2><span>当前所在位置与正在前往皇宫的人分开统计</span></div>
+    <button id="palaceToggle" type="button">查看皇宫人员</button>
+  </div>
+  <div id="palacePanel" hidden>
+    <div id="palaceStatus" class="hint">点击按钮后读取世界位置记录。</div>
+    <div class="detail" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:10px">
+      <section class="panel"><h3>📍 当前在皇宫</h3><div id="palacePresent" class="feed">等待读取…</div></section>
+      <section class="panel"><h3>🚶 正在前往皇宫</h3><div id="palaceIncoming" class="feed">等待读取…</div></section>
+    </div>
+  </div>
+</section>
+
 <div class="layout">
 <section class="panel">
 <div class="sectionbar"><div><h2>🎬 现在正在发生什么</h2><span>每个人都有自己的欲望、情绪和目的</span></div></div>
@@ -77,6 +92,40 @@ const encounterEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_ag
 const familyEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_agent_family?select=child_agent_id,father_agent_id,mother_agent_id,born_at&order=born_at.desc';
 const marriageEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_agent_marriages?select=id,male_agent_id,female_agent_id,status,married_at,birth_eligible_at,child_agent_id&order=married_at.desc&limit=100';
 const apiKey='sb_publishable_MOVcpW2XoLdHbUVp6f-nrw_e_HY1Bav';
+const palacePositionsEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_agent_world_positions?select=agent_id,current_scene,destination_scene,walking,walk_arrive_at,updated_at&order=updated_at.desc';
+let palaceBusy=false;
+const isPalaceScene=v=>/皇宫|palace/i.test(String(v||''));
+async function loadPalace(){
+ if(palaceBusy)return;
+ palaceBusy=true;
+ const status=$('palaceStatus'), present=$('palacePresent'), incoming=$('palaceIncoming');
+ status.textContent='正在读取最新位置记录…';
+ try{
+  const res=await fetchWithRetry(palacePositionsEndpoint,{headers:{apikey:apiKey},cache:'no-store'},3);
+  const raw=await res.text();
+  if(!res.ok)throw new Error('位置接口 HTTP '+res.status+'：'+raw.slice(0,180));
+  const positions=JSON.parse(raw);
+  if(!Array.isArray(positions))throw new Error('位置数据格式异常');
+  const agents=window.__rows||[];
+  const byId=new Map(agents.map(a=>[String(a.id),a]));
+  const alive=a=>!a||String(a.life_status||'alive').toLowerCase()==='alive';
+  const at=positions.filter(p=>isPalaceScene(p.current_scene)&&alive(byId.get(String(p.agent_id))));
+  const going=positions.filter(p=>p.walking&&isPalaceScene(p.destination_scene)&&!isPalaceScene(p.current_scene)&&alive(byId.get(String(p.agent_id))));
+  const time=v=>v?new Date(v).toLocaleString():'未知';
+  const row=(p,desc)=>{const a=byId.get(String(p.agent_id))||{};return '<div class="feeditem"><b>'+esc(a.name||'未知智能人')+'</b> · '+esc(a.gender||'性别未读取')+'<br><span class="hint">'+esc(desc)+' · 位置更新时间 '+esc(time(p.updated_at))+'</span></div>';};
+  present.innerHTML=at.map(p=>row(p,'已记录在皇宫')).join('')||'<div class="empty">目前没有存活智能人被记录在皇宫。</div>';
+  incoming.innerHTML=going.map(p=>row(p,p.walk_arrive_at?'正在前往 · 预计抵达 '+time(p.walk_arrive_at):'正在前往皇宫 · 抵达时间未知')).join('')||'<div class="empty">目前没有智能人被记录为正在前往皇宫。</div>';
+  const newest=positions.reduce((m,p)=>Math.max(m,p.updated_at?Date.parse(p.updated_at)||0:0),0);
+  const stale=newest>0&&Date.now()-newest>5*60*1000;
+  status.textContent='当前在场 '+at.length+' 人 · 前往中 '+going.length+' 人 · 本次查询 '+new Date().toLocaleString()+(newest?' · 最新位置记录 '+time(newest):' · 尚无位置更新时间')+(stale?' · 警告：位置记录超过 5 分钟，名单可能已过期。':'');
+  status.style.color=stale?'#ff9eab':'';
+ }catch(e){
+  status.textContent='读取皇宫名单失败：'+(e?.message||String(e))+'。';
+  present.innerHTML='<div class="empty">无法确认在场人员，请检查位置表的公开读取权限。</div>';
+  incoming.innerHTML='<div class="empty">无法确认前往人员。</div>';
+ }finally{palaceBusy=false;}
+}
+
 const ZHI_SYSTEM_START='2026-09-26T22:01:14Z';
 function updateWorldAge(){
  const days=Math.max(0,Math.floor((Date.now()-new Date(ZHI_SYSTEM_START).getTime())/86400000));
@@ -286,6 +335,13 @@ async function load(){
 $('filter').oninput=()=>{if(window.__rows)render(window.__rows)};
 $('mode').onchange=()=>{if(window.__rows)render(window.__rows)};
 $('refresh').onclick=load;
+$('palaceToggle').onclick=async()=>{
+ const panel=$('palacePanel'), opening=panel.hidden;
+ panel.hidden=!opening;
+ $('palaceToggle').textContent=opening?'刷新皇宫名单':'查看皇宫人员';
+ if(opening)await loadPalace();
+};
+
 load();
 setInterval(()=>{if(document.visibilityState==='visible')load()},30000);
 </script></body>

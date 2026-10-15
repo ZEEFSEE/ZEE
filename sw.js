@@ -24,9 +24,9 @@ self.addEventListener("fetch", event => {
     return;
   }
   if (["style", "script", "image", "font"].includes(request.destination)) {
-    event.respondWith(caches.match(request).then(cached => cached || fetch(request).then(response => {
+    event.respondWith(fetch(request).then(response => {
       if (response && response.ok) caches.open(CACHE_NAME).then(cache => cache.put(request, response.clone()));
       return response;
-    })));
+    }).catch(async () => (await caches.match(request)) || Response.error()));
   }
 });

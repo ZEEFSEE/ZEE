@@ -48,7 +48,7 @@ button,select,input,textarea{font:inherit}button{cursor:pointer;border:1px solid
  const $=id=>document.getElementById(id), sb=window.zhiSupabase;
  const functionUrl='https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-agnes-chat';
  const broadcastUrl='https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-agent-broadcast';
- let agents=[], selected=null, busy=false, broadcastMode=false, unlocked=false;
+ let agents=[], selected=null, busy=false, broadcastMode=false;
  const CHAT_PAGE_PASSWORD='98816223';
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const stamp=()=>new Date().toLocaleTimeString('zh-SG',{hour:'2-digit',minute:'2-digit',hour12:false});
@@ -137,12 +137,12 @@ button,select,input,textarea{font:inherit}button{cursor:pointer;border:1px solid
  }
 
  $('broadcastMode').onclick=()=>{broadcastMode=!broadcastMode;$('broadcastMode').textContent=broadcastMode?'↩ 返回单聊':'📢 全体广播';$('listHeading').textContent=broadcastMode?'📢 全体广播模式':'👥 选择一个智能人';$('agentSearch').disabled=broadcastMode;$('agentList').classList.toggle('hidden',broadcastMode);$('chatTitle').textContent=broadcastMode?'全体智能人广播':(selected?.name||'先选择一个智能人');$('agentMeta').textContent=broadcastMode?'所有人先收到并写入个人记忆，再按各自人格独立决定是否回应。':'个性化表达 · 独立观点 · 记忆关联';$('send').textContent=broadcastMode?'广播给所有人 ↗':'发送 ↗';$('send').disabled=busy||(!broadcastMode&&!selected);};
- $('gateForm').addEventListener('submit',e=>{e.preventDefault();const entered=$('gatePassword').value;if(entered!==CHAT_PAGE_PASSWORD){$('gateStatus').textContent='密码不正确，请重试。';$('gatePassword').select();return;}unlocked=true;$('passwordGate').classList.add('hidden');$('chatApp').classList.remove('hidden');$('gateStatus').textContent='';$('gatePassword').value='';loadAgents();});
+ function unlockChat(e){if(e)e.preventDefault();const entered=$('gatePassword').value.trim();if(entered!==CHAT_PAGE_PASSWORD){$('gateStatus').textContent='密码不正确，请重试。';$('gatePassword').focus();$('gatePassword').select();return;} $('passwordGate').style.display='none';$('chatApp').classList.remove('hidden');$('gateStatus').textContent='';$('gatePassword').value='';loadAgents();} $('gateForm').addEventListener('submit',unlockChat);$('gatePassword').addEventListener('keydown',e=>{if(e.key==='Enter'){unlockChat(e);}});
  $('refresh').onclick=loadAgents;$('agentSearch').oninput=renderAgents;$('send').onclick=send;
  $('message').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
  $('clearChat').onclick=()=>{$('chatLog').innerHTML='<div class="welcome">对话窗口已清空。数据库中已经保存的记忆不会被删除。</div>';};
  document.querySelectorAll('[data-msg]').forEach(b=>b.onclick=()=>{$('message').value=b.dataset.msg;$('message').focus();});
- loadAgents();
+ // Agent data is loaded only after the password gate succeeds.
 })();
 </script>
 </body></html>

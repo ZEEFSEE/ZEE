@@ -58,6 +58,23 @@ button,a,select{touch-action:manipulation}
  .wrap{padding-top:10px}
  .hero{margin-bottom:8px}
 }
+
+/* Mobile agent list recovery: keep the list visible and cards full-width inside the iframe. */
+#agents{display:grid;width:100%;min-width:0;align-content:start;grid-auto-flow:row}
+#agents>.agent,#agents>.empty{width:100%;min-width:0}
+.layout>section,.layout>aside{min-width:0}
+@media(max-width:820px){
+  .layout{display:grid;grid-template-columns:minmax(0,1fr)!important}
+  #agents{grid-template-columns:minmax(0,1fr)!important}
+  #agents>.agent{max-width:100%;overflow-wrap:anywhere}
+}
+#agentDetailDialog{width:min(640px,calc(100vw - 24px));max-width:none;max-height:85dvh;padding:0;border:1px solid #ffffff28;border-radius:16px;background:#0e1118;color:#f7f7fb;box-shadow:0 24px 80px #000b;overflow:auto}
+#agentDetailDialog::backdrop{background:#03040bd9;backdrop-filter:blur(5px)}
+.agent-dialog-head{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px;background:#0e1118;border-bottom:1px solid #ffffff18}
+.agent-dialog-body{padding:12px}
+.agent-dialog-body .agent{transform:none!important;box-shadow:none!important}
+@media(max-width:600px){#agentDetailDialog{width:calc(100vw - 16px);max-height:88dvh}.agent-dialog-body{padding:8px}}
+
 </style>
 <meta name="theme-color" content="#120d20">
 <meta name="mobile-web-app-capable" content="yes">
@@ -111,6 +128,7 @@ button,a,select{touch-action:manipulation}
 <div id="feed" class="feed"></div>
 </aside>
 </div>
+<dialog id="agentDetailDialog" aria-label="智能人详情"><div class="agent-dialog-head"><strong>智能人详情</strong><button type="button" id="closeAgentDetail">关闭 ✕</button></div><div id="agentDetailBody" class="agent-dialog-body"></div></dialog>
 <div class="footer">ZHI · 永恒白昼 · 自主智能人 · 只读公开观察</div>
 </main>
 
@@ -302,19 +320,38 @@ function card(x){
  const desire=val(x,'desire','current_desire','dominant_desire');
  const status=moving?'正在前往 '+(x.destination_scene||'新的地方'):'停留在 '+scene;
  const displayName=x.family_parents?esc(x.name||'未命名')+' <span style="font-size:10px;color:#9ba3b5;font-weight:700">（父：'+esc(x.family_parents.father)+' · 母：'+esc(x.family_parents.mother)+'）</span>':esc(x.name||'未命名');
- return '<article class="agent '+(moving?'moving':'')+'"><div class="top"><div class="identity"><span class="avatar">'+esc(initials(x.name))+'</span><div><div class="name">'+displayName+'</div><div class="personality">'+esc(x.personality||'独立人格')+'</div><div class="gender-badge '+genderClass(x.gender)+'">'+genderLabel(x.gender)+'</div></div></div><span class="badge">'+icon(activity)+' '+esc(label(activity))+'</span></div>'+
+ return '<article class="agent '+(moving?'moving':'')+'" tabindex="0" data-agent-card="true" aria-label="查看 '+esc(x.name||'智能人')+' 详情"><div class="top"><div class="identity"><span class="avatar">'+esc(initials(x.name))+'</span><div><div class="name">'+displayName+'</div><div class="personality">'+esc(x.personality||'独立人格')+'</div><div class="gender-badge '+genderClass(x.gender)+'">'+genderLabel(x.gender)+'</div></div></div><span class="badge">'+icon(activity)+' '+esc(label(activity))+'</span></div>'+
  '<div class="state">'+(love?'<div class="love-state">'+stageMeta(love).icon+' <b>'+esc(stageMeta(love).label)+'</b> · 与 '+esc(love.name||'某人')+' 的关系正在发展</div>':'')+(moving?'<span class="walk">🚶 '+esc(status)+'</span>':'<span class="idle">● '+esc(status)+'</span>')+'</div>'+
  (x.reason?'<div class="activity"><div class="reason">'+esc(x.reason)+'</div></div>':'')+
  '<div class="emotion">'+emo[0]+' <strong>心情</strong> · '+esc(emo[1])+(rels.length?'<div class="relation-list">'+rels.map(r=>'<span class="relation-chip '+(isRomantic(r)?'romantic':isRelationshipConflict(r)?'conflict':'')+'">'+stageMeta(r).icon+' '+esc(relationText(r))+'</span>').join('')+'</div>':'')+'</div>'+((confidence!==null||stress!==null||curiosity!==null)?'<div class="mind">'+(confidence!==null?'<span>信心<b>'+confidence+'%</b></span>':'')+(stress!==null?'<span>压力<b>'+stress+'%</b></span>':'')+(curiosity!==null?'<span>好奇心<b>'+curiosity+'%</b></span>':'')+'</div>':'')+(desire?'<details class="detail"><summary>查看内在状态</summary><div class="detailbox">当前欲望：'+esc(desire)+(rels.length?'<br>正在关注：'+esc(rels.map(relationText).join('、')):'')+'</div></details>':'')+
  (palaceStory?'<div class="palace-story"><strong>🏰 皇宫经历与个人记忆</strong><div>'+esc(palaceStory.memory)+'</div><small>记忆时间：'+esc(dt(palaceStory.created_at))+' · 来自已记录的实际事件</small></div>':'')+'<div class="balance">💰 ZHI 财富 <b>'+balance+'</b> · 🕐 '+dt(x.last_activity_at||x.last_decision_at)+'</div></article>';
 }
 
+const agentDetailDialog=$('agentDetailDialog');
+const openAgentDetail=article=>{
+ if(!article||!agentDetailDialog)return;
+ $('agentDetailBody').innerHTML=article.innerHTML;
+ agentDetailDialog.showModal();
+};
+$('agents').addEventListener('click',event=>{
+ if(event.target.closest('details,summary,button,a,input,select'))return;
+ const article=event.target.closest('[data-agent-card="true"]');
+ if(article)openAgentDetail(article);
+});
+$('agents').addEventListener('keydown',event=>{
+ if((event.key==='Enter'||event.key===' ')&&event.target.matches('[data-agent-card="true"]')){
+  event.preventDefault();openAgentDetail(event.target);
+ }
+});
+$('closeAgentDetail').addEventListener('click',()=>agentDetailDialog.close());
+agentDetailDialog.addEventListener('click',event=>{if(event.target===agentDetailDialog)agentDetailDialog.close();});
+
 async function load(){
  $('liveText').textContent='正在读取智能人…';
  try{
    const worldRes=await fetchWithRetry(endpoint,{method:'POST',headers:{apikey:apiKey,'Content-Type':'application/json'},body:'{}',cache:'no-store'},3);
    let mindRes,relRes,encRes,famRes,marRes,genderRes,storyRes;
-   try{[mindRes,relRes,encRes,famRes,marRes,genderRes]=await Promise.allSettled([
+   try{[mindRes,relRes,encRes,famRes,marRes,genderRes,storyRes]=await Promise.allSettled([
      fetch(psychologyEndpoint,{headers:{apikey:apiKey},cache:'no-store'}),
      fetch(relationshipEndpoint,{headers:{apikey:apiKey},cache:'no-store'}),
      fetch(encounterEndpoint,{headers:{apikey:apiKey},cache:'no-store'}),

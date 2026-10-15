@@ -248,3 +248,7 @@ CREATE OR REPLACE FUNCTION public.zhi_palace_closed_loop_tick()
  SET search_path TO 'public', 'pg_temp'
 AS $function$ declare activity_result jsonb; auto_date_result jsonb; marriage_count integer; relationship_result json; begin activity_result:=public.zhi_palace_date_tick(); auto_date_result:=public.zhi_auto_schedule_king_palace_date(); marriage_count:=public.zhi_run_palace_engine(); relationship_result:=public.zhi_relationship_engine_tick(); return jsonb_build_object('ok',true,'palace_activity',activity_result,'auto_king_date',auto_date_result,'relationship_engine',relationship_result,'marriages_registered',marriage_count,'finished_at',clock_timestamp()); end; $function$
 
+
+-- Internal scheduler entry points must not be callable as public RPCs.
+REVOKE ALL ON FUNCTION public.zhi_auto_schedule_king_palace_date() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.zhi_palace_closed_loop_tick() FROM PUBLIC, anon, authenticated;

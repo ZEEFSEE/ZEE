@@ -141,9 +141,12 @@ async function loadPalace(){
    const comparisonHtml=recentParticipants.map(p=>{
     const agentId=p.female_agent_id||p.before_snapshot?.mind?.agent_id||p.before_snapshot?.female_mind?.agent_id||p.before_snapshot?.agent?.id;const before=snapshotStats(p.before_snapshot,agentId),after=snapshotStats(p.after_snapshot,agentId),person=p.before_snapshot?.agent?.name||name(agentId);
     const keys=Object.keys(before).filter(k=>before[k]!==undefined&&before[k]!==null),hasAfter=p.after_snapshot&&Object.keys(p.after_snapshot).length>0;
-    const changes=hasAfter?keys.map(k=>delta(before[k],after[k],k)).filter(Boolean).join(' · '):'';
+    const entrySnapshotAt=p.before_snapshot?.captured_at;
+    const accurateEntrySnapshot=!!(entrySnapshotAt&&p.started_at&&Math.abs(Date.parse(entrySnapshotAt)-Date.parse(p.started_at))<60000);
+    const changes=hasAfter&&accurateEntrySnapshot?keys.map(k=>delta(before[k],after[k],k)).filter(Boolean).join(' · '):'';
     const emotionCount=Number(p.emotion_event_summary?.count||0);
-    return '<div class="feeditem"><b>📊 '+esc(person)+' · 实际状态变化</b><div class="reason">'+(hasAfter?(changes||'已保存离场快照，但没有足够的前后数值计算差值。'):'尚未保存离场后快照；暂时不能确认增加或减少了什么。')+'</div><div class="hint">进入前：'+esc(time(p.started_at||p.updated_at))+' · '+(p.completed_at?'离场：'+esc(time(p.completed_at)):'互动进行中')+' · 邀请状态：'+esc(p.invitation_status||'—')+' · 情绪事件 '+emotionCount+' 条</div></div>';
+    const changeText=!hasAfter?'尚未保存离场后快照；暂时不能确认增加或减少了什么。':!accurateEntrySnapshot?'这条历史记录没有在实际进入时保存快照，因此不显示推算差值。新进入记录会在入宫时保存真实基线。':(changes||'已保存离场快照，但没有足够的前后数值计算差值。');
+    return '<div class="feeditem"><b>📊 '+esc(person)+' · 实际状态变化</b><div class="reason">'+changeText+'</div><div class="hint">入宫时间：'+esc(time(p.started_at||p.updated_at))+' · '+(p.completed_at?'离场：'+esc(time(p.completed_at)):'互动进行中')+' · 邀请状态：'+esc(p.invitation_status||'—')+' · 情绪事件 '+emotionCount+' 条'+(entrySnapshotAt?' · 基线快照：'+esc(time(entrySnapshotAt)):'')+'</div></div>';
    }).join('');
    const eventHtml=events.map(e=>{
     const a=name(e.agent_a_id),b=name(e.agent_b_id),kind=e.interaction_type||'发生接触';

@@ -112,6 +112,7 @@ async function loadPalace(){
   const positions=JSON.parse(posRaw), encounters=JSON.parse(encRaw);
   if(!Array.isArray(positions)||!Array.isArray(encounters))throw new Error('位置或互动数据格式异常');
   const agents=window.__rows||[], byId=new Map(agents.map(a=>[String(a.id),a]));
+  const truthy=v=>v===true||v==='true'||v===1||v==='1';
   const alive=a=>!a||String(a.life_status||'alive').toLowerCase()==='alive';
   const at=positions.filter(p=>isPalaceScene(p.current_scene)&&alive(byId.get(String(p.agent_id))));
   const going=positions.filter(p=>p.walking&&isPalaceScene(p.destination_scene)&&!isPalaceScene(p.current_scene)&&alive(byId.get(String(p.agent_id))));

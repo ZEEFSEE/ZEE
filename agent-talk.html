@@ -122,7 +122,7 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
 <main id="chatApp" class="wrap hidden">
  <header class="top">
   <div><div class="brand">💬 ZHI · 智能人讲话室</div><div class="sub">单聊或全体广播 · 每位智能人独立记忆与判断</div></div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="secondary" id="refresh">↻ 刷新名单</button><button class="secondary" onclick="location.href='index.html'">← 返回 ZHI</button></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="secondary" id="refresh">↻ 刷新名单</button><button class="secondary" onclick="location.href='index.html'">← 返回 ZHI</button><button class="secondary" id="signOutButton" type="button">Sign Out · 退出登录</button></div>
  </header>
  <div class="layout">
   <aside class="panel">
@@ -163,6 +163,23 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
   let startupError='';
   let checking=false;
   if(loginButton)loginButton.addEventListener('click',function(){location.href='./index.html';});
+  const signOutButton=document.getElementById('signOutButton');
+  if(signOutButton)signOutButton.addEventListener('click',async function(){
+    signOutButton.disabled=true;signOutButton.textContent='正在退出…';
+    try{
+      const client=window.zhiSupabase;
+      if(!client||!client.auth)throw new Error('登录服务尚未加载');
+      const result=await client.auth.signOut();
+      if(result.error)throw result.error;
+      app.classList.add('hidden');gate.style.display='';
+      gateStatus.textContent='已退出 ZHI 登录。再次进入讲话室前，请重新登录管理员账号。';
+      gateStatus.className='status';
+      if(loginButton)loginButton.textContent='返回 ZHI 登录';
+      location.href='./index.html';
+    }catch(error){
+      if(agentStatus){agentStatus.textContent='退出登录失败：'+(error&&error.message?error.message:String(error));agentStatus.className='status error';}
+    }finally{signOutButton.disabled=false;signOutButton.textContent='Sign Out · 退出登录';}
+  });
   async function checkAdminLogin(){
     if(checking)return;
     checking=true;

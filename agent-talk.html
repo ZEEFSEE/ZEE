@@ -489,7 +489,9 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
  }
 
  $('broadcastMode').onclick=()=>{broadcastMode=!broadcastMode;$('broadcastMode').textContent=broadcastMode?'↩ 返回单聊':'📢 全体广播';$('listHeading').textContent=broadcastMode?'📢 全体广播模式':'👥 选择一个智能人';$('agentSearch').disabled=broadcastMode;$('agentList').classList.toggle('hidden',broadcastMode);$('chatTitle').textContent=broadcastMode?'全体智能人广播':(selected?.name||'先选择一个智能人');$('agentMeta').textContent=broadcastMode?'所有人先收到并写入个人记忆，再按各自人格独立决定是否回应。':'个性化表达 · 独立观点 · 记忆关联';$('send').textContent=broadcastMode?'广播给所有人 ↗':'发送 ↗';$('send').disabled=busy||(!broadcastMode&&!selected);};
- function unlockChat(e){if(e)e.preventDefault();const entered=$('gatePassword').value.trim();if(entered!==CHAT_PAGE_PASSWORD){$('gateStatus').textContent='密码不正确，请重试。';$('gatePassword').focus();$('gatePassword').select();return;} $('passwordGate').style.display='none';$('chatApp').classList.remove('hidden');$('gateStatus').textContent='';$('gatePassword').value='';loadAgents();} $('gateForm').addEventListener('submit',unlockChat);$('gatePassword').addEventListener('keydown',e=>{if(e.key==='Enter'){unlockChat(e);}});
+ // The former password-form elements were removed when the Supabase login gate was introduced.
+ // Do not attach listeners to non-existent gateForm/gatePassword nodes.
+
  $('autonomousInboxToggle').onclick=toggleAutonomousInbox;
  $('mobileAgentSelect').onchange=()=>{const id=$('mobileAgentSelect').value;const agent=agents.find(a=>String(a.id)===String(id));if(!agent)return;if(broadcastMode){broadcastMode=false;$('broadcastMode').textContent='📢 全体广播';$('listHeading').textContent='👥 选择一个智能人';$('agentSearch').disabled=false;$('agentList').classList.remove('hidden');$('send').textContent='发送 ↗';}choose(agent);};
  $('refresh').onclick=loadAgents;$('agentSearch').oninput=renderAgents;$('send').onclick=send;

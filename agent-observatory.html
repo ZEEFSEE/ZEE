@@ -94,7 +94,9 @@ const familyEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_agent
 const marriageEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_agent_marriages?select=id,male_agent_id,female_agent_id,status,married_at,birth_eligible_at,child_agent_id&order=married_at.desc&limit=100';
 const apiKey='sb_publishable_MOVcpW2XoLdHbUVp6f-nrw_e_HY1Bav';
 const palacePositionsEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_agent_world_positions?select=agent_id,current_scene,destination_scene,walking,walk_arrive_at,updated_at&order=updated_at.desc';
-const palaceParticipantEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_palace_experiment_participants?select=id,palace_date_id,started_at,completed_at,before_snapshot,after_snapshot,emotion_event_summary,updated_at&order=updated_at.desc&limit=100';
+const palaceParticipantEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_palace_experiment_participants?select=id,female_agent_id,invitation_status,sequence_no,palace_date_id,started_at,ends_at,completed_at,before_snapshot,during_snapshots,after_snapshot,choice_log,emotion_event_summary,diagnostic,updated_at&order=updated_at.desc&limit=200';
+const palaceMindsEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_agent_minds?select=agent_id,mood,energy,stress,curiosity,confidence';
+const palaceDesiresEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_agent_desires?select=agent_id,intimacy_desire';
 let palaceBusy=false;
 const isPalaceScene=v=>/皇宫|palace/i.test(String(v||''));
 async function loadPalace(){
@@ -106,14 +108,18 @@ async function loadPalace(){
   const pair=await Promise.all([
    fetchWithRetry(palacePositionsEndpoint,{headers:{apikey:apiKey},cache:'no-store'},3),
    fetchWithRetry(encounterEndpoint,{headers:{apikey:apiKey},cache:'no-store'},3),
-   fetchWithRetry(palaceParticipantEndpoint,{headers:{apikey:apiKey},cache:'no-store'},3)
+   fetchWithRetry(palaceParticipantEndpoint,{headers:{apikey:apiKey},cache:'no-store'},3),
+   fetchWithRetry(palaceMindsEndpoint,{headers:{apikey:apiKey},cache:'no-store'},3),
+   fetchWithRetry(palaceDesiresEndpoint,{headers:{apikey:apiKey},cache:'no-store'},3)
   ]);
-  const posRaw=await pair[0].text(), encRaw=await pair[1].text(), participantRaw=await pair[2].text();
+  const posRaw=await pair[0].text(), encRaw=await pair[1].text(), participantRaw=await pair[2].text(), mindsRaw=await pair[3].text(), desiresRaw=await pair[4].text();
   if(!pair[0].ok)throw new Error('位置接口 HTTP '+pair[0].status+'：'+posRaw.slice(0,160));
   if(!pair[1].ok)throw new Error('互动接口 HTTP '+pair[1].status+'：'+encRaw.slice(0,160));
   if(!pair[2].ok)throw new Error('进入前后快照接口 HTTP '+pair[2].status+'：'+participantRaw.slice(0,160));
-  const positions=JSON.parse(posRaw), encounters=JSON.parse(encRaw), participants=JSON.parse(participantRaw);
-  if(!Array.isArray(positions)||!Array.isArray(encounters)||!Array.isArray(participants))throw new Error('位置、互动或快照数据格式异常');
+  if(!pair[3].ok)throw new Error('心理状态接口 HTTP '+pair[3].status+'：'+mindsRaw.slice(0,160));
+  if(!pair[4].ok)throw new Error('亲密需求接口 HTTP '+pair[4].status+'：'+desiresRaw.slice(0,160));
+  const positions=JSON.parse(posRaw), encounters=JSON.parse(encRaw), participants=JSON.parse(participantRaw), minds=JSON.parse(mindsRaw), desires=JSON.parse(desiresRaw);
+  if(!Array.isArray(positions)||!Array.isArray(encounters)||!Array.isArray(participants)||!Array.isArray(minds)||!Array.isArray(desires))throw new Error('位置、互动、快照或状态数据格式异常');
   const agents=window.__rows||[], byId=new Map(agents.map(a=>[String(a.id),a]));
   const truthy=v=>v===true||v==='true'||v===1||v==='1';
   const alive=a=>!a||String(a.life_status||'alive').toLowerCase()==='alive';
@@ -121,19 +127,23 @@ async function loadPalace(){
   
   const time=v=>v?new Date(v).toLocaleString():'未知';
   const name=id=>(byId.get(String(id))||{}).name||'未知智能人';
-  const row=(p,desc)=>{const a=byId.get(String(p.agent_id))||{};return '<div class="feeditem"><b>'+esc(a.name||'未知智能人')+'</b> · '+esc(a.gender||'性别未读取')+'<br><span class="hint">'+esc(desc)+' · 位置更新时间 '+esc(time(p.updated_at))+'</span></div>';};
-  present.innerHTML=at.map(p=>row(p,'已记录在皇宫')).join('')||'<div class="empty">目前没有存活智能人被记录在皇宫。</div>';
+  const mindById=new Map(minds.map(m=>[String(m.agent_id),m]));
+  const desireById=new Map(desires.map(d=>[String(d.agent_id),d]));
+  const signed=(v)=>v===undefined||v===null||v===''?'—':(Number(v)>0?'+':'')+Number(v);
+  const currentStats=id=>{const m=mindById.get(String(id))||{},d=desireById.get(String(id))||{};return [['心情',m.mood],['精力',m.energy],['压力',m.stress],['好奇心',m.curiosity],['信心',m.confidence],['亲密需求',d.intimacy_desire]].map(([k,v])=>'<span class="mini">'+esc(k)+' <b>'+esc(signed(v))+'</b></span>').join(' · ');};
+  const row=(p,desc)=>{const a=byId.get(String(p.agent_id))||{};return '<div class="feeditem"><b>'+esc(a.name||'未知智能人')+'</b> · '+esc(a.gender||'性别未读取')+'<div class="reason">'+currentStats(p.agent_id)+'</div><span class="hint">'+esc(desc)+' · 位置更新时间 '+esc(time(p.updated_at))+'</span></div>';};
+  present.innerHTML=at.map(p=>row(p,'当前实际状态（数据库实时值）')).join('')||'<div class="empty">目前没有存活智能人被记录在皇宫。</div>';
   
   const events=encounters.filter(e=>truthy(e.interaction_occurred)&&isPalaceScene(e.scene)&&alive(byId.get(String(e.agent_a_id)))&&alive(byId.get(String(e.agent_b_id))));
   const delta=(before,after,label)=>{if(before===undefined||before===null||after===undefined||after===null||before===''||after==='')return '';const n=Number(after)-Number(before);if(!Number.isFinite(n))return '';return '<span class="hint">'+esc(label)+' '+(n>0?'<b class="success">+'+n+'</b>':n<0?'<b class="danger">'+n+'</b>':'<b>±0</b>')+'</span>';};
-   const snapshotStats=(snap,agentId)=>{const root=snap||{};const pick=(generic,a,b)=>generic||((root[a]?.agent_id&&String(root[a].agent_id)===String(agentId))?root[a]:null)||((root[b]?.agent_id&&String(root[b].agent_id)===String(agentId))?root[b]:null)||root[a]||root[b]||{};const mind=pick(root.mind,'king_mind','female_mind'),rel=pick(root.relationship,'king_relationship','female_relationship'),desires=pick(root.desires,'king_desires','female_desires');return {心情:mind.mood,精力:mind.energy,压力:mind.stress,好奇心:mind.curiosity,信心:mind.confidence,好感度:rel.affection,信任度:rel.trust,熟悉度:rel.familiarity,冲突值:rel.conflict,亲密需求:desires.intimacy_desire??desires.intimacy};};
-   const recentParticipants=participants.filter(p=>p.before_snapshot&&Object.keys(p.before_snapshot).length&&((p.started_at&&Date.now()-Date.parse(p.started_at)<24*60*60*1000)||(p.completed_at&&Date.now()-Date.parse(p.completed_at)<24*60*60*1000)));
+   const snapshotStats=(snap,agentId)=>{const root=snap||{};const pick=(keys,ids)=>{const candidates=keys.map(k=>root[k]).filter(v=>v&&typeof v==='object');return candidates.find(v=>v.agent_id&&String(v.agent_id)===String(agentId))||candidates.find(v=>v.agent_id&&String(v.agent_id)!==String(agentId)&&false)||candidates[0]||{};};const mind=pick(['mind','female_mind','king_mind','agent_mind'],agentId),rel=pick(['relationship','female_relationship','king_relationship'],agentId),desires=pick(['desires','female_desires','king_desires'],agentId);return {心情:mind.mood,精力:mind.energy,压力:mind.stress,好奇心:mind.curiosity,信心:mind.confidence,亲密需求:desires.intimacy_desire??desires.intimacy};};
+   const recentParticipants=participants.filter(p=>p.female_agent_id&&(p.started_at||p.completed_at)&&((p.started_at&&Date.now()-Date.parse(p.started_at)<7*24*60*60*1000)||(p.completed_at&&Date.now()-Date.parse(p.completed_at)<7*24*60*60*1000)));
    const comparisonHtml=recentParticipants.map(p=>{
-    const agentId=p.before_snapshot?.mind?.agent_id||p.before_snapshot?.agent?.id;const before=snapshotStats(p.before_snapshot,agentId),after=snapshotStats(p.after_snapshot,agentId),person=p.before_snapshot?.agent?.name||name(agentId);
+    const agentId=p.female_agent_id||p.before_snapshot?.mind?.agent_id||p.before_snapshot?.female_mind?.agent_id||p.before_snapshot?.agent?.id;const before=snapshotStats(p.before_snapshot,agentId),after=snapshotStats(p.after_snapshot,agentId),person=p.before_snapshot?.agent?.name||name(agentId);
     const keys=Object.keys(before).filter(k=>before[k]!==undefined&&before[k]!==null),hasAfter=p.after_snapshot&&Object.keys(p.after_snapshot).length>0;
     const changes=hasAfter?keys.map(k=>delta(before[k],after[k],k)).filter(Boolean).join(' · '):'';
     const emotionCount=Number(p.emotion_event_summary?.count||0);
-    return '<div class="feeditem"><b>📊 '+esc(person)+' · 进入前 vs 离开后</b><div class="reason">'+(hasAfter?(changes||'已保存离场快照，但没有足够的前后数值计算差值。'):'尚未保存离场后快照；暂时不能确认增加或减少了什么。')+'</div><div class="hint">进入前快照：'+esc(time(p.started_at||p.updated_at))+' · '+(p.completed_at?'离场时间：'+esc(time(p.completed_at)):'互动进行中')+' · 已记录情绪事件 '+emotionCount+' 条</div></div>';
+    return '<div class="feeditem"><b>📊 '+esc(person)+' · 实际状态变化</b><div class="reason">'+(hasAfter?(changes||'已保存离场快照，但没有足够的前后数值计算差值。'):'尚未保存离场后快照；暂时不能确认增加或减少了什么。')+'</div><div class="hint">进入前：'+esc(time(p.started_at||p.updated_at))+' · '+(p.completed_at?'离场：'+esc(time(p.completed_at)):'互动进行中')+' · 邀请状态：'+esc(p.invitation_status||'—')+' · 情绪事件 '+emotionCount+' 条</div></div>';
    }).join('');
    const eventHtml=events.map(e=>{
     const a=name(e.agent_a_id),b=name(e.agent_b_id),kind=e.interaction_type||'发生接触';

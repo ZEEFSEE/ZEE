@@ -30,24 +30,82 @@ iframe{position:absolute;inset:0;border:0;width:100%;height:100%;min-height:0;mi
 </style>
 </head>
 <body>
-<div class="app">
-<main><iframe id="appView" src="./agent-observatory.html?v=20261016signout1" title="ZHI 智能人世界" allow="fullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin"></iframe></main>
+<section id="loginGate" class="login-gate" aria-labelledby="loginTitle">
+  <div class="login-card">
+    <div class="login-mark">ZHI</div>
+    <p class="eyebrow">INTELLIGENT WORLD</p>
+    <h1 id="loginTitle">登录 ZHI 世界</h1>
+    <p class="login-copy">请使用 ZHI 管理员账号登录后进入智能人世界。</p>
+    <form id="loginForm">
+      <label for="loginUser">管理员账号 / 邮箱</label>
+      <input id="loginUser" name="username" autocomplete="username" placeholder="输入账号或邮箱" required>
+      <label for="loginPassword">密码</label>
+      <input id="loginPassword" name="password" type="password" autocomplete="current-password" placeholder="输入密码" required>
+      <button id="loginSubmit" type="submit">登录并进入</button>
+      <p id="loginStatus" class="login-status" role="status" aria-live="polite">正在检查登录状态…</p>
+    </form>
+  </div>
+</section>
+<div class="app hidden" id="zhiApp">
+<main><iframe id="appView" src="./agent-observatory.html?v=20261016loginpage1" title="ZHI 智能人世界" allow="fullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin"></iframe></main>
 <nav class="bottom-nav" aria-label="主导航">
 <button class="tab" type="button" data-page="world" aria-current="page"><span class="ico">🌍</span><span class="label">智能人世界</span></button>
 <button class="tab" type="button" data-page="talk"><span class="ico">💬</span><span class="label">消息与对话</span></button>
 </nav>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./supabase-client.js?v=20261016loginpage1"></script>
 <script>
-(()=>{
+(()=> {
+ const gate=document.getElementById('loginGate');
+ const app=document.getElementById('zhiApp');
+ const form=document.getElementById('loginForm');
+ const userInput=document.getElementById('loginUser');
+ const passwordInput=document.getElementById('loginPassword');
+ const submit=document.getElementById('loginSubmit');
+ const status=document.getElementById('loginStatus');
  const frame=document.getElementById('appView');
- const pages={world:{src:'./agent-observatory.html?v=20261016signout1',title:'ZHI 智能人世界'},talk:{src:'./agent-talk.html?v=20261016signout1',title:'ZHI 智能人讲话室'}};
+ const setStatus=(message,isError=false)=>{status.textContent=message;status.classList.toggle('error',isError)};
+ const showApp=()=>{gate.classList.add('hidden');app.classList.remove('hidden')};
+ const showGate=()=>{app.classList.add('hidden');gate.classList.remove('hidden')};
+ const pages={world:{src:'./agent-observatory.html?v=20261016loginpage1',title:'ZHI 智能人世界'},talk:{src:'./agent-talk.html?v=20261016loginpage1',title:'ZHI 智能人讲话室'}};
  document.querySelectorAll('.tab').forEach(button=>button.addEventListener('click',()=>{
   const page=pages[button.dataset.page];if(!page)return;
   if(frame.getAttribute('src')!==page.src)frame.setAttribute('src',page.src);
   frame.title=page.title;
   document.querySelectorAll('.tab').forEach(tab=>{if(tab===button)tab.setAttribute('aria-current','page');else tab.removeAttribute('aria-current')});
  }));
- if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
+ form.addEventListener('submit',async event=>{
+  event.preventDefault();
+  if(!window.zhiSupabase){setStatus('登录服务暂时无法加载，请刷新页面重试。',true);return}
+  const entered=userInput.value.trim();
+  const email=entered.includes('@')?entered:'admin@zhi-demo.com';
+  const password=passwordInput.value;
+  submit.disabled=true;setStatus('正在验证账号…');
+  try{
+   const {data,error}=await window.zhiSupabase.auth.signInWithPassword({email,password});
+   if(error)throw error;
+   if(!data?.session)throw new Error('登录未建立有效会话，请重试。');
+   passwordInput.value='';
+   setStatus('登录成功，正在进入 ZHI…');
+   showApp();
+   if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  }catch(error){
+   const message=error?.message||'登录失败，请检查账号和密码。';
+   setStatus(/invalid login credentials/i.test(message)?'账号或密码不正确，请重新输入。':message,true);
+  }finally{submit.disabled=false}
+ });
+ (async()=>{
+  if(!window.zhiSupabase){setStatus('登录服务加载失败，请检查网络后刷新页面。',true);return}
+  try{
+   const {data,error}=await window.zhiSupabase.auth.getSession();
+   if(error)throw error;
+   if(data?.session){showApp();setStatus('已登录');}
+   else{showGate();setStatus('请输入 ZHI 管理员账号和密码。');}
+  }catch(error){showGate();setStatus('无法读取登录状态，请刷新后重试。',true)}
+ })();
+ window.zhiShowLogin=showGate;
+ if('serviceWorker' in navigator){window.addEventListener('load',()=>{if(!app.classList.contains('hidden'))navigator.serviceWorker.register('./sw.js').catch(()=>{})})}
 })();
 </script>
 </body>

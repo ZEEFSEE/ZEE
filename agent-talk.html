@@ -51,10 +51,10 @@ button,select,input,textarea{font:inherit}button{cursor:pointer;border:1px solid
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const stamp=()=>new Date().toLocaleTimeString('zh-SG',{hour:'2-digit',minute:'2-digit',hour12:false});
  function status(text,kind=''){ $('agentStatus').textContent=text;$('agentStatus').className='status '+kind; }
- function addBubble(role,text,time=stamp()){
+ function addBubble(role,text,time=stamp(),whoName=null){
   const log=$('chatLog');const empty=log.querySelector('.welcome');if(empty)empty.remove();
   const el=document.createElement('div');el.className='bubble '+(role==='user'?'user':'agent');
-  const who=document.createElement('div');who.className='who';who.textContent=role==='user'?'你':(selected?.name||'智能人');
+  const who=document.createElement('div');who.className='who';who.textContent=role==='user'?'你':(whoName||selected?.name||'智能人');
   const body=document.createElement('div');body.textContent=text;
   const tm=document.createElement('div');tm.className='time';tm.textContent=time;
   el.append(who,body,tm);log.append(el);log.scrollTop=log.scrollHeight;
@@ -124,7 +124,7 @@ button,select,input,textarea{font:inherit}button{cursor:pointer;border:1px solid
       return dd;
      }catch(e){return {status:'error',error:e?.message||String(e)};}
     }));
-    for(const x of out){done++;if(x.status==='reply'){replied++;addBubble('agent','【独立回应】'+(x.reply||''));}else if(x.status==='no_reply')noReply++;else failed++;}
+    for(const x of out){done++;if(x.status==='reply'){replied++;addBubble('agent','【独立回应】'+(x.reply||''),stamp(),x.agent_name||'智能人');}else if(x.status==='no_reply')noReply++;else failed++;}
     status('全体广播处理中：已完成 '+done+'/'+agents.length+' 位决策；主动回应 '+replied+' 位；选择暂不回应 '+noReply+' 位；失败 '+failed+' 位。所有人的广播记忆与回应结果都会保留。');
    }
    status('全体广播处理完成。投递成功 '+d.delivered+'/'+d.total+'；独立回应 '+replied+' 位；选择暂不回应 '+noReply+' 位；失败 '+failed+' 位。','good');

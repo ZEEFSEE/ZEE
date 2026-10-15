@@ -45,6 +45,38 @@ button,select,input,textarea{font:inherit}button{cursor:pointer;border:1px solid
 <script src="supabase-client.js?v=20261015-agnes-talk"></script>
 <script>
 (function(){
+  const gate=document.getElementById('passwordGate');
+  const form=document.getElementById('gateForm');
+  const input=document.getElementById('gatePassword');
+  const gateStatus=document.getElementById('gateStatus');
+  const app=document.getElementById('chatApp');
+  const agentStatus=document.getElementById('agentStatus');
+  if(!gate||!form||!input||!app)return;
+  const password='98816223';
+  form.addEventListener('submit',function(e){
+    const entered=(input.value||'').trim();
+    if(entered!==password){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      gateStatus.textContent='密码不正确，请重试。';
+      input.focus();
+      input.select();
+      return;
+    }
+    gate.style.display='none';
+    app.classList.remove('hidden');
+    if(agentStatus)agentStatus.textContent='密码已通过，正在启动聊天室…';
+  },true);
+  window.addEventListener('error',function(e){
+    if(agentStatus && app.classList.contains('hidden')===false){
+      agentStatus.textContent='页面脚本启动失败：'+(e.message||'JavaScript 错误')+'。请将此提示截图发给管理员。';
+      agentStatus.className='status error';
+    }
+  });
+})();
+</script>
+<script>
+(function(){
  const $=id=>document.getElementById(id), sb=window.zhiSupabase;
  const functionUrl='https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-agnes-chat';
  const broadcastUrl='https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-agent-broadcast';

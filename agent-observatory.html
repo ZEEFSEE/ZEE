@@ -105,13 +105,15 @@ async function loadPalace(){
  try{
   const pair=await Promise.all([
    fetchWithRetry(palacePositionsEndpoint,{headers:{apikey:apiKey},cache:'no-store'},3),
-   fetchWithRetry(encounterEndpoint,{headers:{apikey:apiKey},cache:'no-store'},3)
+   fetchWithRetry(encounterEndpoint,{headers:{apikey:apiKey},cache:'no-store'},3),
+   fetchWithRetry(palaceParticipantEndpoint,{headers:{apikey:apiKey},cache:'no-store'},3)
   ]);
   const posRaw=await pair[0].text(), encRaw=await pair[1].text(), participantRaw=await pair[2].text();
   if(!pair[0].ok)throw new Error('位置接口 HTTP '+pair[0].status+'：'+posRaw.slice(0,160));
   if(!pair[1].ok)throw new Error('互动接口 HTTP '+pair[1].status+'：'+encRaw.slice(0,160));
-  const positions=JSON.parse(posRaw), encounters=JSON.parse(encRaw);
-  if(!Array.isArray(positions)||!Array.isArray(encounters))throw new Error('位置或互动数据格式异常');
+  if(!pair[2].ok)throw new Error('进入前后快照接口 HTTP '+pair[2].status+'：'+participantRaw.slice(0,160));
+  const positions=JSON.parse(posRaw), encounters=JSON.parse(encRaw), participants=JSON.parse(participantRaw);
+  if(!Array.isArray(positions)||!Array.isArray(encounters)||!Array.isArray(participants))throw new Error('位置、互动或快照数据格式异常');
   const agents=window.__rows||[], byId=new Map(agents.map(a=>[String(a.id),a]));
   const truthy=v=>v===true||v==='true'||v===1||v==='1';
   const alive=a=>!a||String(a.life_status||'alive').toLowerCase()==='alive';

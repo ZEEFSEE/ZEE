@@ -28,7 +28,7 @@ grant select, insert, update, delete on public.zhi_agent_control_sessions to ser
 create or replace function public.zhi_agent_is_manually_controlled(p_agent_id uuid)
 returns boolean
 language sql
-stable
+volatile
 security definer
 set search_path = public, pg_temp
 as $function$
@@ -110,8 +110,7 @@ begin
 
   select s.agent_id into target_agent_id
   from public.zhi_agent_control_sessions s
-  where s.session_id = p_session_id and s.status = 'active'
-  for update;
+  where s.session_id = p_session_id and s.status = 'active';
 
   if not found then
     return jsonb_build_object('ok', false, 'reason', 'active_session_not_found');
@@ -122,6 +121,10 @@ begin
   update public.zhi_agent_control_sessions
   set last_seen_at = clock_timestamp(), updated_at = clock_timestamp()
   where session_id = p_session_id and status = 'active';
+
+  if not found then
+    return jsonb_build_object('ok', false, 'reason', 'active_session_not_found');
+  end if;
 
   return jsonb_build_object('ok', true, 'mode', 'manual', 'agent_id', target_agent_id);
 end;
@@ -143,8 +146,7 @@ begin
 
   select s.agent_id into target_agent_id
   from public.zhi_agent_control_sessions s
-  where s.session_id = p_session_id
-  for update;
+  where s.session_id = p_session_id;
 
   if not found then
     return jsonb_build_object('ok', true, 'already_closed', true);
@@ -312,5 +314,56 @@ begin
   execute replace(v_def, v_anchor, v_replacement);
 end;
 $patch$;
+
+-- Stop autonomous chat side effects at the database boundary as well. This
+-- closes the small race between an Edge Function's status check and its writes.
+create or replace function public.zhi_guard_manual_agent_autonomous_chat()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $function$
+declare
+  row_data jsonb := to_jsonb(new);
+  target_agent_id uuid;
+  sender_type text;
+  content text;
+  source_name text;
+begin
+  if current_setting('zhi.manual_action', true) = 'on' then
+    return new;
+  end if;
+
+  target_agent_id := nullif(row_data->>'agent_id', '')::uuid;
+  sender_type := coalesce(row_data->>'sender_type', '');
+  content := coalesce(row_data->>'content', '');
+  source_name := coalesce(row_data->>'source', '');
+
+  if target_agent_id is not null
+     and public.zhi_agent_is_manually_controlled(target_agent_id)
+     and (
+       (tg_table_name = 'admin_agent_messages'
+        and sender_type = 'agent'
+        and (content like '【主动找你】%' or content like '【回应全体广播】%'))
+       or
+       (tg_table_name = 'zhi_agent_memories'
+        and source_name in ('agnes_autonomous_chat', 'admin_broadcast_reply'))
+     ) then
+    raise exception using errcode = 'P0001', message = 'manual_control_active';
+  end if;
+
+  return new;
+end;
+$function$;
+
+drop trigger if exists zhi_guard_manual_autonomous_agent_message on public.admin_agent_messages;
+create trigger zhi_guard_manual_autonomous_agent_message
+before insert on public.admin_agent_messages
+for each row execute function public.zhi_guard_manual_agent_autonomous_chat();
+
+drop trigger if exists zhi_guard_manual_autonomous_agent_memory on public.zhi_agent_memories;
+create trigger zhi_guard_manual_autonomous_agent_memory
+before insert on public.zhi_agent_memories
+for each row execute function public.zhi_guard_manual_agent_autonomous_chat();
 
 commit;

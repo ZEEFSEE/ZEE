@@ -89,6 +89,20 @@ begin
         resume_at = null,
         updated_at = clock_timestamp();
 
+  -- Preserve an explicit audit memory for each in-progress palace date cancelled here.
+  insert into public.zhi_agent_memories
+    (agent_id, memory_type, importance, memory, source)
+  select p_agent_id, 'system_event', 75,
+         '进入讲话室手动控制模式时，系统取消了与 '
+           || coalesce(partner.name, '另一位智能人')
+           || ' 尚未完成的皇宫约会。原有已完成经历没有被删除。',
+         'manual_control_cancelled_action'
+  from public.zhi_palace_dates pd
+  join public.zhi_agents partner
+    on partner.id = case when pd.male_agent_id = p_agent_id then pd.female_agent_id else pd.male_agent_id end
+  where pd.status = 'active'
+    and (pd.male_agent_id = p_agent_id or pd.female_agent_id = p_agent_id);
+
   -- Cancel only in-progress dates/audiences that involve the selected agent.
   -- Completed history is retained; unrelated agents' dates are untouched.
   update public.zhi_palace_dates

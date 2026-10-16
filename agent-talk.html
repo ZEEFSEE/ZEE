@@ -193,11 +193,17 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
 
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const stamp=()=>new Date().toLocaleTimeString('zh-SG',{hour:'2-digit',minute:'2-digit',hour12:false});
+ const CREATOR_IDENTITY={id:'zhi-world-creator',display_name:'世界创造者',avatar:'✦',visibility_seconds:30};
+ const CREATOR_PRESENCE_KEY='zhi_creator_presence_v1';
+ function markCreatorSpeaking(){
+  const now=Date.now();
+  try{localStorage.setItem(CREATOR_PRESENCE_KEY,JSON.stringify({...CREATOR_IDENTITY,last_spoke_at:now,visible_until:now+CREATOR_IDENTITY.visibility_seconds*1000}));}catch(_){}
+ }
  function status(text,kind=''){ $('agentStatus').textContent=text;$('agentStatus').className='status '+kind; }
  function addBubble(role,text,time=stamp(),whoName=null){
   const log=$('chatLog');const empty=log.querySelector('.welcome');if(empty)empty.remove();
   const el=document.createElement('div');el.className='bubble '+(role==='user'?'user':'agent');
-  const who=document.createElement('div');who.className='who';who.textContent=role==='user'?'你':(whoName||selected?.name||'智能人');
+  const who=document.createElement('div');who.className='who';who.textContent=role==='user'?'✦ 世界创造者':(whoName||selected?.name||'智能人');
   const body=document.createElement('div');body.textContent=text;
   const tm=document.createElement('div');tm.className='time';tm.textContent=time;
   el.append(who,body,tm);log.append(el);log.scrollTop=log.scrollHeight;
@@ -409,7 +415,7 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
   if(broadcastMode){await sendBroadcast(message);return;}
   const chatToken=getChatToken();
   if(!chatToken){status('页面访问验证已过期，请重新输入页面密码。','error');window.dispatchEvent(new Event('zhi-chat-auth-expired'));return;}
-  addBubble('user',message);$('message').value='';busy=true;$('send').disabled=true;$('send').textContent='思考中…';
+  markCreatorSpeaking();addBubble('user',message);$('message').value='';busy=true;$('send').disabled=true;$('send').textContent='思考中…';
   const pending=document.createElement('div');pending.className='bubble agent';pending.textContent=(selected.name||'智能人')+' 正在组织语言…';$('chatLog').append(pending);$('chatLog').scrollTop=$('chatLog').scrollHeight;
   try{
    const r=await fetch(functionUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+chatToken,'apikey':window.zhiCorePublishableKey||''},body:JSON.stringify({agent_id:selected.id,message}),cache:'no-store'});
@@ -424,7 +430,7 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
  async function sendBroadcast(message){
   const chatToken=getChatToken();
   if(!chatToken){status('页面访问验证已过期，请重新输入页面密码。','error');window.dispatchEvent(new Event('zhi-chat-auth-expired'));return;}
-  busy=true;$('send').disabled=true;$('send').textContent='广播中…';$('message').value='';addBubble('user','【全体广播】'+message);
+  markCreatorSpeaking();busy=true;$('send').disabled=true;$('send').textContent='广播中…';$('message').value='';addBubble('user','【全体广播】'+message);
   try{
    status('正在向所有智能人投递广播并写入各自记忆…');
    const r=await fetch(broadcastUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+chatToken,'apikey':window.zhiCorePublishableKey||''},body:JSON.stringify({mode:'broadcast',message}),cache:'no-store'});

@@ -58,6 +58,14 @@ button,a,select{touch-action:manipulation}
  .wrap{padding-top:10px}
  .hero{margin-bottom:8px}
 }
+
+/* Creator is a lightweight digital identity, not a 3D avatar. */
+.creator-presence{position:fixed;right:16px;bottom:18px;z-index:1000;display:none;align-items:center;gap:11px;max-width:calc(100vw - 32px);padding:12px 15px;border:1px solid #ffe08a66;border-radius:16px;background:linear-gradient(135deg,#1b1726f5,#10201ff5);box-shadow:0 12px 35px #0008;color:#fff;backdrop-filter:blur(12px)}
+.creator-presence.visible{display:flex;animation:creatorIn .2s ease-out}
+.creator-glyph{width:40px;height:40px;flex:0 0 40px;display:grid;place-items:center;border-radius:13px;background:linear-gradient(145deg,#ffe08a,#79dcca);color:#201a2c;font-size:25px;font-weight:950;box-shadow:0 0 20px #ffe08a25}
+.creator-name{font-size:14px;font-weight:900;color:#ffe8a8}.creator-state{margin-top:2px;font-size:11px;color:#c9d8d6}
+@keyframes creatorIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.creator-presence.visible{animation:none}}
 </style>
 <meta name="theme-color" content="#120d20">
 <meta name="mobile-web-app-capable" content="yes">
@@ -85,6 +93,10 @@ button,a,select{touch-action:manipulation}
 <div><div class="brand">🌍 <b>ZHI</b> · 智能人世界 <span class="tag">实时世界</span> <span class="tag" id="worldAge">成长 0 天</span></div><div class="sub">不是游戏角色。这里的人会工作、吃饭、恋爱、赚钱、失望、开心，然后继续做自己的选择。</div></div>
 <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><a href="agent-talk.html" style="display:inline-block;padding:10px 13px;border-radius:10px;background:#ffe08a;color:#21152a;text-decoration:none;font-weight:900">💬 智能人讲话室</a><div class="live"><span class="pulse"></span><span id="liveText">正在连接世界数据…</span></div></div>
 </header>
+<div id="creatorPresence" class="creator-presence" role="status" aria-live="polite" aria-label="世界创造者正在显身">
+ <div class="creator-glyph" aria-hidden="true">✦</div>
+ <div><div class="creator-name">世界创造者</div><div class="creator-state">正在与你交流</div></div>
+</div>
 
 <section class="stats">
 <div class="stat"><div class="k">正在生活</div><strong id="total">—</strong><em>个智能人</em></div>
@@ -427,6 +439,18 @@ $('palaceToggle').onclick=async()=>{
  if(opening)await loadPalace();
 };
 
+const CREATOR_PRESENCE_KEY='zhi_creator_presence_v1';
+function syncCreatorPresence(){
+ const el=$('creatorPresence');if(!el)return;
+ let presence=null;
+ try{presence=JSON.parse(localStorage.getItem(CREATOR_PRESENCE_KEY)||'null')}catch(_){}
+ const active=presence&&presence.id==='zhi-world-creator'&&Number(presence.visible_until)>Date.now();
+ el.classList.toggle('visible',!!active);
+ if(active)el.setAttribute('aria-label','世界创造者正在显身');
+}
+syncCreatorPresence();
+setInterval(syncCreatorPresence,1000);
+window.addEventListener('storage',e=>{if(e.key===CREATOR_PRESENCE_KEY)syncCreatorPresence();});
 load();
 setInterval(()=>{if(document.visibilityState==='visible')load()},30000);
 </script>

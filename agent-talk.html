@@ -118,11 +118,10 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
 <link rel="apple-touch-icon" href="./zhi-icon.svg">
 </head>
 <body>
-<section id="passwordGate" class="gate" aria-labelledby="gateTitle"><h1 id="gateTitle">🔐 ZHI · 智能人讲话室</h1><p id="gateDescription">请先登录 ZHI 管理员账号，再进入智能人讲话室。</p><button id="adminLoginButton" class="primary" type="button" style="width:100%;margin-top:12px">返回 ZHI 登录</button><div id="gateStatus" class="status" style="margin-top:12px" aria-live="polite">正在检查管理员登录状态…</div></section>
-<main id="chatApp" class="wrap hidden">
+<main id="chatApp" class="wrap">
  <header class="top">
   <div><div class="brand">💬 ZHI · 智能人讲话室</div><div class="sub">单聊或全体广播 · 每位智能人独立记忆与判断</div></div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="secondary" id="refresh">↻ 刷新名单</button><button class="secondary" onclick="location.href='index.html'">← 返回 ZHI</button><button class="secondary" id="signOutButton" type="button">Sign Out · 退出登录</button></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="secondary" id="refresh">↻ 刷新名单</button><button class="secondary" onclick="location.href='index.html'">← 返回 ZHI</button></div>
  </header>
  <div class="layout">
   <aside class="panel">
@@ -151,87 +150,7 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
  </div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-client.js?v=20261015-agnes-talk"></script>
-<script>
-(function(){
-  const gate=document.getElementById('passwordGate');
-  const gateStatus=document.getElementById('gateStatus');
-  const loginButton=document.getElementById('adminLoginButton');
-  const app=document.getElementById('chatApp');
-  const agentStatus=document.getElementById('agentStatus');
-  if(!gate||!gateStatus||!app)return;
-  let startupError='';
-  let checking=false;
-  if(loginButton)loginButton.addEventListener('click',function(){location.href='./index.html';});
-  const signOutButton=document.getElementById('signOutButton');
-  if(signOutButton)signOutButton.addEventListener('click',async function(){
-    signOutButton.disabled=true;signOutButton.textContent='正在退出…';
-    try{
-      const client=window.zhiSupabase;
-      if(!client||!client.auth)throw new Error('登录服务尚未加载');
-      const result=await client.auth.signOut();
-      if(result.error)throw result.error;
-      app.classList.add('hidden');gate.style.display='';
-      gateStatus.textContent='已退出 ZHI 登录。再次进入讲话室前，请重新登录管理员账号。';
-      gateStatus.className='status';
-      if(loginButton)loginButton.textContent='返回 ZHI 登录';
-      location.href='./index.html';
-    }catch(error){
-      if(agentStatus){agentStatus.textContent='退出登录失败：'+(error&&error.message?error.message:String(error));agentStatus.className='status error';}
-    }finally{signOutButton.disabled=false;signOutButton.textContent='Sign Out · 退出登录';}
-  });
-  async function checkAdminLogin(){
-    if(checking)return;
-    checking=true;
-    try{
-      const client=window.zhiSupabase;
-      if(!client||!client.auth)throw new Error('登录服务尚未加载，请刷新页面重试。');
-      const result=await client.auth.getSession();
-      if(result.error)throw result.error;
-      const session=result.data&&result.data.session;
-      if(!session||!session.user){
-        app.classList.add('hidden');
-        gate.style.display='';
-        gateStatus.textContent='当前没有有效的登录会话。请返回 ZHI，先使用管理员账号登录，再重新打开聊天室。';
-        gateStatus.className='status error';
-        if(loginButton)loginButton.textContent='返回 ZHI 登录';
-        return;
-      }
-      gate.style.display='none';
-      app.classList.remove('hidden');
-      if(agentStatus){
-        agentStatus.textContent=startupError?'页面脚本启动失败：'+startupError+'。请将此提示截图发给管理员。':'管理员登录会话已检测到，正在启动聊天室…';
-        if(startupError)agentStatus.className='status error';
-      }
-    }catch(error){
-      app.classList.add('hidden');
-      gate.style.display='';
-      gateStatus.textContent='无法验证登录状态：'+(error&&error.message?error.message:String(error))+'。请返回 ZHI 登录后重试。';
-      gateStatus.className='status error';
-    }finally{checking=false;}
-  }
-  window.addEventListener('error',function(e){
-    startupError=e.message||'JavaScript 错误';
-    if(agentStatus&&!app.classList.contains('hidden')){
-      agentStatus.textContent='页面脚本启动失败：'+startupError+'。请将此提示截图发给管理员。';
-      agentStatus.className='status error';
-    }
-  });
-  checkAdminLogin();
-  if(window.zhiSupabase&&window.zhiSupabase.auth){
-    window.zhiSupabase.auth.onAuthStateChange(function(event,session){
-      if(event==='SIGNED_OUT'||!session){
-        app.classList.add('hidden');
-        gate.style.display='';
-        gateStatus.textContent='登录已失效，请重新登录 ZHI 管理员账号。';
-        gateStatus.className='status error';
-      }else if(event==='SIGNED_IN'||event==='TOKEN_REFRESHED'){
-        checkAdminLogin();
-      }
-    });
-  }
-})();
-</script>
+<script src="supabase-client.js?v=20261016-nologin"></script>
 <script>
 (function(){
  const $=id=>document.getElementById(id), sb=window.zhiSupabase;

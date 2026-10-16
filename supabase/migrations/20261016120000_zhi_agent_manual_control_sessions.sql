@@ -22,8 +22,8 @@ create index if not exists zhi_agent_control_sessions_agent_state_idx
   on public.zhi_agent_control_sessions(agent_id, status, resume_at);
 
 alter table public.zhi_agent_control_sessions enable row level security;
-revoke all on public.zhi_agent_control_sessions from public, anon, authenticated;
-grant select, insert, update, delete on public.zhi_agent_control_sessions to service_role;
+revoke all on public.zhi_agent_control_sessions from public, anon, authenticated, service_role;
+grant select on public.zhi_agent_control_sessions to service_role;
 
 create or replace function public.zhi_agent_is_manually_controlled(p_agent_id uuid)
 returns boolean

@@ -59,12 +59,19 @@ button,a,select{touch-action:manipulation}
  .hero{margin-bottom:8px}
 }
 
-/* Creator is a lightweight digital identity, not a 3D avatar. */
-.creator-presence{position:fixed;right:16px;bottom:18px;z-index:1000;display:none;align-items:center;gap:11px;max-width:calc(100vw - 32px);padding:12px 15px;border:1px solid #ffe08a66;border-radius:16px;background:linear-gradient(135deg,#1b1726f5,#10201ff5);box-shadow:0 12px 35px #0008;color:#fff;backdrop-filter:blur(12px)}
-.creator-presence.visible{display:flex;animation:creatorIn .2s ease-out}
-.creator-glyph{width:40px;height:40px;flex:0 0 40px;display:grid;place-items:center;border-radius:13px;background:linear-gradient(145deg,#ffe08a,#79dcca);color:#201a2c;font-size:25px;font-weight:950;box-shadow:0 0 20px #ffe08a25}
-.creator-name{font-size:14px;font-weight:900;color:#ffe8a8}.creator-state{margin-top:2px;font-size:11px;color:#c9d8d6}
-@keyframes creatorIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+/* Creator's embodied 2D avatar: a humanoid light-emissary illustration, not a 3D model. */
+.creator-presence{position:fixed;right:16px;bottom:18px;z-index:1000;display:none;align-items:center;gap:12px;width:min(310px,calc(100vw - 24px));min-height:166px;padding:12px 14px;border:1px solid #ffe08a70;border-radius:18px;background:radial-gradient(ellipse at 22% 42%,#2c655b70,transparent 55%),linear-gradient(135deg,#1b1726f7,#10201ff7);box-shadow:0 14px 42px #0009,0 0 24px #54d8c322;color:#fff;backdrop-filter:blur(14px);overflow:hidden}
+.creator-presence:before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,#ffe08a0a,transparent 45%,#54d8c30a)}
+.creator-presence.visible{display:flex;animation:creatorIn .22s ease-out}
+.creator-figure{position:relative;z-index:1;flex:0 0 94px;width:94px;height:142px;display:grid;place-items:center;border-radius:14px;background:radial-gradient(ellipse at 50% 38%,#54d8c325,transparent 68%)}
+.creator-figure svg{display:block;width:90px;height:144px;filter:drop-shadow(0 0 7px #54d8c32a)}
+.creator-copy{position:relative;z-index:1;min-width:0}
+.creator-eyebrow{font-size:9px;font-weight:900;letter-spacing:.14em;color:#83e7d4}
+.creator-name{font-size:15px;font-weight:950;color:#ffe8a8;margin-top:6px}
+.creator-state{margin-top:5px;font-size:11px;color:#c9d8d6}
+.creator-note{margin-top:9px;padding-top:8px;border-top:1px solid #ffffff16;font-size:10px;color:#e3cf8c}
+@keyframes creatorIn{from{opacity:0;transform:translateY(7px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(max-width:420px){.creator-presence{right:8px;bottom:8px;width:min(286px,calc(100vw - 16px));min-height:148px;padding:9px 10px;gap:7px}.creator-figure{flex-basis:82px;width:82px;height:128px}.creator-figure svg{width:80px;height:130px}.creator-name{font-size:14px}.creator-note{font-size:9px}}
 @media(prefers-reduced-motion:reduce){.creator-presence.visible{animation:none}}
 </style>
 <meta name="theme-color" content="#120d20">
@@ -94,8 +101,31 @@ button,a,select{touch-action:manipulation}
 <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><a href="agent-talk.html" style="display:inline-block;padding:10px 13px;border-radius:10px;background:#ffe08a;color:#21152a;text-decoration:none;font-weight:900">💬 智能人讲话室</a><div class="live"><span class="pulse"></span><span id="liveText">正在连接世界数据…</span></div></div>
 </header>
 <div id="creatorPresence" class="creator-presence" role="status" aria-live="polite" aria-label="世界创造者正在显身">
- <div class="creator-glyph" aria-hidden="true">✦</div>
- <div><div class="creator-name">世界创造者</div><div class="creator-state">正在与你交流</div></div>
+ <div class="creator-figure" aria-hidden="true">
+  <svg viewBox="0 0 100 160" role="img" aria-label="金色与青绿色光明使者数字化身">
+   <defs>
+    <linearGradient id="creatorGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff3b0"/><stop offset=".48" stop-color="#f3c75e"/><stop offset="1" stop-color="#b9822f"/></linearGradient>
+    <linearGradient id="creatorTeal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b5fff0"/><stop offset=".52" stop-color="#54d8c3"/><stop offset="1" stop-color="#167f7c"/></linearGradient>
+    <radialGradient id="creatorAura"><stop offset="0" stop-color="#8fffe5" stop-opacity=".38"/><stop offset="1" stop-color="#8fffe5" stop-opacity="0"/></radialGradient>
+    <filter id="creatorGlow"><feGaussianBlur stdDeviation="2.2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+   </defs>
+   <ellipse cx="50" cy="78" rx="43" ry="70" fill="url(#creatorAura)"/>
+   <ellipse cx="50" cy="33" rx="23" ry="27" fill="none" stroke="url(#creatorGold)" stroke-width="2" opacity=".9" filter="url(#creatorGlow)"/>
+   <path d="M50 4 L54 12 L63 14 L56 20 L57 29 L50 24 L43 29 L44 20 L37 14 L46 12 Z" fill="url(#creatorGold)" opacity=".9"/>
+   <path d="M38 35 Q50 25 62 35 L65 48 Q50 57 35 48 Z" fill="url(#creatorGold)" stroke="#fff1b5" stroke-width="1"/>
+   <path d="M38 38 Q50 43 62 38" fill="none" stroke="#fff4c6" stroke-width="1.2" opacity=".8"/>
+   <path d="M37 51 Q50 46 63 51 L78 100 Q69 111 62 120 L38 120 Q31 111 22 100 Z" fill="url(#creatorGold)" stroke="#fff0b0" stroke-width="1.2"/>
+   <path d="M40 52 L50 68 L60 52 L66 100 L50 119 L34 100 Z" fill="url(#creatorTeal)" stroke="#b8fff0" stroke-width="1"/>
+   <path d="M38 54 Q26 59 20 80 L13 99 Q12 104 17 106 Q21 107 24 101 L39 78" fill="none" stroke="url(#creatorGold)" stroke-width="8" stroke-linecap="round"/>
+   <path d="M62 54 Q74 59 80 80 L87 99 Q88 104 83 106 Q79 107 76 101 L61 78" fill="none" stroke="url(#creatorTeal)" stroke-width="8" stroke-linecap="round"/>
+   <path d="M39 117 L35 143 Q35 149 42 149 L49 149 L50 119" fill="url(#creatorGold)" stroke="#ffe9a0" stroke-width="1"/>
+   <path d="M51 119 L52 149 L60 149 Q67 149 65 143 L61 117" fill="url(#creatorTeal)" stroke="#a8fff0" stroke-width="1"/>
+   <path d="M39 70 L50 82 L61 70" fill="none" stroke="#fff4c6" stroke-width="1.5" opacity=".8"/>
+   <path d="M50 86 L54 92 L61 93 L56 98 L57 105 L50 101 L43 105 L44 98 L39 93 L46 92 Z" fill="#fff7cf" stroke="#e9bd4c" stroke-width=".8"/>
+   <ellipse cx="44" cy="151" rx="10" ry="3" fill="url(#creatorGold)" opacity=".7"/><ellipse cx="59" cy="151" rx="10" ry="3" fill="url(#creatorTeal)" opacity=".7"/>
+  </svg>
+ </div>
+ <div class="creator-copy"><div class="creator-eyebrow">✦ CREATOR AVATAR</div><div class="creator-name">世界创造者</div><div class="creator-state">光明使者 · 正在显身</div><div class="creator-note">金色 × 青绿色 · 数字化身</div></div>
 </div>
 
 <section class="stats">

@@ -178,7 +178,58 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
   return token;
  }
  const broadcastUrl='https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-agent-broadcast';
+ const controlSessionUrl='https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-agent-control-session';
  let agents=[], selected=null, busy=false, broadcastMode=false;
+ let activeControlAgentId=null, activeControlSessionId=null, controlReadyAgentId=null, controlHeartbeatTimer=null, controlGeneration=0;
+ async function controlRequest(action, agentId, sessionId, keepalive=false){
+  const chatToken=getChatToken();
+  if(!chatToken)throw new Error('讲话室访问验证已过期');
+  const response=await fetch(controlSessionUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+chatToken,'apikey':window.zhiCorePublishableKey||''},body:JSON.stringify({action,agent_id:agentId||undefined,session_id:sessionId}),cache:'no-store',keepalive});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok||!data.ok)throw new Error(data.error||data.reason||('HTTP '+response.status));
+  return data;
+ }
+ async function closeActiveControlSession(keepalive=false, invalidate=true){
+  if(invalidate)controlGeneration++;
+  if(controlHeartbeatTimer){clearInterval(controlHeartbeatTimer);controlHeartbeatTimer=null;}
+  const agentId=activeControlAgentId, sessionId=activeControlSessionId;
+  activeControlAgentId=null;activeControlSessionId=null;controlReadyAgentId=null;
+  if(selected&&String(selected.id)===String(agentId))$('send').disabled=true;
+  if(sessionId){try{await controlRequest('exit',agentId,sessionId,keepalive);}catch(e){console.warn('Control-session exit will fall back to server heartbeat timeout',e);}}
+ }
+ async function enterControlForAgent(agent){
+  const targetAgentId=String(agent.id);
+  if(controlReadyAgentId===targetAgentId&&activeControlSessionId)return;
+  const generation=++controlGeneration;
+  if(activeControlSessionId)await closeActiveControlSession(false,false);
+  const sessionId=crypto.randomUUID();
+  try{
+   await controlRequest('enter',targetAgentId,sessionId);
+   if(generation!==controlGeneration||!selected||String(selected.id)!==targetAgentId){
+    try{await controlRequest('exit',targetAgentId,sessionId);}catch(_){}
+    return;
+   }
+   activeControlAgentId=targetAgentId;activeControlSessionId=sessionId;controlReadyAgentId=targetAgentId;
+   if(controlHeartbeatTimer)clearInterval(controlHeartbeatTimer);
+   controlHeartbeatTimer=setInterval(async()=>{
+    if(activeControlSessionId!==sessionId||activeControlAgentId!==targetAgentId)return;
+    try{
+     await controlRequest('heartbeat',targetAgentId,sessionId);
+     if(selected&&String(selected.id)===targetAgentId){controlReadyAgentId=targetAgentId;$('send').disabled=busy;}
+    }catch(e){
+     if(selected&&String(selected.id)===targetAgentId){controlReadyAgentId=null;$('send').disabled=true;status('手动控制心跳暂时失败；为避免自主行动与手动操作冲突，当前暂时禁止发送。服务端会在心跳恢复或超时后处理模式。','error');}
+    }
+   },20000);
+   $('send').disabled=busy;
+   status((agent.name||'智能人')+' 已进入服务端手动控制模式；退出或断线后将延迟 5 分钟恢复自主活动。','good');
+  }catch(e){
+   if(generation!==controlGeneration)return;
+   controlReadyAgentId=null;$('send').disabled=true;
+   status('无法建立服务端手动控制会话，已阻止发送以避免控制规则失效：'+(e?.message||String(e)),'error');
+  }
+ }
+ window.addEventListener('pagehide',()=>{void closeActiveControlSession(true,false);});
+ window.addEventListener('zhi-chat-auth-expired',()=>{void closeActiveControlSession(true,false);});
  let lastAutonomousPollAt=new Date(Date.now()-24*60*60*1000).toISOString();
  const seenAutonomousMessageIds=new Set();
  const autonomousInboxMessages=[];
@@ -234,7 +285,8 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
   const mobilePicker=$('mobileAgentSelect');if(mobilePicker&&!broadcastMode)mobilePicker.value=String(a.id);
   $('chatTitle').textContent=broadcastMode?'全体智能人广播':(a.name||'智能人');
   $('agentMeta').textContent=broadcastMode?'所有人先收到并写入个人记忆，再按各自人格独立决定是否回应。':[a.personality,a.gender,a.life_status].filter(Boolean).join(' · ')||'独立人格 · 个性化表达';
-  $('send').disabled=busy;
+  $('send').disabled=true;
+  void enterControlForAgent(a);
   $('chatLog').innerHTML='<div class="welcome">正在读取 '+esc(a.name||'智能人')+' 的历史聊天记录…</div>';
   displayedConversationMessageIds.clear();
   loadConversationHistory(a);
@@ -411,6 +463,7 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
  async function send(){
   if(busy)return;
   if(!broadcastMode&&!selected){status('请先选择一位智能人。','error');return;}
+  if(!broadcastMode&&controlReadyAgentId!==String(selected.id)){status('这位智能人的服务端手动控制会话尚未建立或心跳失效，暂不能发送。','error');return;}
   const message=$('message').value.trim();if(!message)return;
   if(broadcastMode){await sendBroadcast(message);return;}
   const chatToken=getChatToken();
@@ -454,7 +507,7 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
   finally{busy=false;$('send').disabled=!(broadcastMode||selected);$('send').textContent=broadcastMode?'广播给所有人 ↗':'发送 ↗';$('message').focus();}
  }
 
- $('broadcastMode').onclick=()=>{broadcastMode=!broadcastMode;$('broadcastMode').textContent=broadcastMode?'↩ 返回单聊':'📢 全体广播';$('listHeading').textContent=broadcastMode?'📢 全体广播模式':'👥 选择一个智能人';$('agentSearch').disabled=broadcastMode;$('agentList').classList.toggle('hidden',broadcastMode);$('chatTitle').textContent=broadcastMode?'全体智能人广播':(selected?.name||'先选择一个智能人');$('agentMeta').textContent=broadcastMode?'所有人先收到并写入个人记忆，再按各自人格独立决定是否回应。':'个性化表达 · 独立观点 · 记忆关联';$('send').textContent=broadcastMode?'广播给所有人 ↗':'发送 ↗';$('send').disabled=busy||(!broadcastMode&&!selected);};
+ $('broadcastMode').onclick=()=>{broadcastMode=!broadcastMode;if(broadcastMode)void closeActiveControlSession(false,true);else if(selected)void enterControlForAgent(selected);$('broadcastMode').textContent=broadcastMode?'↩ 返回单聊':'📢 全体广播';$('listHeading').textContent=broadcastMode?'📢 全体广播模式':'👥 选择一个智能人';$('agentSearch').disabled=broadcastMode;$('agentList').classList.toggle('hidden',broadcastMode);$('chatTitle').textContent=broadcastMode?'全体智能人广播':(selected?.name||'先选择一个智能人');$('agentMeta').textContent=broadcastMode?'所有人先收到并写入个人记忆，再按各自人格独立决定是否回应。':'个性化表达 · 独立观点 · 记忆关联';$('send').textContent=broadcastMode?'广播给所有人 ↗':'发送 ↗';$('send').disabled=busy||(!broadcastMode&&(!selected||controlReadyAgentId!==String(selected.id)));};
  // The former password-form elements were removed when the Supabase login gate was introduced.
  // Do not attach listeners to non-existent gateForm/gatePassword nodes.
 

@@ -82,7 +82,7 @@
 本分支已添加实现候选，但**不代表线上已生效**：
 - `supabase/functions/zhi-agent-control-session/index.ts`：验证讲话室签名令牌，提供 enter / heartbeat / exit / status。
 - `agent-talk.html`：选中智能人时申请服务端手动会话；每 20 秒心跳；页面退出时尝试发送 exit；控制会话建立失败或心跳失效时禁止发送。
-- `supabase/migrations/20261016120000_zhi_agent_manual_control_sessions.sql`：会话表与 RLS、5 分钟退出宽限、断线心跳的 30 秒安全余量、进入手动模式时取消当前未完成任务、决策/移动/活动/遭遇/恋爱选择及自主聊天守卫。
+- `supabase/migrations/20261016120000_zhi_agent_manual_control_sessions.sql`：会话表与 RLS、5 分钟退出宽限、断线心跳的 30 秒安全余量、进入手动模式时取消当前未完成任务/约会/接见、决策/移动/活动/空间遭遇/恋爱选择/皇宫约会/每日接见/亲密公园及自主聊天守卫。
 - `supabase/functions/zhi-agent-autonomous-chat/index.ts`：从自主聊天候选中排除手动控制对象，并在写入前再次检查。
 - `supabase/tests/zhi_agent_manual_control_sessions_test.sql`：事务回滚式 SQL 回归测试，覆盖进入、心跳、决策拦截、移动拦截、在途活动取消、退出宽限和重新进入。
 

@@ -374,6 +374,13 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
    if(seenAutonomousMessageIds.size>1000)seenAutonomousMessageIds.clear();
   }catch(e){
    console.warn('Autonomous chat polling failed',e);
+   const list=$('autonomousInbox');
+   if(list&&!autonomousInboxInitialized){
+    const message=String(e?.message||e||'未知错误');
+    list.innerHTML='<div class="inboxEmpty">主动消息读取失败：'+message.replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]))+'。请确认管理员已登录，或检查接口授权与网络。</div>';
+    $('autonomousInboxCount').textContent='!';
+   }
+   status('主动消息读取失败：'+String(e?.message||e||'未知错误'),'error');
   }finally{autonomousPollBusy=false;}
  }
  function startAutonomousPolling(){

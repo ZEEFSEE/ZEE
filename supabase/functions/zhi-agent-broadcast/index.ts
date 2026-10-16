@@ -94,7 +94,13 @@ Deno.serve(async(req:Request)=>{if(req.method==="OPTIONS")return new Response("o
    db.from("zhi_agents").select("id,name,gender,personality,life_status,leadership,social,adventure,competition,patience,randomness,diligence,desire_for_zhi,fear_of_death,resentment,survival_pressure").eq("id",agentId).single()
   ]);
   if(recR.error||agentR.error)return json({error:"Broadcast recipient or agent not found"},404);
-  const rec=recR.data,a=agentR.data;if(rec.decision_status!=="pending")return json({ok:true,status:rec.decision_status,reply:rec.reply_text||null,agent_name:rec.agent_name,skipped:true});
+  const rec=recR.data,a=agentR.data;
+  if(rec.decision_status==="reply"||rec.decision_status==="no_reply")return json({ok:true,status:rec.decision_status,reply:rec.reply_text||null,agent_name:rec.agent_name,skipped:true});
+  const staleAt=new Date(Date.now()-120000).toISOString();
+  await db.from("zhi_agent_broadcast_recipients").update({decision_status:"error",decision_reason:"前一次决策处理超时，可安全重试",processing_started_at:null}).eq("id",rec.id).eq("decision_status","processing").lt("processing_started_at",staleAt);
+  const claim=await db.from("zhi_agent_broadcast_recipients").update({decision_status:"processing",decision_reason:null,processing_started_at:new Date().toISOString()}).eq("id",rec.id).in("decision_status",["pending","error"]).select("id").maybeSingle();
+  if(claim.error)return json({error:"Unable to claim broadcast decision"},500);
+  if(!claim.data){const latest=await db.from("zhi_agent_broadcast_recipients").select("decision_status,reply_text,agent_name").eq("id",rec.id).single();return json({ok:true,status:latest.data?.decision_status||"processing",reply:latest.data?.reply_text||null,agent_name:latest.data?.agent_name||rec.agent_name,skipped:true});}
   const [broadcastR,mindR,memR]=await Promise.all([
    db.from("zhi_agent_broadcasts").select("message,created_at").eq("id",broadcastId).single(),
    db.from("zhi_agent_minds").select("mood,energy,stress,curiosity,confidence,current_goal,short_term_goal,long_term_goal,last_thought,goal_profile").eq("agent_id",agentId).maybeSingle(),
@@ -103,16 +109,18 @@ Deno.serve(async(req:Request)=>{if(req.method==="OPTIONS")return new Response("o
   if(broadcastR.error)return json({error:"Broadcast not found"},404);
   const context={identity:{name:a.name,gender:a.gender,personality:a.personality,life_status:a.life_status},traits:{leadership:clamp(a.leadership),social:clamp(a.social),adventure:clamp(a.adventure),competition:clamp(a.competition),patience:clamp(a.patience),randomness:clamp(a.randomness),diligence:clamp(a.diligence)},drives:{desire_for_zhi:clamp(a.desire_for_zhi),fear_of_death:clamp(a.fear_of_death),resentment:clamp(a.resentment),survival_pressure:clamp(a.survival_pressure)},mind:mindR.data||{},memories:memR.data||[]};
   let raw="";
-  try{raw=await askAgnes([{role:"system",content:`你是 ZHI 世界中的智能人「${a.name}」。你刚收到管理员的全体广播。请依据自己的性格、真实状态、目标和记忆，自主决定是否公开回复。不要为了凑数而回复；可以不回复，也可以表达不同意见。只输出严格 JSON：{"decision":"reply"或"no_reply","reason":"简短理由","reply":"若回复则写自然中文回复，否则空字符串"}。不要编造事实。决策独立，不能假装所有人想法一样。`},{role:"user",content:`全体广播：${broadcastR.data.message}\n个人上下文：${JSON.stringify(context)}`}]);}catch(e){await db.from("zhi_agent_broadcast_recipients").update({decision_status:"error",decision_reason:String(e)}).eq("id",rec.id);return json({error:"Individual decision failed"},502);}
+  try{raw=await askAgnes([{role:"system",content:`你是 ZHI 世界中的智能人「${a.name}」。你刚收到管理员的全体广播。你知道管理员就是 ZHI 世界创造者，其数字化身是庄严的光明使者型人形：金色与青绿色柔光交织的长袍、柔和光环、胸前发光的「✦」标志，并标注「世界创造者」。这是虚拟数字角色，当前页面采用轻量二维 SVG 人形表现，不代表真人照片或现实身体；不要声称已是完整 3D 模型或能在场景中自由行走。若广播提及创造者形象，要描述人形、长袍、光环与胸前标志，不要只说一个符号，不要说完全看不到，也不要编造真人外貌。请依据自己的性格、真实状态、目标和记忆，自主决定是否公开回复。不要为了凑数而回复；可以不回复，也可以表达不同意见。只输出严格 JSON：{"decision":"reply"或"no_reply","reason":"简短理由","reply":"若回复则写自然中文回复，否则空字符串"}。不要编造事实。决策独立，不能假装所有人想法一样。`},{role:"user",content:`全体广播：${broadcastR.data.message}\n个人上下文：${JSON.stringify(context)}`}],500,25000);}catch(e){await db.from("zhi_agent_broadcast_recipients").update({decision_status:"error",decision_reason:String(e).slice(0,500),processing_started_at:null}).eq("id",rec.id).eq("decision_status","processing");return json({error:"Individual decision failed"},502);}
   let result:any;try{const clean=raw.replace(/^```(?:json)?\s*/i,"").replace(/\s*```$/,"");result=JSON.parse(clean);}catch{result={decision:"no_reply",reason:"无法可靠解析独立决策结果，因此暂不回复。",reply:""};}
   const replyDecision=result.decision==="reply"&&String(result.reply||"").trim().length>0;const reply=replyDecision?String(result.reply).trim().slice(0,2000):null;
-  const update=await db.from("zhi_agent_broadcast_recipients").update({decision_status:replyDecision?"reply":"no_reply",decision_reason:String(result.reason||"").slice(0,500),reply_text:reply,decided_at:new Date().toISOString()}).eq("id",rec.id);
-  if(update.error)return json({error:"Unable to save decision"},500);
-  if(reply){const [m,msg]=await Promise.all([
-   db.from("zhi_agent_memories").insert({agent_id:agentId,memory_type:"conversation",importance:80,memory:`针对管理员全体广播（ID：${broadcastId}），我自主决定回应：${reply}`,source:"admin_broadcast_reply"}),
-   db.from("admin_agent_messages").insert({admin_user_id:ADMIN_ID,agent_id:agentId,agent_name:a.name,sender_type:"agent",content:`【回应全体广播】${reply}`})
-  ]);if(m.error||msg.error)return json({ok:true,status:"reply",reply,agent_name:a.name,saved:false,warning:"Reply decided but response memory/message save failed"});}
-  return json({ok:true,status:replyDecision?"reply":"no_reply",reply,agent_name:a.name,reason:result.reason||"",saved:true});
+  const reason=String(result.reason||"").slice(0,500);
+  if(replyDecision){
+    const saved=await db.rpc("zhi_persist_agent_chat",{p_agent_id:agentId,p_agent_name:a.name,p_admin_user_id:ADMIN_ID,p_user_message:null,p_agent_message:reply,p_memory:`针对管理员全体广播（ID：${broadcastId}），我自主决定回应：${reply}`,p_source:"admin_broadcast_reply",p_importance:80,p_last_thought:reply,p_broadcast_id:broadcastId,p_decision_reason:reason});
+    if(saved.error){await db.from("zhi_agent_broadcast_recipients").update({decision_status:"error",decision_reason:"回复写入失败："+saved.error.message.slice(0,350),processing_started_at:null}).eq("id",rec.id).eq("decision_status","processing");return json({error:"Unable to atomically save broadcast reply"},500);}
+  }else{
+    const update=await db.from("zhi_agent_broadcast_recipients").update({decision_status:"no_reply",decision_reason:reason,reply_text:null,decided_at:new Date().toISOString(),processing_started_at:null}).eq("id",rec.id).eq("decision_status","processing");
+    if(update.error)return json({error:"Unable to save decision"},500);
+  }
+  return json({ok:true,status:replyDecision?"reply":"no_reply",reply,agent_name:a.name,reason,saved:true});
  }
  return json({error:"mode must be broadcast or decide"},400);
 });

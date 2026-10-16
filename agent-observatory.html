@@ -171,7 +171,7 @@ button,a,select{touch-action:manipulation}
 const endpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/rpc/zhi_observe_agents';
 const palaceStoryEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/rpc/zhi_observe_agent_palace_stories';
 const genderEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_agents?select=id,gender&life_status=eq.alive';
-const psychologyEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_agent_minds?select=agent_id,mood,confidence,stress,curiosity';
+const psychologyEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_agent_minds_public?select=agent_id,mood,confidence,stress,curiosity';
 const relationshipEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_agent_social_relationships?select=male_agent_id,female_agent_id,status,relationship_stage,familiarity,affection,trust,conflict,interactions,last_interaction_type,last_social_at&order=updated_at.desc';
 const encounterEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_agent_encounters?select=id,agent_a_id,agent_b_id,scene,a_reaction,b_reaction,a_expression,b_expression,a_feeling,b_feeling,interaction_occurred,relationship_changed,interaction_type,occurred_at,metadata&occurred_at=gte.'+encodeURIComponent(new Date(Date.now()-24*60*60*1000).toISOString())+'&order=occurred_at.desc&limit=200';
 const familyEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_agent_family?select=child_agent_id,father_agent_id,mother_agent_id,born_at&order=born_at.desc';
@@ -179,7 +179,7 @@ const marriageEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_age
 const apiKey='sb_publishable_MOVcpW2XoLdHbUVp6f-nrw_e_HY1Bav';
 const palacePositionsEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_agent_world_positions?select=agent_id,current_scene,destination_scene,walking,walk_arrive_at,updated_at&order=updated_at.desc';
 const palaceParticipantEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_palace_experiment_participants?select=id,female_agent_id,invitation_status,sequence_no,palace_date_id,started_at,ends_at,completed_at,before_snapshot,during_snapshots,after_snapshot,choice_log,emotion_event_summary,diagnostic,updated_at&order=updated_at.desc&limit=200';
-const palaceMindsEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_agent_minds?select=agent_id,mood,energy,stress,curiosity,confidence';
+const palaceMindsEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_agent_minds_public?select=agent_id,mood,energy,stress,curiosity,confidence';
 const palaceDesiresEndpoint='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_agent_desires?select=agent_id,intimacy_desire';
 let palaceBusy=false;
 const isPalaceScene=v=>/皇宫|palace/i.test(String(v||''));

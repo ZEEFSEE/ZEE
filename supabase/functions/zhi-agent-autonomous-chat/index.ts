@@ -93,7 +93,7 @@ Deno.serve(async (req: Request) => {
       const lastSeen = Date.parse(String(s.last_seen_at || ""));
       const resumeAt = Date.parse(String(s.resume_at || ""));
       if (s.status === "disconnected") return Number.isFinite(resumeAt) && resumeAt > now.getTime();
-      return s.status === "active" && Number.isFinite(lastSeen) && lastSeen + 5 * 60 * 1000 > now.getTime();
+      return s.status === "active" && Number.isFinite(lastSeen) && lastSeen + 5 * 60 * 1000 + 30 * 1000 > now.getTime();
     };
     const manuallyControlled = new Set((controlSessionsRes.data || [])
       .filter(manualControlActive).map((s: any) => String(s.agent_id)));

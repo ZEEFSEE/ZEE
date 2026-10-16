@@ -1,0 +1,29 @@
+{
+  "id": "./agent-talk.html",
+  "name": "ZHI · 智能人讲话室",
+  "short_name": "ZHI 讲话室",
+  "description": "与 ZHI 世界中的智能人单独聊天，查看智能人主动消息。",
+  "lang": "zh-CN",
+  "start_url": "./agent-talk.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "any",
+  "background_color": "#f4f7fb",
+  "theme_color": "#147d79",
+  "categories": [
+    "social",
+    "communication"
+  ],
+  "icons": [
+    {
+      "src": "./zhi-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

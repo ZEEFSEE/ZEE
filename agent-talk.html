@@ -489,20 +489,22 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
    const r=await fetch(broadcastUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+chatToken,'apikey':window.zhiCorePublishableKey||''},body:JSON.stringify({mode:'broadcast',message}),cache:'no-store'});
    const d=await r.json().catch(()=>({}));if(!r.ok||!d.ok)throw new Error(d.error||('HTTP '+r.status));
    status('广播已建立：'+d.delivered+'/'+d.total+' 位已写入个人记忆。现在开始逐个读取各自人格与状态，由 Agnes 为每位智能人独立判断是否回应…');
-   let done=0,replied=0,noReply=0,failed=d.failed||0;
+   let done=0,replied=0,noReply=0,failed=d.failed||0,manualSkipped=0;
    for(let i=0;i<agents.length;i+=6){
     const batch=agents.slice(i,i+6);
     const out=await Promise.all(batch.map(async a=>{
      try{
+      const mode=await controlRequest('status',String(a.id),null);
+      if(mode.manually_controlled)return {status:'manual_control_active'};
       const rr=await fetch(broadcastUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+chatToken,'apikey':window.zhiCorePublishableKey||''},body:JSON.stringify({mode:'decide',broadcast_id:d.broadcast_id,agent_id:a.id}),cache:'no-store'});
       const dd=await rr.json().catch(()=>({}));if(!rr.ok||!dd.ok)throw new Error(dd.error||('HTTP '+rr.status));
       return dd;
      }catch(e){return {status:'error',error:e?.message||String(e)};}
     }));
-    for(const x of out){done++;if(x.status==='reply'){replied++;addBubble('agent','【独立回应】'+(x.reply||''),stamp(),x.agent_name||'智能人');}else if(x.status==='no_reply')noReply++;else failed++;}
-    status('全体广播处理中：已完成 '+done+'/'+agents.length+' 位决策；主动回应 '+replied+' 位；选择暂不回应 '+noReply+' 位；失败 '+failed+' 位。所有人的广播记忆与回应结果都会保留。');
+    for(const x of out){done++;if(x.status==='reply'){replied++;addBubble('agent','【独立回应】'+(x.reply||''),stamp(),x.agent_name||'智能人');}else if(x.status==='no_reply')noReply++;else if(x.status==='manual_control_active')manualSkipped++;else failed++;}
+    status('全体广播处理中：已完成 '+done+'/'+agents.length+' 位；主动回应 '+replied+' 位；暂不回应 '+noReply+' 位；手动控制跳过 '+manualSkipped+' 位；失败 '+failed+' 位。所有人的广播记忆与回应结果都会保留。');
    }
-   status('全体广播处理完成。投递成功 '+d.delivered+'/'+d.total+'；独立回应 '+replied+' 位；选择暂不回应 '+noReply+' 位；失败 '+failed+' 位。','good');
+   status('全体广播处理完成。投递成功 '+d.delivered+'/'+d.total+'；独立回应 '+replied+' 位；选择暂不回应 '+noReply+' 位；手动控制跳过 '+manualSkipped+' 位；失败 '+failed+' 位。','good');
   }catch(e){status('全体广播失败：'+(e?.message||String(e))+'。请检查函数日志；已成功写入的记忆不会因页面报错自动删除。','error');}
   finally{busy=false;$('send').disabled=!(broadcastMode||selected);$('send').textContent=broadcastMode?'广播给所有人 ↗':'发送 ↗';$('message').focus();}
  }

@@ -306,7 +306,7 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
    const name=document.createElement('span');name.className='inboxItemName';name.textContent=(readAutonomousMessageIds.has(String(m.id))?'':'🔔 ')+(m.agent_name||'智能人');
    const time=document.createElement('span');time.className='inboxItemTime';time.textContent=m.created_at?new Date(m.created_at).toLocaleString('zh-SG',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}):'刚刚';
    const preview=document.createElement('div');preview.className='inboxPreview';preview.textContent=String(m.content||'').replace(/^【主动找你】\\s*/,'');
-   const hint=document.createElement('div');hint.className='inboxItemTime';hint.style.marginTop='7px';hint.textContent=readAutonomousMessageIds.has(String(m.id))?'已读 · 点击再次查看':'未读 · 点击查看并清除提醒';
+   const hint=document.createElement('div');hint.className='inboxItemTime';hint.style.marginTop='7px';hint.textContent=readAutonomousMessageIds.has(String(m.id))?'已读 · 点击再次查看':'未读 · 点击查看消息';
    top.append(name,time);b.append(top,preview,hint);b.onclick=()=>openAutonomousMessage(m);list.append(b);
   });
  }
@@ -486,7 +486,7 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
  });
  window.addEventListener('appinstalled',()=>{deferredPrompt=null;setInstalled();});
  button.addEventListener('click',async()=>{
-  if(isStandalone()){alert('ZHI 智能人讲话室已在 APP 模式运行。');return;}
+  if(isStandalone()){showInstallHint('ZHI 智能人讲话室已在 APP 模式运行。');return;}
   if(deferredPrompt){
    deferredPrompt.prompt();
    const choice=await deferredPrompt.userChoice;
@@ -495,9 +495,9 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
    return;
   }
   if(isIOS()){
-   alert('在 iPhone/iPad 安装：请先在 Safari 打开本页面，点“分享”图标，再选择“添加到主屏幕”。');
+   showInstallHint('在 iPhone/iPad 安装：请先在 Safari 打开本页面，点“分享”图标，再选择“添加到主屏幕”。');
   }else{
-   alert('如果浏览器没有弹出安装窗口，请打开浏览器菜单，选择“安装应用”或“添加到主屏幕”。请使用 HTTPS 地址访问。');
+   showInstallHint('如果浏览器没有弹出安装窗口，请打开浏览器菜单，选择“安装应用”或“添加到主屏幕”。请使用 HTTPS 地址访问。');
   }
  });
 })();

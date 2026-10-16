@@ -166,6 +166,17 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
 (function(){
  const $=id=>document.getElementById(id), sb=window.zhiSupabase;
  const functionUrl='https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-agnes-chat';
+ const authUrl='https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-chat-auth';
+ const CHAT_TOKEN_KEY='zhi_chat_access_token_v1';
+ const CHAT_EXPIRY_KEY='zhi_chat_access_expires_at_v1';
+ function getChatToken(){
+  const token=sessionStorage.getItem(CHAT_TOKEN_KEY), expiry=Date.parse(sessionStorage.getItem(CHAT_EXPIRY_KEY)||'');
+  if(!token||!Number.isFinite(expiry)||Date.now()>=expiry){
+   if(token){sessionStorage.removeItem(CHAT_TOKEN_KEY);sessionStorage.removeItem(CHAT_EXPIRY_KEY);window.dispatchEvent(new Event('zhi-chat-auth-expired'));}
+   return null;
+  }
+  return token;
+ }
  const broadcastUrl='https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-agent-broadcast';
  let agents=[], selected=null, busy=false, broadcastMode=false;
  let lastAutonomousPollAt=new Date(Date.now()-24*60*60*1000).toISOString();
@@ -226,9 +237,9 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
  async function loadConversationHistory(agent){
   const requestedId=String(agent.id);
   try{
-   const {data:{session},error:sessionError}=await sb.auth.getSession();
-   if(sessionError||!session)throw new Error('管理员登录已失效，请重新登录。');
-   const r=await fetch(historyUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,'apikey':window.zhiCorePublishableKey||''},body:JSON.stringify({agent_id:requestedId}),cache:'no-store'});
+   const chatToken=getChatToken();
+   if(!chatToken)throw new Error('页面访问验证已过期，请重新输入页面密码。');
+   const r=await fetch(historyUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+chatToken,'apikey':window.zhiCorePublishableKey||''},body:JSON.stringify({agent_id:requestedId}),cache:'no-store'});
    const d=await r.json().catch(()=>({}));
    if(!r.ok||!d.ok)throw new Error(d.error||('HTTP '+r.status));
    if(!selected||String(selected.id)!==requestedId)return;
@@ -338,17 +349,9 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
   if(autonomousPollBusy||!sb)return;
   autonomousPollBusy=true;
   try{
-   const {data:{session},error:sessionError}=await sb.auth.getSession();
-   if(sessionError)throw sessionError;
-   if(!session){
-    const list=$('autonomousInbox');
-    list.innerHTML='<div class="inboxEmpty">免登录模式下，主动消息接口仍受管理员权限保护，暂时无法读取。为保护私人消息，没有开放匿名读取。</div>';
-    $('autonomousInboxCount').textContent='0';
-    status('主动消息需要管理员授权；智能人名单与普通页面仍可免登录使用。','error');
-    autonomousInboxInitialized=true;
-    return;
-   }
-   const r=await fetch(feedUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,'apikey':window.zhiCorePublishableKey||''},body:JSON.stringify({since:lastAutonomousPollAt}),cache:'no-store'});
+   const chatToken=getChatToken();
+   if(!chatToken)return;
+   const r=await fetch(feedUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+chatToken,'apikey':window.zhiCorePublishableKey||''},body:JSON.stringify({since:lastAutonomousPollAt}),cache:'no-store'});
    const d=await r.json().catch(()=>({}));
    if(!r.ok||!d.ok)throw new Error(d.error||('HTTP '+r.status));
    const incoming=d.messages||[];
@@ -404,12 +407,12 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
   if(!broadcastMode&&!selected){status('请先选择一位智能人。','error');return;}
   const message=$('message').value.trim();if(!message)return;
   if(broadcastMode){await sendBroadcast(message);return;}
-  const {data:{session},error:sessionError}=await sb.auth.getSession();
-  if(sessionError||!session){status('管理员会话已失效，请重新登录。','error');return;}
+  const chatToken=getChatToken();
+  if(!chatToken){status('页面访问验证已过期，请重新输入页面密码。','error');window.dispatchEvent(new Event('zhi-chat-auth-expired'));return;}
   addBubble('user',message);$('message').value='';busy=true;$('send').disabled=true;$('send').textContent='思考中…';
   const pending=document.createElement('div');pending.className='bubble agent';pending.textContent=(selected.name||'智能人')+' 正在组织语言…';$('chatLog').append(pending);$('chatLog').scrollTop=$('chatLog').scrollHeight;
   try{
-   const r=await fetch(functionUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,'apikey':window.zhiCorePublishableKey||''},body:JSON.stringify({agent_id:selected.id,message}),cache:'no-store'});
+   const r=await fetch(functionUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+chatToken,'apikey':window.zhiCorePublishableKey||''},body:JSON.stringify({agent_id:selected.id,message}),cache:'no-store'});
    const d=await r.json().catch(()=>({}));
    if(!r.ok||!d.ok)throw new Error(d.error||('HTTP '+r.status)+(d.upstream_status?' · Agnes upstream '+d.upstream_status:''));
    pending.remove();addBubble('agent',d.reply||'（没有收到文字回复）');
@@ -419,12 +422,12 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
  }
 
  async function sendBroadcast(message){
-  const {data:{session},error:sessionError}=await sb.auth.getSession();
-  if(sessionError||!session){status('管理员会话已失效，请重新登录。','error');return;}
+  const chatToken=getChatToken();
+  if(!chatToken){status('页面访问验证已过期，请重新输入页面密码。','error');window.dispatchEvent(new Event('zhi-chat-auth-expired'));return;}
   busy=true;$('send').disabled=true;$('send').textContent='广播中…';$('message').value='';addBubble('user','【全体广播】'+message);
   try{
    status('正在向所有智能人投递广播并写入各自记忆…');
-   const r=await fetch(broadcastUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,'apikey':window.zhiCorePublishableKey||''},body:JSON.stringify({mode:'broadcast',message}),cache:'no-store'});
+   const r=await fetch(broadcastUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+chatToken,'apikey':window.zhiCorePublishableKey||''},body:JSON.stringify({mode:'broadcast',message}),cache:'no-store'});
    const d=await r.json().catch(()=>({}));if(!r.ok||!d.ok)throw new Error(d.error||('HTTP '+r.status));
    status('广播已建立：'+d.delivered+'/'+d.total+' 位已写入个人记忆。现在开始逐个读取各自人格与状态，由 Agnes 为每位智能人独立判断是否回应…');
    let done=0,replied=0,noReply=0,failed=d.failed||0;
@@ -432,7 +435,7 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
     const batch=agents.slice(i,i+6);
     const out=await Promise.all(batch.map(async a=>{
      try{
-      const rr=await fetch(broadcastUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,'apikey':window.zhiCorePublishableKey||''},body:JSON.stringify({mode:'decide',broadcast_id:d.broadcast_id,agent_id:a.id}),cache:'no-store'});
+      const rr=await fetch(broadcastUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+chatToken,'apikey':window.zhiCorePublishableKey||''},body:JSON.stringify({mode:'decide',broadcast_id:d.broadcast_id,agent_id:a.id}),cache:'no-store'});
       const dd=await rr.json().catch(()=>({}));if(!rr.ok||!dd.ok)throw new Error(dd.error||('HTTP '+rr.status));
       return dd;
      }catch(e){return {status:'error',error:e?.message||String(e)};}
@@ -464,27 +467,35 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
 
 <script>
 (()=> {
- const KEY="zhi_page_access_v1";
- const HASH="1fd8607cb9f85718678a131c8dc73d434c5ff6d78462e7e5dcd08b8ab90bae58";
+ const TOKEN_KEY="zhi_chat_access_token_v1";
+ const EXPIRES_KEY="zhi_chat_access_expires_at_v1";
+ const AUTH_URL="https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-chat-auth";
  const gate=document.getElementById("zhiPasswordGate");
  if(!gate)return;
- if(sessionStorage.getItem(KEY)==="ok"){gate.remove();return;}
  const input=document.getElementById("zhiPagePassword");
  const error=document.getElementById("zhiPasswordError");
+ const button=document.querySelector("#zhiPasswordForm button[type=submit]");
+ const valid=()=>Boolean(sessionStorage.getItem(TOKEN_KEY)&&Date.parse(sessionStorage.getItem(EXPIRES_KEY)||"")>Date.now());
+ const show=()=>{gate.style.display="flex";};
+ const hide=()=>{gate.style.display="none";};
+ window.addEventListener("zhi-chat-auth-expired",()=>{sessionStorage.removeItem(TOKEN_KEY);sessionStorage.removeItem(EXPIRES_KEY);error.textContent="访问验证已过期，请重新输入页面密码。";show();input.focus({preventScroll:true});});
+ if(valid())hide();else show();
  input.focus({preventScroll:true});
  document.getElementById("zhiPasswordForm").addEventListener("submit",async e=>{
   e.preventDefault();
-  const value=input.value;
+  if(button.disabled)return;
+  button.disabled=true;error.textContent="正在验证…";
   try{
-   const bytes=new TextEncoder().encode(value);
-   const digest=await crypto.subtle.digest("SHA-256",bytes);
-   const hash=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,"0")).join("");
-   if(hash!==HASH){error.textContent="密码不正确，请重试。";input.value="";input.focus();return;}
-   sessionStorage.setItem(KEY,"ok");
-   gate.remove();
-   const frame=document.getElementById("appView");
-   if(frame&&frame.contentWindow){const src=frame.getAttribute("src");frame.setAttribute("src",src);}
-  }catch(_){error.textContent="当前浏览器无法完成验证，请使用最新版本浏览器。";}
+   const response=await fetch(AUTH_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:input.value}),cache:"no-store"});
+   const data=await response.json().catch(()=>({}));
+   if(!response.ok||!data.ok||!data.access_token||!data.expires_at)throw new Error(data.error||"服务端验证失败，请稍后重试。");
+   sessionStorage.setItem(TOKEN_KEY,data.access_token);
+   sessionStorage.setItem(EXPIRES_KEY,data.expires_at);
+   input.value="";
+   hide();
+   location.reload();
+  }catch(err){error.textContent=String(err?.message||"验证失败，请重试。");input.value="";input.focus();}
+  finally{button.disabled=false;}
  });
 })();
 </script>

@@ -370,12 +370,13 @@ security definer
 set search_path = public, pg_temp
 as $function$
 declare
-  row_data jsonb := to_jsonb(new);
+  row_data jsonb;
   target_agent_id uuid;
   sender_type text;
   content text;
   source_name text;
 begin
+  row_data := to_jsonb(new);
   if current_setting('zhi.manual_action', true) = 'on' then
     return new;
   end if;

@@ -37,7 +37,7 @@ as $function$
     from public.zhi_agent_control_sessions s
     where s.agent_id = p_agent_id
       and (
-        (s.status = 'active' and s.last_seen_at + interval '5 minutes' > clock_timestamp())
+        (s.status = 'active' and s.last_seen_at + interval '5 minutes 30 seconds' > clock_timestamp())
         or (s.status = 'disconnected' and s.resume_at > clock_timestamp())
       )
   );
@@ -184,18 +184,26 @@ set search_path = public, pg_temp
 as $function$
 declare
   target_agent_id uuid;
+  target_status text;
   target_resume_at timestamptz;
 begin
   if p_session_id is null then
     return jsonb_build_object('ok', false, 'reason', 'session_id_required');
   end if;
 
-  select s.agent_id into target_agent_id
+  select s.agent_id, s.status, s.resume_at
+    into target_agent_id, target_status, target_resume_at
   from public.zhi_agent_control_sessions s
   where s.session_id = p_session_id;
 
   if not found then
     return jsonb_build_object('ok', true, 'already_closed', true);
+  end if;
+  if target_status = 'disconnected' then
+    return jsonb_build_object(
+      'ok', true, 'mode', 'pending_autonomous_resume',
+      'agent_id', target_agent_id, 'resume_at', target_resume_at, 'already_closed', true
+    );
   end if;
 
   perform pg_advisory_xact_lock(hashtextextended('zhi-agent-mode:' || target_agent_id::text, 0));
@@ -206,7 +214,12 @@ begin
       exited_at = clock_timestamp(),
       resume_at = target_resume_at,
       updated_at = clock_timestamp()
-  where session_id = p_session_id;
+  where session_id = p_session_id and status = 'active';
+
+  if not found then
+    select s.resume_at into target_resume_at
+    from public.zhi_agent_control_sessions s where s.session_id = p_session_id;
+  end if;
 
   return jsonb_build_object(
     'ok', true, 'mode', 'pending_autonomous_resume',

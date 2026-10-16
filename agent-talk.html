@@ -13,7 +13,7 @@ button{cursor:pointer;border:1px solid #d5e0e8;border-radius:12px;padding:10px 1
 button:hover{border-color:#8ebdb9;background:#f8fdfc}button:active{transform:translateY(1px)}button:disabled{opacity:.45;cursor:not-allowed;transform:none}
 .primary{background:var(--accent);color:#fff;border-color:var(--accent)}.primary:hover{background:#0e6965;border-color:#0e6965;color:#fff}.secondary{background:#fff}
 .wrap{width:min(1440px,100%);margin:0 auto;padding:24px 22px 36px}
-.top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:4px 2px 18px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:4px 2px 18px}.topActions{display:flex;align-items:center;justify-content:flex-end;gap:8px}.topActions #installApp{white-space:nowrap}
 .brand{font-size:clamp(22px,2.3vw,30px);font-weight:900;letter-spacing:-.6px;color:#173a49}
 .sub{color:var(--muted);font-size:12px;margin-top:5px}
 .layout{display:grid;grid-template-columns:minmax(270px,330px) minmax(0,1fr);gap:18px;margin-top:4px;align-items:stretch}
@@ -63,8 +63,8 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
  .wrap{padding:10px 8px 24px}
  .top{padding:4px 2px 12px;gap:10px}
  .brand{font-size:21px;letter-spacing:-.3px}
- .top>div:last-child{width:100%;display:grid!important;grid-template-columns:1fr 1fr;gap:8px!important}
- .top>div:last-child button{min-height:42px;padding:9px 10px}
+ .topActions{width:auto;display:flex!important;margin-left:auto}
+ .topActions #installApp{min-height:42px;padding:9px 12px;font-size:12px}
  .layout{display:flex;flex-direction:column;gap:12px;margin-top:0}
  .layout>.chatPanel{order:0;min-height:0;width:100%;border-radius:18px}
  .layout>aside.panel{order:1;width:100%;min-width:0;border-radius:18px}
@@ -113,7 +113,7 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ZHI 世界">
-<link rel="manifest" href="./manifest.webmanifest">
+<link rel="manifest" href="./agent-talk.webmanifest">
 <link rel="icon" href="./zhi-icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./zhi-icon.svg">
 </head>
@@ -132,7 +132,7 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
 <main id="chatApp" class="wrap">
  <header class="top">
   <div><div class="brand">💬 ZHI · 智能人讲话室</div><div class="sub">单聊或全体广播 · 每位智能人独立记忆与判断</div></div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="secondary" id="refresh">↻ 刷新名单</button><button class="secondary" onclick="location.href='index.html'">← 返回 ZHI</button></div>
+  <div class="topActions"><button class="primary" id="installApp" type="button">＋ 安装手机 APP</button></div>
  </header>
  <div class="layout">
   <aside class="panel">
@@ -454,13 +454,46 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
 
  $('autonomousInboxToggle').onclick=toggleAutonomousInbox;
  $('mobileAgentSelect').onchange=()=>{const id=$('mobileAgentSelect').value;const agent=agents.find(a=>String(a.id)===String(id));if(!agent)return;if(broadcastMode){broadcastMode=false;$('broadcastMode').textContent='📢 全体广播';$('listHeading').textContent='👥 选择一个智能人';$('agentSearch').disabled=false;$('agentList').classList.remove('hidden');$('send').textContent='发送 ↗';}choose(agent);};
- $('refresh').onclick=loadAgents;$('agentSearch').oninput=renderAgents;$('send').onclick=send;
+ $('agentSearch').oninput=renderAgents;$('send').onclick=send;
  $('message').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
  $('clearChat').onclick=()=>{$('chatLog').innerHTML='<div class="welcome">对话窗口已清空。数据库中已经保存的记忆不会被删除。</div>';};
  document.querySelectorAll('[data-msg]').forEach(b=>b.onclick=()=>{$('message').value=b.dataset.msg;$('message').focus();});
  // Load the agent list and start the protected active-message feed after page-password authentication.
  loadAgents();
  startAutonomousPolling();
+})();
+</script>
+
+
+<script>
+(()=> {
+ const button=document.getElementById('installApp');
+ if(!button)return;
+ let deferredPrompt=null;
+ const isStandalone=()=>window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;
+ const isIOS=()=>/iphone|ipad|ipod/i.test(navigator.userAgent);
+ const setInstalled=()=>{button.textContent='✓ 已安装 APP';button.disabled=true;button.title='讲话室已作为手机 APP 安装';};
+ if(isStandalone())setInstalled();
+ window.addEventListener('beforeinstallprompt',event=>{
+  event.preventDefault();deferredPrompt=event;
+  button.textContent='＋ 安装手机 APP';
+ });
+ window.addEventListener('appinstalled',()=>{deferredPrompt=null;setInstalled();});
+ button.addEventListener('click',async()=>{
+  if(isStandalone()){alert('ZHI 智能人讲话室已在 APP 模式运行。');return;}
+  if(deferredPrompt){
+   deferredPrompt.prompt();
+   const choice=await deferredPrompt.userChoice;
+   if(choice?.outcome==='accepted'){button.textContent='正在安装…';}
+   deferredPrompt=null;
+   return;
+  }
+  if(isIOS()){
+   alert('在 iPhone/iPad 安装：请先在 Safari 打开本页面，点“分享”图标，再选择“添加到主屏幕”。');
+  }else{
+   alert('如果浏览器没有弹出安装窗口，请打开浏览器菜单，选择“安装应用”或“添加到主屏幕”。请使用 HTTPS 地址访问。');
+  }
+ });
 })();
 </script>
 

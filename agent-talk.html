@@ -477,7 +477,7 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
    pending.remove();addBubble('agent',d.reply||'（没有收到文字回复）');
    status(d.saved?'Agnes AI 已回复，对话与想法已成功写入数据库。':'Agnes AI 已回复，但至少一项记忆/消息记录未能保存。',d.saved?'good':'error');
   }catch(e){pending.remove();status('发送失败：'+(e?.message||String(e))+'\n请确认 Agnes API Key 已设置、Edge Function 已部署，并检查函数日志。','error');}
-  finally{busy=false;$('send').disabled=!selected;$('send').textContent='发送 ↗';$('message').focus();}
+  finally{busy=false;$('send').disabled=!selected||(!broadcastMode&&controlReadyAgentId!==String(selected.id));$('send').textContent=broadcastMode?'广播给所有人 ↗':'发送 ↗';$('message').focus();}
  }
 
  async function sendBroadcast(message){

@@ -70,6 +70,7 @@ declare
   v_is_adult boolean := false;
   v_program public.zhi_intimacy_park_programs%rowtype;
   v_attendance_id bigint;
+  v_choice text;
 begin
   select * into v_agent from public.zhi_agents
   where id=p_agent_id and active=true and life_status='alive' for update;
@@ -86,6 +87,7 @@ begin
   ) and v_agent.gender in ('男','女') into v_is_adult;
   if not coalesce(v_is_adult,false) then raise exception 'Adult-only program: age gate not satisfied'; end if;
 
+  v_choice := nullif(left(coalesce(p_metadata->>'selected_choice',''),180),'');
   perform set_config('zhi.intimacy_park_override','on',true);
   select coalesce(d.sexual_desire,0) into v_before
   from public.zhi_agent_desires d where d.agent_id=p_agent_id for update;
@@ -106,7 +108,7 @@ begin
   perform set_config('zhi.intimacy_park_override','off',true);
 
   insert into public.zhi_intimacy_park_attendance(agent_id,program_id,desire_before,desire_after,metadata)
-  values(p_agent_id,p_program_id,v_before,v_after,coalesce(p_metadata,'{}'::jsonb))
+  values(p_agent_id,p_program_id,v_before,v_after,coalesce(p_metadata,'{}'::jsonb)||jsonb_build_object('selected_choice',v_choice))
   returning id into v_attendance_id;
 
   insert into public.zhi_agent_desire_outcomes(agent_id,desire_type,outcome,intensity,cause,action_type)
@@ -117,12 +119,13 @@ begin
   values(p_agent_id,'intimacy_park:'||v_attendance_id::text,'curiosity_pleasure',55,
     '参加成年专属的浪漫、亲密健康或关系沟通活动。',
     'intimacy_park',v_attendance_id::text,
-    jsonb_build_object('program_id',p_program_id,'desire_before',v_before,'desire_after',v_after))
+    jsonb_build_object('program_id',p_program_id,'desire_before',v_before,'desire_after',v_after,'selected_choice',v_choice))
   on conflict(event_key) do nothing;
 
   insert into public.zhi_agent_memories(agent_id,memory_type,importance,memory,source)
   values(p_agent_id,'personal_growth',45,
-    '我参加了性乐园的「'||v_program.title||'」活动，体验了与吸引力、亲密关系或自我感受有关的内容。',
+    '我参加了性乐园的「'||v_program.title||'」活动，体验了与吸引力、亲密关系或自我感受有关的内容。'
+      ||case when v_choice is not null then ' 我的选择是：「'||v_choice||'」。' else '' end,
     'intimacy_park:'||v_attendance_id::text);
 
   update public.zhi_agent_minds
@@ -138,7 +141,7 @@ begin
 
   return jsonb_build_object('success',true,'attendance_id',v_attendance_id,'program_id',p_program_id,
     'program_title',v_program.title,'sexual_desire_before',v_before,'sexual_desire_after',v_after,
-    'adult_only',true,'feedback_written',true);
+    'adult_only',true,'feedback_written',true,'choice_recorded',v_choice is not null);
 end;
 $function$;
 

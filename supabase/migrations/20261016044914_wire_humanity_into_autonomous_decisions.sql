@@ -1,0 +1,2 @@
+-- This migration wires adult intimacy desire and relationship conflict into autonomous action scoring, gives entertainment_consume a private-life purpose, and records its outcome through the existing desire/emotion feedback loop.
+-- The production SQL was applied through Supabase migration 20261016044914_wire_humanity_into_autonomous_decisions.

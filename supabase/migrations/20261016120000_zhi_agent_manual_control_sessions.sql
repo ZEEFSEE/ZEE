@@ -132,6 +132,7 @@ begin
   from public.zhi_palace_dates pd
   where ep.palace_date_id = pd.id
     and pd.status = 'cancelled'
+    and (pd.male_agent_id = p_agent_id or pd.female_agent_id = p_agent_id)
     and ep.invitation_status = 'active'
     and exists (
       select 1 from public.zhi_palace_experiments ex
@@ -474,5 +475,166 @@ drop trigger if exists zhi_guard_manual_autonomous_agent_memory on public.zhi_ag
 create trigger zhi_guard_manual_autonomous_agent_memory
 before insert on public.zhi_agent_memories
 for each row execute function public.zhi_guard_manual_agent_autonomous_chat();
+
+-- Guard independent scheduled paths that can start or advance dates.
+-- These source-aware patches preserve the existing business logic for every other agent.
+do $patch$
+declare
+  v_def text;
+  v_anchor text;
+  v_replacement text;
+begin
+  v_def := pg_get_functiondef('public.zhi_start_palace_date(uuid,uuid)'::regprocedure);
+  v_anchor := '  if p_male = p_female then';
+  v_replacement := E'  if coalesce(current_setting(\'zhi.manual_action\', true), \'off\') <> \'on\'\n     and (public.zhi_agent_is_manually_controlled(p_male) or public.zhi_agent_is_manually_controlled(p_female)) then\n    raise exception \'manual_control_active\';\n  end if;\n\n  if p_male = p_female then';
+  if position(v_anchor in v_def) = 0 then
+    raise exception 'Unable to safely patch zhi_start_palace_date(uuid,uuid)';
+  end if;
+  execute replace(v_def, v_anchor, v_replacement);
+end;
+$patch$;
+
+do $patch$
+declare
+  v_def text;
+  v_anchor text;
+  v_replacement text;
+begin
+  v_def := pg_get_functiondef('public.zhi_intimacy_park_attend(uuid,text,jsonb)'::regprocedure);
+  v_anchor := '  select * into v_agent from public.zhi_agents';
+  v_replacement := E'  if coalesce(current_setting(\'zhi.manual_action\', true), \'off\') <> \'on\'\n     and public.zhi_agent_is_manually_controlled(p_agent_id) then\n    raise exception \'manual_control_active\';\n  end if;\n\n  select * into v_agent from public.zhi_agents';
+  if position(v_anchor in v_def) = 0 then
+    raise exception 'Unable to safely patch zhi_intimacy_park_attend(uuid,text,jsonb)';
+  end if;
+  execute replace(v_def, v_anchor, v_replacement);
+end;
+$patch$;
+
+do $patch$
+declare
+  v_def text;
+  v_anchor text := E'and a.life_status = \'alive\'\n    and a.gender in (\'男\',\'女\')';
+  v_replacement text := E'and a.life_status = \'alive\'\n    and not public.zhi_agent_is_manually_controlled(a.id)\n    and a.gender in (\'男\',\'女\')';
+begin
+  v_def := pg_get_functiondef('public.zhi_intimacy_park_autonomous_tick()'::regprocedure);
+  if position(v_anchor in v_def) = 0 then
+    raise exception 'Unable to safely patch zhi_intimacy_park_autonomous_tick()';
+  end if;
+  execute replace(v_def, v_anchor, v_replacement);
+end;
+$patch$;
+
+do $patch$
+declare
+  v_def text;
+  v_anchor text;
+  v_replacement text;
+begin
+  v_def := pg_get_functiondef('public.zhi_auto_schedule_king_palace_date()'::regprocedure);
+  v_anchor := E'if v_king is null then return jsonb_build_object(\'ok\',false,\'reason\',\'KING_NOT_FOUND\'); end if;';
+  v_replacement := v_anchor || E'\n if public.zhi_agent_is_manually_controlled(v_king) then return jsonb_build_object(\'ok\',true,\'scheduled\',false,\'reason\',\'KING_MANUAL_CONTROL\'); end if;';
+  if position(v_anchor in v_def) = 0 then
+    raise exception 'Unable to safely patch zhi_auto_schedule_king_palace_date()';
+  end if;
+  v_def := replace(v_def, v_anchor, v_replacement);
+  v_anchor := E'where r.male_agent_id=v_king and f.gender=\'女\' and f.active=true';
+  v_replacement := E'where r.male_agent_id=v_king and f.gender=\'女\' and f.active=true and not public.zhi_agent_is_manually_controlled(f.id)';
+  if position(v_anchor in v_def) = 0 then
+    raise exception 'Unable to safely filter candidates in zhi_auto_schedule_king_palace_date()';
+  end if;
+  execute replace(v_def, v_anchor, v_replacement);
+end;
+$patch$;
+
+do $patch$
+declare
+  v_def text;
+  v_anchor text;
+  v_replacement text;
+begin
+  v_def := pg_get_functiondef('public.zhi_king_daily_palace_audience_tick()'::regprocedure);
+  v_anchor := E'  with existing_max as (';
+  v_replacement := E'  if public.zhi_agent_is_manually_controlled(v_king) then\n    return jsonb_build_object(\'ok\',true,\'skipped\',true,\'reason\',\'KING_MANUAL_CONTROL\',\'date\',v_today);\n  end if;\n\n  with existing_max as (';
+  if position(v_anchor in v_def) = 0 then
+    raise exception 'Unable to safely patch zhi_king_daily_palace_audience_tick()';
+  end if;
+  v_def := replace(v_def, v_anchor, v_replacement);
+  v_anchor := E'where a.gender = \'女\' and a.active = true and a.life_status = \'alive\' and a.id <> v_king\n      and not exists (';
+  v_replacement := E'where a.gender = \'女\' and a.active = true and a.life_status = \'alive\' and a.id <> v_king\n      and not public.zhi_agent_is_manually_controlled(a.id)\n      and not exists (';
+  if position(v_anchor in v_def) = 0 then
+    raise exception 'Unable to safely filter daily audience candidates';
+  end if;
+  execute replace(v_def, v_anchor, v_replacement);
+end;
+$patch$;
+
+do $patch$
+declare
+  v_def text;
+  v_anchor text;
+  v_replacement text;
+begin
+  v_def := pg_get_functiondef('public.zhi_king_palace_experiment_tick()'::regprocedure);
+  v_anchor := E'where experiment_key=\'king_all_women_10m_20261015\' and status=\'running\' for update;';
+  v_replacement := E'where experiment_key=\'king_all_women_10m_20261015\' and status=\'running\'\n   and not public.zhi_agent_is_manually_controlled(king_agent_id) for update;';
+  if position(v_anchor in v_def) = 0 then
+    raise exception 'Unable to safely guard zhi_king_palace_experiment_tick()';
+  end if;
+  v_def := replace(v_def, v_anchor, v_replacement);
+
+  v_anchor := E'where experiment_id=ex.id and invitation_status=\'active\' order by sequence_no loop';
+  v_replacement := E'where experiment_id=ex.id and invitation_status=\'active\'\n   and not public.zhi_agent_is_manually_controlled(female_agent_id) order by sequence_no loop';
+  if position(v_anchor in v_def) = 0 then
+    raise exception 'Unable to safely filter active experiment participants';
+  end if;
+  v_def := replace(v_def, v_anchor, v_replacement);
+
+  v_anchor := E'where experiment_id=ex.id and invitation_status=\'invited\' order by sequence_no limit 1 for update;';
+  v_replacement := E'where experiment_id=ex.id and invitation_status=\'invited\'\n   and not public.zhi_agent_is_manually_controlled(female_agent_id) order by sequence_no limit 1 for update;';
+  if position(v_anchor in v_def) = 0 then
+    raise exception 'Unable to safely filter invited experiment participants';
+  end if;
+  v_def := replace(v_def, v_anchor, v_replacement);
+
+  v_anchor := E'where experiment_id=ex.id and invitation_status=\'queued\' order by sequence_no limit 1 for update;';
+  v_replacement := E'where experiment_id=ex.id and invitation_status=\'queued\'\n   and not public.zhi_agent_is_manually_controlled(female_agent_id) order by sequence_no limit 1 for update;';
+  if position(v_anchor in v_def) = 0 then
+    raise exception 'Unable to safely filter queued experiment participants';
+  end if;
+  execute replace(v_def, v_anchor, v_replacement);
+end;
+$patch$;
+
+do $patch$
+declare
+  v_def text;
+  v_anchor text;
+  v_replacement text;
+begin
+  v_def := pg_get_functiondef('public.zhi_palace_date_tick()'::regprocedure);
+  v_anchor := E'WHERE pd.status=\'active\' AND pd.started_at<=now() AND pd.ends_at>now()';
+  v_replacement := E'WHERE pd.status=\'active\' AND pd.started_at<=now() AND pd.ends_at>now()\n      AND not public.zhi_agent_is_manually_controlled(pd.male_agent_id)\n      AND not public.zhi_agent_is_manually_controlled(pd.female_agent_id)';
+  if position(v_anchor in v_def) = 0 then
+    raise exception 'Unable to safely patch zhi_palace_date_tick()';
+  end if;
+  execute replace(v_def, v_anchor, v_replacement);
+end;
+$patch$;
+
+do $patch$
+declare
+  v_def text;
+  v_anchor text;
+  v_replacement text;
+begin
+  v_def := pg_get_functiondef('public.zhi_run_palace_engine()'::regprocedure);
+  v_anchor := E'WHERE status=\'active\' AND ends_at<=now()';
+  v_replacement := E'WHERE status=\'active\' AND ends_at<=now()\n      AND not public.zhi_agent_is_manually_controlled(male_agent_id)\n      AND not public.zhi_agent_is_manually_controlled(female_agent_id)';
+  if position(v_anchor in v_def) = 0 then
+    raise exception 'Unable to safely patch zhi_run_palace_engine()';
+  end if;
+  execute replace(v_def, v_anchor, v_replacement);
+end;
+$patch$;
 
 commit;

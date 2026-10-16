@@ -530,6 +530,7 @@ async function loadCreatorIdentity(){
 }
 syncCreatorPresence();
 loadCreatorIdentity();
+setInterval(loadCreatorIdentity,15000);
 setInterval(syncCreatorPresence,1000);
 window.addEventListener('storage',e=>{if(e.key===CREATOR_PRESENCE_KEY)syncCreatorPresence();});
 load();

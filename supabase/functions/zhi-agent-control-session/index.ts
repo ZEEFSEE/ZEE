@@ -65,6 +65,20 @@ Deno.serve(async (req: Request) => {
   const action = String(body?.action || "");
   const sessionId = String(body?.session_id || "");
   const agentId = String(body?.agent_id || "");
+  const db = createClient(SUPABASE_URL, SERVICE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  if (action === "status") {
+    if (!UUID_RE.test(agentId)) return json({ error: "A valid agent_id is required" }, 400);
+    const { data, error } = await db.rpc("zhi_agent_is_manually_controlled", { p_agent_id: agentId });
+    if (error) {
+      console.error("ZHI control-session status check failed", { code: error.code, message: error.message });
+      return json({ error: "Control status could not be checked" }, 503);
+    }
+    return json({ ok: true, action, agent_id: agentId, manually_controlled: data === true });
+  }
+
   if (!UUID_RE.test(sessionId)) return json({ error: "A valid session_id is required" }, 400);
   if (action === "enter" && !UUID_RE.test(agentId)) {
     return json({ error: "A valid agent_id is required" }, 400);
@@ -75,11 +89,8 @@ Deno.serve(async (req: Request) => {
     exit: { name: "zhi_agent_control_session_exit", args: { p_session_id: sessionId } },
   };
   const selected = rpcByAction[action];
-  if (!selected) return json({ error: "action must be enter, heartbeat, or exit" }, 400);
+  if (!selected) return json({ error: "action must be enter, heartbeat, exit, or status" }, 400);
 
-  const db = createClient(SUPABASE_URL, SERVICE_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
   const { data, error } = await db.rpc(selected.name, selected.args);
   if (error) {
     console.error("ZHI control-session RPC failed", { action, code: error.code, message: error.message });

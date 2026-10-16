@@ -5,9 +5,41 @@ const FINANCE_URL="https://bkttvffunyvbswkxpygp.supabase.co", FINANCE_KEY="sb_pu
 const cors={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type","Access-Control-Allow-Methods":"POST, OPTIONS"};
 const json=(b:unknown,s=200)=>new Response(JSON.stringify(b),{status:s,headers:{...cors,"Content-Type":"application/json"}});
 const clamp=(v:unknown)=>Math.max(0,Math.min(100,Math.round(Number(v??50))));
-async function admin(req:Request){const h=req.headers.get("Authorization")||"";if(!h.startsWith("Bearer "))return false;const c=createClient(FINANCE_URL,FINANCE_KEY,{global:{headers:{Authorization:h}},auth:{persistSession:false,autoRefreshToken:false}});const {data:{user},error}=await c.auth.getUser(h.slice(7));return !error&&user?.id===ADMIN_ID;}
-async function askAgnes(messages:unknown[]){const r=await fetch("https://apihub.agnes-ai.com/v1/chat/completions",{method:"POST",headers:{"Authorization":`Bearer ${AGNES_API_KEY}`,"Content-Type":"application/json"},signal:AbortSignal.timeout(25000),body:JSON.stringify({model:AGNES_MODEL,messages,temperature:0.75,max_tokens:300,stream:false})});const b=await r.json().catch(()=>({}));if(!r.ok)throw new Error("Agnes upstream "+r.status);return String(b?.choices?.[0]?.message?.content||"").trim();}
-Deno.serve(async(req:Request)=>{if(req.method==="OPTIONS")return new Response("ok",{headers:cors});if(req.method!=="POST")return json({error:"POST required"},405);if(!await admin(req))return json({error:"Admin only"},403);if(!AGNES_API_KEY)return json({error:"Agnes API is not configured"},503);
+
+function decodeB64url(value: string): Uint8Array {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+  const binary = atob(normalized + "=".repeat((4 - normalized.length % 4) % 4));
+  return Uint8Array.from(binary, (char) => char.charCodeAt(0));
+}
+async function isSignedChatAdminToken(token: string): Promise<boolean> {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 2) return false;
+    const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(SERVICE_KEY), { name: "HMAC", hash: "SHA-256" }, false, ["verify"]);
+    const validSignature = await crypto.subtle.verify("HMAC", key, decodeB64url(parts[1]), new TextEncoder().encode(parts[0]));
+    if (!validSignature) return false;
+    const claims = JSON.parse(new TextDecoder().decode(decodeB64url(parts[0])));
+    const now = Math.floor(Date.now() / 1000);
+    return claims?.aud === "zhi-chat-admin" && claims?.sub === "admin" &&
+      Number.isFinite(claims?.exp) && claims.exp > now &&
+      Number.isFinite(claims?.iat) && claims.iat <= now + 60;
+  } catch { return false; }
+}
+async function isChatAdmin(req: Request): Promise<boolean> {
+  const authorization = req.headers.get("Authorization") || "";
+  if (!authorization.startsWith("Bearer ")) return false;
+  const token = authorization.slice(7);
+  if (await isSignedChatAdminToken(token)) return true;
+  // Backward-compatible verification: existing Supabase administrator sessions remain valid.
+  const authClient = createClient(FINANCE_URL, FINANCE_KEY, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data: { user }, error } = await authClient.auth.getUser(token);
+  return !error && !!user && user.id === ADMIN_ID;
+}
+
+Deno.serve(async(req:Request)=>{if(req.method==="OPTIONS")return new Response("ok",{headers:cors});if(req.method!=="POST")return json({error:"POST required"},405);if(!(await isChatAdmin(req)))return json({error:"Admin only"},403);if(!AGNES_API_KEY)return json({error:"Agnes API is not configured"},503);
  const b=await req.json().catch(()=>null),mode=String(b?.mode||"");const db=createClient(SUPABASE_URL,SERVICE_KEY);
  if(mode==="broadcast"){
   const message=String(b?.message||"").trim().slice(0,2000);if(!message)return json({error:"message is required"},400);

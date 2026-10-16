@@ -5,6 +5,35 @@ const FINANCE_URL="https://bkttvffunyvbswkxpygp.supabase.co", FINANCE_KEY="sb_pu
 const cors={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type","Access-Control-Allow-Methods":"POST, OPTIONS"};
 const json=(b:unknown,s=200)=>new Response(JSON.stringify(b),{status:s,headers:{...cors,"Content-Type":"application/json"}});
 const clamp=(v:unknown)=>Math.max(0,Math.min(100,Math.round(Number(v??50))));
+async function askAgnes(messages: unknown[], maxTokens = 500, timeoutMs = 25000): Promise<string> {
+  let lastError: unknown = new Error("Agnes request failed");
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const response = await fetch("https://apihub.agnes-ai.com/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${AGNES_API_KEY}`, "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(timeoutMs),
+        body: JSON.stringify({ model: AGNES_MODEL, messages, temperature: 0.7, max_tokens: maxTokens, stream: false }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (response.ok) {
+        const content = String(body?.choices?.[0]?.message?.content || "").trim();
+        if (content) return content;
+        lastError = new Error("Agnes returned an empty response");
+      } else {
+        lastError = new Error(`Agnes upstream ${response.status}`);
+        if (response.status !== 429 && response.status < 500) throw lastError;
+        if (attempt === 2) throw lastError;
+      }
+    } catch (error) {
+      lastError = error;
+      if (attempt === 2) throw error;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+  }
+  throw lastError;
+}
+
 
 function decodeB64url(value: string): Uint8Array {
   const normalized = value.replace(/-/g, "+").replace(/_/g, "/");

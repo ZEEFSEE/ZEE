@@ -30,7 +30,7 @@ returns boolean
 language sql
 volatile
 security definer
-set search_path = public, pg_temp
+set search_path = pg_catalog, public
 as $function$
   select exists (
     select 1
@@ -52,7 +52,7 @@ create or replace function public.zhi_agent_control_session_enter(
 returns jsonb
 language plpgsql
 security definer
-set search_path = public, pg_temp
+set search_path = pg_catalog, public
 as $function$
 declare
   existing_agent_id uuid;
@@ -209,7 +209,7 @@ create or replace function public.zhi_agent_control_session_heartbeat(p_session_
 returns jsonb
 language plpgsql
 security definer
-set search_path = public, pg_temp
+set search_path = pg_catalog, public
 as $function$
 declare
   target_agent_id uuid;
@@ -244,7 +244,7 @@ create or replace function public.zhi_agent_control_session_exit(p_session_id uu
 returns jsonb
 language plpgsql
 security definer
-set search_path = public, pg_temp
+set search_path = pg_catalog, public
 as $function$
 declare
   target_agent_id uuid;
@@ -305,7 +305,7 @@ create or replace function public.zhi_guard_manual_agent_position()
 returns trigger
 language plpgsql
 security definer
-set search_path = public, pg_temp
+set search_path = pg_catalog, public
 as $function$
 declare
   target_agent_id uuid;
@@ -352,7 +352,7 @@ create or replace function public.zhi_guard_manual_agent_activity()
 returns trigger
 language plpgsql
 security definer
-set search_path = public, pg_temp
+set search_path = pg_catalog, public
 as $function$
 begin
   if current_setting('zhi.manual_action', true) = 'on' then
@@ -444,7 +444,7 @@ create or replace function public.zhi_guard_manual_agent_autonomous_chat()
 returns trigger
 language plpgsql
 security definer
-set search_path = public, pg_temp
+set search_path = pg_catalog, public
 as $function$
 declare
   row_data jsonb;

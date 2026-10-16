@@ -564,6 +564,13 @@ begin
   if position(v_anchor in v_def) = 0 then
     raise exception 'Unable to safely filter daily audience candidates';
   end if;
+  v_def := replace(v_def, v_anchor, v_replacement);
+
+  v_anchor := E'where i.invitation_status = \'active\' and i.ends_at <= now()';
+  v_replacement := E'where i.invitation_status = \'active\' and i.ends_at <= now()\n      and not public.zhi_agent_is_manually_controlled(i.king_agent_id)\n      and not public.zhi_agent_is_manually_controlled(i.female_agent_id)';
+  if position(v_anchor in v_def) = 0 then
+    raise exception 'Unable to safely guard active daily audiences';
+  end if;
   execute replace(v_def, v_anchor, v_replacement);
 end;
 $patch$;

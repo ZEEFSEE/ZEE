@@ -328,7 +328,15 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
   autonomousPollBusy=true;
   try{
    const {data:{session},error:sessionError}=await sb.auth.getSession();
-   if(sessionError||!session)return;
+   if(sessionError)throw sessionError;
+   if(!session){
+    const list=$('autonomousInbox');
+    list.innerHTML='<div class="inboxEmpty">免登录模式下，主动消息接口仍受管理员权限保护，暂时无法读取。为保护私人消息，没有开放匿名读取。</div>';
+    $('autonomousInboxCount').textContent='0';
+    status('主动消息需要管理员授权；智能人名单与普通页面仍可免登录使用。','error');
+    autonomousInboxInitialized=true;
+    return;
+   }
    const r=await fetch(feedUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,'apikey':window.zhiCorePublishableKey||''},body:JSON.stringify({since:lastAutonomousPollAt}),cache:'no-store'});
    const d=await r.json().catch(()=>({}));
    if(!r.ok||!d.ok)throw new Error(d.error||('HTTP '+r.status));

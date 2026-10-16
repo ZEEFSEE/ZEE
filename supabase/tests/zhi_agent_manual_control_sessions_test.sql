@@ -6,11 +6,14 @@ do $test$
 declare
   v_agent_id uuid;
   v_session_id uuid := gen_random_uuid();
+  v_session_id_2 uuid := gen_random_uuid();
   v_before_x numeric;
   v_after_x numeric;
   v_result jsonb;
   v_manual boolean;
   v_decision jsonb;
+  v_activity_status text;
+  v_activity_type text;
 begin
   select p.agent_id, p.x
     into v_agent_id, v_before_x
@@ -24,6 +27,16 @@ begin
     raise exception 'Test fixture required: at least one agent with a world position';
   end if;
 
+  insert into public.zhi_agent_activities
+    (agent_id, activity_type, status, location_name, started_at, ends_at, metadata, updated_at)
+  values
+    (v_agent_id, 'traveling', 'busy', '测试目的地', clock_timestamp(),
+     clock_timestamp() + interval '10 minutes', '{}'::jsonb, clock_timestamp())
+  on conflict (agent_id) do update
+    set activity_type = 'traveling', status = 'busy', location_name = '测试目的地',
+        started_at = clock_timestamp(), ends_at = clock_timestamp() + interval '10 minutes',
+        metadata = '{}'::jsonb, updated_at = clock_timestamp();
+
   v_result := public.zhi_agent_control_session_enter(v_agent_id, v_session_id);
   if coalesce((v_result->>'ok')::boolean, false) is not true then
     raise exception 'enter failed: %', v_result;
@@ -32,6 +45,12 @@ begin
   v_manual := public.zhi_agent_is_manually_controlled(v_agent_id);
   if v_manual is not true then
     raise exception 'agent must enter manual mode immediately';
+  end if;
+
+  select status, activity_type into v_activity_status, v_activity_type
+  from public.zhi_agent_activities where agent_id = v_agent_id;
+  if v_activity_status <> 'idle' or v_activity_type <> 'idle' then
+    raise exception 'in-flight autonomous activity was not cancelled on manual entry';
   end if;
 
   v_result := public.zhi_agent_control_session_heartbeat(v_session_id);
@@ -65,9 +84,17 @@ begin
     raise exception 'agent must remain in manual/grace mode for five minutes after exit';
   end if;
 
+  -- Re-entering before the grace period expires must immediately return to manual mode.
+  v_result := public.zhi_agent_control_session_enter(v_agent_id, v_session_id_2);
+  if coalesce((v_result->>'ok')::boolean, false) is not true
+     or public.zhi_agent_is_manually_controlled(v_agent_id) is not true then
+    raise exception 're-entry did not cancel pending autonomous resume: %', v_result;
+  end if;
+  perform public.zhi_agent_control_session_exit(v_session_id_2);
+
   update public.zhi_agent_control_sessions
   set resume_at = clock_timestamp() - interval '1 second'
-  where session_id = v_session_id;
+  where agent_id = v_agent_id and status = 'disconnected';
 
   if public.zhi_agent_is_manually_controlled(v_agent_id) is true then
     raise exception 'expired grace period should restore autonomous mode';

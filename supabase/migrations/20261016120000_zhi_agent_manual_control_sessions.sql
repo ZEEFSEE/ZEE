@@ -56,6 +56,7 @@ set search_path = public, pg_temp
 as $function$
 declare
   existing_agent_id uuid;
+  active_activity record;
 begin
   if p_agent_id is null or p_session_id is null then
     return jsonb_build_object('ok', false, 'reason', 'agent_id_and_session_id_required');
@@ -87,6 +88,51 @@ begin
         exited_at = null,
         resume_at = null,
         updated_at = clock_timestamp();
+
+  -- Cancel only the selected agent's in-progress autonomous task and destination.
+  -- Keep the historical decision rows and write an auditable cancellation memory.
+  perform set_config('zhi.manual_action', 'on', true);
+  for active_activity in
+    select activity_type, location_name, metadata
+    from public.zhi_agent_activities
+    where agent_id = p_agent_id and status = 'busy'
+    for update
+  loop
+    insert into public.zhi_agent_memories
+      (agent_id, memory_type, importance, memory, source)
+    values (
+      p_agent_id, 'system_event', 70,
+      '进入讲话室手动控制模式时，系统取消了尚未完成的自主活动：'
+        || coalesce(active_activity.activity_type, '未知活动')
+        || case when active_activity.location_name is not null
+          then '（地点：' || active_activity.location_name || '）' else '' end
+        || '。已完成的历史事件未被删除。',
+      'manual_control_cancelled_action'
+    );
+    update public.zhi_agent_activities
+    set status = 'idle',
+        activity_type = 'idle',
+        location_name = null,
+        started_at = null,
+        ends_at = null,
+        metadata = coalesce(active_activity.metadata, '{}'::jsonb)
+          || jsonb_build_object('manual_control_cancelled', true, 'manual_control_cancelled_at', clock_timestamp()),
+        updated_at = clock_timestamp()
+    where agent_id = p_agent_id;
+  end loop;
+
+  update public.zhi_agent_world_positions
+  set walking = false,
+      destination_scene = null,
+      destination_x = null,
+      destination_y = null,
+      walk_started_at = null,
+      walk_arrive_at = null,
+      speed_mps = 0.1,
+      updated_at = clock_timestamp()
+  where agent_id = p_agent_id;
+
+  perform set_config('zhi.manual_action', 'off', true);
 
   return jsonb_build_object(
     'ok', true, 'mode', 'manual', 'agent_id', p_agent_id,

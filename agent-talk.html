@@ -437,8 +437,8 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
    const d=await r.json().catch(()=>({}));if(!r.ok||!d.ok)throw new Error(d.error||('HTTP '+r.status));
    status('广播已建立：'+d.delivered+'/'+d.total+' 位已写入个人记忆。现在开始逐个读取各自人格与状态，由 Agnes 为每位智能人独立判断是否回应…');
    let done=0,replied=0,noReply=0,failed=d.failed||0;
-   for(let i=0;i<agents.length;i+=6){
-    const batch=agents.slice(i,i+6);
+   for(let i=0;i<agents.length;i+=3){
+    const batch=agents.slice(i,i+3);
     const out=await Promise.all(batch.map(async a=>{
      try{
       const rr=await fetch(broadcastUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+chatToken,'apikey':window.zhiCorePublishableKey||''},body:JSON.stringify({mode:'decide',broadcast_id:d.broadcast_id,agent_id:a.id}),cache:'no-store'});

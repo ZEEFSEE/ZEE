@@ -19,21 +19,21 @@ const json = (body: unknown, status = 200) =>
 const clamp = (v: unknown) => Math.max(0, Math.min(100, Math.round(Number(v ?? 50))));
 
 async function askAgnes(messages: unknown[]) {
-  const r = await fetch("https://apihub.agnes-ai.com/v1/chat/completions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${AGNES_API_KEY}`, "Content-Type": "application/json" },
-    signal: AbortSignal.timeout(25000),
-    body: JSON.stringify({
-      model: AGNES_MODEL,
-      messages,
-      temperature: 0.85,
-      max_tokens: 300,
-      stream: false,
-    }),
-  });
-  const b = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error("Agnes upstream " + r.status);
-  return String(b?.choices?.[0]?.message?.content || "").trim();
+  let lastError: unknown = new Error("Agnes request failed");
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const r = await fetch("https://apihub.agnes-ai.com/v1/chat/completions", {
+        method: "POST", headers: { Authorization: `Bearer ${AGNES_API_KEY}`, "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(25000),
+        body: JSON.stringify({ model: AGNES_MODEL, messages, temperature: 0.85, max_tokens: 300, stream: false }),
+      });
+      const body = await r.json().catch(() => ({}));
+      if (r.ok) { const content=String(body?.choices?.[0]?.message?.content||"").trim(); if(content)return content; lastError=new Error("Agnes returned an empty response"); }
+      else { lastError=new Error("Agnes upstream "+r.status); if(!(r.status===429||r.status>=500)||attempt===2)throw lastError; }
+    } catch(error) { lastError=error; if(attempt===2)throw error; }
+    await new Promise((resolve)=>setTimeout(resolve,500*(attempt+1)));
+  }
+  throw lastError;
 }
 function parseDecision(raw: string): any {
   const clean = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
@@ -151,34 +151,22 @@ Deno.serve(async (req: Request) => {
     // Maximum one autonomous message per 10-minute tick to prevent flooding.
     const chosen: any = initiators[Math.floor(Math.random() * initiators.length)];
     const content = PREFIX + chosen.message;
-    const [messageWrite, memoryWrite, mindWrite] = await Promise.all([
-      db.from("admin_agent_messages").insert({
-        admin_user_id: ADMIN_ID, agent_id: chosen.agent.id, agent_name: chosen.agent.name,
-        sender_type: "agent", content,
-      }).select("id,created_at").single(),
-      db.from("zhi_agent_memories").insert({
-        agent_id: chosen.agent.id, memory_type: "conversation", importance: 72,
-        memory: `我主动决定联系管理员。我的原话：${chosen.message}`,
-        source: "agnes_autonomous_chat",
-      }),
-      db.from("zhi_agent_minds").upsert({
-        agent_id: chosen.agent.id, last_thought: chosen.message,
-        last_reflection_at: now.toISOString(), updated_at: now.toISOString(),
-      }, { onConflict: "agent_id" }),
-    ]);
-    const errors = [messageWrite.error, memoryWrite.error, mindWrite.error].filter(Boolean).map((e: any) => e.message);
-    if (errors.length) {
-      console.error("autonomous chat persistence errors", errors);
-      return json({ ok: false, sent: !messageWrite.error ? 1 : 0, agent: chosen.agent.name,
-        error: "One or more records failed to save", details: errors }, 500);
-    }
-    console.log("autonomous chat delivered", { agent_id: chosen.agent.id, message_id: messageWrite.data?.id });
-    return json({
-      ok: true, considered: weighted.length, sent: 1,
-      agent: { id: chosen.agent.id, name: chosen.agent.name },
-      message_id: messageWrite.data?.id, created_at: messageWrite.data?.created_at,
-      content, reason: String(chosen.decision.reason || "").slice(0, 180),
+    const persisted = await db.rpc("zhi_persist_agent_chat", {
+      p_agent_id: chosen.agent.id, p_agent_name: chosen.agent.name, p_admin_user_id: ADMIN_ID,
+      p_user_message: null, p_agent_message: content,
+      p_memory: `我主动决定联系管理员。我的原话：${chosen.message}`,
+      p_source: "agnes_autonomous_chat", p_importance: 72, p_last_thought: chosen.message,
+      p_broadcast_id: null, p_decision_reason: null,
     });
+    if (persisted.error) {
+      console.error("autonomous chat atomic persistence failed", persisted.error.message);
+      return json({ ok: false, sent: 0, agent: chosen.agent.name,
+        error: "Atomic chat persistence failed", detail: persisted.error.message }, 500);
+    }
+    console.log("autonomous chat delivered", { agent_id: chosen.agent.id });
+    return json({ ok: true, considered: weighted.length, sent: 1,
+      agent: { id: chosen.agent.id, name: chosen.agent.name }, content,
+      reason: String(chosen.decision.reason || "").slice(0, 180) });
   } catch (error) {
     console.error("autonomous chat tick failed", error);
     return json({ error: "Autonomous chat tick failed", detail: error instanceof Error ? error.message : String(error) }, 500);

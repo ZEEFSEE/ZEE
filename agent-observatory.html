@@ -141,7 +141,7 @@ button,a,select{touch-action:manipulation}
   <div id="creatorEntityName" class="creator-entity-name">世界创造者</div>
   <div id="creatorEntityTitle" class="creator-entity-title">造物主 · Creator</div>
   <div id="creatorEntityBio" class="creator-entity-bio">正在读取造物主的世界身份资料…</div>
-  <div class="creator-entity-meta"><span id="creatorEntityScene">📍 🌸中央广场</span><span id="creatorEntityGoal">目标：进入 ZHI 世界</span><span>独立于普通智能人 · 不接管 KING 决策</span></div>
+  <div class="creator-entity-meta"><span id="creatorEntityScene">📍 🌸中央广场</span><span id="creatorEntityCoordinates">坐标：读取中…</span><span id="creatorEntityMotion">状态：读取中…</span><span id="creatorEntityGoal">目标：进入 ZHI 世界</span><span>独立于普通智能人 · 不接管 KING 决策</span></div>
  </div>
  <div id="creatorEntityState" class="creator-entity-state">读取身份中</div>
 </section>
@@ -498,22 +498,34 @@ function syncCreatorPresence(){
 async function loadCreatorIdentity(){
  const set=(id,value)=>{const el=$(id);if(el)el.textContent=value};
  try{
-  const url='https://jozrslgdjreepxplicen.supabase.co/rest/v1/zhi_world_creator_identity?select=id,display_name,avatar_symbol,title,personality,current_scene,current_goal,biography,active,updated_at&id=eq.zhi-world-creator&active=eq.true';
-  const res=await fetchWithRetry(url,{headers:{apikey:apiKey},cache:'no-store'},2);
-  if(!res.ok)throw new Error('HTTP '+res.status);
-  const rows=await res.json();const creator=Array.isArray(rows)?rows[0]:null;
+  const base='https://jozrslgdjreepxplicen.supabase.co/rest/v1/';
+  const identityUrl=base+'zhi_world_creator_identity?select=id,display_name,avatar_symbol,title,personality,current_scene,current_goal,biography,active,updated_at&id=eq.zhi-world-creator&active=eq.true';
+  const positionUrl=base+'zhi_world_creator_position?select=entity_ref,x,y,current_scene,destination_scene,destination_x,destination_y,walking,walk_arrive_at,updated_at&entity_ref=eq.zhi-world-creator';
+  const [identityRes,positionRes]=await Promise.all([
+   fetchWithRetry(identityUrl,{headers:{apikey:apiKey},cache:'no-store'},2),
+   fetchWithRetry(positionUrl,{headers:{apikey:apiKey},cache:'no-store'},2)
+  ]);
+  if(!identityRes.ok)throw new Error('身份资料 HTTP '+identityRes.status);
+  if(!positionRes.ok)throw new Error('世界位置 HTTP '+positionRes.status);
+  const rows=await identityRes.json(),positions=await positionRes.json();
+  const creator=Array.isArray(rows)?rows[0]:null,position=Array.isArray(positions)?positions[0]:null;
   if(!creator)throw new Error('身份记录不存在');
+  if(!position)throw new Error('Creator 世界位置记录不存在');
   set('creatorEntityName',creator.display_name||'世界创造者');
   set('creatorEntityTitle',creator.title||'造物主 · Creator');
   set('creatorEntityBio',creator.biography||'ZHI 世界的独立创造者身份。');
-  set('creatorEntityScene','📍 '+(creator.current_scene||'世界位置待确认'));
+  set('creatorEntityScene','📍 '+(position.current_scene||creator.current_scene||'世界位置待确认'));
+  set('creatorEntityCoordinates','世界坐标：('+Number(position.x).toFixed(0)+', '+Number(position.y).toFixed(0)+')');
+  set('creatorEntityMotion',position.walking
+   ?'🚶 前往 '+(position.destination_scene||'目标位置')+' · 预计 '+(position.walk_arrive_at?new Date(position.walk_arrive_at).toLocaleTimeString():'抵达时间待定')
+   :'● 当前状态：驻留');
   set('creatorEntityGoal','目标：'+(creator.current_goal||'与智能人建立互动'));
-  set('creatorEntityState','身份已载入');
+  set('creatorEntityState','身份与世界位置已载入');
   const portrait=document.querySelector('.creator-portrait span');if(portrait)portrait.textContent=creator.avatar_symbol||'✦';
  }catch(e){
-  set('creatorEntityBio','造物主人物面板已加载，但持久化身份资料尚不可用；请先应用对应数据库迁移。');
-  set('creatorEntityState','等待数据库接入');
-  console.warn('ZHI creator identity:',e);
+  set('creatorEntityBio','Creator 身份已独立保存；当前无法读取其世界位置。请检查 Creator 位置表的读取权限与数据记录。');
+  set('creatorEntityState','世界位置待确认');
+  console.warn('ZHI creator identity/position:',e);
  }
 }
 syncCreatorPresence();

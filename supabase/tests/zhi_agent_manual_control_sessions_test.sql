@@ -7,6 +7,8 @@ declare
   v_agent_id uuid;
   v_session_id uuid := gen_random_uuid();
   v_session_id_2 uuid := gen_random_uuid();
+  v_session_id_3 uuid := gen_random_uuid();
+  v_other_agent_id uuid;
   v_before_x numeric;
   v_after_x numeric;
   v_result jsonb;
@@ -26,6 +28,7 @@ begin
   if v_agent_id is null then
     raise exception 'Test fixture required: at least one agent with a world position';
   end if;
+  select id into v_other_agent_id from public.zhi_agents where id <> v_agent_id order by id limit 1;
 
   insert into public.zhi_agent_activities
     (agent_id, activity_type, status, location_name, started_at, ends_at, metadata, updated_at)
@@ -45,6 +48,9 @@ begin
   v_manual := public.zhi_agent_is_manually_controlled(v_agent_id);
   if v_manual is not true then
     raise exception 'agent must enter manual mode immediately';
+  end if;
+  if v_other_agent_id is not null and public.zhi_agent_is_manually_controlled(v_other_agent_id) is true then
+    raise exception 'unselected agent was incorrectly put into manual mode';
   end if;
 
   select status, activity_type into v_activity_status, v_activity_type
@@ -98,6 +104,18 @@ begin
 
   if public.zhi_agent_is_manually_controlled(v_agent_id) is true then
     raise exception 'expired grace period should restore autonomous mode';
+  end if;
+
+  -- A crashed tab has no exit event; stale heartbeat must eventually restore autonomy.
+  v_result := public.zhi_agent_control_session_enter(v_agent_id, v_session_id_3);
+  if coalesce((v_result->>'ok')::boolean, false) is not true then
+    raise exception 'third session enter failed: %', v_result;
+  end if;
+  update public.zhi_agent_control_sessions
+  set last_seen_at = clock_timestamp() - interval '6 minutes'
+  where session_id = v_session_id_3;
+  if public.zhi_agent_is_manually_controlled(v_agent_id) is true then
+    raise exception 'stale disconnected heartbeat should eventually restore autonomy';
   end if;
 end;
 $test$;

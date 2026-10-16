@@ -458,8 +458,9 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
  $('message').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
  $('clearChat').onclick=()=>{$('chatLog').innerHTML='<div class="welcome">对话窗口已清空。数据库中已经保存的记忆不会被删除。</div>';};
  document.querySelectorAll('[data-msg]').forEach(b=>b.onclick=()=>{$('message').value=b.dataset.msg;$('message').focus();});
- // Load the agent list directly; the homepage no longer has an account-login gate.
+ // Load the agent list and start the protected active-message feed after page-password authentication.
  loadAgents();
+ startAutonomousPolling();
 })();
 </script>
 

@@ -364,19 +364,14 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
  }
 
  async function loadAgents(){
-  if(!sb){status('Supabase 客户端未加载，请检查 supabase-client.js。','error');return;}
-  status('正在验证登录状态…');
+  if(!window.zhiCoreSupabase){status('Core 数据库客户端未加载，请检查 supabase-client.js。','error');return;}
+  status('正在读取智能人名单…');
   try{
-   const {data:{session},error:sessionError}=await sb.auth.getSession();
-   if(sessionError)throw sessionError;
-   if(!session){status('请先登录 ZHI 管理员账号，再进入智能人讲话室。','error');return;}
-   status('正在读取智能人名单…');
    const {data,error}=await window.zhiCoreSupabase.from('zhi_agents').select('id,name,gender,personality,life_status').order('name').limit(1000);
    if(error)throw error;
    agents=data||[];renderAgents();status('已读取 '+agents.length+' 位智能人。','good');
-   startAutonomousPolling();
    if(selected){const latest=agents.find(a=>String(a.id)===String(selected.id));if(latest)choose(latest);}
-  }catch(e){status('读取失败：'+(e?.message||String(e))+'\n请检查登录状态、Core 数据库读取权限及 zhi_agents 表。','error');}
+  }catch(e){status('读取失败：'+(e?.message||String(e))+'\n请检查 Core 数据库的 zhi_agents 表、匿名读取 RLS 策略及网络连接。','error');}
  }
  async function send(){
   if(busy)return;
@@ -434,7 +429,8 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
  $('message').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
  $('clearChat').onclick=()=>{$('chatLog').innerHTML='<div class="welcome">对话窗口已清空。数据库中已经保存的记忆不会被删除。</div>';};
  document.querySelectorAll('[data-msg]').forEach(b=>b.onclick=()=>{$('message').value=b.dataset.msg;$('message').focus();});
- // Agent data is loaded only after the password gate succeeds.
+ // Load the agent list directly; the homepage no longer has an account-login gate.
+ loadAgents();
 })();
 </script>
 

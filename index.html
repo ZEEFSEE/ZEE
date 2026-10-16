@@ -72,7 +72,7 @@ iframe{position:absolute;inset:0;border:0;width:100%;height:100%;min-height:0;mi
  const HASH="1fd8607cb9f85718678a131c8dc73d434c5ff6d78462e7e5dcd08b8ab90bae58";
  const gate=document.getElementById("zhiPasswordGate");
  if(!gate)return;
- if(sessionStorage.getItem(KEY)==="ok"){gate.remove();return;}
+ if(sessionStorage.getItem(KEY)==="ok"&&sessionStorage.getItem("zhi_page_pass")){gate.remove();return;}
  const input=document.getElementById("zhiPagePassword");
  const error=document.getElementById("zhiPasswordError");
  input.focus({preventScroll:true});

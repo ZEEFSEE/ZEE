@@ -89,6 +89,55 @@ begin
         resume_at = null,
         updated_at = clock_timestamp();
 
+  -- Cancel only in-progress dates/audiences that involve the selected agent.
+  -- Completed history is retained; unrelated agents' dates are untouched.
+  update public.zhi_palace_dates
+  set status = 'cancelled', completed_at = clock_timestamp()
+  where status = 'active'
+    and (male_agent_id = p_agent_id or female_agent_id = p_agent_id);
+
+  update public.zhi_king_daily_palace_invites
+  set invitation_status = 'blocked',
+      completed_at = clock_timestamp(),
+      event_summary = coalesce(event_summary, '{}'::jsonb)
+        || jsonb_build_object('cancelled_by_manual_control', true, 'cancelled_at', clock_timestamp()),
+      choice_log = coalesce(choice_log, '[]'::jsonb)
+        || jsonb_build_array(jsonb_build_object('event','cancelled_by_manual_control','cancelled_at',clock_timestamp())),
+      updated_at = clock_timestamp()
+  where invitation_status in ('invited','active')
+    and (
+      female_agent_id = p_agent_id
+      or (king_agent_id = p_agent_id and invitation_status = 'active')
+    );
+
+  update public.zhi_palace_experiment_participants ep
+  set invitation_status = case when ep.invitation_status = 'active' then 'error' else 'ineligible' end,
+      completed_at = clock_timestamp(),
+      diagnostic = coalesce(ep.diagnostic, '{}'::jsonb)
+        || jsonb_build_object('cancelled_by_manual_control', true, 'cancelled_at', clock_timestamp()),
+      choice_log = coalesce(ep.choice_log, '[]'::jsonb)
+        || jsonb_build_array(jsonb_build_object('event','cancelled_by_manual_control','cancelled_at',clock_timestamp())),
+      updated_at = clock_timestamp()
+  where ep.female_agent_id = p_agent_id
+    and ep.invitation_status in ('queued','invited','accepted','active');
+
+  update public.zhi_palace_experiment_participants ep
+  set invitation_status = 'error',
+      completed_at = clock_timestamp(),
+      diagnostic = coalesce(ep.diagnostic, '{}'::jsonb)
+        || jsonb_build_object('cancelled_by_manual_control', true, 'cancelled_at', clock_timestamp()),
+      choice_log = coalesce(ep.choice_log, '[]'::jsonb)
+        || jsonb_build_array(jsonb_build_object('event','cancelled_by_manual_control','cancelled_at',clock_timestamp())),
+      updated_at = clock_timestamp()
+  from public.zhi_palace_dates pd
+  where ep.palace_date_id = pd.id
+    and pd.status = 'cancelled'
+    and ep.invitation_status = 'active'
+    and exists (
+      select 1 from public.zhi_palace_experiments ex
+      where ex.id = ep.experiment_id and ex.king_agent_id = p_agent_id
+    );
+
   -- Cancel only the selected agent's in-progress autonomous task and destination.
   -- Keep the historical decision rows and write an auditable cancellation memory.
   perform set_config('zhi.manual_action', 'on', true);

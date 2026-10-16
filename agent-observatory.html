@@ -68,12 +68,12 @@ button,a,select{touch-action:manipulation}
   #agents{grid-template-columns:minmax(0,1fr)!important}
   #agents>.agent{max-width:100%;overflow-wrap:anywhere}
 }
-#agentDetailDialog{width:min(640px,calc(100vw - 24px));max-width:none;max-height:85dvh;padding:0;border:1px solid #ffffff28;border-radius:16px;background:#0e1118;color:#f7f7fb;box-shadow:0 24px 80px #000b;overflow:auto}
-#agentDetailDialog::backdrop{background:#03040bd9;backdrop-filter:blur(5px)}
-.agent-dialog-head{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px;background:#0e1118;border-bottom:1px solid #ffffff18}
-.agent-dialog-body{padding:12px}
-.agent-dialog-body .agent{transform:none!important;box-shadow:none!important}
-@media(max-width:600px){#agentDetailDialog{width:calc(100vw - 16px);max-height:88dvh}.agent-dialog-body{padding:8px}}
+#agentDetailPanel{margin-top:12px;border:1px solid #ffffff20;border-radius:14px;background:#0e1118;color:#f7f7fb;overflow:hidden}
+#agentDetailPanel[hidden]{display:none!important}
+.agent-detail-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px;background:#0e1118;border-bottom:1px solid #ffffff18}
+.agent-detail-body{padding:12px}
+.agent-detail-body .agent{transform:none!important;box-shadow:none!important;max-width:100%}
+@media(max-width:600px){.agent-detail-body{padding:8px}}
 
 </style>
 <meta name="theme-color" content="#120d20">
@@ -128,7 +128,7 @@ button,a,select{touch-action:manipulation}
 <div id="feed" class="feed"></div>
 </aside>
 </div>
-<dialog id="agentDetailDialog" aria-label="智能人详情"><div class="agent-dialog-head"><strong>智能人详情</strong><button type="button" id="closeAgentDetail">关闭 ✕</button></div><div id="agentDetailBody" class="agent-dialog-body"></div></dialog>
+<section id="agentDetailPanel" class="panel" hidden aria-label="智能人详情"><div class="agent-detail-head"><strong>智能人详情</strong><button type="button" id="closeAgentDetail">收起详情 ✕</button></div><div id="agentDetailBody" class="agent-detail-body"></div></section>
 <div class="footer">ZHI · 永恒白昼 · 自主智能人 · 只读公开观察</div>
 </main>
 
@@ -327,11 +327,12 @@ function card(x){
  (palaceStory?'<div class="palace-story"><strong>🏰 皇宫经历与个人记忆</strong><div>'+esc(palaceStory.memory)+'</div><small>记忆时间：'+esc(dt(palaceStory.created_at))+' · 来自已记录的实际事件</small></div>':'')+'<div class="balance">💰 ZHI 财富 <b>'+balance+'</b> · 🕐 '+dt(x.last_activity_at||x.last_decision_at)+'</div></article>';
 }
 
-const agentDetailDialog=$('agentDetailDialog');
+const agentDetailPanel=$('agentDetailPanel');
 const openAgentDetail=article=>{
- if(!article||!agentDetailDialog)return;
+ if(!article||!agentDetailPanel)return;
  $('agentDetailBody').innerHTML=article.innerHTML;
- agentDetailDialog.showModal();
+ agentDetailPanel.hidden=false;
+ agentDetailPanel.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'nearest'});
 };
 $('agents').addEventListener('click',event=>{
  if(event.target.closest('details,summary,button,a,input,select'))return;
@@ -343,8 +344,7 @@ $('agents').addEventListener('keydown',event=>{
   event.preventDefault();openAgentDetail(event.target);
  }
 });
-$('closeAgentDetail').addEventListener('click',()=>agentDetailDialog.close());
-agentDetailDialog.addEventListener('click',event=>{if(event.target===agentDetailDialog)agentDetailDialog.close();});
+$('closeAgentDetail').addEventListener('click',()=>{agentDetailPanel.hidden=true;$('agentDetailBody').replaceChildren();});
 
 async function load(){
  $('liveText').textContent='正在读取智能人…';

@@ -1,4 +1,4 @@
-const CACHE_NAME = "zhi-pwa-shell-v11";
+const CACHE_NAME = "zhi-pwa-shell-v12";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./mia-chat.html", "./mia-chat.webmanifest", "./zhi-icon.svg"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting()));

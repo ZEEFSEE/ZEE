@@ -1,0 +1,23 @@
+{
+  "id": "./mia-chat.html",
+  "name": "Mia · 独立聊天",
+  "short_name": "Mia Chat",
+  "description": "Mia 的独立聊天应用，保留独立身份、记忆与对话历史。",
+  "lang": "zh-CN",
+  "start_url": "./mia-chat.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#f4f7fb",
+  "theme_color": "#147d79",
+  "categories": ["social", "communication"],
+  "icons": [
+    {
+      "src": "./zhi-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

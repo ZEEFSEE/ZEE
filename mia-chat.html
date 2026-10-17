@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f4f7fb">
+<title>Mia · 独立聊天</title>
+<style>
+:root{color-scheme:light;--bg:#f4f7fb;--panel:#fff;--line:#e2e8f0;--ink:#172033;--muted:#68758a;--accent:#147d79;--soft:#e5f5f2;--red:#b42332}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#eef7f8,#f4f7fb 360px);color:var(--ink);font:15px/1.55 system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;min-height:100vh}
+button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e8;border-radius:12px;padding:10px 14px;background:#fff;color:#26364b;font-weight:750}button:disabled{opacity:.5;cursor:not-allowed}.primary{background:var(--accent);color:white;border-color:var(--accent)}input,textarea{width:100%;border:1px solid #d9e3eb;border-radius:12px;background:#fbfdff;color:var(--ink);padding:13px;outline:none}input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3px #147d7918}
+.wrap{width:min(1000px,100%);margin:0 auto;padding:22px 16px 30px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.brand{font-size:clamp(22px,3vw,30px);font-weight:900;color:#173a49}.sub{font-size:12px;color:var(--muted);margin-top:4px}.panel{background:var(--panel);border:1px solid #e4ebf1;border-radius:20px;overflow:hidden;box-shadow:0 10px 35px #18394b0b}.head{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px}.name{font-weight:900;font-size:19px}.meta{font-size:12px;color:var(--muted)}#status{padding:9px 18px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line);white-space:pre-wrap}#status.error{color:var(--red)}#status.good{color:#15803d}.log{height:min(65vh,680px);min-height:360px;overflow:auto;padding:20px;display:flex;flex-direction:column;gap:12px;background:linear-gradient(180deg,#fbfdff,#f7fafc)}.welcome{margin:auto;text-align:center;color:var(--muted);max-width:500px;line-height:1.9}.bubble{max-width:min(82%,700px);padding:12px 15px;border-radius:16px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7}.bubble.user{align-self:flex-end;background:#dff4ee;border:1px solid #c6e9e2;border-bottom-right-radius:5px}.bubble.assistant{align-self:flex-start;background:#fff;border:1px solid #e3eaf0;border-bottom-left-radius:5px}.time{font-size:10px;color:#78879a;margin-top:6px}.composer{border-top:1px solid var(--line);padding:14px;display:grid;grid-template-columns:minmax(0,1fr) 105px;gap:9px}.composer textarea{resize:vertical;min-height:54px;max-height:170px}.foot{font-size:11px;color:var(--muted);padding:0 16px 15px}.hidden{display:none!important}.gate{position:fixed;inset:0;z-index:1000;background:radial-gradient(ellipse at top,#30234a,#0b0912 70%);display:flex;align-items:center;justify-content:center;padding:20px}.gate form{width:min(390px,100%);padding:26px;border:1px solid #ffffff24;border-radius:22px;background:#171220;color:white;box-shadow:0 24px 80px #0009}.gate .eyebrow{font-size:12px;letter-spacing:.2em;color:#ffe08a;font-weight:800}.gate h1{margin:12px 0 6px;font-size:25px}.gate p{color:#b8aec9;font-size:13px}.gate input{background:#0d0a14;border-color:#ffffff30;color:white;font-size:18px;letter-spacing:.12em}.gate button{width:100%;margin-top:12px;padding:13px;border:0;background:#ffe08a;color:#21182b}.gateError{min-height:18px;color:#ff9f9f;font-size:12px}
+@media(max-width:600px){.wrap{padding:10px 7px 20px}.head{padding:13px}.log{height:55vh;min-height:300px;padding:12px 9px}.bubble{max-width:94%;padding:10px 12px;font-size:14px}.composer{grid-template-columns:minmax(0,1fr) 78px;padding:9px;gap:7px}.composer button{padding:8px;font-size:13px}.top{align-items:flex-start}.head .name{font-size:17px}}
+</style>
+</head>
+<body>
+<div id="gate" class="gate">
+ <form id="loginForm">
+  <div class="eyebrow">MIA · PRIVATE CHAT</div><h1>Mia 独立聊天</h1>
+  <p>请输入页面访问密码。验证成功后，聊天将使用 Mia 独立数据库中的历史、记忆与人格状态。</p>
+  <input id="password" type="password" autocomplete="current-password" placeholder="页面访问密码" required maxlength="128">
+  <div id="loginError" class="gateError" aria-live="polite"></div>
+  <button type="submit" id="loginButton">验证并进入</button>
+ </form>
+</div>
+<main class="wrap">
+ <header class="top"><div><div class="brand">💬 Mia · 独立聊天</div><div class="sub">独立身份 · 独立记忆 · 独立情绪与人格状态</div></div><button id="logout">退出</button></header>
+ <section class="panel">
+  <div class="head"><div><div class="name" id="miaName">Mia</div><div class="meta">独立运行于 zee-extension，不调用 KING 的聊天历史</div></div><button id="refresh">刷新历史</button></div>
+  <div id="status">请先验证页面访问密码。</div>
+  <div id="log" class="log"><div class="welcome">登录后可继续查看 Mia 已迁移的聊天历史，并开始新的独立对话。</div></div>
+  <form id="composer" class="composer"><textarea id="message" placeholder="对 Mia 说些什么……" maxlength="2000" rows="2" disabled></textarea><button id="send" class="primary" type="submit" disabled>发送 ↗</button></form>
+  <div class="foot">对话会写入 Mia 的独立聊天记录，并在回复生成后尝试更新独立记忆。若 Agnes API 密钥尚未配置，页面会显示明确错误，不会伪造回复。</div>
+ </section>
+</main>
+<script>
+(() => {
+ const PROJECT_URL='https://dbooikzqprnqbgpfwsze.supabase.co';
+ const PUBLISHABLE_KEY='sb_publishable_spH47ZngJJTk13cpYPBjSw_X5qAsBmK';
+ const AUTH_URL=PROJECT_URL+'/functions/v1/mia-chat-auth';
+ const CHAT_URL=PROJECT_URL+'/functions/v1/mia-chat';
+ const $=id=>document.getElementById(id);
+ let token=sessionStorage.getItem('mia_chat_token')||'';
+ let busy=false;
+ function status(message,type=''){const el=$('status');el.textContent=message;el.className=type;}
+ function escapeText(value){return String(value??'');}
+ function addBubble(role,content,time){const wrap=document.createElement('div');wrap.className='bubble '+(role==='user'?'user':'assistant');const body=document.createElement('div');body.textContent=escapeText(content);wrap.append(body);if(time){const t=document.createElement('div');t.className='time';t.textContent=new Date(time).toLocaleString('zh-SG',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});wrap.append(t);} $('log').append(wrap);}
+ function showApp(on){$('gate').classList.toggle('hidden',on);$('message').disabled=!on;$('send').disabled=!on;}
+ async function request(action,payload={}){const res=await fetch(CHAT_URL,{method:'POST',headers:{'Content-Type':'application/json','apikey':PUBLISHABLE_KEY,'Authorization':'Bearer '+token},body:JSON.stringify({action,...payload}),cache:'no-store'});const data=await res.json().catch(()=>({}));if(res.status===401){token='';sessionStorage.removeItem('mia_chat_token');showApp(false);}if(!res.ok||!data.ok)throw new Error(data.error||('HTTP '+res.status));return data;}
+ async function loadHistory(){if(!token)return;status('正在读取 Mia 的独立聊天记录…');try{const data=await request('history');$('miaName').textContent=data.identity?.name||'Mia';$('log').innerHTML='';const rows=data.messages||[];if(!rows.length){$('log').innerHTML='<div class="welcome">还没有聊天记录，向 Mia 发送第一条消息吧。</div>';}else rows.forEach(m=>addBubble(m.role,m.content,m.created_at));$('log').scrollTop=$('log').scrollHeight;status('已读取 '+rows.length+' 条 Mia 独立聊天记录。','good');showApp(true);}catch(e){status('读取失败：'+e.message,'error');}}
+ $('loginForm').addEventListener('submit',async e=>{e.preventDefault();$('loginButton').disabled=true;$('loginError').textContent='正在验证…';try{const res=await fetch(AUTH_URL,{method:'POST',headers:{'Content-Type':'application/json','apikey':PUBLISHABLE_KEY},body:JSON.stringify({password:$('password').value}),cache:'no-store'});const data=await res.json().catch(()=>({}));if(!res.ok||!data.ok)throw new Error(data.error||('HTTP '+res.status));token=data.access_token;sessionStorage.setItem('mia_chat_token',token);$('password').value='';$('loginError').textContent='';showApp(true);await loadHistory();}catch(err){$('loginError').textContent=err.message||String(err);}finally{$('loginButton').disabled=false;}});
+ $('composer').addEventListener('submit',async e=>{e.preventDefault();if(busy||!token)return;const message=$('message').value.trim();if(!message)return;busy=true;$('send').disabled=true;$('message').disabled=true;addBubble('user',message,new Date().toISOString());$('message').value='';const pending=document.createElement('div');pending.className='bubble assistant';pending.textContent='Mia 正在思考…';$('log').append(pending);$('log').scrollTop=$('log').scrollHeight;status('正在结合 Mia 的记忆、情绪与人格状态生成回复…');try{const data=await request('send',{message});pending.remove();addBubble('assistant',data.reply,data.assistant_message?.created_at||new Date().toISOString());status(data.memory_saved?'Mia 已回复，对话与记忆已保存。':'Mia 已回复；记忆写入未成功，请检查函数日志。',data.memory_saved?'good':'error');}catch(err){pending.remove();status(err.message||String(err),'error');}finally{busy=false;$('send').disabled=!token;$('message').disabled=!token;$('message').focus();$('log').scrollTop=$('log').scrollHeight;}});
+ $('refresh').onclick=loadHistory;
+ $('logout').onclick=()=>{token='';sessionStorage.removeItem('mia_chat_token');showApp(false);status('已退出 Mia 独立聊天。');$('log').innerHTML='<div class="welcome">登录后可继续查看 Mia 已迁移的聊天历史，并开始新的独立对话。</div>';};
+ if(token){showApp(true);loadHistory();}else showApp(false);
+})();
+</script>
+</body>
+</html>

@@ -14,6 +14,10 @@
 <link rel="apple-touch-icon" href="./zhi-icon.svg">
 <title>ZHI · 智能人世界</title>
 <style>
+/* Mia quick access: floating, responsive and independent from the embedded world */
+.mia-launcher{position:fixed;top:calc(12px + env(safe-area-inset-top));right:14px;z-index:50;display:flex;align-items:center;gap:9px;padding:9px 15px;border:1px solid #ffe08a70;border-radius:999px;background:linear-gradient(135deg,#ffe8a8,#f2c967);color:#241a2e;text-decoration:none;font-size:13px;font-weight:850;box-shadow:0 8px 28px #0005,inset 0 1px #fff9;backdrop-filter:blur(14px);transition:transform .18s ease,box-shadow .18s ease}
+.mia-launcher:hover{transform:translateY(-1px);box-shadow:0 12px 32px #0006}.mia-launcher:focus-visible{outline:3px solid #fff;outline-offset:3px}.mia-launcher .mia-dot{width:8px;height:8px;border-radius:50%;background:#287c65;box-shadow:0 0 0 4px #287c6518}
+@media(max-width:600px){.mia-launcher{top:calc(8px + env(safe-area-inset-top));right:8px;padding:9px 12px;font-size:12px}.mia-launcher .mia-caption{display:none}}
 :root{color-scheme:dark;--bg:#090710;--panel:#171020;--line:#ffffff18;--gold:#ffe08a;--muted:#b8aec9}
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;background:var(--bg);color:#fff;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overscroll-behavior:none}
@@ -44,6 +48,7 @@ iframe{position:absolute;inset:0;border:0;width:100%;height:100%;min-height:0;mi
   <button type="submit" style="width:100%;padding:13px;border:0;border-radius:12px;background:#ffe08a;color:#21182b;font-weight:850;font-size:15px;cursor:pointer">进入 ZHI 世界</button>
  </form>
 </div>
+<a class="mia-launcher" href="./mia-chat.html" aria-label="打开 Mia 独立聊天应用"><span class="mia-dot"></span><span>💬 Mia Chat</span><span class="mia-caption">独立聊天</span><span aria-hidden="true">↗</span></a>
 <div class="app" id="zhiApp">
 <main><iframe id="appView" src="./agent-observatory.html?v=20261016nopopups2" title="ZHI 智能人世界" allow="fullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin"></iframe></main>
 <nav class="bottom-nav" aria-label="主导航">

@@ -108,7 +108,16 @@ async function probe(db: ReturnType<typeof createClient>, sourceKey: string, end
     p_payload: { provider: kind, item_count: items.length, sample: items.slice(0, 10) },
     p_event_time: new Date().toISOString(),
   });
-  if (ingest.error) throw new Error("external_ingest_failed");
+  if (ingest.error) {
+    console.error("zhi_hub_ingest_external_failed", {
+      sourceKey,
+      code: ingest.error.code ?? null,
+      message: ingest.error.message ?? null,
+      details: ingest.error.details ?? null,
+      hint: ingest.error.hint ?? null,
+    });
+    throw new Error("external_ingest_failed");
+  }
   return { ok: true, event_id: ingest.data, item_count: items.length, latency_ms: latency };
 }
 

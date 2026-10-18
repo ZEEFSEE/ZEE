@@ -66,6 +66,21 @@ function htmlToText(input: string): string {
     .trim();
 }
 
+
+async function readChunkWithTimeout<T>(read: Promise<T>, timeoutMs: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      read,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(() => reject(new Error("stream_read_timeout")), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
+}
+
 async function readPublicUrl(rawUrl: unknown) {
   if (typeof rawUrl !== "string" || rawUrl.length === 0 || rawUrl.length > MAX_URL_LENGTH) {
     return { response: json({ ok: false, error: "url_required_or_too_long" }, 400) };
@@ -152,10 +167,7 @@ async function readPublicUrl(rawUrl: unknown) {
         await reader.cancel();
         return { response: json({ ok: false, error: "upstream_read_timeout" }, 504) };
       }
-      const { done, value } = await Promise.race([
-        reader.read(),
-        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("read_timeout")), remaining)),
-      ]);
+      const { done, value } = await readChunkWithTimeout(reader.read(), remaining);
       if (done) break;
       total += value.byteLength;
       if (total > MAX_BYTES) {
@@ -164,9 +176,15 @@ async function readPublicUrl(rawUrl: unknown) {
       }
       chunks.push(value);
     }
-  } catch {
+  } catch (error) {
     await reader.cancel().catch(() => {});
-    return { response: json({ ok: false, error: "response_read_failed" }, 502) };
+    const timedOut = error instanceof Error && error.message === "stream_read_timeout";
+    return {
+      response: json(
+        { ok: false, error: timedOut ? "upstream_read_timeout" : "response_read_failed" },
+        timedOut ? 504 : 502,
+      ),
+    };
   }
 
   const bytes = new Uint8Array(total);
@@ -217,10 +235,7 @@ async function readJsonBody(req: Request): Promise<unknown | null> {
         await reader.cancel();
         return null;
       }
-      const { done, value } = await Promise.race([
-        reader.read(),
-        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("request_read_timeout")), remaining)),
-      ]);
+      const { done, value } = await readChunkWithTimeout(reader.read(), remaining);
       if (done) break;
       total += value.byteLength;
       if (total > maxRequestBytes) {

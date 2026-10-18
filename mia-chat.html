@@ -118,6 +118,7 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
   }catch(err){
    pending.remove();
    selectedImages=sendingImages;
+   if(message&&!$('message').value)$('message').value=message;
    renderImagePreviews();
    status((err.message||String(err))+(sendingImages.length?' 图片仍保留在待发送区，可检查提示后重试。':''),'error');
   }finally{

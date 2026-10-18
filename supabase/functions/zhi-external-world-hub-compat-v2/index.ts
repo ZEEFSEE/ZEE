@@ -52,7 +52,7 @@ async function probe(db: ReturnType<typeof createClient>, sourceKey: string, end
   const started = Date.now();
   const res = await fetch(endpoint, {
     headers: { accept: "application/json" },
-    signal: AbortSignal.timeout(8_000),
+    signal: AbortSignal.timeout(18_000), // GDELT can take longer than 8 seconds to respond.
     redirect: "error",
   });
   const latency = Date.now() - started;

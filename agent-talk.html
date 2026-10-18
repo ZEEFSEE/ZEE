@@ -23,18 +23,6 @@ button:hover{border-color:#8ebdb9;background:#f8fdfc}button:active{transform:tra
 .field{display:grid;gap:7px;margin-bottom:13px}.field label,.mobileAgentPicker label{font-size:12px;color:var(--muted);font-weight:700}
 select,input,textarea{width:100%;border:1px solid #d9e3eb;border-radius:12px;background:#fbfdff;color:var(--ink);padding:12px;outline:none;min-width:0}
 select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3px #147d7918}
-.inboxSection{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:13px 14px}
-.inboxHeading{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:850;margin-bottom:9px;color:#29394d}
-.inboxCount{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 7px;border-radius:99px;background:#dff4ee;color:#11665f;font-size:11px}
-.autonomousInbox{display:grid;gap:8px;max-height:300px;overflow:auto}
-.inboxItem{width:100%;text-align:left;display:block;background:#f8fafc;border:1px solid #e7edf2;border-radius:12px;padding:11px}
-.inboxItem:hover,.inboxItem.selected{border-color:#8cc9c2;background:#f0faf8}
-.inboxItemTop{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:5px}.inboxItemName{font-weight:850;color:#176f6a;font-size:12px}.inboxItemTime{font-size:10px;color:var(--muted);white-space:nowrap}
-.inboxPreview{font-size:12px;color:#344256;line-height:1.55;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.inboxEmpty{font-size:12px;color:var(--muted);line-height:1.7;padding:8px 2px}
-.autonomousMessageDetail{margin-top:9px;padding:12px;border-radius:12px;border:1px solid #b8ded8;background:#f5fbfa}
-.autonomousMessageDetail .detailName{font-weight:850;color:#176f6a;margin-bottom:4px}.autonomousMessageDetail .detailTime{font-size:10px;color:var(--muted);margin-bottom:8px}
-.autonomousMessageDetail .detailContent{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7}.autonomousMessageDetail .detailActions{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap}.autonomousMessageDetail .detailActions button{font-size:11px;padding:8px 10px}
 .agentList{max-height:56vh;overflow:auto;padding:8px}
 .agentOption{width:100%;text-align:left;display:block;background:transparent;border:1px solid transparent;border-radius:12px;padding:12px;margin-bottom:4px}
 .agentOption.selected{background:#eaf7f5;border-color:#b8ded8}.agentOption strong{display:block;font-size:14px;color:#1f3345}.agentOption span{display:block;color:var(--muted);font-size:11px;margin-top:4px}
@@ -85,8 +73,6 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
  .footnote{padding:0 12px 12px;font-size:10px}
  .panelHead{padding:13px 14px}
  .panelBody{padding:13px}
- .inboxSection{padding:12px}
- .autonomousInbox{max-height:230px}
  .agentList{display:flex;gap:7px;max-height:none;overflow-x:auto;overflow-y:hidden;padding:8px;scroll-snap-type:x proximity}
  .agentOption{flex:0 0 158px;width:158px;min-height:72px;margin:0;padding:10px;scroll-snap-align:start;background:#f9fbfd;border-color:#e8eef2}
  .agentOption strong{font-size:13px;overflow-wrap:anywhere}
@@ -141,11 +127,6 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
     <div class="field"><label for="agentSearch">搜索姓名</label><input id="agentSearch" placeholder="输入智能人姓名"></div>
     <div id="agentStatus" class="status">正在读取智能人名单…</div>
    </div>
-   <section class="inboxSection">
-    <button id="autonomousInboxToggle" type="button" class="inboxHeading" aria-expanded="true" style="width:100%;background:transparent;border:0;border-radius:0;padding:0;margin:0 0 9px;text-align:left"><span>📨 智能人主动消息</span><span style="display:flex;align-items:center;gap:8px"><span id="autonomousInboxCount" class="inboxCount">0</span><span id="autonomousInboxChevron" style="color:var(--muted);font-size:11px">收起 ▴</span></span></button>
-    <div id="autonomousInbox" class="autonomousInbox"><div class="inboxEmpty">正在读取最新主动消息…</div></div>
-    <div id="autonomousMessageDetail" class="autonomousMessageDetail hidden"></div>
-   </section>
    <div id="agentList" class="agentList"></div>
    <div class="panelBody" style="border-top:1px solid var(--line)"><div class="status">对话将调用服务端 Agnes AI。只有成功生成的回答才会显示为智能人的回复；是否保存成功会单独提示。</div></div>
   </aside>
@@ -164,7 +145,7 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
 <script src="supabase-client.js?v=20261016-nologin"></script>
 <script>
 (function(){
- const $=id=>document.getElementById(id), sb=window.zhiSupabase;
+ const $=id=>document.getElementById(id);
  const functionUrl='https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-agnes-chat';
  const authUrl='https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-chat-auth';
  const CHAT_TOKEN_KEY='zhi_chat_access_token_v1';
@@ -179,18 +160,6 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
  }
  const broadcastUrl='https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-agent-broadcast';
  let agents=[], selected=null, busy=false, broadcastMode=false;
- let lastAutonomousPollAt=new Date(Date.now()-24*60*60*1000).toISOString();
- const seenAutonomousMessageIds=new Set();
- const autonomousInboxMessages=[];
- const AUTONOMOUS_READ_KEY='zhi_autonomous_read_message_ids_v1';
- const readAutonomousMessageIds=new Set((()=>{try{return JSON.parse(localStorage.getItem(AUTONOMOUS_READ_KEY)||'[]')}catch(_){return []}})().map(String));
- function markAutonomousMessageRead(id){
-  if(id==null)return;
-  readAutonomousMessageIds.add(String(id));
-  try{localStorage.setItem(AUTONOMOUS_READ_KEY,JSON.stringify([...readAutonomousMessageIds].slice(-2000)))}catch(_){}
- }
- let autonomousPollTimer=null, autonomousPollBusy=false, autonomousInboxInitialized=false;
-
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const stamp=()=>new Date().toLocaleTimeString('zh-SG',{hour:'2-digit',minute:'2-digit',hour12:false});
  const CREATOR_IDENTITY={id:'zhi-world-creator',display_name:'世界创造者',avatar:'✦',visibility_seconds:30};
@@ -272,132 +241,6 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
   }
  }
 
- const feedUrl='https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-agent-chat-feed';
- function renderAutonomousInbox(){
-  const list=$('autonomousInbox'),count=$('autonomousInboxCount');
-  list.innerHTML='';
-  // 点击“智能人主动消息”标题可折叠/展开消息列表与详情。
-  const inboxToggle=$('autonomousInboxToggle');
-  if(inboxToggle){
-   inboxToggle.setAttribute('aria-expanded',String(!autonomousInboxCollapsed));
-   // 只更新箭头文字，不能覆盖整个按钮，否则会删除标题和未读计数节点。
-   const chevron=$('autonomousInboxChevron');
-   if(chevron)chevron.textContent=autonomousInboxCollapsed?'展开 ▾':'收起 ▴';
-  }
-  list.classList.toggle('hidden',autonomousInboxCollapsed);
-  $('autonomousMessageDetail').classList.toggle('hidden',autonomousInboxCollapsed||!selectedAutonomousMessageId);
-  // 每位智能人独立占一张卡片，只在列表显示该人的最新一条主动消息。
-  const byPerson=new Map();
-  autonomousInboxMessages.slice().sort((a,b)=>Date.parse(b.created_at||0)-Date.parse(a.created_at||0)).forEach(m=>{
-   const person=String(m.agent_id||m.agent_name||'unknown');
-   if(!byPerson.has(person))byPerson.set(person,m);
-  });
-  const people=[...byPerson.values()];
-  const unreadCount=people.filter(m=>!readAutonomousMessageIds.has(String(m.id))).length;
-  count.textContent=String(unreadCount);
-  count.title=unreadCount+' 条未读主动消息';
-  count.style.display=unreadCount?'inline-flex':'none';
-  if(!people.length){
-   const empty=document.createElement('div');empty.className='inboxEmpty';empty.textContent='暂时还没有智能人主动找你。后台会持续检查。';list.append(empty);return;
-  }
-  people.forEach(m=>{
-   const b=document.createElement('button');b.type='button';b.className='inboxItem'+(String(m.id)===String(selectedAutonomousMessageId)?' selected':'');
-   const top=document.createElement('div');top.className='inboxItemTop';
-   const name=document.createElement('span');name.className='inboxItemName';name.textContent=(readAutonomousMessageIds.has(String(m.id))?'':'🔔 ')+(m.agent_name||'智能人');
-   const time=document.createElement('span');time.className='inboxItemTime';time.textContent=m.created_at?new Date(m.created_at).toLocaleString('zh-SG',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}):'刚刚';
-   const preview=document.createElement('div');preview.className='inboxPreview';preview.textContent=String(m.content||'').replace(/^【主动找你】\\s*/,'');
-   const hint=document.createElement('div');hint.className='inboxItemTime';hint.style.marginTop='7px';hint.textContent=readAutonomousMessageIds.has(String(m.id))?'已读 · 点击再次查看':'未读 · 点击查看消息';
-   top.append(name,time);b.append(top,preview,hint);b.onclick=()=>openAutonomousMessage(m);list.append(b);
-  });
- }
- let selectedAutonomousMessageId=null;
- let autonomousInboxCollapsed=false;
- function toggleAutonomousInbox(){
-  autonomousInboxCollapsed=!autonomousInboxCollapsed;
-  const list=$('autonomousInbox');
-  list.classList.toggle('hidden',autonomousInboxCollapsed);
-  $('autonomousMessageDetail').classList.toggle('hidden',autonomousInboxCollapsed||!selectedAutonomousMessageId);
-  const btn=$('autonomousInboxToggle');
-  if(btn){btn.setAttribute('aria-expanded',String(!autonomousInboxCollapsed));const label=autonomousInboxCollapsed?'展开 ▾':'收起 ▴';const chevron=$('autonomousInboxChevron');if(chevron)chevron.textContent=label;}
- }
- function openAutonomousMessage(m){
-  selectedAutonomousMessageId=m.id;
-  markAutonomousMessageRead(m.id);
-  const detail=$('autonomousMessageDetail');detail.classList.remove('hidden');detail.innerHTML='';
-  const name=document.createElement('div');name.className='detailName';name.textContent='💬 '+(m.agent_name||'智能人')+' 的主动消息';
-  const time=document.createElement('div');time.className='detailTime';time.textContent=m.created_at?new Date(m.created_at).toLocaleString('zh-SG',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}):'时间未知';
-  const content=document.createElement('div');content.className='detailContent';content.textContent=String(m.content||'').replace(/^【主动找你】\\s*/,'');
-  const actions=document.createElement('div');actions.className='detailActions';
-  const replyInChat=document.createElement('button');replyInChat.type='button';replyInChat.className='primary';replyInChat.textContent='回复这条消息';
-  replyInChat.onclick=()=>{
-   const agent=agents.find(a=>String(a.id)===String(m.agent_id))||agents.find(a=>String(a.name||'')===String(m.agent_name||''));
-   if(!agent){status('找不到发送这条消息的智能人，请先刷新名单。','error');return;}
-   broadcastMode=false;
-   $('broadcastMode').textContent='📢 全体广播';$('listHeading').textContent='👥 选择一个智能人';$('agentSearch').disabled=false;$('agentList').classList.remove('hidden');
-   $('send').textContent='发送 ↗';
-   choose(agent);
-   $('message').placeholder='回复 '+(agent.name||'这位智能人')+' ……';
-   $('message').focus();
-   status('已切换到 '+(agent.name||'这位智能人')+' 的单聊。输入回复后点击“发送”，消息会通过聊天接口发送并保存。','good');
-  };
-  const showInChat=document.createElement('button');showInChat.type='button';showInChat.className='secondary';showInChat.textContent='打开单聊';
-  showInChat.onclick=()=>{
-   const agent=agents.find(a=>String(a.id)===String(m.agent_id))||agents.find(a=>String(a.name||'')===String(m.agent_name||''));
-   if(!agent){status('找不到发送这条消息的智能人，请先刷新名单。','error');return;}
-   broadcastMode=false;
-   $('broadcastMode').textContent='📢 全体广播';$('listHeading').textContent='👥 选择一个智能人';$('agentSearch').disabled=false;$('agentList').classList.remove('hidden');
-   $('send').textContent='发送 ↗';choose(agent);
-  };
-  const close=document.createElement('button');close.type='button';close.className='secondary';close.textContent='收起';close.onclick=()=>detail.classList.add('hidden');
-  actions.append(replyInChat,showInChat,close);detail.append(name,time,content,actions);renderAutonomousInbox();
- }
- async function pollAutonomousMessages(){
-  if(autonomousPollBusy||!sb)return;
-  autonomousPollBusy=true;
-  try{
-   const chatToken=getChatToken();
-   if(!chatToken)return;
-   const r=await fetch(feedUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+chatToken,'apikey':window.zhiCorePublishableKey||''},body:JSON.stringify({since:lastAutonomousPollAt}),cache:'no-store'});
-   const d=await r.json().catch(()=>({}));
-   if(!r.ok||!d.ok)throw new Error(d.error||('HTTP '+r.status));
-   const incoming=d.messages||[];
-   for(const m of incoming){
-    if(!seenAutonomousMessageIds.has(String(m.id))){
-     seenAutonomousMessageIds.add(String(m.id));
-     autonomousInboxMessages.push(m);
-     if(autonomousInboxMessages.length>30)autonomousInboxMessages.shift();
-     if(autonomousInboxInitialized){
-      const time=m.created_at?new Date(m.created_at).toLocaleTimeString('zh-SG',{hour:'2-digit',minute:'2-digit',hour12:false}):stamp();
-      if(selected&&String(selected.id)===String(m.agent_id)&&!displayedConversationMessageIds.has(String(m.id))){
-       addBubble('agent',String(m.content||'').replace(/^【主动找你】\\s*/,''),time,m.agent_name||'智能人');
-       displayedConversationMessageIds.add(String(m.id));
-      }
-      if(!busy)status((m.agent_name||'有智能人')+' 主动找你聊天了。','good');
-     }
-    }
-   }
-   autonomousInboxMessages.sort((a,b)=>Date.parse(b.created_at||0)-Date.parse(a.created_at||0));
-   renderAutonomousInbox();
-   autonomousInboxInitialized=true;
-   lastAutonomousPollAt=new Date(Date.now()-15000).toISOString();
-   if(seenAutonomousMessageIds.size>1000)seenAutonomousMessageIds.clear();
-  }catch(e){
-   console.warn('Autonomous chat polling failed',e);
-   const list=$('autonomousInbox');
-   if(list&&!autonomousInboxInitialized){
-    const message=String(e?.message||e||'未知错误');
-    list.innerHTML='<div class="inboxEmpty">主动消息读取失败：'+message.replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]))+'。请确认管理员已登录，或检查接口授权与网络。</div>';
-    $('autonomousInboxCount').textContent='!';
-   }
-   status('主动消息读取失败：'+String(e?.message||e||'未知错误'),'error');
-  }finally{autonomousPollBusy=false;}
- }
- function startAutonomousPolling(){
-  if(autonomousPollTimer)return;
-  pollAutonomousMessages();
-  autonomousPollTimer=setInterval(pollAutonomousMessages,10000);
- }
-
  async function loadAgents(){
   if(!window.zhiCoreSupabase){status('Core 数据库客户端未加载，请检查 supabase-client.js。','error');return;}
   status('正在读取智能人名单…');
@@ -457,16 +300,13 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
  $('broadcastMode').onclick=()=>{broadcastMode=!broadcastMode;$('broadcastMode').textContent=broadcastMode?'↩ 返回单聊':'📢 全体广播';$('listHeading').textContent=broadcastMode?'📢 全体广播模式':'👥 选择一个智能人';$('agentSearch').disabled=broadcastMode;$('agentList').classList.toggle('hidden',broadcastMode);$('chatTitle').textContent=broadcastMode?'全体智能人广播':(selected?.name||'先选择一个智能人');$('agentMeta').textContent=broadcastMode?'所有人先收到并写入个人记忆，再按各自人格独立决定是否回应。':'个性化表达 · 独立观点 · 记忆关联';$('send').textContent=broadcastMode?'广播给所有人 ↗':'发送 ↗';$('send').disabled=busy||(!broadcastMode&&!selected);};
  // The former password-form elements were removed when the Supabase login gate was introduced.
  // Do not attach listeners to non-existent gateForm/gatePassword nodes.
-
- $('autonomousInboxToggle').onclick=toggleAutonomousInbox;
  $('mobileAgentSelect').onchange=()=>{const id=$('mobileAgentSelect').value;const agent=agents.find(a=>String(a.id)===String(id));if(!agent)return;if(broadcastMode){broadcastMode=false;$('broadcastMode').textContent='📢 全体广播';$('listHeading').textContent='👥 选择一个智能人';$('agentSearch').disabled=false;$('agentList').classList.remove('hidden');$('send').textContent='发送 ↗';}choose(agent);};
  $('agentSearch').oninput=renderAgents;$('send').onclick=send;
  $('message').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
  $('clearChat').onclick=()=>{$('chatLog').innerHTML='<div class="welcome">对话窗口已清空。数据库中已经保存的记忆不会被删除。</div>';};
  document.querySelectorAll('[data-msg]').forEach(b=>b.onclick=()=>{$('message').value=b.dataset.msg;$('message').focus();});
- // Load the agent list and start the protected active-message feed after page-password authentication.
+ // Load the agent list; proactive-message polling has been removed.
  loadAgents();
- startAutonomousPolling();
 })();
 </script>
 

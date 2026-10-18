@@ -42,6 +42,21 @@ jobs:
             exit 1
           fi
 
+
+      - name: Verify valid key reaches Hub validation without database writes
+        shell: bash
+        run: |
+          code=$(curl --silent --show-error --max-time 15 -o /tmp/hub-v2.json -w '%{http_code}' \
+            -X POST "https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-external-world-hub-v2" \
+            -H 'Content-Type: application/json' \
+            -H "x-zhi-hub-key: $HUB_KEY" \
+            --data '{"action":"read_url","url":"https://example.com/"}')
+          cat /tmp/hub-v2.json
+          if [[ "$code" != "403" ]] || ! grep -q 'host_not_allowlisted' /tmp/hub-v2.json; then
+            echo "::error::Expected authenticated request to be rejected by host allowlist with HTTP 403, got $code."
+            exit 1
+          fi
+
       - name: Probe real news and sports sources
         if: ${{ inputs.run_provider_probes }}
         shell: bash

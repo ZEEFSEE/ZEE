@@ -93,6 +93,8 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}button{transition:none}}
 
+
+.groupChatTools{display:none;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}.groupChatTools select{flex:1;min-width:170px}.groupMemberPicker{display:none;padding:10px;border-top:1px solid var(--line)}.groupMemberPicker label{display:flex;align-items:center;gap:9px;padding:8px;border:1px solid #e2eaf0;border-radius:10px;margin:5px 0}.groupMemberPicker input{width:18px;height:18px}.groupMemberPicker .hint{font-size:11px;color:var(--muted);padding:4px}.groupModeOn .groupChatTools{display:flex}.groupModeOn .groupMemberPicker{display:block}
 </style>
 <meta name="theme-color" content="#120d20">
 <meta name="mobile-web-app-capable" content="yes">
@@ -122,16 +124,16 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
  </header>
  <div class="layout">
   <aside class="panel">
-   <div class="panelHead"><span id="listHeading">👥 选择一个智能人</span><button id="broadcastMode" type="button" class="secondary" style="font-size:11px;padding:7px 9px">📢 全体广播</button></div>
+   <div class="panelHead"><span id="listHeading">👥 选择一个智能人</span><div style="display:flex;gap:6px;flex-wrap:wrap"><button id="groupChatToggle" type="button" class="secondary" style="font-size:11px;padding:7px 9px">👥 多人群聊</button><button id="broadcastMode" type="button" class="secondary" style="font-size:11px;padding:7px 9px">📢 全体广播</button></div></div>
    <div class="panelBody">
     <div class="field"><label for="agentSearch">搜索姓名</label><input id="agentSearch" placeholder="输入智能人姓名"></div>
     <div id="agentStatus" class="status">正在读取智能人名单…</div>
    </div>
-   <div id="agentList" class="agentList"></div>
+   <div id="agentList" class="agentList"></div><div id="groupMemberPicker" class="groupMemberPicker"><div class="hint">勾选 2–5 位智能人；保存成员可随时添加或移除。</div><div id="groupMemberOptions">正在读取智能人名单…</div></div>
    <div class="panelBody" style="border-top:1px solid var(--line)"><div class="status">对话将调用服务端 Agnes AI。只有成功生成的回答才会显示为智能人的回复；是否保存成功会单独提示。</div></div>
   </aside>
   <section class="panel chatPanel">
-   <div class="chatHead"><div><div class="agentTitle" id="chatTitle">先选择一个智能人</div><div class="sub" id="agentMeta">个性化表达 · 独立观点 · 记忆关联</div></div><div class="mobileAgentPicker"><label for="mobileAgentSelect">选择聊天对象</label><select id="mobileAgentSelect" aria-label="选择聊天对象"><option value="">先选择一位智能人</option></select></div><button id="clearChat" class="secondary">清空窗口</button></div>
+   <div class="chatHead"><div style="min-width:0;flex:1"><div class="agentTitle" id="chatTitle">先选择一个智能人</div><div class="sub" id="agentMeta">个性化表达 · 独立观点 · 记忆关联</div><div id="groupChatTools" class="groupChatTools"><select id="groupChatSelect" aria-label="选择已保存群聊"><option value="">选择已保存群聊</option></select><button id="groupChatCreate" class="primary" type="button">创建群聊</button><button id="groupChatSaveMembers" class="secondary" type="button">保存成员</button></div></div><div class="mobileAgentPicker"><label for="mobileAgentSelect">选择聊天对象</label><select id="mobileAgentSelect" aria-label="选择聊天对象"><option value="">先选择一位智能人</option></select></div><button id="clearChat" class="secondary">清空窗口</button></div>
    <div id="chatLog" class="chatLog"><div class="welcome">选择左侧的智能人，向他/她提问。<br>例如：你今天在想什么？你最近有什么目标？你怎么看待社区里的事情？</div></div>
    <div class="composer">
     <div><div class="quick"><button data-msg="你今天在想什么？">你今天在想什么？</button><button data-msg="你最近最想完成什么目标？">最近的目标</button><button data-msg="你对社区里其他智能人有什么看法？">社区看法</button><button data-msg="最近有什么事让你开心或烦恼？">心情与烦恼</button></div><textarea id="message" placeholder="写下你想对这位智能人说的话……（Enter 发送，Shift+Enter 换行）" maxlength="2000"></textarea></div>
@@ -312,6 +314,84 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
 
 
 
+
+
+<script>
+(()=> {
+ const $=id=>document.getElementById(id);
+ const endpoint="https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-agent-group-chat";
+ const tokenKey="zhi_chat_access_token_v1", expiryKey="zhi_chat_access_expires_at_v1";
+ let mode=false, groupId=null, groups=[], agents=[], chosen=new Set(), sending=false;
+ const chat=$("chatLog"), input=$("message"), sendButton=$("send");
+ const status=(t,k="")=>{ $("agentStatus").textContent=t;$("agentStatus").className="status "+k; };
+ async function call(payload){
+  const token=sessionStorage.getItem(tokenKey), exp=Date.parse(sessionStorage.getItem(expiryKey)||"");
+  if(!token||!Number.isFinite(exp)||Date.now()>=exp)throw new Error("页面访问验证已过期，请重新输入密码。");
+  const r=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token,"apikey":window.zhiCorePublishableKey||""},body:JSON.stringify(payload),cache:"no-store"});
+  const d=await r.json().catch(()=>({}));if(!r.ok||!d.ok)throw new Error(d.error||("HTTP "+r.status));return d;
+ }
+ function bubble(name,content,time,creator=false){
+  const empty=chat.querySelector(".welcome");if(empty)empty.remove();
+  const el=document.createElement("div");el.className="bubble "+(creator?"user":"agent");
+  const who=document.createElement("div");who.className="who";who.textContent=name;
+  const body=document.createElement("div");body.textContent=content;
+  const tm=document.createElement("div");tm.className="time";tm.textContent=time?new Date(time).toLocaleString("zh-SG",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false}):new Date().toLocaleTimeString("zh-SG",{hour:"2-digit",minute:"2-digit",hour12:false});
+  el.append(who,body,tm);chat.append(el);chat.scrollTop=chat.scrollHeight;
+ }
+ async function loadAgents(){
+  const c=window.zhiCoreSupabase;if(!c)throw new Error("Core 数据库客户端未加载");
+  const {data,error}=await c.from("zhi_agents").select("id,name,gender,personality,life_status").eq("active",true).order("name").limit(1000);if(error)throw error;agents=data||[];renderPicker();
+ }
+ function renderPicker(){
+  const box=$("groupMemberOptions");box.innerHTML="";
+  agents.forEach(a=>{const label=document.createElement("label"),check=document.createElement("input"),txt=document.createElement("span");check.type="checkbox";check.checked=chosen.has(String(a.id));check.disabled=!check.checked&&chosen.size>=5;check.onchange=()=>{if(check.checked){if(chosen.size>=5){check.checked=false;return;}chosen.add(String(a.id));}else chosen.delete(String(a.id));renderPicker();};txt.textContent=(a.name||"未命名")+" · "+(a.personality||"独立人格");label.append(check,txt);box.append(label);});
+ }
+ async function refreshGroups(){
+  const d=await call({op:"list_groups"});groups=d.groups||[];const sel=$("groupChatSelect");sel.innerHTML='<option value="">选择已保存群聊</option>';
+  groups.forEach(g=>{const o=document.createElement("option");o.value=g.id;o.textContent=g.title+"（"+g.members.length+"人）";sel.append(o);});
+  if(groupId)sel.value=groupId;
+ }
+ async function openGroup(id){
+  const d=await call({op:"history",group_id:id});groupId=id;chosen=new Set((d.members||[]).map(m=>String(m.agent_id)));renderPicker();$("groupChatSelect").value=id;
+  $("chatTitle").textContent=d.group.title;$("agentMeta").textContent="多人群聊 · "+(d.members||[]).map(m=>m.agent_name).join("、");
+  chat.innerHTML="";
+  if(!(d.messages||[]).length)chat.innerHTML='<div class="welcome">群聊已建立。发一条消息，让大家依次参与讨论。</div>';
+  (d.messages||[]).forEach(m=>bubble(m.sender_name,m.content,m.created_at,m.sender_type==="creator"));
+  sendButton.disabled=false;status("已恢复群聊历史："+(d.messages||[]).length+" 条消息。","good");
+ }
+ async function createOrUpdate(){
+  if(chosen.size<2||chosen.size>5){status("请勾选 2–5 位智能人。","error");return;}
+  try{
+   let title="多人群聊";if(!groupId){title=window.prompt("给群聊取个名字：","多人群聊");if(title===null)return;}
+   const d=await call({op:groupId?"update_members":"create_group",group_id:groupId,agent_ids:Array.from(chosen),title});
+   groupId=d.group_id||groupId;await refreshGroups();await openGroup(groupId);status("群聊成员已保存。","good");
+  }catch(e){status("保存群聊失败："+e.message,"error");}
+ }
+ async function sendGroup(){
+  if(sending)return;if(!groupId){status("请先创建或选择一个群聊。","error");return;}
+  const message=input.value.trim();if(!message)return;sending=true;sendButton.disabled=true;sendButton.textContent="讨论中…";input.value="";
+  bubble("世界创造者",message,new Date().toISOString(),true);
+  try{status("已保存你的消息，智能人正在按顺序阅读群聊并回应…");const d=await call({op:"send",group_id:groupId,message});
+   (d.responses||[]).forEach(m=>bubble(m.sender_name,m.content,m.created_at,false));
+   status("群聊完成：已保存消息，"+(d.responses||[]).filter(x=>x.sender_type==="agent").length+" 位智能人已回应。","good");
+  }catch(e){status("群聊发送失败："+e.message,"error");}
+  finally{sending=false;sendButton.disabled=false;sendButton.textContent="发送 ↗";input.focus();}
+ }
+ $("groupChatToggle").addEventListener("click",async()=>{
+  mode=!mode;document.querySelector(".chatPanel").classList.toggle("groupModeOn",mode);$("groupChatToggle").textContent=mode?"↩ 返回单聊":"👥 多人群聊";
+  $("groupMemberPicker").style.display=mode?"block":"none";$("groupChatTools").style.display=mode?"flex":"none";
+  $("agentList").classList.toggle("hidden",mode||false);$("agentSearch").disabled=mode;
+  $("listHeading").textContent=mode?"👥 群聊成员":"👥 选择一个智能人";
+  if(mode){$("chatTitle").textContent=groupId?"多人群聊":"创建或选择群聊";$("agentMeta").textContent="选择 2–5 位成员 · 轮流回应 · 保存历史";sendButton.disabled=!groupId;try{await loadAgents();await refreshGroups();}catch(e){status("多人群聊初始化失败："+e.message,"error");}}
+  else{ $("groupChatTools").style.display="none";$("groupMemberPicker").style.display="none";$("agentList").classList.remove("hidden");$("agentSearch").disabled=false;if($("mobileAgentSelect").value){$("mobileAgentSelect").dispatchEvent(new Event("change"));}else{sendButton.disabled=true;$("chatTitle").textContent="先选择一个智能人";$("agentMeta").textContent="个性化表达 · 独立观点 · 记忆关联";}}
+ });
+ $("groupChatCreate").addEventListener("click",createOrUpdate);
+ $("groupChatSaveMembers").addEventListener("click",createOrUpdate);
+ $("groupChatSelect").addEventListener("change",async()=>{if(!$("groupChatSelect").value)return;try{await openGroup($("groupChatSelect").value);}catch(e){status("打开群聊失败："+e.message,"error");}});
+ sendButton.addEventListener("click",e=>{if(mode){e.preventDefault();e.stopImmediatePropagation();sendGroup();}},true);
+ input.addEventListener("keydown",e=>{if(mode&&e.key==="Enter"&&!e.shiftKey){e.preventDefault();e.stopImmediatePropagation();sendGroup();}},true);
+})();
+</script>
 
 <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}</script>
 

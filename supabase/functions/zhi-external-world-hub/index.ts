@@ -193,6 +193,41 @@ async function readPublicUrl(rawUrl: unknown) {
   };
 }
 
+async function readJsonBody(req: Request): Promise<unknown | null> {
+  const declaredLength = Number(req.headers.get("content-length") ?? 0);
+  const maxRequestBytes = 8_192;
+  if (declaredLength > maxRequestBytes || !req.body) return null;
+  const reader = req.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > maxRequestBytes) {
+        await reader.cancel();
+        return null;
+      }
+      chunks.push(value);
+    }
+  } catch {
+    await reader.cancel().catch(() => {});
+    return null;
+  }
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  try {
+    return JSON.parse(new TextDecoder().decode(bytes));
+  } catch {
+    return null;
+  }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") {
     return json({ ok: false, error: "post_required" }, 405);
@@ -215,7 +250,7 @@ Deno.serve(async (req: Request) => {
     return json({ ok: false, error: "host_allowlist_not_configured" }, 503);
   }
 
-  const body = await req.json().catch(() => null);
+  const body = await readJsonBody(req);
   if (!body || typeof body !== "object" || Array.isArray(body)) {
     return json({ ok: false, error: "json_object_required" }, 400);
   }

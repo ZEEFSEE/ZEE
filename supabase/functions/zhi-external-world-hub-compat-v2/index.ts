@@ -6,6 +6,7 @@ const secretKeys = JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") || "{}");
 const serviceKey = secretKeys.default || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const HUB_KEY = Deno.env.get("ZHI_HUB_KEY") ?? "";
 const MAX_BODY_BYTES = 8_192;
+const MAX_PROVIDER_BYTES = 1_500_000;
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
   status,
@@ -24,17 +25,15 @@ async function readBody(req: Request): Promise<Record<string, unknown> | null> {
   let total = 0;
   try {
     while (true) {
-      const { done, value } = await Promise.race([
-        reader.read(),
-        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("body_timeout")), 5_000)),
-      ]);
-      if (done) break;
-      total += value.byteLength;
-      if (total > MAX_BODY_BYTES) {
-        await reader.cancel();
-        return null;
-      }
-      chunks.push(value);
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const timeout = new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error("body_timeout")), 5_000); });
+      let part: ReadableStreamReadResult<Uint8Array>;
+      try { part = await Promise.race([reader.read(), timeout]); }
+      finally { if (timer !== undefined) clearTimeout(timer); }
+      if (part.done) break;
+      total += part.value.byteLength;
+      if (total > MAX_BODY_BYTES) { await reader.cancel(); return null; }
+      chunks.push(part.value);
     }
   } catch {
     await reader.cancel().catch(() => {});
@@ -57,11 +56,32 @@ async function probe(db: ReturnType<typeof createClient>, sourceKey: string, end
     redirect: "error",
   });
   const latency = Date.now() - started;
-  const raw = await res.text();
+  const contentLength = Number(res.headers.get("content-length") ?? 0);
+  if (contentLength > MAX_PROVIDER_BYTES) { await res.body?.cancel(); throw new Error("provider_response_too_large"); }
+  if (!res.body) throw new Error("provider_empty_body");
+  const reader = res.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  try {
+    while (true) {
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const timeout = new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error("provider_read_timeout")), 5_000); });
+      let part: ReadableStreamReadResult<Uint8Array>;
+      try { part = await Promise.race([reader.read(), timeout]); }
+      finally { if (timer !== undefined) clearTimeout(timer); }
+      if (part.done) break;
+      total += part.value.byteLength;
+      if (total > MAX_PROVIDER_BYTES) { await reader.cancel(); throw new Error("provider_response_too_large"); }
+      chunks.push(part.value);
+    }
+  } catch (error) { await reader.cancel().catch(() => {}); throw error; }
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
   let payload: any = {};
-  try { payload = JSON.parse(raw); } catch { /* non-JSON provider response */ }
+  try { payload = JSON.parse(new TextDecoder().decode(bytes)); } catch { /* non-JSON provider response */ }
 
-  await db.rpc("zhi_hub_record_health", {
+  const health = await db.rpc("zhi_hub_record_health", {
     p_source_key: sourceKey,
     p_status: res.ok ? "healthy" : "degraded",
     p_latency_ms: latency,
@@ -69,6 +89,7 @@ async function probe(db: ReturnType<typeof createClient>, sourceKey: string, end
     p_error_code: res.ok ? null : "HTTP_" + res.status,
     p_details: { probe: true, provider: kind },
   });
+  if (health.error) throw new Error("health_record_failed");
   if (!res.ok) return { ok: false, source: sourceKey, status: res.status, latency_ms: latency };
 
   const items = kind === "GDELT"

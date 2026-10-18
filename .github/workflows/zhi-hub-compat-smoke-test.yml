@@ -1,6 +1,13 @@
 name: ZHI Hub compatibility smoke test
 
 on:
+  push:
+    branches:
+      - fix/zhi-external-world-hub-secure-url-read
+    paths:
+      - .github/workflows/zhi-hub-compat-smoke-test.yml
+      - supabase/functions/zhi-external-world-hub-compat-v2/**
+      - supabase/functions/zhi-external-world-hub-v2/**
   workflow_dispatch:
     inputs:
       run_provider_probes:
@@ -58,7 +65,7 @@ jobs:
           fi
 
       - name: Probe real news and sports sources
-        if: ${{ inputs.run_provider_probes }}
+        if: ${{ github.event_name == 'push' || inputs.run_provider_probes }}
         shell: bash
         run: |
           for action in probe_news probe_sports; do

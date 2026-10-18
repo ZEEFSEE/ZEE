@@ -359,12 +359,12 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
   (d.messages||[]).forEach(m=>bubble(m.sender_name,m.content,m.created_at,m.sender_type==="creator"));
   sendButton.disabled=false;status("已恢复群聊历史："+(d.messages||[]).length+" 条消息。","good");
  }
- async function createOrUpdate(){
+ async function createOrUpdate(makeNew){
   if(chosen.size<2||chosen.size>5){status("请勾选 2–5 位智能人。","error");return;}
   try{
-   let title="多人群聊";if(!groupId){title=window.prompt("给群聊取个名字：","多人群聊");if(title===null)return;}
-   const d=await call({op:groupId?"update_members":"create_group",group_id:groupId,agent_ids:Array.from(chosen),title});
-   groupId=d.group_id||groupId;await refreshGroups();await openGroup(groupId);status("群聊成员已保存。","good");
+   let title="多人群聊";if(makeNew){title=window.prompt("给群聊取个名字：","多人群聊");if(title===null)return;} if(!makeNew&&!groupId){status("请先选择或创建一个群聊。","error");return;}
+   const d=await call({op:makeNew?"create_group":"update_members",group_id:makeNew?undefined:groupId,agent_ids:Array.from(chosen),title});
+   groupId=d.group_id||groupId;await refreshGroups();await openGroup(groupId);status(makeNew?"群聊已创建。":"群聊成员已保存。","good");
   }catch(e){status("保存群聊失败："+e.message,"error");}
  }
  async function sendGroup(){
@@ -385,8 +385,8 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
   if(mode){$("chatTitle").textContent=groupId?"多人群聊":"创建或选择群聊";$("agentMeta").textContent="选择 2–5 位成员 · 轮流回应 · 保存历史";sendButton.disabled=!groupId;try{await loadAgents();await refreshGroups();}catch(e){status("多人群聊初始化失败："+e.message,"error");}}
   else{ $("groupChatTools").style.display="none";$("groupMemberPicker").style.display="none";$("agentList").classList.remove("hidden");$("agentSearch").disabled=false;if($("mobileAgentSelect").value){$("mobileAgentSelect").dispatchEvent(new Event("change"));}else{sendButton.disabled=true;$("chatTitle").textContent="先选择一个智能人";$("agentMeta").textContent="个性化表达 · 独立观点 · 记忆关联";}}
  });
- $("groupChatCreate").addEventListener("click",createOrUpdate);
- $("groupChatSaveMembers").addEventListener("click",createOrUpdate);
+ $("groupChatCreate").addEventListener("click",()=>createOrUpdate(true));
+ $("groupChatSaveMembers").addEventListener("click",()=>createOrUpdate(false));
  $("groupChatSelect").addEventListener("change",async()=>{if(!$("groupChatSelect").value)return;try{await openGroup($("groupChatSelect").value);}catch(e){status("打开群聊失败："+e.message,"error");}});
  sendButton.addEventListener("click",e=>{if(mode){e.preventDefault();e.stopImmediatePropagation();sendGroup();}},true);
  input.addEventListener("keydown",e=>{if(mode&&e.key==="Enter"&&!e.shiftKey){e.preventDefault();e.stopImmediatePropagation();sendGroup();}},true);

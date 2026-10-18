@@ -1,0 +1,72 @@
+name: ZHI Hub compatibility smoke test
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_provider_probes:
+        description: "Run real news and sports provider probes (records source health and ingests sample events)"
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    env:
+      HUB_URL: https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-external-world-hub-compat-v2
+      HUB_KEY: ${{ secrets.ZHI_HUB_KEY }}
+    steps:
+      - name: Verify secret is configured
+        shell: bash
+        run: |
+          if [[ -z "$HUB_KEY" || ${#HUB_KEY} -lt 32 ]]; then
+            echo "::error::Repository secret ZHI_HUB_KEY is missing or shorter than 32 characters."
+            exit 1
+          fi
+
+      - name: Verify invalid key is rejected
+        shell: bash
+        run: |
+          code=$(curl --silent --show-error --max-time 15 -o /tmp/unauth.json -w '%{http_code}' \
+            -X POST "$HUB_URL" \
+            -H 'Content-Type: application/json' \
+            -H 'x-zhi-hub-key: invalid-smoke-test-key' \
+            --data '{"action":"probe_news"}')
+          cat /tmp/unauth.json
+          if [[ "$code" != "401" ]]; then
+            echo "::error::Expected HTTP 401 for invalid key, got $code."
+            exit 1
+          fi
+
+      - name: Probe real news and sports sources
+        if: ${{ inputs.run_provider_probes }}
+        shell: bash
+        run: |
+          for action in probe_news probe_sports; do
+            code=$(curl --silent --show-error --max-time 25 -o "/tmp/${action}.json" -w '%{http_code}' \
+              -X POST "$HUB_URL" \
+              -H 'Content-Type: application/json' \
+              -H "x-zhi-hub-key: $HUB_KEY" \
+              --data "{\"action\":\"$action\"}")
+            echo "$action HTTP $code"
+            cat "/tmp/${action}.json"
+            echo
+            if [[ "$code" != "200" ]]; then
+              echo "::error::$action returned HTTP $code."
+              exit 1
+            fi
+            if ! grep -q '"ok":true' "/tmp/${action}.json"; then
+              echo "::error::$action response did not contain ok=true."
+              exit 1
+            fi
+          done
+
+      - name: Summarize safe test scope
+        if: always()
+        run: |
+          echo "This workflow intentionally does not run the pipeline action because that action processes pending real events."
+          echo "Provider probes write source-health and sample-event records by design."

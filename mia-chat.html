@@ -17,7 +17,7 @@
 :root{color-scheme:light;--bg:#f4f7fb;--panel:#fff;--line:#e2e8f0;--ink:#172033;--muted:#68758a;--accent:#147d79;--soft:#e5f5f2;--red:#b42332}
 *{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#eef7f8,#f4f7fb 360px);color:var(--ink);font:15px/1.55 system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;min-height:100vh}
 button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e8;border-radius:12px;padding:10px 14px;background:#fff;color:#26364b;font-weight:750}button:disabled{opacity:.5;cursor:not-allowed}.primary{background:var(--accent);color:white;border-color:var(--accent)}input,textarea{width:100%;border:1px solid #d9e3eb;border-radius:12px;background:#fbfdff;color:var(--ink);padding:13px;outline:none}input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3px #147d7918}
-.wrap{width:min(1000px,100%);margin:0 auto;padding:22px 16px 30px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.top-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}.install-btn{background:#e5f5f2;border-color:#b9e2da;color:#11645f}.back-link{color:#147d79;text-decoration:none;font-size:13px;font-weight:800;white-space:nowrap}.brand{font-size:clamp(22px,3vw,30px);font-weight:900;color:#173a49}.sub{font-size:12px;color:var(--muted);margin-top:4px}.panel{background:var(--panel);border:1px solid #e4ebf1;border-radius:20px;overflow:hidden;box-shadow:0 10px 35px #18394b0b}.head{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px}.head-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.name{font-weight:900;font-size:19px}.meta{font-size:12px;color:var(--muted)}#status{padding:9px 18px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line);white-space:pre-wrap}#status.error{color:var(--red)}#status.good{color:#15803d}.log{height:min(65vh,680px);min-height:360px;overflow:auto;padding:20px;display:flex;flex-direction:column;gap:12px;background:linear-gradient(180deg,#fbfdff,#f7fafc)}.welcome{margin:auto;text-align:center;color:var(--muted);max-width:500px;line-height:1.9}.bubble{max-width:min(82%,700px);padding:12px 15px;border-radius:16px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7}.bubble.user{align-self:flex-end;background:#dff4ee;border:1px solid #c6e9e2;border-bottom-right-radius:5px}.bubble.assistant{align-self:flex-start;background:#fff;border:1px solid #e3eaf0;border-bottom-left-radius:5px}.time{font-size:10px;color:#78879a;margin-top:6px}.composer{border-top:1px solid var(--line);padding:14px;display:block}.compose-row{display:grid;grid-template-columns:44px minmax(0,1fr) 105px;gap:9px;align-items:end}.composer textarea{resize:vertical;min-height:54px;max-height:170px}.attach-btn{height:48px;display:flex;align-items:center;justify-content:center;border:1px solid #d5e0e8;border-radius:12px;background:#fff;color:#147d79;font-size:20px;cursor:pointer}.attach-btn:hover{background:#e5f5f2}.image-input{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;opacity:0;pointer-events:none}.preview-strip{display:flex;gap:9px;flex-wrap:wrap;padding:0 0 12px}.preview-item{position:relative;width:76px;height:76px;border:1px solid #dce5ec;border-radius:12px;overflow:hidden;background:#f5f8fa}.preview-item img{width:100%;height:100%;object-fit:cover}.remove-image{position:absolute;right:3px;top:3px;width:23px;height:23px;padding:0;border:0;border-radius:50%;background:#172033d9;color:#fff;font-size:16px;line-height:1}.bubble-images{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}.bubble-images img{display:block;max-width:min(260px,100%);max-height:260px;object-fit:contain;border-radius:10px;border:1px solid #dbe4eb;background:#fff}.foot{font-size:11px;color:var(--muted);padding:0 16px 15px}.hidden{display:none!important}.gate{position:fixed;inset:0;z-index:1000;background:radial-gradient(ellipse at top,#30234a,#0b0912 70%);display:flex;align-items:center;justify-content:center;padding:20px}.gate form{width:min(390px,100%);padding:26px;border:1px solid #ffffff24;border-radius:22px;background:#171220;color:white;box-shadow:0 24px 80px #0009}.gate .eyebrow{font-size:12px;letter-spacing:.2em;color:#ffe08a;font-weight:800}.gate h1{margin:12px 0 6px;font-size:25px}.gate p{color:#b8aec9;font-size:13px}.gate input{background:#0d0a14;border-color:#ffffff30;color:white;font-size:18px;letter-spacing:.12em}.gate button{width:100%;margin-top:12px;padding:13px;border:0;background:#ffe08a;color:#21182b}.gateError{min-height:18px;color:#ff9f9f;font-size:12px}
+.wrap{width:min(1000px,100%);margin:0 auto;padding:22px 16px 30px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.top-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}.install-btn{background:#e5f5f2;border-color:#b9e2da;color:#11645f}.back-link{color:#147d79;text-decoration:none;font-size:13px;font-weight:800;white-space:nowrap}.brand{font-size:clamp(22px,3vw,30px);font-weight:900;color:#173a49}.sub{font-size:12px;color:var(--muted);margin-top:4px}.panel{background:var(--panel);border:1px solid #e4ebf1;border-radius:20px;overflow:hidden;box-shadow:0 10px 35px #18394b0b}.head{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px}.head-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.name{font-weight:900;font-size:19px}.meta{font-size:12px;color:var(--muted)}#status{padding:9px 18px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line);white-space:pre-wrap}#status.error{color:var(--red)}#status.good{color:#15803d}.log{height:min(65vh,680px);min-height:360px;overflow:auto;padding:20px;display:flex;flex-direction:column;gap:12px;background:linear-gradient(180deg,#fbfdff,#f7fafc)}.welcome{margin:auto;text-align:center;color:var(--muted);max-width:500px;line-height:1.9}.bubble{max-width:min(82%,700px);padding:12px 15px;border-radius:16px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7}.bubble.user{align-self:flex-end;background:#dff4ee;border:1px solid #c6e9e2;border-bottom-right-radius:5px}.bubble.assistant{align-self:flex-start;background:#fff;border:1px solid #e3eaf0;border-bottom-left-radius:5px}.time{font-size:10px;color:#78879a;margin-top:6px}.composer{border-top:1px solid var(--line);padding:14px;display:block}.compose-row{display:grid;grid-template-columns:44px minmax(0,1fr) 105px;gap:9px;align-items:end}.composer textarea{resize:vertical;min-height:54px;max-height:170px}.attach-btn{height:48px;display:flex;align-items:center;justify-content:center;border:1px solid #d5e0e8;border-radius:12px;background:#fff;color:#147d79;font-size:20px;cursor:pointer}.attach-btn:hover{background:#e5f5f2}.image-input{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;opacity:0;pointer-events:none}.preview-strip{display:flex;gap:9px;flex-wrap:wrap;padding:0 0 12px}.preview-item{position:relative;width:76px;height:76px;border:1px solid #dce5ec;border-radius:12px;overflow:hidden;background:#f5f8fa}.preview-item img{width:100%;height:100%;object-fit:cover}.preview-fallback{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px;height:100%;padding:5px;text-align:center;color:#526174;font-size:10px;overflow-wrap:anywhere}.preview-fallback .preview-icon{font-size:22px}.remove-image{position:absolute;right:3px;top:3px;width:23px;height:23px;padding:0;border:0;border-radius:50%;background:#172033d9;color:#fff;font-size:16px;line-height:1}.bubble-images{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}.bubble-images img{display:block;max-width:min(260px,100%);max-height:260px;object-fit:contain;border-radius:10px;border:1px solid #dbe4eb;background:#fff}.foot{font-size:11px;color:var(--muted);padding:0 16px 15px}.hidden{display:none!important}.gate{position:fixed;inset:0;z-index:1000;background:radial-gradient(ellipse at top,#30234a,#0b0912 70%);display:flex;align-items:center;justify-content:center;padding:20px}.gate form{width:min(390px,100%);padding:26px;border:1px solid #ffffff24;border-radius:22px;background:#171220;color:white;box-shadow:0 24px 80px #0009}.gate .eyebrow{font-size:12px;letter-spacing:.2em;color:#ffe08a;font-weight:800}.gate h1{margin:12px 0 6px;font-size:25px}.gate p{color:#b8aec9;font-size:13px}.gate input{background:#0d0a14;border-color:#ffffff30;color:white;font-size:18px;letter-spacing:.12em}.gate button{width:100%;margin-top:12px;padding:13px;border:0;background:#ffe08a;color:#21182b}.gateError{min-height:18px;color:#ff9f9f;font-size:12px}
 @media(max-width:600px){.wrap{padding:10px 7px 20px}.head{padding:13px}.head-actions button{padding:8px 9px;font-size:12px}.log{height:55vh;min-height:300px;padding:12px 9px}.bubble{max-width:94%;padding:10px 12px;font-size:14px}.composer{padding:9px}.compose-row{grid-template-columns:38px minmax(0,1fr) 72px;gap:6px}.composer button{padding:8px;font-size:13px}.attach-btn{height:46px;font-size:18px}.bubble-images img{max-width:100%;max-height:220px}.top{align-items:flex-start}.head .name{font-size:17px}}
 </style>
 </head>
@@ -58,38 +58,80 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
  if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
  const imageInput=$('imageInput');const imagePreview=$('imagePreview');const chooseImage=$('chooseImage');let selectedImages=[];
   chooseImage.addEventListener('click',()=>{if(!token||busy)return;imageInput.click();});
- function renderImagePreviews(){imagePreview.innerHTML='';imagePreview.classList.toggle('hidden',!selectedImages.length);selectedImages.forEach((item,index)=>{const card=document.createElement('div');card.className='preview-item';const img=document.createElement('img');img.src=item.previewUrl;img.alt=item.file.name;const remove=document.createElement('button');remove.type='button';remove.className='remove-image';remove.textContent='×';remove.setAttribute('aria-label','移除图片');remove.onclick=()=>{URL.revokeObjectURL(item.previewUrl);selectedImages.splice(index,1);renderImagePreviews();};card.append(img,remove);imagePreview.append(card);});}
+ function renderImagePreviews(){
+  imagePreview.innerHTML='';
+  imagePreview.classList.toggle('hidden',!selectedImages.length);
+  selectedImages.forEach((item,index)=>{
+   const card=document.createElement('div');card.className='preview-item';
+   const img=document.createElement('img');img.alt=item.file.name||'待发送图片';img.src=item.previewUrl;
+   img.onerror=()=>{
+    img.remove();
+    if(!card.querySelector('.preview-fallback')){
+     const fallback=document.createElement('div');fallback.className='preview-fallback';
+     const glyph=document.createElement('span');glyph.className='preview-icon';glyph.textContent='🖼️';
+     const name=document.createElement('span');name.textContent=item.file.name||'图片格式暂不支持预览';
+     fallback.append(glyph,name);card.prepend(fallback);
+     status('已选中 '+(item.file.name||'图片')+'，但当前浏览器无法直接预览该格式。发送时会尝试转换；若转换失败，请将照片另存为 JPG。','error');
+    }
+   };
+   const remove=document.createElement('button');remove.type='button';remove.className='remove-image';remove.textContent='×';remove.setAttribute('aria-label','移除图片');
+   remove.onclick=()=>{URL.revokeObjectURL(item.previewUrl);selectedImages.splice(index,1);renderImagePreviews();};
+   card.append(img,remove);imagePreview.append(card);
+  });
+ }
  function supportedImageMime(file){
   const raw=String(file.type||'').toLowerCase().split(';')[0].trim();
   if(raw==='image/jpg'||raw==='image/pjpeg')return 'image/jpeg';
   if(['image/jpeg','image/png','image/webp'].includes(raw))return raw;
-  if(!raw||raw==='application/octet-stream'||raw==='binary/octet-stream'){
-   const ext=String(file.name||'').toLowerCase().match(/\.([a-z0-9]+)$/)?.[1]||'';
-   if(['jpg','jpeg'].includes(ext))return 'image/jpeg';
-   if(ext==='png')return 'image/png';
-   if(ext==='webp')return 'image/webp';
-  }
+  const ext=String(file.name||'').toLowerCase().match(/\.([a-z0-9]+)$/)?.[1]||'';
+  if(['jpg','jpeg'].includes(ext))return 'image/jpeg';
+  if(ext==='png')return 'image/png';
+  if(ext==='webp')return 'image/webp';
+  if(raw.startsWith('image/'))return raw;
+  if(['heic','heif'].includes(ext))return 'image/heic';
   return '';
  }
  imageInput.addEventListener('change',()=>{
   const incoming=Array.from(imageInput.files||[]);
   imageInput.value='';
-  let added=0, rejected='';
+  if(!incoming.length){status('没有收到所选照片。请重新点击＋选择照片。','error');return;}
+  let added=0,rejected='';
   for(const file of incoming){
    if(selectedImages.length>=4){rejected='一次最多发送 4 张图片。';break;}
    const mime=supportedImageMime(file);
-   if(!mime){rejected='无法识别 '+(file.name||'这张图片')+' 的格式。请使用 JPG、PNG 或 WEBP；HEIC/HEIF 暂不支持。';continue;}
+   if(!mime){rejected='无法识别 '+(file.name||'这张文件')+' 是否为图片。请尝试从相册选择原始照片。';continue;}
    if(file.size>5*1024*1024){rejected=(file.name||'图片')+' 超过 5 MB，请先压缩后重试。';continue;}
    if(selectedImages.reduce((sum,item)=>sum+item.file.size,0)+file.size>12*1024*1024){rejected='单条消息图片总大小不能超过 12 MB。';break;}
-   selectedImages.push({file,mime,previewUrl:URL.createObjectURL(file)});
-   added++;
+   try{selectedImages.push({file,mime,previewUrl:URL.createObjectURL(file)});added++;}
+   catch(err){rejected='手机浏览器无法读取 '+(file.name||'这张图片')+'，请重新选择。';}
   }
   renderImagePreviews();
   if(rejected)status(rejected,'error');
   else if(added)status('已选择 '+selectedImages.length+' 张图片，可添加文字后发送。','good');
-  else if(!selectedImages.length)status('尚未添加可发送的图片。请选择 JPG、PNG 或 WEBP。','error');
+  else if(!selectedImages.length)status('尚未添加可发送的图片，请重新选择 JPG、PNG 或 WEBP。','error');
  });
- function fileToBase64(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(',')[1]||'');reader.onerror=()=>reject(new Error('读取图片失败，请重新选择。'));reader.onabort=()=>reject(new Error('图片读取已中断，请重新选择。'));reader.readAsDataURL(file);});}
+ async function prepareImageForSend(item){
+  const allowed=['image/jpeg','image/png','image/webp'];
+  if(allowed.includes(item.mime))return {file:item.file,mime:item.mime};
+  if(typeof createImageBitmap==='function'){
+   let bitmap;
+   try{
+    bitmap=await createImageBitmap(item.file);
+    const canvas=document.createElement('canvas');canvas.width=bitmap.width;canvas.height=bitmap.height;
+    const ctx=canvas.getContext('2d');
+    if(!ctx)throw new Error('无法创建图片转换画布');
+    ctx.drawImage(bitmap,0,0);
+    const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('图片转换失败')),'image/jpeg',0.9));
+    const converted=new File([blob],(item.file.name||'photo').replace(/\.[^.]+$/,'')+'.jpg',{type:'image/jpeg',lastModified:Date.now()});
+    if(converted.size>5*1024*1024)throw new Error('转换后的图片超过 5 MB，请先压缩后重试。');
+    return {file:converted,mime:'image/jpeg'};
+   }catch(err){
+    throw new Error((item.file.name||'这张图片')+'（'+(item.mime||'未知格式')+'）无法在手机浏览器中转换。请将照片另存/分享为 JPG、PNG 或 WEBP 后再选。');
+   }finally{if(bitmap)bitmap.close();}
+  }
+  throw new Error((item.file.name||'这张图片')+' 的格式需要转换。请将照片另存为 JPG、PNG 或 WEBP 后再选。');
+ }
+ async function fileToBase64(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(',')[1]||'');reader.onerror=()=>reject(new Error('读取图片失败，请重新选择。'));reader.onabort=()=>reject(new Error('图片读取已中断，请重新选择。'));reader.readAsDataURL(file);});}
  function status(message,type=''){const el=$('status');el.textContent=message;el.className=type;}
  function escapeText(value){return String(value??'');}
  function addBubble(role,content,time,images=[]){const wrap=document.createElement('div');wrap.className='bubble '+(role==='user'?'user':'assistant');if(content){const body=document.createElement('div');body.textContent=escapeText(content);wrap.append(body);}if(Array.isArray(images)&&images.length){const gallery=document.createElement('div');gallery.className='bubble-images';images.forEach(item=>{if(!item?.url)return;const img=document.createElement('img');img.src=item.url;img.alt=item.name||'聊天图片';img.loading='lazy';gallery.append(img);});if(gallery.childNodes.length)wrap.append(gallery);}if(time){const t=document.createElement('div');t.className='time';t.textContent=new Date(time).toLocaleString('zh-SG',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});wrap.append(t);} $('log').append(wrap);}
@@ -111,7 +153,7 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
   const pending=document.createElement('div');pending.className='bubble assistant';pending.textContent='Mia 正在思考并查看图片…';$('log').append(pending);$('log').scrollTop=$('log').scrollHeight;
   status(sendingImages.length?'正在读取并发送图片，请稍候…':'正在安全保存消息并生成回复…');
   try{
-   const images=await Promise.all(sendingImages.map(async item=>({name:item.file.name,mime_type:item.mime||supportedImageMime(item.file),data:await fileToBase64(item.file)})));
+   const images=await Promise.all(sendingImages.map(async item=>{const prepared=await prepareImageForSend(item);return {name:prepared.file.name,mime_type:prepared.mime,data:await fileToBase64(prepared.file)};}));
    const data=wantsExplore?await request('explore',{message}):await request('send',{message,images});
    pending.remove();
    addBubble('assistant',data.reply,data.assistant_message?.created_at||new Date().toISOString());

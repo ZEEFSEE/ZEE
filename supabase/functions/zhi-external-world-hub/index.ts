@@ -144,9 +144,18 @@ async function readPublicUrl(rawUrl: unknown) {
   const reader = upstream.body.getReader();
   const chunks: Uint8Array[] = [];
   let total = 0;
+  const readDeadline = Date.now() + TIMEOUT_MS;
   try {
     while (true) {
-      const { done, value } = await reader.read();
+      const remaining = readDeadline - Date.now();
+      if (remaining <= 0) {
+        await reader.cancel();
+        return { response: json({ ok: false, error: "upstream_read_timeout" }, 504) };
+      }
+      const { done, value } = await Promise.race([
+        reader.read(),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("read_timeout")), remaining)),
+      ]);
       if (done) break;
       total += value.byteLength;
       if (total > MAX_BYTES) {
@@ -200,9 +209,18 @@ async function readJsonBody(req: Request): Promise<unknown | null> {
   const reader = req.body.getReader();
   const chunks: Uint8Array[] = [];
   let total = 0;
+  const requestDeadline = Date.now() + 5_000;
   try {
     while (true) {
-      const { done, value } = await reader.read();
+      const remaining = requestDeadline - Date.now();
+      if (remaining <= 0) {
+        await reader.cancel();
+        return null;
+      }
+      const { done, value } = await Promise.race([
+        reader.read(),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("request_read_timeout")), remaining)),
+      ]);
       if (done) break;
       total += value.byteLength;
       if (total > maxRequestBytes) {

@@ -122,7 +122,7 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
 <main id="chatApp" class="wrap">
  <header class="top">
   <div><div class="brand">💬 ZHI · 智能人讲话室</div><div class="sub">单聊或全体广播 · 每位智能人独立记忆与判断</div></div>
-  <div class="topActions"><button id="installApp" class="primary hidden" type="button">安装群聊室 App</button></div>
+  <div class="topActions"><button id="installApp" class="primary" type="button" aria-label="安装 ZHI 智能人讲话室">安装群聊室 App</button></div>
  </header>
  <div class="layout">
   <aside class="panel">
@@ -400,16 +400,31 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
  let installPrompt=null;
  const button=document.getElementById('installApp');
  if(!button)return;
+ const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+ const isAndroid=/android/i.test(navigator.userAgent);
  window.addEventListener('beforeinstallprompt',event=>{
-  event.preventDefault();installPrompt=event;button.classList.remove('hidden');
+  event.preventDefault();installPrompt=event;
+  button.textContent='安装群聊室 App';
+  button.setAttribute('aria-label','安装 ZHI 智能人讲话室');
  });
  button.addEventListener('click',async()=>{
-  if(!installPrompt)return;
-  installPrompt.prompt();
-  await installPrompt.userChoice;
-  installPrompt=null;button.classList.add('hidden');
+  if(installPrompt){
+   try{
+    installPrompt.prompt();
+    await installPrompt.userChoice;
+   }catch(_){}
+   installPrompt=null;
+   return;
+  }
+  if(isIOS){
+   alert('在 iPhone 上安装：请用 Safari 打开此页面，点击底部“分享”图标，再选择“添加到主屏幕”。');
+  }else if(isAndroid){
+   alert('安装方法：请用 Chrome 打开此页面，点击右上角“⋮”菜单，选择“安装应用”或“添加到主屏幕”。如果没有该选项，请先刷新页面并确认网络正常。');
+  }else{
+   alert('请使用手机 Chrome（Android）或 Safari（iPhone）打开此页面，再通过浏览器菜单选择“安装应用”或“添加到主屏幕”。');
+  }
  });
- window.addEventListener('appinstalled',()=>{installPrompt=null;button.classList.add('hidden');});
+ window.addEventListener('appinstalled',()=>{installPrompt=null;button.textContent='群聊室 App 已安装';button.disabled=true;});
 })();
 </script>
 <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}</script>

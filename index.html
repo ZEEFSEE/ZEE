@@ -24,7 +24,7 @@ html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;backgrou
 .app{height:100%;height:100dvh;display:grid;grid-template-rows:minmax(0,1fr) auto;padding-top:env(safe-area-inset-top)}
 main{min-height:0;min-width:0;position:relative;overflow:hidden;isolation:isolate}
 iframe{position:absolute;inset:0;border:0;width:100%;height:100%;min-height:0;min-width:0;display:block;background:var(--bg);overflow:auto;-webkit-overflow-scrolling:touch}
-.bottom-nav{z-index:5;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:7px 10px calc(7px + env(safe-area-inset-bottom));background:rgba(17,12,26,.97);border-top:1px solid var(--line);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.bottom-nav{z-index:5;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:7px 10px calc(7px + env(safe-area-inset-bottom));background:rgba(17,12,26,.97);border-top:1px solid var(--line);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
 .tab{appearance:none;border:0;border-radius:13px;min-height:54px;padding:6px 3px;background:transparent;color:var(--muted);font:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;touch-action:manipulation}
 .tab .ico{font-size:21px;line-height:1.15}.tab .label{font-size:11px;font-weight:750;letter-spacing:.02em}
 .tab[aria-current="page"]{background:#ffe08a18;color:var(--gold);box-shadow:inset 0 0 0 1px #ffe08a36}
@@ -50,11 +50,10 @@ iframe{position:absolute;inset:0;border:0;width:100%;height:100%;min-height:0;mi
 </div>
 <a class="mia-launcher" href="./mia-chat.html" aria-label="打开 Mia 独立聊天应用"><span class="mia-dot"></span><span>💬 Mia Chat</span><span class="mia-caption">独立聊天</span><span aria-hidden="true">↗</span></a>
 <div class="app" id="zhiApp">
-<main><iframe id="appView" src="./agent-observatory.html?v=20261019backendbridge1" title="ZHI 智能人世界" allow="fullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin"></iframe></main>
+<main><iframe id="appView" src="./agent-observatory.html?v=20261019commercial1" title="ZHI 智能人世界" allow="fullscreen" loading="eager" referrerpolicy="strict-origin-when-cross-origin"></iframe></main>
 <nav class="bottom-nav" aria-label="主导航">
 <button class="tab" type="button" data-page="world" aria-current="page"><span class="ico">🌍</span><span class="label">智能人世界</span></button>
 <button class="tab" type="button" data-page="talk"><span class="ico">💬</span><span class="label">消息与对话</span></button>
-<button class="tab" type="button" data-page="park"><span class="ico">🌹</span><span class="label">性乐园</span></button>
 <button class="tab" type="button" data-page="adoption"><span class="ico">✧</span><span class="label">领养计划</span></button>
 </nav>
 </div>

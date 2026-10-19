@@ -1,5 +1,5 @@
-const CACHE_NAME = "zhi-pwa-shell-v18";
-const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./mia-chat.html", "./mia-chat.webmanifest", "./zhi-icon.svg"];
+const CACHE_NAME = "zhi-pwa-shell-v19";
+const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./mia-chat.html", "./mia-chat.webmanifest", "./agent-talk.html", "./agent-talk.webmanifest", "./zhi-icon.svg"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting()));
 });
@@ -23,9 +23,12 @@ self.addEventListener("fetch", event => {
     }).catch(async () => {
       const cached = await caches.match(request);
       if (cached) return cached;
-      // Keep Mia PWA navigation inside the Mia chat page when offline.
+      // Keep standalone chat PWAs on their own page when offline.
       if (url.pathname.endsWith("/mia-chat.html")) {
         return (await caches.match("./mia-chat.html")) || Response.error();
+      }
+      if (url.pathname.endsWith("/agent-talk.html")) {
+        return (await caches.match("./agent-talk.html")) || Response.error();
       }
       return (await caches.match("./index.html")) || Response.error();
     }));

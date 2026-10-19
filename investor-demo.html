@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f4faff">
+<meta name="description" content="ZHI Investor Preview — 可操作试运行入口与功能边界说明">
+<title>ZHI · Investor Preview</title>
+<style>
+:root{color-scheme:light;--ink:#13263b;--muted:#637b91;--line:#dce9f3;--blue:#1678e8;--cyan:#39c8df;--paper:#f4faff;--green:#16876f}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 88% 4%,#d8f7ff 0,transparent 30%),radial-gradient(ellipse at 0 60%,#e5edff 0,transparent 28%),var(--paper);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;color:var(--ink);min-height:100vh}
+a{color:inherit;text-decoration:none}.shell{max-width:1120px;margin:auto;padding:0 28px}
+header{height:76px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}.brand{display:flex;gap:10px;align-items:center;font-weight:900;letter-spacing:.14em}.mark{display:grid;place-items:center;width:34px;height:34px;border-radius:11px;background:linear-gradient(140deg,#fff,#d8f7ff);border:1px solid #cbe7f4;color:#1979d8;box-shadow:0 7px 20px #4baddb22}.status{font-size:11px;color:#597c91;letter-spacing:.12em;display:flex;gap:8px;align-items:center}.dot{width:7px;height:7px;border-radius:50%;background:#25b997;box-shadow:0 0 0 4px #25b9971b}
+.hero{padding:55px 0 32px;display:grid;grid-template-columns:1fr auto;gap:24px;align-items:end}.eyebrow{color:#2487bc;letter-spacing:.18em;font-size:10px;font-weight:800}.hero h1{font-size:clamp(34px,5vw,56px);letter-spacing:-.05em;line-height:1.12;margin:14px 0 15px}.hero h1 span{color:var(--blue)}.hero p{color:var(--muted);font-size:14px;line-height:1.85;max-width:660px;margin:0}.stamp{padding:12px 14px;border:1px solid #cce4f1;border-radius:13px;background:#ffffffa6;color:#4d7b96;font-size:11px;white-space:nowrap;align-self:center}
+.section-title{font-size:18px;margin:22px 0 13px;letter-spacing:-.02em}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.card{border:1px solid var(--line);background:#ffffffc7;border-radius:18px;padding:20px;box-shadow:0 12px 32px #477b9b0a;min-width:0;transition:transform .18s,border-color .18s}.card:hover{transform:translateY(-2px);border-color:#a8d7e8}.card-head{display:flex;gap:13px;align-items:center;margin-bottom:14px}.ico{width:43px;height:43px;display:grid;place-items:center;border-radius:13px;background:linear-gradient(145deg,#edfaff,#e7eeff);border:1px solid #dcecf6;font-size:20px;color:#207ec8}.card h2{font-size:16px;margin:0 0 5px}.tag{font-size:10px;color:#5b8aa2;letter-spacing:.1em}.card p{font-size:12px;line-height:1.8;color:var(--muted);margin:0 0 16px;min-height:43px}.btn{display:inline-flex;align-items:center;justify-content:center;gap:12px;padding:11px 14px;border-radius:11px;background:linear-gradient(110deg,#177be9,#28b6d7);color:#fff;font-weight:750;font-size:12px;box-shadow:0 7px 18px #188ee322}.btn.secondary{background:#fff;color:#26739b;border:1px solid #cfe4ef;box-shadow:none}.arrow{font-size:16px}
+.notice{margin:22px 0;padding:18px 20px;border:1px solid #d9e9f2;border-radius:16px;background:linear-gradient(110deg,#e9f8ffb8,#ffffffd9)}.notice h2{font-size:15px;margin:0 0 8px}.notice p{font-size:12px;color:var(--muted);line-height:1.85;margin:0}.checks{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}.check{background:#ffffffb8;border:1px solid #e1edf4;border-radius:12px;padding:12px}.check b{display:block;font-size:12px;margin-bottom:5px}.check span{font-size:11px;color:var(--muted);line-height:1.65}.check em{font-style:normal;color:#ad6a18}
+footer{padding:20px 0 28px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;color:#8095a7;font-size:10px;letter-spacing:.07em}
+@media(max-width:650px){.shell{padding:0 16px}header{height:66px}.status{font-size:9px;letter-spacing:.04em}.hero{grid-template-columns:1fr;padding:38px 0 22px;gap:14px}.stamp{justify-self:start}.grid{grid-template-columns:1fr}.card p{min-height:0}.checks{grid-template-columns:1fr}.section-title{margin-top:20px}footer{font-size:9px;flex-direction:column}}
+</style>
+</head>
+<body><div class="shell">
+<header><a class="brand" href="./investor-demo.html"><span class="mark">✦</span><span>ZHI <span style="font-weight:450;color:#6c8498">/ PREVIEW</span></span></a><div class="status"><span class="dot"></span> INVESTOR TRIAL · DAYLIGHT MODE</div></header>
+<main>
+<section class="hero"><div><div class="eyebrow">INTERACTIVE PRODUCT PREVIEW</div><h1>从可运行开始，<br><span>用真实体验说明 ZHI。</span></h1><p>这是 ZHI 投资商试运行入口。请从下面进入现有模块，现场验证实际页面、数据读取和互动。每项功能的状态边界均明确标注，不把设计稿当成已上线功能。</p></div><div class="stamp">ZHI WORLD · MVP</div></section>
+<h2 class="section-title">体验入口</h2>
+<section class="grid">
+<article class="card"><div class="card-head"><div class="ico">◉</div><div><h2>智能人世界</h2><div class="tag">LIVE WORLD VIEW</div></div></div><p>查看现有智能人世界页面。现场检查智能人名单、状态、情绪与活动是否能从后端实际读取。</p><a class="btn" href="./agent-observatory.html">打开世界观察台 <span class="arrow">↗</span></a></article>
+<article class="card"><div class="card-head"><div class="ico">⌁</div><div><h2>消息与对话</h2><div class="tag">INTERACTION</div></div></div><p>进入现有讲话室，测试智能人列表、发送消息、回复及历史记录。实际结果以页面和后端响应为准。</p><a class="btn" href="./agent-talk.html">打开对话模块 <span class="arrow">↗</span></a></article>
+<article class="card"><div class="card-head"><div class="ico">✧</div><div><h2>领养计划</h2><div class="tag">FRONTEND PREVIEW</div></div></div><p>展示认识、参观、建立关系的领养体验。当前是前台预览，真实领养提交和关系持久化尚未接通。</p><a class="btn" href="./adoption.html">查看领养前台 <span class="arrow">↗</span></a></article>
+<article class="card"><div class="card-head"><div class="ico">♡</div><div><h2>Mia 独立聊天</h2><div class="tag">SEPARATE MODULE</div></div></div><p>Mia 聊天是独立模块入口，不嵌入或改写她的数据库。建议单独验证登录、文字发送和手机图片上传。</p><a class="btn secondary" href="./mia-chat.html">打开 Mia Chat <span class="arrow">↗</span></a></article>
+</section>
+<section class="notice"><h2>试运行现场检查清单</h2><p>请按实际结果确认以下项目。此页面不会自动把尚未验证的功能显示为成功。</p><div class="checks">
+<div class="check"><b>01 · 数据是否实时</b><span>打开世界观察台，刷新页面并检查真实名单和状态；出现加载错误则记录错误提示。</span></div>
+<div class="check"><b>02 · 互动是否闭环</b><span>发送一条测试消息，确认是否有真实响应、记录是否保留，以及刷新后是否仍可查看。</span></div>
+<div class="check"><b>03 · 领养是否可执行</b><span><em>当前仅前台预览。</em> 在后端完成接入与验证前，不向投资商宣称正式领养已经可用。</span></div>
+</div></section>
+</main>
+<footer><span>© ZHI WORLD · INVESTOR PREVIEW</span><span>现有页面入口 · 真实状态现场验证 · 不改主数据库</span></footer>
+</div></body></html>

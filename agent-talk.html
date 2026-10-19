@@ -13,7 +13,9 @@ button{cursor:pointer;border:1px solid #d5e0e8;border-radius:12px;padding:10px 1
 button:hover{border-color:#8ebdb9;background:#f8fdfc}button:active{transform:translateY(1px)}button:disabled{opacity:.45;cursor:not-allowed;transform:none}
 .primary{background:var(--accent);color:#fff;border-color:var(--accent)}.primary:hover{background:#0e6965;border-color:#0e6965;color:#fff}.secondary{background:#fff}
 .wrap{width:min(1440px,100%);margin:0 auto;padding:24px 22px 36px}
-.top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:4px 2px 18px}.topActions{display:flex;align-items:center;justify-content:flex-end;gap:8px}.topActions #installApp{white-space:nowrap}
+.top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:nowrap;padding:4px 2px 18px;position:relative}.topActions{display:flex;align-items:flex-start;justify-content:flex-end;gap:8px;margin-left:auto;flex:0 0 auto}.topActions #installApp{white-space:nowrap;position:fixed;top:12px;right:12px;z-index:10000;box-shadow:0 8px 24px #173a4930}
+@media(max-width:760px){.top{padding-right:0}.topActions #installApp{top:10px;right:10px;max-width:48vw;white-space:normal;font-size:12px;padding:9px 11px}}
+
 .brand{font-size:clamp(22px,2.3vw,30px);font-weight:900;letter-spacing:-.6px;color:#173a49}
 .sub{color:var(--muted);font-size:12px;margin-top:5px}
 .layout{display:grid;grid-template-columns:minmax(270px,330px) minmax(0,1fr);gap:18px;margin-top:4px;align-items:stretch}

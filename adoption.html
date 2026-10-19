@@ -86,10 +86,12 @@ footer{border-top:1px solid var(--line);padding:22px 0 30px;display:flex;justify
  const roster=document.getElementById('agentRoster'),rosterState=document.getElementById('rosterState');
  function safe(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
  async function loadRoster(){
+   const controller=new AbortController();
+   const timeout=setTimeout(()=>controller.abort(),12000);
    try{
-     const response=await fetch(observerUrl,{method:'GET',headers:{'Accept':'application/json'},cache:'no-store'});
-     const data=await response.json();
-     if(!response.ok||!data.ok||!Array.isArray(data.agents))throw new Error(data.error||'实时名单暂时不可用');
+     const response=await fetch(observerUrl,{method:'GET',headers:{'Accept':'application/json'},cache:'no-store',signal:controller.signal});
+     const data=await response.json().catch(()=>null);
+     if(!response.ok||!data||!data.ok||!Array.isArray(data.agents))throw new Error(data?.error||('实时名单请求失败（HTTP '+response.status+'）'));
      const agents=data.agents.filter(a=>a.life_status!=='dead'&&a.active!==false);
      rosterState.textContent='实时名单 · '+agents.length+' 位';
      if(!agents.length){roster.innerHTML='<article class="feature"><h3>暂时没有可展示的智能人</h3><p>请稍后重试。</p></article>';return;}
@@ -105,10 +107,11 @@ footer{border-top:1px solid var(--line);padding:22px 0 30px;display:flex;justify
        notice.scrollIntoView({behavior:'smooth',block:'center'});
      }));
    }catch(error){
+     const message=error?.name==='AbortError'?'连接超时（12 秒），请检查网络后重试。':(error.message||'请稍后重试');
      rosterState.textContent='暂时无法连接';
-     roster.innerHTML='<article class="feature"><div class="feature-icon">!</div><h3>实时名单暂时不可用</h3><p>'+safe(error.message||'请稍后重试')+'</p><button class="primary" type="button" id="retryRoster" style="margin-top:12px;padding:10px 14px;font-size:13px">重新读取 ↻</button></article>';
+     roster.innerHTML='<article class="feature"><div class="feature-icon">!</div><h3>实时名单暂时不可用</h3><p>'+safe(message)+'</p><button class="primary" type="button" id="retryRoster" style="margin-top:12px;padding:10px 14px;font-size:13px">重新读取 ↻</button></article>';
      document.getElementById('retryRoster').addEventListener('click',loadRoster);
-   }
+   }finally{clearTimeout(timeout)}
  }
  document.getElementById('startBtn').addEventListener('click',function(){const n=document.getElementById('notice');n.classList.toggle('show');this.innerHTML=n.classList.contains('show')?'收起说明 <span class="arrow">↑</span>':'查看计划说明 <span class="arrow">→</span>';});
  loadRoster();

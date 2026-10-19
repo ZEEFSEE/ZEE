@@ -56,6 +56,11 @@ footer{border-top:1px solid var(--line);padding:22px 0 30px;display:flex;justify
     <div class="art-caption">DIGITAL LIFE · HUMAN CONNECTION</div>
   </div>
 </section>
+<section id="agents" aria-labelledby="agents-title" style="margin:34px 0 48px">
+  <div class="section-head"><div><h2 id="agents-title">认识真实的智能人</h2><p>名单直接读取 ZHI 主系统，不另建一份人物资料。</p></div><span class="small-tag" id="rosterState">正在读取实时名单…</span></div>
+  <div id="agentRoster" class="features" aria-live="polite"><article class="feature"><div class="feature-icon">◌</div><h3>正在连接 ZHI 世界</h3><p>读取现有智能人资料。</p></article></div>
+  <div class="notice show" id="adoptionBackendNotice" role="status" style="margin-top:18px">正式申请需要可写入的主数据库及已验证的用户身份。在持久化确认前，不会显示“领养成功”。</div>
+</section>
 <section class="steps" id="steps" aria-label="领养计划三步">
   <div class="step"><span class="step-num">01</span><div><h3>认识</h3><p>了解智能人的个性、经历与兴趣。</p></div></div>
   <div class="step"><span class="step-num">02</span><div><h3>参观</h3><p>先走进 ZHI 世界，观察日常生活。</p></div></div>
@@ -77,7 +82,33 @@ footer{border-top:1px solid var(--line);padding:22px 0 30px;display:flex;justify
 <footer><span>© ZHI WORLD · ADOPTION PROGRAM</span><span>明亮 · 简洁 · 尊重自主</span></footer>
 </div>
 <script>
-document.getElementById('startBtn').addEventListener('click',function(){const n=document.getElementById('notice');n.classList.toggle('show');this.innerHTML=n.classList.contains('show')?'收起说明 <span class="arrow">↑</span>':'查看计划说明 <span class="arrow">→</span>';});
+ const observerUrl='https://jozrslgdjreepxplicen.supabase.co/functions/v1/zhi-agent-observer';
+ const roster=document.getElementById('agentRoster'),rosterState=document.getElementById('rosterState');
+ function safe(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+ async function loadRoster(){
+   try{
+     const response=await fetch(observerUrl,{method:'GET',headers:{'Accept':'application/json'},cache:'no-store'});
+     const data=await response.json();
+     if(!response.ok||!data.ok||!Array.isArray(data.agents))throw new Error(data.error||'实时名单暂时不可用');
+     const agents=data.agents.filter(a=>a.life_status!=='dead'&&a.active!==false);
+     rosterState.textContent='实时名单 · '+agents.length+' 位';
+     if(!agents.length){roster.innerHTML='<article class="feature"><h3>暂时没有可展示的智能人</h3><p>请稍后重试。</p></article>';return;}
+     roster.innerHTML=agents.map(a=>'<article class="feature"><div class="feature-icon">✦</div><h3>'+safe(a.name||'未命名智能人')+'</h3><p>'+safe(a.gender||'性别未标注')+' · '+safe(a.personality||'个性资料待补充')+'</p><p style="font-size:12px;color:#65788d">状态：'+safe(a.life_status||'未知')+'</p><button class="primary" type="button" data-agent="'+safe(a.id)+'" data-name="'+safe(a.name||'未命名智能人')+'" style="margin-top:12px;padding:10px 14px;font-size:13px">了解这位智能人 ↗</button></article>').join('');
+     roster.querySelectorAll('button[data-agent]').forEach(button=>button.addEventListener('click',()=>{
+       const name=button.dataset.name||'这位智能人';
+       const notice=document.getElementById('adoptionBackendNotice');
+       notice.classList.add('show');
+       notice.textContent='已选择了解 '+name+'。正式申请提交尚未开放：主数据库目前处于只读状态，且需要验证用户身份和双方确认。不会在后端恢复写入前创建虚假的领养记录。';
+       notice.scrollIntoView({behavior:'smooth',block:'center'});
+     }));
+   }catch(error){
+     rosterState.textContent='暂时无法连接';
+     roster.innerHTML='<article class="feature"><div class="feature-icon">!</div><h3>实时名单暂时不可用</h3><p>'+safe(error.message||'请稍后重试')+'</p><button class="primary" type="button" id="retryRoster" style="margin-top:12px;padding:10px 14px;font-size:13px">重新读取 ↻</button></article>';
+     document.getElementById('retryRoster').addEventListener('click',loadRoster);
+   }
+ }
+ document.getElementById('startBtn').addEventListener('click',function(){const n=document.getElementById('notice');n.classList.toggle('show');this.innerHTML=n.classList.contains('show')?'收起说明 <span class="arrow">↑</span>':'查看计划说明 <span class="arrow">→</span>';});
+ loadRoster();
 </script>
 </body>
 </html>

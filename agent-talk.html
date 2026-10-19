@@ -100,7 +100,7 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="ZHI 世界">
+<meta name="apple-mobile-web-app-title" content="ZHI 讲话室">
 <link rel="manifest" href="./agent-talk.webmanifest">
 <link rel="icon" href="./zhi-icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./zhi-icon.svg">
@@ -120,7 +120,7 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
 <main id="chatApp" class="wrap">
  <header class="top">
   <div><div class="brand">💬 ZHI · 智能人讲话室</div><div class="sub">单聊或全体广播 · 每位智能人独立记忆与判断</div></div>
-
+  <div class="topActions"><button id="installApp" class="primary hidden" type="button">安装群聊室 App</button></div>
  </header>
  <div class="layout">
   <aside class="panel">
@@ -393,6 +393,23 @@ select:focus,input:focus,textarea:focus{border-color:#5ba8a1;box-shadow:0 0 0 3p
 })();
 </script>
 
+<script>
+(()=> {
+ let installPrompt=null;
+ const button=document.getElementById('installApp');
+ if(!button)return;
+ window.addEventListener('beforeinstallprompt',event=>{
+  event.preventDefault();installPrompt=event;button.classList.remove('hidden');
+ });
+ button.addEventListener('click',async()=>{
+  if(!installPrompt)return;
+  installPrompt.prompt();
+  await installPrompt.userChoice;
+  installPrompt=null;button.classList.add('hidden');
+ });
+ window.addEventListener('appinstalled',()=>{installPrompt=null;button.classList.add('hidden');});
+})();
+</script>
 <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}</script>
 
 <script>

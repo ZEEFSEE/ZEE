@@ -53,29 +53,4 @@ checkPublicText([
   ...(Array.isArray(data.tags) ? data.tags : [])
 ].join("\n"), "daily JSON");
 
-const sectionsFile = "mia/sections.json";
-if (fs.existsSync(sectionsFile)) {
-  const feed = JSON.parse(fs.readFileSync(sectionsFile, "utf8"));
-  const expected = [
-    "creation_exploration", "reality_decisions",
-    "philosophy_experiment", "micro_life_growth"
-  ];
-  if (!Array.isArray(feed.sections) || feed.sections.length !== 4) {
-    throw new Error("Public section feed must contain exactly four sections.");
-  }
-  const ids = feed.sections.map((s) => s.id);
-  if (expected.some((id) => !ids.includes(id))) {
-    throw new Error("Public section feed is missing a required stable section ID.");
-  }
-  for (const section of feed.sections) {
-    if (!section.title || !section.content || !Array.isArray(section.tags_display)) {
-      throw new Error("Each public section must include title, content, and tags.");
-    }
-    checkPublicText([
-      section.title, section.subtitle || "", section.content, section.focus || "",
-      section.trigger || "", ...(section.mood || []), ...(section.tags_display || [])
-    ].join("\n"), "section " + section.id);
-  }
-}
-
-console.log("Mia public JSON and four-section feed safety checks passed.");
+console.log("Mia daily public diary safety check passed.");

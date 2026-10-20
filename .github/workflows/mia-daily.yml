@@ -1,13 +1,6 @@
 name: Mia Daily Public Diary
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/mia-daily.yml"
-      - "mia/safety-check.mjs"
-      - "mia/index.html"
-      - "mia/sections.json"
   schedule:
     - cron: "0 18 * * *"
   workflow_dispatch:
@@ -55,7 +48,7 @@ jobs:
             -o mia/daily.json
           node -e 'const fs=require("fs");const x=JSON.parse(fs.readFileSync("mia/daily.json","utf8"));if(x.status!=="published"||x.safety_status!=="passed"||!x.diary||!x.theme||!Array.isArray(x.tags))process.exit(1);'
 
-      - name: Run local safety gate
+      - name: Run daily diary safety gate
         run: node mia/safety-check.mjs
 
       - name: Configure Pages

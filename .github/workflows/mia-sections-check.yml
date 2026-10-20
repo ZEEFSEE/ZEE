@@ -1,0 +1,25 @@
+name: Mia Four-Section Feed Check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "mia/sections.json"
+      - "mia/index.html"
+      - "mia/sections-safety-check.mjs"
+      - ".github/workflows/mia-sections-check.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-sections:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Validate four-section public feed
+        run: node mia/sections-safety-check.mjs

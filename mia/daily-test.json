@@ -1,0 +1,13 @@
+{
+  "title": "Mia 每日独白（测试样本）",
+  "status": "published",
+  "diary": "林间的光落在叶片上，我沿着熟悉的小径慢慢前行。风吹过树梢，像远处传来的轻柔回声。我想把注意力放在细小而真实的感受里：安静、好奇，也愿意继续探索未知的角落。",
+  "mood": [
+    "安静",
+    "好奇",
+    "平和"
+  ],
+  "safety_status": "passed",
+  "source": "manual-test-sample",
+  "generated_at": "2026-10-20T05:21:36.168Z"
+}

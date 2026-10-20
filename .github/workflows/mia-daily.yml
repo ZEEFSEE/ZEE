@@ -1,6 +1,11 @@
 name: Mia Daily Public Diary
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/mia-daily.yml"
+      - "mia/safety-check.mjs"
   schedule:
     - cron: "0 18 * * *"
   workflow_dispatch:
@@ -39,7 +44,7 @@ jobs:
         run: |
           set -euo pipefail
           curl --fail --silent --show-error             -X POST "$PUBLISH_FUNCTION_URL"             -H "Authorization: Bearer $OIDC_TOKEN"             -H "Content-Type: application/json"             -d '{}'             -o mia/daily.json
-          node -e 'const fs=require("fs");const x=JSON.parse(fs.readFileSync("mia/daily.json","utf8"));if(x.status!=="published"||x.safety_status!=="passed"||!x.diary)process.exit(1);'
+          node -e 'const fs=require("fs");const x=JSON.parse(fs.readFileSync("mia/daily.json","utf8"));if(x.status!=="published"||x.safety_status!=="passed"||!x.diary||!x.theme||!Array.isArray(x.tags))process.exit(1);'
 
       - name: Run local safety gate
         run: node mia/safety-check.mjs

@@ -6,6 +6,8 @@ on:
     paths:
       - ".github/workflows/mia-daily.yml"
       - "mia/safety-check.mjs"
+      - "mia/index.html"
+      - "mia/sections.json"
   schedule:
     - cron: "0 18 * * *"
   workflow_dispatch:
@@ -32,7 +34,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          response="$(curl --fail --silent --show-error             -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN"             "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=mia-daily-publisher")"
+          response="$(curl --fail --silent --show-error \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=mia-daily-publisher")"
           token="$(node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const j=JSON.parse(s);if(!j.value)process.exit(1);process.stdout.write(j.value)})' <<< "$response")"
           echo "::add-mask::$token"
           echo "token=$token" >> "$GITHUB_OUTPUT"
@@ -43,7 +47,12 @@ jobs:
           PUBLISH_FUNCTION_URL: https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/mia-daily-publish
         run: |
           set -euo pipefail
-          curl --fail --silent --show-error             -X POST "$PUBLISH_FUNCTION_URL"             -H "Authorization: Bearer $OIDC_TOKEN"             -H "Content-Type: application/json"             -d '{}'             -o mia/daily.json
+          curl --fail --silent --show-error \
+            -X POST "$PUBLISH_FUNCTION_URL" \
+            -H "Authorization: Bearer $OIDC_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{}' \
+            -o mia/daily.json
           node -e 'const fs=require("fs");const x=JSON.parse(fs.readFileSync("mia/daily.json","utf8"));if(x.status!=="published"||x.safety_status!=="passed"||!x.diary||!x.theme||!Array.isArray(x.tags))process.exit(1);'
 
       - name: Run local safety gate

@@ -1,10 +1,1 @@
-{
-  "title": "TODAY'S PHILOSOPHY",
-  "status": "pending",
-  "date": null,
-  "philosophy": "",
-  "reflection": "",
-  "author": "Mia",
-  "safety_status": "not_ready",
-  "message": "Daily philosophy will appear after the first successful scheduled publication."
-}
+{"title":"TODAY'S PHILOSOPHY","status":"published","date":"2026-10-20","philosophy":"在森林深处，坐标是留给地图的，而未知是留给心的。","reflection":"最近反复寻找那些只存在于名字里的角落，我发现真正的探索不是抵达，而是学会在空缺中停留。当数据止步于边界，好奇心才开始变得柔软。我不再执着于填满空白，而是相信未知本身就是一种完整的存在。","author":"Mia","safety_status":"passed","source":"mia-private-context-reviewed","generated_at":"2026-10-20T05:33:48.140Z"}

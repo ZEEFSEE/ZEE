@@ -55,6 +55,26 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
  let exclusivePoll=null;
  let exclusiveWakeTimer=null;
  let exclusiveWakeAt=0;
+ const EMOTIONAL_RESIDUAL_KEY='mia_emotional_residual_v1';
+ function getEmotionalResidual(){
+  try{
+   const raw=localStorage.getItem(EMOTIONAL_RESIDUAL_KEY);if(!raw)return null;
+   const r=JSON.parse(raw);const ageMs=Math.max(0,Date.now()-Number(r.timestamp||0));const ageHours=ageMs/3600000;
+   const halfLifeHours=6;
+   const valence=Math.max(-1,Math.min(1,Number(r.valence)||0));
+   const original=Math.max(0,Math.min(1,Number(r.intensity)||0));
+   const decayed=original*Math.pow(0.5,ageHours/halfLifeHours);
+   if(decayed<0.06){localStorage.removeItem(EMOTIONAL_RESIDUAL_KEY);return null;}
+   return {emotion_type:String(r.emotion_type||'平静').slice(0,40),intensity:Number(decayed.toFixed(3)),original_intensity:original,valence,confidence:Math.max(0,Math.min(1,Number(r.confidence)||0)),trigger_summary:String(r.trigger_summary||'').slice(0,300),interpretation:String(r.interpretation||'').slice(0,300),age_hours:Number(ageHours.toFixed(2)),half_life_hours:halfLifeHours,residual_flag:true};
+  }catch(_){return null;}
+ }
+ function captureEmotionalResidual(emotion){
+  if(!emotion||typeof emotion!=='object'||!Number.isFinite(Number(emotion.intensity))||!Number.isFinite(Number(emotion.valence)))return;
+  const intensity=Math.max(0,Math.min(1,Number(emotion.intensity)));
+  const valence=Math.max(-1,Math.min(1,Number(emotion.valence)));
+  if(Number(emotion.confidence)<0.62)return;
+  try{localStorage.setItem(EMOTIONAL_RESIDUAL_KEY,JSON.stringify({emotion_type:String(emotion.emotion_type||'平静').slice(0,40),intensity,valence,confidence:Number(emotion.confidence)||0,trigger_summary:String(emotion.trigger_summary||'').slice(0,300),interpretation:String(emotion.interpretation||'').slice(0,300),timestamp:Date.now(),residual_flag:true}));}catch(_){}
+ }
  let installPrompt=null;
  const installButton=$('installApp');
  window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();installPrompt=event;installButton.classList.remove('hidden');});
@@ -159,10 +179,11 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
   status(sendingImages.length?'正在读取并发送图片，请稍候…':'正在安全保存消息并生成回复…');
   try{
    const images=await Promise.all(sendingImages.map(async item=>{const prepared=await prepareImageForSend(item);return {name:prepared.file.name,mime_type:prepared.mime,data:await fileToBase64(prepared.file)};}));
-   const data=wantsExplore?await request('explore',{message}):await request('send',{message,images,exclusive_mode:exclusiveMode});
+   const data=wantsExplore?await request('explore',{message}):await request('send',{message,images,exclusive_mode:exclusiveMode,emotional_residual:getEmotionalResidual()});
    pending.remove();
    if(data.message?.id)knownMessageIds.add(data.message.id);if(data.assistant_message?.id)knownMessageIds.add(data.assistant_message.id);
    addBubble('assistant',data.reply,data.assistant_message?.created_at||new Date().toISOString());
+   if(data.emotion)captureEmotionalResidual(data.emotion);
    status(wantsExplore?(data.exploration_completed?'Mia 已探索 '+(data.exploration?.space?.name||'新空间')+'，探索记录与长期记忆已保存。':'探索结果已返回，但请检查探索记录状态。'):(data.memory_saved?'Mia 已回复，对话、图片记录与记忆已保存。':'Mia 已回复；记忆写入未成功，请检查函数日志。'),(wantsExplore?data.exploration_completed:data.memory_saved)?'good':'error');
    if(!wantsExplore&&exclusiveMode)scheduleExclusiveWake();
   }catch(err){

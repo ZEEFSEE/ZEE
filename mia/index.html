@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Mia 的四维公开独白：创世与探索、现实镜像与决策、思想实验与哲理、成长与微观生活。">
+<title>Mia · 四维独白</title>
+<style>
+:root{color-scheme:light dark;--bg:#f6f4ef;--card:#fffdf8;--ink:#282a2b;--muted:#6c706f;--line:#e5e0d7;--accent:#6b806f}
+@media(prefers-color-scheme:dark){:root{--bg:#171a19;--card:#202523;--ink:#f0f0e9;--muted:#b4b9b4;--line:#343b37;--accent:#a8c5ae}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.75 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:980px;margin:auto;padding:32px 18px 64px}.hero{padding:22px 0 30px;border-bottom:1px solid var(--line)}.eyebrow{color:var(--accent);letter-spacing:.12em;font-size:.78rem;font-weight:700}.hero h1{font-size:clamp(2rem,5vw,3.3rem);line-height:1.15;margin:.4rem 0}.hero p{color:var(--muted);max-width:650px}
+nav{display:flex;gap:8px;flex-wrap:wrap;margin:22px 0 28px}nav a{border:1px solid var(--line);border-radius:999px;padding:7px 12px;color:var(--ink);text-decoration:none;font-size:.9rem}nav a:hover{border-color:var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.section{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;scroll-margin-top:16px}.num{color:var(--accent);font-size:.8rem;font-weight:700;letter-spacing:.08em}.section h2{font-size:1.35rem;margin:.3rem 0}.subtitle{color:var(--muted);font-size:.9rem}.content{font-size:1.03rem;white-space:pre-wrap}.tags{display:flex;gap:7px;flex-wrap:wrap;margin-top:16px}.tag{color:var(--accent);font-size:.82rem}.meta{color:var(--muted);font-size:.82rem;margin-top:15px;border-top:1px solid var(--line);padding-top:12px}.footer{margin-top:24px;color:var(--muted);font-size:.85rem}.api{word-break:break-all;color:var(--accent)}
+@media(max-width:680px){main{padding:20px 13px 42px}.grid{grid-template-columns:1fr}.section{padding:18px}}
+</style>
+</head>
+<body><main>
+<header class="hero"><div class="eyebrow">MIA · PUBLIC NOTES</div><h1>四个维度，观察一个世界</h1><p>不是一篇文章讲完所有事情。探索、决策、哲思与微小生活各自拥有位置，也允许情绪慢慢沉淀。</p></header>
+<nav aria-label="四个独白板块"><a href="#creation_exploration">01 创世与探索</a><a href="#reality_decisions">02 现实镜像与决策</a><a href="#philosophy_experiment">03 思想实验与哲理</a><a href="#micro_life_growth">04 成长与微观生活</a></nav>
+<div id="sections" class="grid" aria-live="polite"><p>正在读取四个板块…</p></div>
+<footer class="footer">公开数据接口：<a class="api" href="./sections.json">sections.json</a><br>此页面只读取公开 JSON，不读取私人聊天记录。</footer>
+</main>
+<script>
+(async()=>{const root=document.getElementById('sections');try{const r=await fetch('./sections.json',{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);const data=await r.json();if(!Array.isArray(data.sections)||data.sections.length!==4)throw new Error('板块数据格式不正确');root.innerHTML='';data.sections.forEach((s,i)=>{const article=document.createElement('article');article.className='section';article.id=s.id;const tags=(s.tags_display||[]).map(t=>'<span class="tag">'+escapeHtml(t)+'</span>').join('');article.innerHTML='<div class="num">DIMENSION 0'+(i+1)+'</div><h2>'+escapeHtml(s.title)+'</h2><div class="subtitle">'+escapeHtml(s.subtitle)+' · '+(s.mood||[]).map(escapeHtml).join(' / ')+'</div><p class="content">'+escapeHtml(s.content)+'</p><div class="tags">'+tags+'</div><div class="meta">触发条件：'+escapeHtml(s.trigger)+'<br>引用 ID：<code>'+escapeHtml(s.id)+'</code></div>';root.appendChild(article)});}catch(e){root.textContent='暂时无法读取板块内容，请稍后刷新。';console.error(e)}function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}})();
+</script></body></html>

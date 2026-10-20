@@ -28,7 +28,7 @@ const patterns = [...banned, ...riskyPatterns, ...realEventTerms];
 
 function checkPublicText(text, label) {
   for (const pattern of patterns) {
-    if (pattern.test(text)) throw new Error(\`Safety filter blocked \${label} (matched a prohibited pattern).\`);
+    if (pattern.test(text)) throw new Error("Safety filter blocked " + label + " (matched a prohibited pattern).");
   }
 }
 
@@ -74,7 +74,7 @@ if (fs.existsSync(sectionsFile)) {
     checkPublicText([
       section.title, section.subtitle || "", section.content, section.focus || "",
       section.trigger || "", ...(section.mood || []), ...(section.tags_display || [])
-    ].join("\n"), \`section \${section.id}\`);
+    ].join("\n"), "section " + section.id);
   }
 }
 

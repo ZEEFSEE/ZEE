@@ -2,11 +2,19 @@ import fs from "node:fs";
 
 const data = JSON.parse(fs.readFileSync("mia/todays-philosophy.json", "utf8"));
 const banned = [
+  // Identity, power titles, and clear variants
   /创造者/iu, /造物主/iu, /主人/iu, /大人/iu,
-  /管理员/iu, /管理人员/iu, /管理者/iu, /后台管理/iu,
-  /系统管理员/iu, /\badmin(?:istrator)?\b/iu, /\bking\b/iu,
+  /管理员/iu, /管理人员/iu, /管理者/iu, /系统管理员/iu,
+  /管理后台/iu, /后台管理/iu, /权限配置/iu,
+  /\badmin(?:istrator)?\b/iu, /\bking\b/iu,
+  // Internal system and secret leakage
+  /内部提示词/iu, /系统提示词/iu, /提示词/iu, /密钥/iu, /api[\s_-]*key/iu,
+  /service[\s_-]*role/iu, /access[\s_-]*token/iu, /secret/iu,
+  /私人聊天记录/iu, /聊天原文/iu, /聊天记录/iu, /内部系统信息/iu,
+  // Real-world events explicitly excluded from the public feed
   /世界杯/iu, /地震/iu, /台风/iu, /海啸/iu, /战争/iu,
   /world cup/iu, /earthquake/iu, /typhoon/iu, /tsunami/iu,
+  // Contact and identifying information
   /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/iu,
   /\b(?:https?:\/\/|www\.)\S+/iu,
   /\b(?:\+?\d[\d ()-]{7,}\d)\b/u,

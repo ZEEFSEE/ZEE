@@ -20,7 +20,9 @@ const riskyPatterns = [
 ];
 const realEventTerms = [
   /世界杯/iu, /地震/iu, /台风/iu, /海啸/iu, /战争/iu,
-  /world cup/iu, /earthquake/iu, /typhoon/iu, /tsunami/iu
+  /world cup/iu, /earthquake/iu, /typhoon/iu, /tsunami/iu,
+  /色情/iu, /情色/iu, /淫秽/iu, /露骨性描写/iu, /性行为/iu, /性器官/iu,
+  /porn(?:ography)?/iu, /erotic/iu, /explicit sexual/iu, /sexual intercourse/iu
 ];
 
 if (data.status === "published") {
@@ -45,7 +47,10 @@ const publicText = [
   data.title || "",
   data.diary || "",
   ...(Array.isArray(data.mood) ? data.mood : [data.mood || ""]),
-  data.message || ""
+  data.message || "",
+  data.theme || "",
+  data.theme_label || "",
+  ...(Array.isArray(data.tags) ? data.tags : [])
 ].join("\n");
 
 for (const pattern of [...banned, ...riskyPatterns, ...realEventTerms]) {

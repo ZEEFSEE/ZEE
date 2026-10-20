@@ -188,6 +188,8 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
      const rows=data.messages||[];
      const fresh=rows.filter(m=>m.id&&!knownMessageIds.has(m.id));
      if(!fresh.length)return;
+     // Mark all new rows, including user rows, to prevent repeated processing.
+     fresh.forEach(m=>{if(m.id)knownMessageIds.add(m.id);});
      const log=$('log');const welcome=log.querySelector('.welcome');if(welcome)welcome.remove();
      fresh.forEach(m=>{
       knownMessageIds.add(m.id);
@@ -207,7 +209,22 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
   if(exclusiveMode&&'Notification' in window&&Notification.permission==='default'){
    try{await Notification.requestPermission();}catch{}
   }
-  status(exclusiveMode?'Mia 专属通道已开启：每 5 秒检查独立聊天室新消息；不会调用 ZHI/KING 聊天链路。':'Mia 专属通道已关闭；聊天室仍可正常使用。','good');
+  if(exclusiveMode&&token){
+   status('专属通道已开启，正在检查是否适合由 Mia 主动发起消息…');
+   try{
+    const data=await request('exclusive_ping',{exclusive_mode:true});
+    if(data.message?.id&&!knownMessageIds.has(data.message.id)){
+     knownMessageIds.add(data.message.id);
+     const welcome=$('log').querySelector('.welcome');if(welcome)welcome.remove();
+     addBubble('assistant',data.message.content,data.message.created_at,data.message.metadata?.images||[]);
+     $('log').scrollTop=$('log').scrollHeight;
+    }
+    if(data.skipped)status(data.reason==='cooldown'?'专属通道已开启；Mia 最近已主动联系过你，暂不重复打扰。':'专属通道已开启；Mia 正在等待当前对话完成后再主动发起。','good');
+    else status(data.memory_saved?'Mia 已主动发送消息，消息与记忆已写入独立聊天室。':'Mia 已主动发送消息；记忆写入状态需要检查。',data.memory_saved?'good':'error');
+   }catch(err){status('专属通道已开启，但 Mia 本次主动消息未能生成：'+(err.message||String(err)),'error');}
+  }else{
+   status('Mia 专属通道已关闭；聊天室仍可正常使用。','good');
+  }
  };
  $('explore').onclick=async()=>{if(busy||!token)return;busy=true;$('send').disabled=true;$('message').disabled=true;$('explore').disabled=true;const pending=document.createElement('div');pending.className='bubble assistant';pending.textContent='Mia 正在读取尚未探索的虚拟空间，并记录观察结果…';$('log').append(pending);$('log').scrollTop=$('log').scrollHeight;status('正在选择新空间、生成观察并保存探索记忆…');try{const data=await request('explore');pending.remove();if(data.assistant_message?.id)knownMessageIds.add(data.assistant_message.id);addBubble('assistant',data.reply,data.assistant_message?.created_at||new Date().toISOString());status(data.exploration_completed?'Mia 已探索 '+(data.exploration?.space?.name||'新空间')+'，探索记录与长期记忆已保存。':'探索结果已返回，但请检查探索记录状态。',data.exploration_completed?'good':'error');}catch(err){pending.remove();status('探索失败：'+(err.message||String(err)),'error');}finally{busy=false;$('send').disabled=!token;$('message').disabled=!token;$('explore').disabled=!token;imageInput.disabled=!token;$('log').scrollTop=$('log').scrollHeight;}};
  $('logout').onclick=()=>{if(exclusivePoll){clearInterval(exclusivePoll);exclusivePoll=null;}token='';sessionStorage.removeItem('mia_chat_token');showApp(false);status('已退出 Mia 独立聊天。');$('log').innerHTML='<div class="welcome">登录后可继续查看 Mia 已迁移的聊天历史，并开始新的独立对话。</div>';};

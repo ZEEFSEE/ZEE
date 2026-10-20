@@ -6,17 +6,17 @@ const data = JSON.parse(fs.readFileSync(file, "utf8"));
 const banned = [
   /创造者/iu, /造物主/iu, /主人/iu, /大人/iu,
   /管理员/iu, /管理人员/iu, /管理者/iu, /后台管理/iu,
-  /系统管理员/iu, /\\badmin(?:istrator)?\\b/iu,
-  /\\bking\\b/iu
+  /系统管理员/iu, /\badmin(?:istrator)?\b/iu,
+  /\bking\b/iu
 ];
 const riskyPatterns = [
-  /[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/iu,
-  /\\b(?:https?:\\/\\/|www\\.)\\S+/iu,
-  /\\b(?:\\+?\\d[\\d ()-]{7,}\\d)\\b/u,
-  /\\b-?\\d{1,2}\\.\\d{4,}\\s*,\\s*-?\\d{1,3}\\.\\d{4,}\\b/u,
-  /(?:\\d{1,5}\\s*(?:号|弄|巷|街|路|道|avenue|street|road|lane)\\b)/iu,
-  /\\b20\\d{2}[-/.年]\\d{1,2}[-/.月]\\d{1,2}日?\\b/u,
-  /\\b(?:19|20)\\d{2}年\\d{1,2}月\\d{1,2}日/u
+  /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/iu,
+  /\b(?:https?:\/\/|www\.)\S+/iu,
+  /\b(?:\+?\d[\d ()-]{7,}\d)\b/u,
+  /\b-?\d{1,2}\.\d{4,}\s*,\s*-?\d{1,3}\.\d{4,}\b/u,
+  /(?:\d{1,5}\s*(?:号|弄|巷|街|路|道|avenue|street|road|lane)\b)/iu,
+  /\b20\d{2}[-/.年]\d{1,2}[-/.月]\d{1,2}日?\b/u,
+  /\b(?:19|20)\d{2}年\d{1,2}月\d{1,2}日/u
 ];
 const realEventTerms = [
   /世界杯/iu, /地震/iu, /台风/iu, /海啸/iu, /战争/iu,
@@ -28,7 +28,7 @@ const patterns = [...banned, ...riskyPatterns, ...realEventTerms];
 
 function checkPublicText(text, label) {
   for (const pattern of patterns) {
-    if (pattern.test(text)) throw new Error(`Safety filter blocked ${label} (matched a prohibited pattern).`);
+    if (pattern.test(text)) throw new Error(\`Safety filter blocked \${label} (matched a prohibited pattern).\`);
   }
 }
 
@@ -51,7 +51,7 @@ checkPublicText([
   ...(Array.isArray(data.mood) ? data.mood : [data.mood || ""]),
   data.message || "", data.theme || "", data.theme_label || "",
   ...(Array.isArray(data.tags) ? data.tags : [])
-].join("\\n"), "daily JSON");
+].join("\n"), "daily JSON");
 
 const sectionsFile = "mia/sections.json";
 if (fs.existsSync(sectionsFile)) {
@@ -74,7 +74,7 @@ if (fs.existsSync(sectionsFile)) {
     checkPublicText([
       section.title, section.subtitle || "", section.content, section.focus || "",
       section.trigger || "", ...(section.mood || []), ...(section.tags_display || [])
-    ].join("\\n"), `section ${section.id}`);
+    ].join("\n"), \`section \${section.id}\`);
   }
 }
 

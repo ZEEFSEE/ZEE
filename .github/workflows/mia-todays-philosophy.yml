@@ -1,4 +1,5 @@
 name: Mia Today's Philosophy
+# Deployment validation: keep this workflow change scoped to its own publication path.
 
 on:
   schedule:

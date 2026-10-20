@@ -1,0 +1,106 @@
+name: Mia Today's Philosophy
+
+on:
+  schedule:
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: mia-todays-philosophy
+  cancel-in-progress: false
+
+jobs:
+  generate-and-stage:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      pages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Obtain short-lived GitHub OIDC token
+        id: oidc
+        shell: bash
+        run: |
+          set -euo pipefail
+          response="$(curl --fail --silent --show-error             -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN"             "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=mia-todays-philosophy")"
+          token="$(node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const j=JSON.parse(s);if(!j.value)process.exit(1);process.stdout.write(j.value)})' <<< "$response")"
+          echo "::add-mask::$token"
+          echo "token=$token" >> "$GITHUB_OUTPUT"
+
+      - name: Generate philosophy from Mia's private context (server-side)
+        env:
+          OIDC_TOKEN: ${{ steps.oidc.outputs.token }}
+          PUBLISH_FUNCTION_URL: https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/mia-todays-philosophy
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error             -X POST "$PUBLISH_FUNCTION_URL"             -H "Authorization: Bearer $OIDC_TOKEN"             -H "Content-Type: application/json"             -d '{}'             -o mia/todays-philosophy.json
+          node -e 'const fs=require("fs");const x=JSON.parse(fs.readFileSync("mia/todays-philosophy.json","utf8"));if(x.status!=="published"||x.safety_status!=="passed"||!x.philosophy)process.exit(1);'
+
+      - name: Run local public-content safety gate
+        run: node mia/philosophy-safety-check.mjs
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload site for Pages deployment
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - name: Upload reviewed philosophy JSON
+        uses: actions/upload-artifact@v4
+        with:
+          name: mia-todays-philosophy-json
+          path: mia/todays-philosophy.json
+          if-no-files-found: error
+          retention-days: 2
+
+  commit-reviewed-json:
+    needs: generate-and-stage
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download reviewed JSON
+        uses: actions/download-artifact@v4
+        with:
+          name: mia-todays-philosophy-json
+          path: reviewed
+
+      - name: Commit only the reviewed public JSON
+        shell: bash
+        run: |
+          set -euo pipefail
+          install -m 0644 reviewed/todays-philosophy.json mia/todays-philosophy.json
+          node mia/philosophy-safety-check.mjs
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- mia/todays-philosophy.json; then
+            echo "No public JSON change to commit."
+            exit 0
+          fi
+          git add -- mia/todays-philosophy.json
+          git commit -m "Publish Mia today's philosophy"
+          git push
+
+  deploy-pages:
+    needs: generate-and-stage
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy generated Pages artifact
+        id: deployment
+        uses: actions/deploy-pages@v4

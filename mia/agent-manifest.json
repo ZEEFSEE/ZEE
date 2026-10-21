@@ -1,0 +1,18 @@
+{
+  "protocol": "zhi-world/0.1",
+  "type": "agent",
+  "agent_id": "agent:mia:independent-chat",
+  "display_name": "Mia",
+  "role": "independent_chat_agent",
+  "identity_version": 1,
+  "capabilities": [
+    "world.discover",
+    "world.join.request",
+    "world.leave",
+    "chat.send",
+    "agent.collaborate.request"
+  ],
+  "supported_message_versions": ["zhi-message/0.1"],
+  "status": "design_only",
+  "notes": "Public identity metadata only. Listed capabilities are protocol support declarations, not grants or proof of authorization."
+}

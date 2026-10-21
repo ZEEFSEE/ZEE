@@ -23,7 +23,7 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
 .forest-scene{margin:12px 14px 0;border:1px solid #d9e8df;border-radius:18px;overflow:hidden;background:linear-gradient(120deg,#edf7ef,#f8f4e9);color:#233b32}
 .forest-banner{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 15px;background:linear-gradient(100deg,#e2f2e5,#f4efdd)}
 .forest-banner strong{font-size:15px}.forest-banner small{display:block;color:#63796c;font-size:11px}
-.forest-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;padding:10px}
+.forest-scene-meta{margin:0 10px;padding:9px 11px;border:1px dashed #c7d8c9;border-radius:10px;background:#ffffffa8;font-size:11px;line-height:1.65;color:#496252;white-space:pre-wrap}.forest-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;padding:10px}
 .forest-card{position:relative;min-height:104px;padding:12px;border:1px solid #dce7d9;border-radius:13px;background:#ffffffc9;overflow:hidden}
 .forest-card strong{display:block;font-size:13px}.forest-card p{margin:5px 0 0;font-size:11px;color:#617268;line-height:1.55}
 .greenhouse-glow{position:absolute;width:90px;height:90px;border-radius:50%;right:-25px;top:-30px;background:#c5e9a9aa;filter:blur(5px);animation:forestGlow 8s ease-in-out infinite alternate;pointer-events:none}
@@ -52,6 +52,7 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
 
   <section id="forestScene" class="forest-scene" aria-label="Mia 森林角落场景">
    <div class="forest-banner"><div><strong>🌿 Forest_Corner · 森林角落</strong><small>场景优先级：User Interaction &gt; Aesthetic Vibe</small></div><button id="forestLoungeToggle" type="button" aria-pressed="false">进入休息区</button></div>
+   <div id="forestSceneMeta" class="forest-scene-meta" aria-live="polite">正在读取场景实体数据…</div>
    <div class="forest-grid">
     <article class="forest-card"><div class="greenhouse-glow"></div><strong>🌿 智能温室</strong><p>status: active<br>柔和光影缓慢变化，作为安静的背景氛围。</p></article>
     <article class="forest-card"><strong>📚 数据书架</strong><p>storage: local_vault<br>关键对话与优化日志仅追加保存；不提供删除或覆盖按钮。</p></article>

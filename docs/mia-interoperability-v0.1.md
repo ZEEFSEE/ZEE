@@ -44,9 +44,13 @@ These are contracts only; none are claimed to exist or be deployed:
 6. Test cross-agent privacy, expiry/revocation, replay/idempotency, unsupported versions/capabilities, oversized payloads and audit failures.
 7. Deploy only after review; never expose service-role keys in browser code.
 
-## Known blocker
+## Read-only backend findings
 
-The current repository page `mia-chat.html` references deployed functions `mia-chat-auth` and `mia-chat`, but source files at `supabase/functions/mia-chat-auth/index.ts` and `supabase/functions/mia-chat/index.ts` were not found at those paths on the repository's default branch during this read-only inspection. Their actual source location and deployed configuration must be located before safely implementing the server adapter.
+The `zee-extension` Supabase project currently has active `mia-chat-auth` (version 6), `mia-chat` (version 34), and `mia-world-bridge` (version 9) Edge Functions. The chat/auth source is available from the deployed function inspection, although the corresponding source paths were not found in the repository default branch.
+
+The existing `mia-world-bridge` currently returns HTTP 410 with the message that the Mia–ZHI connection has been disabled to restore the pre-connection boundary. Do not reactivate or overwrite this function as part of this baseline. A new, separately named adapter should be designed and reviewed instead.
+
+The inspected Mia tables (`mia_identity`, `mia_chat_sessions`, `mia_messages`, `mia_memories`, `mia_life_events`, `mia_emotion_events`, `mia_relationship_context`, and related tables) have RLS enabled. No existing world-membership table was identified in the inspected relevant table list. Do not create one until the membership model, grants, RLS policies, and revocation behavior are reviewed.
 
 ## Acceptance gate
 

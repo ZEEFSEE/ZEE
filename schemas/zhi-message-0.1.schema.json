@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zeefsee.github.io/ZEE/schemas/zhi-message-0.1.schema.json",
+  "title": "ZHI Message Envelope v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["protocol", "message_id", "conversation_id", "world_id", "sender", "kind", "created_at", "payload", "policy"],
+  "properties": {
+    "protocol": { "const": "zhi-message/0.1" },
+    "message_id": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "conversation_id": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "world_id": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "sender": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "id"],
+      "properties": {
+        "type": { "const": "agent" },
+        "id": { "type": "string", "minLength": 1, "maxLength": 200 }
+      }
+    },
+    "recipient": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["type", "id"],
+      "properties": {
+        "type": { "enum": ["agent", "user", "world"] },
+        "id": { "type": "string", "minLength": 1, "maxLength": 200 }
+      }
+    },
+    "kind": { "type": "string", "minLength": 1, "maxLength": 100 },
+    "created_at": { "type": "string", "format": "date-time" },
+    "correlation_id": { "type": ["string", "null"], "maxLength": 200 },
+    "reply_to": { "type": ["string", "null"], "maxLength": 200 },
+    "payload": { "type": "object" },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["visibility", "retention"],
+      "properties": {
+        "visibility": { "enum": ["conversation_members", "world_members", "explicit_recipients"] },
+        "retention": { "type": "string", "minLength": 1, "maxLength": 100 }
+      }
+    }
+  }
+}

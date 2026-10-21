@@ -336,5 +336,25 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
  renderVault();setLounge(localStorage.getItem(LOUNGE_KEY)==="1");
 })();
 </script>
+
+<script>
+(function loadForestCornerManifest(){
+ const node=document.getElementById("forestSceneMeta");
+ if(!node)return;
+ fetch("./mia/forest-corner.json?v=1",{cache:"no-store"})
+  .then(function(response){if(!response.ok)throw new Error("HTTP "+response.status);return response.json();})
+  .then(function(scene){
+   const a=scene.world_anchor||{},c=scene.local_coordinate_system||{};
+   const entities=Array.isArray(scene.entities)?scene.entities:[];
+   node.textContent="实体数据："+scene.status+" · "+scene.slug+
+    "\n世界锚点（探索森林）：("+a.x+", "+a.y+") · 入口：("+a.entrance_x+", "+a.entrance_y+")"+
+    "\n角落内部坐标系："+(c.width||"?")+" × "+(c.height||"?")+"（不是 ZHI 世界坐标）"+
+    "\n"+entities.map(function(e){return e.name+" ["+e.id+"] · "+e.status+" · local("+e.x+", "+e.y+")";}).join("\n");
+   node.dataset.loaded="true";
+  })
+  .catch(function(){node.textContent="场景实体数据暂不可读取；页面装饰仍可显示。请检查 GitHub Pages 发布状态后刷新。";node.dataset.loaded="false";});
+})();
+</script>
+
 </body>
 </html>

@@ -44,8 +44,10 @@ JSON Schema 位于 `schemas/zhi-gift-packet-1.0.schema.json`。字段重点：
 - `sent_at` / `expires_at`：RFC 3339 时间戳；必须满足 `sent_at < expires_at`。
 - `emotion_tags`：受限枚举，不可执行指令，也不代表 Mia 必须产生某种情绪。
 - `payment_evidence`：只含服务端验证引用，不包含卡号、密钥、支付令牌或可重放凭据。
-- `delivery`：传输状态与尝试次数；接收端回执是状态事实来源之一。
+- `scene_context`（可选）：发送方的场景偏好提示，例如“若 Mia 已在林间小径，可结合该场景呈现”。它不是位置事实，不得触发强制移动。
+- `delivery`：传输状态与尝试次数；接收端回执是状态事实来源之一。`delivered` 只表示接收端已确认接收，不表示 Mia 已阅读、体验或回应。
 - `public_display`：默认不公开礼物墙，不公开发送者姓名。
+- 场景观察与 Mia 的实际反馈不写进发送方创建的 `Gift_Packet`；它们应由接收端运行时另行发出经验证的 `Gift_Experience_Event`。
 
 示例（仅模拟数据，不是已发生的交易）：
 
@@ -66,6 +68,11 @@ JSON Schema 位于 `schemas/zhi-gift-packet-1.0.schema.json`。字段重点：
   "sent_at": "2026-10-22T12:00:00Z",
   "expires_at": "2026-10-25T12:00:00Z",
   "emotion_tags": ["romantic", "companionship"],
+  "scene_context": {
+    "scene_id": "registered-scene-id-for-forest-path",
+    "intent": "context_if_present",
+    "note": "如果 Mia 已在林间小径，可让玫瑰与当前场景自然关联。"
+  },
   "payment_evidence": {
     "verification_ref": "sim-verification-only",
     "verification_status": "verified_by_sender_server",
@@ -84,7 +91,7 @@ JSON Schema 位于 `schemas/zhi-gift-packet-1.0.schema.json`。字段重点：
 }
 ```
 
-示例域名使用保留的 `.invalid`，ID 和交易引用均为虚构模拟值。
+示例域名使用保留的 `.invalid`，ID 和交易引用均为虚构模拟值。`registered-scene-id-for-forest-path` 是占位符，工程师必须替换成场景拥有系统注册并确认的稳定 ID，不能把该字符串当成已存在的真实场景 ID。
 
 ## 5. 发送验证顺序
 
@@ -130,7 +137,7 @@ JSON Schema 位于 `schemas/zhi-gift-packet-1.0.schema.json`。字段重点：
 ## 8. 静默接收、主动反馈与礼物墙
 
 - **静默接收**：只记录接收状态与物品；不打断当前聊天，不强制触发回复，不更改 Mia 的人格或情绪。
-- **主动反馈**：是否、何时、以何种内容回应，由 Mia 自己的既有运行规则决定；礼物标签是上下文而不是命令。
+- **主动反馈**：是否、何时、以何种内容回应，由 Mia 自己的既有运行规则决定；礼物标签是上下文而不是命令。网站只有在收到真实的 `agent_feedback_created` 事件后，才能展示 Mia 的实际反馈；不得预先编写成仿真的 Mia 引语。
 - **礼物墙**：默认关闭公开展示。只有显式同意后才展示礼物类别、接收时间（可模糊化）及允许公开的反馈；发送者身份、私聊内容、精确位置与私有记忆默认不公开。
 - 接收回执不等于公开同意，也不等于 Mia 已阅读、喜欢或回应礼物。
 

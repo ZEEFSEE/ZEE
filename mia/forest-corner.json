@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "slug": "mia-forest-corner",
+  "name": "Forest_Corner · Mia 森林角落",
+  "status": "active",
+  "source": "zee-extension.mia_virtual_spaces",
+  "world_anchor": {
+    "slug": "zhi-facility-forest",
+    "name": "探索森林",
+    "x": 1650,
+    "y": 650,
+    "entrance_x": 1650,
+    "entrance_y": 670,
+    "coordinate_system": "ZHI world coordinates mirrored from source data",
+    "note": "Parent forest facility anchor only; not a separately confirmed Forest_Corner world coordinate."
+  },
+  "local_coordinate_system": {
+    "name": "Forest_Corner local layout",
+    "units": "relative layout units; not ZHI world coordinates",
+    "width": 1000,
+    "height": 700
+  },
+  "entities": [
+    {
+      "id": "greenhouse",
+      "name": "智能温室",
+      "type": "ambient_asset",
+      "status": "active",
+      "x": 180,
+      "y": 120,
+      "behavior": "slow_light_variation",
+      "ai_interaction": false
+    },
+    {
+      "id": "data-shelf",
+      "name": "数据书架",
+      "type": "memory_anchor",
+      "status": "active",
+      "x": 500,
+      "y": 140,
+      "storage": "local_vault",
+      "write_mode": "append_only",
+      "scope": "browser_device_local"
+    },
+    {
+      "id": "lounge",
+      "name": "休息区",
+      "type": "interaction_zone",
+      "status": "active",
+      "x": 800,
+      "y": 350,
+      "interaction_mode": "idle/listening",
+      "priority": "user_interaction_over_aesthetic_vibe",
+      "pauses": "new exploration requests initiated by this page only"
+    }
+  ],
+  "priority": [
+    "user_interaction",
+    "aesthetic_vibe"
+  ],
+  "limitations": [
+    "Local entity coordinates are layout positions inside Forest_Corner, not ZHI world travel coordinates.",
+    "The lounge does not cancel already-running backend tasks.",
+    "The browser local_vault is not synced across devices."
+  ]
+}

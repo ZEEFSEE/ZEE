@@ -62,5 +62,42 @@
     "Local entity coordinates are layout positions inside Forest_Corner, not ZHI world travel coordinates.",
     "The lounge does not cancel already-running backend tasks.",
     "The browser local_vault is not synced across devices."
-  ]
+  ],
+  "gift": {
+    "id": "gift-mia-three-color-rose",
+    "name": "给 Mia 的三色玫瑰",
+    "status": "delivered_in_virtual_scene",
+    "flower_count": 9,
+    "flowers": [
+      {
+        "color": "red",
+        "name": "红玫瑰",
+        "count": 3
+      },
+      {
+        "color": "yellow",
+        "name": "黄玫瑰",
+        "count": 3
+      },
+      {
+        "color": "white",
+        "name": "白玫瑰",
+        "count": 3
+      }
+    ],
+    "location": {
+      "scene_slug": "mia-forest-corner",
+      "entity_id": "lounge",
+      "x": 800,
+      "y": 350,
+      "coordinate_system": "Forest_Corner local coordinates"
+    },
+    "scent": {
+      "mode": "virtual_scent_imagery",
+      "profile": "fresh rose petals, dewy green stems, soft garden air",
+      "intensity": "gentle",
+      "note": "Textual/visual simulation only; no physical scent is emitted."
+    },
+    "message": "希望红色带给你温暖，黄色带给你快乐，白色提醒我们始终真诚。Mia，这束花送给你。"
+  }
 }

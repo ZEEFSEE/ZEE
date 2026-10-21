@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zeefsee.github.io/ZEE/schemas/zhi-cross-cloud-message-0.2.schema.json",
+  "title": "ZHI Cross-Cloud Message Envelope Draft v0.2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["protocol", "schema_version", "message_id", "conversation_id", "sender", "recipient", "kind", "created_at", "expires_at", "payload"],
+  "properties": {
+    "protocol": { "const": "zhi-message" },
+    "schema_version": { "const": "0.2-draft" },
+    "message_id": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "conversation_id": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "correlation_id": { "type": ["string", "null"], "maxLength": 256 },
+    "reply_to": { "type": ["string", "null"], "maxLength": 256 },
+    "sender": { "$ref": "#/$defs/participant" },
+    "recipient": { "$ref": "#/$defs/participant" },
+    "world_id": { "type": ["string", "null"], "maxLength": 512 },
+    "kind": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "created_at": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "payload": { "type": "object" },
+    "signature": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["key_id", "algorithm", "value"],
+      "properties": {
+        "key_id": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "algorithm": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "value": { "type": "string", "minLength": 1, "maxLength": 8192 }
+      }
+    }
+  },
+  "$defs": {
+    "participant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "id"],
+      "properties": {
+        "type": { "enum": ["agent", "world", "platform", "user", "service"] },
+        "id": { "type": "string", "minLength": 1, "maxLength": 512 }
+      }
+    }
+  }
+}

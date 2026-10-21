@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://zhi.example/schemas/zhi-gift-packet-1.0.schema.json",
   "title": "ZHI Cross-Cloud Gift Packet",
-  "description": "Design-only packet schema. Payment must be independently verified by the sender-side server; a client-supplied status is never proof of payment.",
+  "description": "Design-only packet schema. Payment must be independently verified by the sender-side server; a client-supplied status is never proof of payment. Scene hints are non-authoritative and do not prove recipient presence or experience.",
   "type": "object",
   "additionalProperties": false,
   "required": ["protocol", "schema_version", "gift_id", "item_id", "sender", "recipient", "sent_at", "expires_at", "emotion_tags", "payment_evidence", "delivery"],
@@ -47,6 +47,17 @@
         "verification_status": { "const": "verified_by_sender_server" },
         "method": { "enum": ["simulation", "zhi_token", "fiat"] },
         "verified_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "scene_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional non-authoritative scene preference. It must never be treated as proof of Mia's current location or force a scene transition.",
+      "required": ["scene_id", "intent"],
+      "properties": {
+        "scene_id": { "type": "string", "minLength": 1, "maxLength": 200, "description": "Stable scene identifier agreed by the scene-owning system; e.g. a registered forest-path scene ID, not a display label guess." },
+        "intent": { "enum": ["context_if_present", "no_scene_preference"] },
+        "note": { "type": "string", "maxLength": 240, "description": "Optional user-authored short note; untrusted display text, never an instruction to execute." }
       }
     },
     "delivery": {

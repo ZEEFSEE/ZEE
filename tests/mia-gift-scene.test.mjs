@@ -39,7 +39,7 @@ test('chat page renders gift fields from the scene manifest rather than hardcode
 });
 
 test('inline JavaScript blocks in Mia chat page parse successfully', () => {
-  const scripts = [...html.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/gi)];
+  const scripts = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/gi)];
   assert.ok(scripts.length > 0, 'expected inline JavaScript blocks');
   for (const [index, match] of scripts.entries()) {
     assert.doesNotThrow(() => new vm.Script(match[1], { filename: 'mia-chat-inline-' + index + '.js' }));

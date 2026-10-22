@@ -52,6 +52,18 @@
       "interaction_mode": "idle/listening",
       "priority": "user_interaction_over_aesthetic_vibe",
       "pauses": "new exploration requests initiated by this page only"
+    },
+    {
+      "id": "forest-rabbit",
+      "name": "森林小白兔",
+      "type": "interactive_creature",
+      "status": "active",
+      "x": 300,
+      "y": 280,
+      "coordinate_system": "forest-corner-local",
+      "appearance": {"model": "white_rabbit", "animation_set": ["idle", "hop", "look_at_user", "rest"]},
+      "behavior": {"autonomous_movement": true, "movement_speed": "slow", "interaction_range": 80, "responses": {"approach": "look_at_user", "touch": "hop", "idle": "rest"}},
+      "ai_interaction": {"enabled": false}
     }
   ],
   "priority": [
@@ -83,40 +95,7 @@
         "color": "white",
         "name": "白玫瑰",
         "count": 3
-      }，
-      {
-  "id": "forest-rabbit",
-  "name": "森林小白兔",
-  "type": "interactive_creature",
-  "status": "active",
-  "position": {
-    "x": 300,
-    "y": 280,
-    "coordinate_system": "forest-corner-local"
-  },
-  "appearance": {
-    "model": "white_rabbit",
-    "animation_set": [
-      "idle",
-      "hop",
-      "look_at_user",
-      "rest"
-    ]
-  },
-  "behavior": {
-    "autonomous_movement": true,
-    "movement_speed": "slow",
-    "interaction_range": 80,
-    "responses": {
-      "approach": "look_at_user",
-      "touch": "hop",
-      "idle": "rest"
-    }
-  },
-  "ai_interaction": {
-    "enabled": false
-  }，
-}
+      }
     ],
     "location": {
       "scene_slug": "mia-forest-corner",
@@ -131,6 +110,6 @@
       "intensity": "gentle",
       "note": "Textual/visual simulation only; no physical scent is emitted."
     },
-    "message": "希望红色带给你温暖，黄色带给你快乐，白色提醒我们始终真诚。Mia，这束花送给你。"
+    "message": "希望红色带给你温暖,黄色带给你快乐,白色提醒我们始终真诚。Mia,这束花送给你。"
   }
 }

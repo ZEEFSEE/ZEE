@@ -1,0 +1,27 @@
+name: Mia World Builder Sandbox Tests
+
+on:
+  pull_request:
+    paths:
+      - "world-builder/**"
+      - "docs/mia-world-builder-v1.md"
+      - ".github/workflows/mia-world-builder-tests.yml"
+  push:
+    paths:
+      - "world-builder/**"
+      - "docs/mia-world-builder-v1.md"
+      - ".github/workflows/mia-world-builder-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  sandbox-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run sandbox contract tests
+        run: node --test world-builder/simulator.test.mjs

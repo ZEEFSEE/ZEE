@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0.0",
+  "mode": "sandbox",
+  "creator": "Mia",
+  "autonomy": {
+    "may_propose_scenes": true,
+    "may_propose_gift_mechanics": true,
+    "may_run_conditioned_aigc_via_adapter": false,
+    "may_write_production_world_state": false,
+    "may_deploy_own_proposals": false,
+    "per_scene_human_approval_required": false,
+    "operator_controls": [
+      "palette_weights",
+      "global_pause",
+      "resource_budget",
+      "rollback_policy"
+    ]
+  },
+  "oracle": {
+    "max_logic_error_rate": 0.1,
+    "freeze_when_rate_strictly_exceeds_threshold": true,
+    "minimum_sample_size": 20,
+    "freeze_scope": "affected_region_only",
+    "unfreeze_requires": "successful_validation_and_explicit_operator_resume"
+  },
+  "resources": {
+    "compute": "simulated_budget_units",
+    "stake": "simulated_only",
+    "token_debit_enabled": false,
+    "reward_enabled": false,
+    "burn_enabled": false,
+    "production_wallet_access": false
+  },
+  "invariants": [
+    "No direct writes to ZHI Core or Mia independent chat database from this sandbox.",
+    "Generated proposals are untrusted input and must be schema-validated.",
+    "No proposal may change authentication, permissions, economy rules, world coordinate system, or oracle policy.",
+    "A rollback restores the last validated region snapshot; it does not erase audit events.",
+    "No actual token stake, reward, or burn in sandbox mode."
+  ]
+}

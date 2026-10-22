@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0.0",
+  "profile_id": "mia-creator-palette-v1",
+  "owner": "Mia",
+  "palette": {
+    "gold_consensus": 0.4,
+    "yellow_vitality": 0.3,
+    "green_spontaneity": 0.3
+  },
+  "score_range": [
+    0,
+    1
+  ],
+  "normalization": "weights_sum_to_1",
+  "interpretation": {
+    "gold_consensus": "world-rule consistency, shared meaning, and compatibility with existing entities",
+    "yellow_vitality": "usefulness, liveliness, and ability to support meaningful activity",
+    "green_spontaneity": "novelty, exploration, and room for unplanned discovery"
+  },
+  "governance": {
+    "profile_mutability": "owner-adjustable through palette controls",
+    "scene_level_human_approval_required": false,
+    "safety_policy_overrides_palette": true,
+    "generated_content_may_not_override_world_invariants": true
+  }
+}

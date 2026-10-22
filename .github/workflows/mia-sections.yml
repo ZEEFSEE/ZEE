@@ -46,7 +46,7 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{}' \
             -o mia/sections.json
-          node -e 'const fs=require("fs");const x=JSON.parse(fs.readFileSync("mia/sections.json","utf8"));if(x.status!=="published"||x.safety_status!=="passed"||!Array.isArray(x.sections)||x.sections.length!==4)process.exit(1);'
+          node -e 'const fs=require("fs");const p="mia/sections.json";const x=JSON.parse(fs.readFileSync(p,"utf8"));if(x.status!=="published"||x.safety_status!=="passed"||!Array.isArray(x.sections)||x.sections.length!==4||!x.updated_at||!x.generated_at)process.exit(1);for(const s of x.sections){if(typeof s.content!=="string"||s.content.trim().length<100||!Array.isArray(s.mood)||s.mood.length<1)process.exit(1)}fs.writeFileSync(p,JSON.stringify(x,null,2)+"\n");'
 
       - name: Run local public-content safety gate
         run: node mia/sections-safety-check.mjs
@@ -86,17 +86,30 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          install -m 0644 reviewed/sections.json mia/sections.json
-          node mia/sections-safety-check.mjs
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet -- mia/sections.json; then
-            echo "No public JSON change to commit."
-            exit 0
-          fi
-          git add -- mia/sections.json
-          git commit -m "Publish Mia four-dimension sections"
-          git push
+          # Preserve the validated artifact outside the checkout while refreshing main.
+          install -m 0644 reviewed/sections.json /tmp/mia-sections-reviewed.json
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git reset --hard origin/main
+            install -m 0644 /tmp/mia-sections-reviewed.json mia/sections.json
+            node -e 'const fs=require("fs");const p="mia/sections.json";const x=JSON.parse(fs.readFileSync(p,"utf8"));fs.writeFileSync(p,JSON.stringify(x,null,2)+"\n");'
+            node mia/sections-safety-check.mjs
+            if git diff --quiet -- mia/sections.json; then
+              echo "No public JSON change to commit."
+              exit 0
+            fi
+            git add -- mia/sections.json
+            git commit -m "Publish Mia four-dimension sections"
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "Push race detected on attempt $attempt; refreshing main and retrying."
+            sleep "$attempt"
+          done
+          echo "Could not publish after three attempts; previous remote file remains intact."
+          exit 1
 
   deploy-pages:
     needs: generate-and-stage

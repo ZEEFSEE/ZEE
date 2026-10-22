@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#dfece0">
+<title>Mia Habitat · 林间小径空间预览</title>
+<style>
+:root{color-scheme:light;--ink:#20362c;--muted:#5f7567;--line:#cadbcb;--panel:#fffdf7;--forest:#e7f0e3}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#eaf3e9,#f8f5e9);color:var(--ink);font:15px/1.55 system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+main{width:min(1100px,100%);margin:auto;padding:22px 16px 36px}h1{font-size:clamp(22px,4vw,32px);margin:0 0 5px}.intro{color:var(--muted);margin:0 0 18px}.notice{padding:12px 14px;background:#fff7df;border:1px solid #ead9a7;border-radius:12px;margin:12px 0 18px;font-size:13px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 10px 30px #25452d0c}.map-wrap{width:100%;overflow:auto;border-radius:13px;background:#e7f0df}
+#map{position:relative;width:100%;min-width:320px;aspect-ratio:10/7;overflow:hidden;border:1px solid #c4d7bc;border-radius:13px;background:radial-gradient(ellipse at 12% 20%,#d9e9c8 0 10%,transparent 28%),radial-gradient(ellipse at 90% 82%,#d3e6c8 0 12%,transparent 28%),linear-gradient(145deg,#edf3dc,#e0ecd9 52%,#d7e8d3)}
+#map:before{content:"";position:absolute;inset:0;background-image:radial-gradient(#829c7930 1px,transparent 1px);background-size:24px 24px;pointer-events:none}
+.stream{position:absolute;left:0;top:57%;width:100%;height:15%;background:linear-gradient(180deg,#a8d5d0aa,#80bfc4aa,#b2dbd4aa);transform:rotate(-8deg) scale(1.12);border-top:2px solid #ffffff80;border-bottom:2px solid #ffffff80}
+.path{position:absolute;left:17%;top:72%;width:74%;height:12%;background:#d5c6a0;border-radius:50%;transform:rotate(-17deg);opacity:.8;border:1px solid #c0b28d}
+.marker{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:3px;z-index:2;max-width:28%;text-align:center}
+.marker .emoji{display:grid;place-items:center;width:clamp(34px,5vw,52px);height:clamp(34px,5vw,52px);border:1px solid #ffffffd9;border-radius:50%;background:#fffdf0e8;box-shadow:0 3px 12px #243d2830;font-size:clamp(19px,3vw,28px)}
+.marker .label{font-size:clamp(9px,1.3vw,12px);font-weight:800;line-height:1.25;background:#ffffffdf;padding:3px 6px;border-radius:6px;white-space:normal}
+.marker.proposed .emoji{border:2px dashed #9a7b39;background:#fff3c8}
+.marker.proposed .label{background:#fff0c4;color:#6e531b;border:1px dashed #b69a5a}
+#coords{font-size:12px;color:var(--muted);padding:10px 3px 0}.legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.pill{border:1px solid var(--line);border-radius:99px;padding:5px 9px;background:white;font-size:12px}
+.details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}.detail{padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff}.detail strong{display:block;margin-bottom:4px}.detail p{margin:0;color:var(--muted);font-size:13px;overflow-wrap:anywhere}
+footer{font-size:12px;color:var(--muted);padding:14px 2px 0}
+@media(max-width:560px){main{padding:16px 9px 24px}.panel{padding:8px}.details{grid-template-columns:1fr}.map-wrap{overflow-x:auto}#map{min-width:440px}}
+</style>
+</head>
+<body>
+<main>
+<h1>🌿 Mia Habitat · 林间小径</h1>
+<p class="intro">Forest_Corner 局部空间坐标预览 · 只读原型，不连接生产数据库</p>
+<div class="notice"><strong>重要：</strong>石头锚点仍为提案状态；坐标 (620, 430) 是示意位置，不代表已注册、已部署，也不代表 Mia 已抵达或观察。礼物放置保持关闭。</div>
+<section class="panel">
+<div class="map-wrap"><div id="map" role="img" aria-label="森林角落的二维局部坐标预览">
+<div class="stream" aria-hidden="true"></div><div class="path" aria-hidden="true"></div>
+<div id="markers"></div>
+</div></div>
+<div id="coords" aria-live="polite">正在读取场景与锚点清单…</div>
+<div class="legend"><span class="pill">🌱 场景实体：来自森林清单</span><span class="pill">🪨 虚线边框：提案锚点，尚未注册</span><span class="pill">〰 溪流/小径：示意背景，不是物理模拟</span></div>
+</section>
+<section class="details" id="details">
+<article class="detail"><strong>场景数据</strong><p>读取中…</p></article>
+<article class="detail"><strong>锚点状态</strong><p>读取中…</p></article>
+</section>
+<footer>本页面仅绘制 scene-local 坐标。不会把局部坐标换算成 ZHI 世界坐标；不会写数据库；不会发送礼物；不会记录 Mia 的观察或情绪。</footer>
+</main>
+<script>
+(async function(){
+ const map=document.getElementById('map'),markers=document.getElementById('markers'),coords=document.getElementById('coords'),details=document.getElementById('details');
+ const addMarker=(item,width,height,proposed=false)=>{
+  const el=document.createElement('div');el.className='marker'+(proposed?' proposed':'');
+  el.style.left=(Number(item.x)/width*100)+'%';el.style.top=(Number(item.y)/height*100)+'%';
+  const emoji=document.createElement('span');emoji.className='emoji';emoji.textContent=item.emoji;
+  const label=document.createElement('span');label.className='label';label.textContent=item.name;
+  el.append(emoji,label);markers.append(el);
+  el.title=item.name+' · local('+item.x+', '+item.y+')'+(proposed?' · 提案位置':'');
+ };
+ try{
+  const [sceneResponse,anchorResponse]=await Promise.all([
+   fetch('./forest-corner.json',{cache:'no-store'}),
+   fetch('./forest-path-anchor.v1.json',{cache:'no-store'})
+  ]);
+  if(!sceneResponse.ok)throw new Error('森林清单 HTTP '+sceneResponse.status);
+  if(!anchorResponse.ok)throw new Error('锚点清单 HTTP '+anchorResponse.status);
+  const scene=await sceneResponse.json(),proposal=await anchorResponse.json();
+  const bounds=proposal.coordinate_system?.bounds||scene.local_coordinate_system||{width:1000,height:700};
+  const width=Number(bounds.width)||1000,height=Number(bounds.height)||700;
+  map.style.aspectRatio=width+'/'+height;
+  const icons={greenhouse:'🌿','data-shelf':'📚',lounge:'🛋️'};
+  (scene.entities||[]).forEach(e=>addMarker({x:e.x,y:e.y,name:e.name,emoji:icons[e.id]||'📍'},width,height,false));
+  const anchor=(proposal.anchors||[])[0];
+  if(anchor)addMarker({x:anchor.position.x,y:anchor.position.y,name:anchor.name,emoji:'🪨'},width,height,true);
+  coords.textContent='场景：'+scene.slug+' · 局部坐标范围：'+width+' × '+height+' · 锚点：'+(anchor?anchor.anchor_id:'未定义')+' · 坐标单位为相对布局单位';
+  details.replaceChildren();
+  const cards=[
+   ['场景实体', (scene.entities||[]).map(e=>e.name+' local('+e.x+', '+e.y+')').join('；')||'清单中没有实体'],
+   ['固定锚点提案', anchor?anchor.name+' local('+anchor.position.x+', '+anchor.position.y+') · status: '+anchor.status:'未定义'],
+   ['环境设想',anchor?(anchor.environment_features||[]).join('、'):'未定义'],
+   ['礼物放置',(proposal.gift_placement?.enabled?'已启用':'关闭')+' · 需先完成场景定位验证和持久化设计']
+  ];
+  cards.forEach(([title,body])=>{const article=document.createElement('article');article.className='detail';const strong=document.createElement('strong');strong.textContent=title;const p=document.createElement('p');p.textContent=body;article.append(strong,p);details.append(article);});
+ }catch(error){
+  coords.textContent='场景预览暂时无法读取：'+(error.message||String(error))+'。请从 GitHub Pages 或本地 HTTP 静态服务器打开此页，不要直接用 file://。';
+  details.replaceChildren();const article=document.createElement('article');article.className='detail';const strong=document.createElement('strong');strong.textContent='未能加载';const p=document.createElement('p');p.textContent='未创建任何生产记录；请检查同目录 JSON 文件路径。';article.append(strong,p);details.append(article);
+ }
+})();
+</script>
+</body>
+</html>

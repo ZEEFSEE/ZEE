@@ -45,5 +45,5 @@ export function formatQuoteSummary(q) {
     "行情时间：" + (q.quoteTime || "数据源未提供"),
     "数据源：" + q.source,
     "说明：这是本次查询返回的数据，不代表持续监控；此临时问答不会写入 Mia 聊天历史或长期记忆。",
-  ].join("\\n");
+  ].join("\n");
 }

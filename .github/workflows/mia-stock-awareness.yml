@@ -1,0 +1,26 @@
+name: Mia Stock Awareness Tests
+on:
+  pull_request:
+    paths:
+      - "mia-chat.html"
+      - "mia-stock-awareness.js"
+      - "mia-stock-awareness-core.mjs"
+      - "mia-stock-awareness.test.mjs"
+      - ".github/workflows/mia-stock-awareness.yml"
+  push:
+    branches: ["work/mia-stock-awareness-v1"]
+    paths:
+      - "mia-chat.html"
+      - "mia-stock-awareness.js"
+      - "mia-stock-awareness-core.mjs"
+      - "mia-stock-awareness.test.mjs"
+      - ".github/workflows/mia-stock-awareness.yml"
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node --test mia-stock-awareness.test.mjs

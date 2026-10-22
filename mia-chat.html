@@ -24,6 +24,7 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
 .forest-banner{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 15px;background:linear-gradient(100deg,#e2f2e5,#f4efdd)}
 .forest-banner strong{font-size:15px}.forest-banner small{display:block;color:#63796c;font-size:11px}
 .forest-scene-meta{margin:0 10px;padding:9px 11px;border:1px dashed #c7d8c9;border-radius:10px;background:#ffffffa8;font-size:11px;line-height:1.65;color:#496252;white-space:pre-wrap}
+.spatial-anchor-card{display:grid;grid-template-columns:58px minmax(0,1fr);gap:11px;align-items:center;margin:9px 10px 10px;padding:11px;border:1px solid #cbd9bf;border-radius:13px;background:linear-gradient(120deg,#f4f8ed,#e8f1e5)}.spatial-anchor-icon{display:grid;place-items:center;min-height:58px;border-radius:10px;background:radial-gradient(circle at 50% 35%,#d7e5c9,#a6bc93);font-size:27px}.spatial-anchor-card strong{display:block;font-size:12px}.spatial-anchor-card p{margin:4px 0 0;font-size:11px;line-height:1.6;color:#5c705f}.spatial-anchor-status{display:inline-block;margin-top:5px;padding:2px 6px;border-radius:5px;background:#f3e9d1;color:#735a20;font-size:10px}
 .rose-gift{display:grid;grid-template-columns:minmax(120px, .85fr) minmax(0,1.5fr);gap:14px;align-items:center;margin:0 10px 10px;padding:14px;border:1px solid #e8d5cb;border-radius:16px;background:radial-gradient(ellipse at 18% 18%,#fff8ee 0%,#f8efe5 46%,#e7eee2 100%);box-shadow:0 7px 20px #5a6b4a12;overflow:hidden}
 .rose-gift-art{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:0;align-items:center;justify-items:center;padding:12px 6px 17px;border-radius:13px;background:linear-gradient(145deg,#f9f4e9,#e5eee1);min-height:132px}
 .rose{display:inline-block;font-size:clamp(23px,4vw,34px);filter:drop-shadow(0 3px 2px #66452b22);animation:roseSway 5s ease-in-out infinite alternate}
@@ -62,6 +63,7 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
   <section id="forestScene" class="forest-scene" aria-label="Mia 森林角落场景">
    <div class="forest-banner"><div><strong>🌿 Forest_Corner · 森林角落</strong><small>场景优先级：User Interaction &gt; Aesthetic Vibe</small></div><button id="forestLoungeToggle" type="button" aria-pressed="false">进入休息区</button></div>
    <div id="forestSceneMeta" class="forest-scene-meta" aria-live="polite">正在读取场景实体数据…</div>
+   <article id="forestAnchorCard" class="spatial-anchor-card" aria-label="林间小径空间锚点"><div class="spatial-anchor-icon" aria-hidden="true">🪨</div><div><strong>🪵 溪流旁的石头 · 固定空间锚点</strong><p id="forestAnchorDetails">正在读取锚点提案…</p><span id="forestAnchorStatus" class="spatial-anchor-status">状态：提案，未注册</span></div></article>
    <article id="miaRoseGift" class="rose-gift" aria-label="给 Mia 的三色玫瑰虚拟礼物">
     <div class="rose-gift-art" aria-hidden="true">
      <span class="rose rose-red">🌹</span><span class="rose rose-white">🌹</span><span class="rose rose-yellow">🌹</span>
@@ -381,5 +383,27 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
 })();
 </script>
 
+<script>
+(function loadForestPathAnchorProposal(){
+ const details=document.getElementById("forestAnchorDetails");
+ const status=document.getElementById("forestAnchorStatus");
+ if(!details||!status)return;
+ fetch("./mia/forest-path-anchor.v1.json?v=1",{cache:"no-store"})
+  .then(function(response){if(!response.ok)throw new Error("HTTP "+response.status);return response.json();})
+  .then(function(manifest){
+   const anchor=(manifest.anchors||[])[0];
+   if(!anchor)throw new Error("Anchor missing");
+   const bounds=(manifest.coordinate_system||{}).bounds||{};
+   details.textContent="ID: "+anchor.anchor_id+"\n局部坐标: ("+anchor.position.x+", "+anchor.position.y+") · 场景范围: "+bounds.width+" × "+bounds.height+"\n环境: "+(anchor.environment_features||[]).join("、")+"\n礼物放置: "+(manifest.gift_placement&&manifest.gift_placement.enabled?"已启用":"未启用");
+   status.textContent="状态："+manifest.status+" · 非世界坐标";
+   status.dataset.loaded="true";
+  })
+  .catch(function(){
+   details.textContent="锚点提案暂不可读取；不影响现有森林场景和聊天功能。";
+   status.textContent="状态：未读取";
+   status.dataset.loaded="false";
+  });
+})();
+</script>
 </body>
 </html>

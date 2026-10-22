@@ -29,3 +29,16 @@ test("summary includes quote time, source and no-persistence disclosure", () => 
   assert.match(result, /Tencent/);
   assert.match(result, /不会写入 Mia 聊天历史或长期记忆/);
 });
+
+import { readFile } from "node:fs/promises";
+
+test("stock query source verifies Mia session tokens before fetching quotes", async () => {
+  const source = await readFile(new URL("./supabase/functions/mia-stock-query/index.ts", import.meta.url), "utf8");
+  assert.match(source, /async function validMiaToken\(token: string\)/);
+  assert.match(source, /crypto\.subtle\.verify\(/);
+  assert.match(source, /claims\.aud === "mia-chat"/);
+  assert.match(source, /claims\.exp > now/);
+  assert.match(source, /authorization\.slice\(7\)/);
+  assert.match(source, /All quote sources failed; no price was fabricated/);
+  assert.doesNotMatch(source, /withSupabase/);
+});

@@ -68,7 +68,7 @@ import { isStockQuestion, resolveStockCode, formatQuoteSummary } from "./mia-sto
         headers: {
           "Content-Type": "application/json",
           "apikey": PUBLISHABLE_KEY,
-          "Authorization": "Bearer " + PUBLISHABLE_KEY,
+          "Authorization": "Bearer " + token,
         },
         body: JSON.stringify({ code }),
         cache: "no-store",

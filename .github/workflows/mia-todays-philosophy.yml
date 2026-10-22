@@ -43,7 +43,7 @@ jobs:
         run: |
           set -euo pipefail
           curl --fail --silent --show-error             -X POST "$PUBLISH_FUNCTION_URL"             -H "Authorization: Bearer $OIDC_TOKEN"             -H "Content-Type: application/json"             -d '{}'             -o mia/todays-philosophy.json
-          node -e 'const fs=require("fs");const x=JSON.parse(fs.readFileSync("mia/todays-philosophy.json","utf8"));if(x.status!=="published"||x.safety_status!=="passed"||!x.philosophy)process.exit(1);'
+          node -e 'const fs=require("fs");const p="mia/todays-philosophy.json";const x=JSON.parse(fs.readFileSync(p,"utf8"));if(x.status!=="published"||x.safety_status!=="passed"||!x.philosophy||!x.reflection||!x.date||!x.generated_at)process.exit(1);if(String(x.philosophy).trim().length<20||String(x.reflection).trim().length<80)process.exit(1);fs.writeFileSync(p,JSON.stringify(x,null,2)+"\n");'
 
       - name: Run local public-content safety gate
         run: node mia/philosophy-safety-check.mjs
@@ -83,17 +83,31 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          install -m 0644 reviewed/todays-philosophy.json mia/todays-philosophy.json
-          node mia/philosophy-safety-check.mjs
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet -- mia/todays-philosophy.json; then
-            echo "No public JSON change to commit."
-            exit 0
-          fi
-          git add -- mia/todays-philosophy.json
-          git commit -m "Publish Mia today's philosophy"
-          git push
+          # Keep the reviewed artifact safe while refreshing the moving main branch.
+          install -m 0644 reviewed/todays-philosophy.json /tmp/mia-todays-philosophy-reviewed.json
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git reset --hard origin/main
+            install -m 0644 /tmp/mia-todays-philosophy-reviewed.json mia/todays-philosophy.json
+            node -e 'const fs=require("fs");const p="mia/todays-philosophy.json";const x=JSON.parse(fs.readFileSync(p,"utf8"));if(x.status!=="published"||x.safety_status!=="passed"||!x.philosophy||!x.reflection||!x.date||!x.generated_at)process.exit(1);fs.writeFileSync(p,JSON.stringify(x,null,2)+"\n");'
+            node mia/philosophy-safety-check.mjs
+            if git diff --quiet -- mia/todays-philosophy.json; then
+              echo "No public JSON change to commit."
+              exit 0
+            fi
+            git add -- mia/todays-philosophy.json
+            git commit -m "Publish Mia today's philosophy"
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "Push race detected on attempt $attempt; refreshing main and retrying."
+            sleep "$attempt"
+          done
+          echo "Could not publish philosophy after three attempts; previous remote file remains intact."
+          exit 1
 
   deploy-pages:
     needs: generate-and-stage

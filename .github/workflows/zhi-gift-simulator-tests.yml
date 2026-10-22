@@ -1,0 +1,27 @@
+name: ZHI Gift Simulator Tests
+
+on:
+  push:
+    paths:
+      - "simulators/gift-simulator.mjs"
+      - "simulators/gift-simulator.test.mjs"
+      - ".github/workflows/zhi-gift-simulator-tests.yml"
+  pull_request:
+    paths:
+      - "simulators/gift-simulator.mjs"
+      - "simulators/gift-simulator.test.mjs"
+      - ".github/workflows/zhi-gift-simulator-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  simulator-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run isolated in-memory simulator tests
+        run: node --test simulators/gift-simulator.test.mjs

@@ -34,6 +34,7 @@ import { readFile } from "node:fs/promises";
 
 test("stock query source verifies Mia session tokens before fetching quotes", async () => {
   const source = await readFile(new URL("./supabase/functions/mia-stock-query/index.ts", import.meta.url), "utf8");
+  const config = await readFile(new URL("./supabase/config.toml", import.meta.url), "utf8");
   assert.match(source, /async function validMiaToken\(token: string\)/);
   assert.match(source, /crypto\.subtle\.verify\(/);
   assert.match(source, /claims\.aud === "mia-chat"/);
@@ -41,4 +42,5 @@ test("stock query source verifies Mia session tokens before fetching quotes", as
   assert.match(source, /authorization\.slice\(7\)/);
   assert.match(source, /All quote sources failed; no price was fabricated/);
   assert.doesNotMatch(source, /withSupabase/);
+  assert.match(config, /\[functions\.mia-stock-query\]\s+verify_jwt = false/);
 });

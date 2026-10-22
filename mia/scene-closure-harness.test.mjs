@@ -119,7 +119,7 @@ test("partial persistence failure never reports completion", async () => {
   }
 });
 
-test("a failed retry does not fabricate memory recall", async () => {
+test("a failed exploration does not fabricate memory recall", async () => {
   const h = createHarness({ scenes: [activeScene], failAt: "memory" });
   const result = await h.explore("test-garden");
   assert.equal(result.ok, false);

@@ -1,0 +1,33 @@
+name: Mia scene closure validator
+
+on:
+  pull_request:
+    paths:
+      - 'mia/scene-closure-validator.mjs'
+      - 'mia/scene-closure-validator.test.mjs'
+      - 'mia/scene-closure-harness.test.mjs'
+      - '.github/workflows/mia-scene-closure.yml'
+  push:
+    branches:
+      - 'work/mia-scene-closure-v1'
+    paths:
+      - 'mia/scene-closure-validator.mjs'
+      - 'mia/scene-closure-validator.test.mjs'
+      - 'mia/scene-closure-harness.test.mjs'
+      - '.github/workflows/mia-scene-closure.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validator-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run validator and mocked closure tests
+        run: node --test mia/scene-closure-validator.test.mjs mia/scene-closure-harness.test.mjs

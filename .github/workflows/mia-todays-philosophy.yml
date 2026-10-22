@@ -42,7 +42,32 @@ jobs:
           PUBLISH_FUNCTION_URL: https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/mia-todays-philosophy
         run: |
           set -euo pipefail
-          curl --fail --silent --show-error             -X POST "$PUBLISH_FUNCTION_URL"             -H "Authorization: Bearer $OIDC_TOKEN"             -H "Content-Type: application/json"             -d '{}'             -o mia/todays-philosophy.json
+          response_file="$(mktemp)"
+          trap 'rm -f "$response_file"' EXIT
+          http_status="$(curl --silent --show-error \
+            -X POST "$PUBLISH_FUNCTION_URL" \
+            -H "Authorization: Bearer $OIDC_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{}' \
+            -o "$response_file" \
+            -w '%{http_code}')"
+          if [[ "$http_status" != "200" ]]; then
+            echo "Mia philosophy publisher returned HTTP $http_status."
+            # Print only a short error label, never the full response or private context.
+            node - "$response_file" <<'NODE'
+          const fs = require("fs");
+          try {
+            const body = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
+            const raw = typeof body.error === "string" ? body.error : "";
+            const safe = raw.length <= 160 && !/[\r\n]/.test(raw) ? raw : "";
+            console.error("Publisher error: " + (safe || "No safe short error label returned; response body withheld."));
+          } catch {
+            console.error("Publisher returned a non-JSON error; response body withheld.");
+          }
+          NODE
+            exit 1
+          fi
+          cp "$response_file" mia/todays-philosophy.json
           node -e 'const fs=require("fs");const p="mia/todays-philosophy.json";const x=JSON.parse(fs.readFileSync(p,"utf8"));if(x.status!=="published"||x.safety_status!=="passed"||!x.philosophy||!x.reflection||!x.date||!x.generated_at)process.exit(1);if(String(x.philosophy).trim().length<20||String(x.reflection).trim().length<80)process.exit(1);fs.writeFileSync(p,JSON.stringify(x,null,2)+"\n");'
 
       - name: Run local public-content safety gate

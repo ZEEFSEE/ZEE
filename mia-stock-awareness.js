@@ -93,7 +93,7 @@ import { isStockQuestion, resolveStockCode, formatQuoteSummary } from "./mia-sto
         throw new Error(stockResult.error || ("股票解释失败（HTTP " + stockResponse.status + "）"));
       }
 
-      addTemporaryBubble("assistant", formatQuoteSummary(stockResult.quote || quoteResult.data) + "\\n\\nMia：\\n" + stockResult.reply);
+      addTemporaryBubble("assistant", formatQuoteSummary(stockResult.quote || quoteResult.data) + "\n\nMia：\n" + stockResult.reply);
       setStatus("行情已返回。为遵守独立聊天边界，本次股票问答只在当前页面临时显示，不写入 mia_messages、mia_memories、情绪或人格状态；刷新页面后不会作为聊天历史保留。", "good");
     } catch (error) {
       addTemporaryBubble("assistant", "这次我没能可靠取得股票行情，因此不会猜测价格。原因：" + (error?.message || String(error)));

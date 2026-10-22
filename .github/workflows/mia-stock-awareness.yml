@@ -7,6 +7,7 @@ on:
       - "mia-stock-awareness-core.mjs"
       - "mia-stock-awareness.test.mjs"
       - "supabase/functions/mia-stock-query/index.ts"
+      - "supabase/config.toml"
       - ".github/workflows/mia-stock-awareness.yml"
   push:
     branches: ["work/mia-stock-awareness-v1"]
@@ -16,6 +17,7 @@ on:
       - "mia-stock-awareness-core.mjs"
       - "mia-stock-awareness.test.mjs"
       - "supabase/functions/mia-stock-query/index.ts"
+      - "supabase/config.toml"
       - ".github/workflows/mia-stock-awareness.yml"
 jobs:
   tests:

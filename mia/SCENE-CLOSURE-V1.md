@@ -16,23 +16,27 @@ This is a non-production validation layer. It does not call Supabase, write data
 8. **Recall check** — query the newly saved memory by its exploration ID/source record ID in a later request and verify that the retrieved record matches the completed run. A saved memory does not by itself prove successful later recall.
 9. **Report** — distinguish `scene_validated`, `exploration_generated`, `records_persisted`, `memory_recalled`, and `actual_world_entry`. The last remains `false` unless a separately authorized and verified world-action interface provides evidence.
 
-## Validator
+## Validator and tests
 
 `scene-closure-validator.mjs` exposes:
 - `validateScene(scene)` — structural and coordinate-boundary checks.
 - `validateExplorationClosure(evidence)` — verifies explicit evidence flags for run completion, memory, life event, and assistant message.
 
-Run the dependency-free tests with Node.js:
+The pure in-memory mock harness (`scene-closure-harness.test.mjs`) covers missing/inactive scene rejection, successful mocked persistence and later recall, upstream generation failure, and partial persistence failures. It does not connect to Supabase or prove production behavior. Duplicate retry/idempotency is not covered yet.
+
+Run both dependency-free test files with Node.js:
 
 ```sh
-node --test mia/scene-closure-validator.test.mjs
+node --test mia/scene-closure-validator.test.mjs mia/scene-closure-harness.test.mjs
 ```
+
+GitHub Actions runs the same command on matching pushes and pull requests.
 
 ## Known gaps found during audit
 
 - The forest JSON lists `forest-rabbit`, while the active database scene's `scene_data.entities` contains only `greenhouse`, `data-shelf`, and `lounge`. The validator does not silently reconcile or write this mismatch.
 - Six other active scenes have task descriptions but no structured `entities` inventory in `scene_data`.
-- The active exploration function returns persistence flags and writes linked records, but the full end-to-end behavior (including later memory recall) has not been executed and verified as part of this branch.
+- The active exploration function returns persistence flags and writes linked records, but the full production end-to-end behavior (including later memory recall) has not been executed and verified as part of this branch.
 - Education Center, Entertainment, and Arena should not be activated from legacy records until their source, status, and coordinate semantics are reviewed. Arena project coordinates remain unknown; do not substitute facility coordinates.
 
 ## Acceptance checklist before production integration
@@ -40,6 +44,7 @@ node --test mia/scene-closure-validator.test.mjs
 - [ ] Scene catalog has one reviewed source of truth or a deterministic, versioned merge rule.
 - [ ] Every active scene has a validated entity inventory, or an explicit `entities_status: "not_modeled"` marker.
 - [ ] All coordinates declare their coordinate system; unknown coordinates are `null`/omitted and are never guessed.
-- [ ] Tests cover missing scene, inactive scene, duplicate IDs, out-of-bounds coordinates, upstream model failure, partial persistence failure, duplicate retry, and memory recall.
-- [ ] A test exploration confirms run + life event + memory + assistant message and later recall by exploration ID.
+- [x] Mock tests cover missing/inactive scenes, duplicate IDs, out-of-bounds coordinates, upstream generation failure, partial persistence failure, and a mocked memory recall.
+- [ ] Duplicate retry/idempotency is tested with stable run IDs and duplicate-write safeguards.
+- [ ] A production-like test exploration confirms run + life event + memory + assistant message and later recall by exploration ID.
 - [ ] Production writes and deployment remain disabled until the owner explicitly approves the tested change.

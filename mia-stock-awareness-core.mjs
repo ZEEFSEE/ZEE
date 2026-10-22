@@ -1,6 +1,6 @@
 export function isStockQuestion(value) {
   const text = String(value || "").trim();
-  return /股票|行情|股价|涨跌|涨幅|跌幅|收盘|开盘|成交量|市值|贵州茅台|茅台|平安银行|比亚迪|宁德时代|五粮液|(?:sh|sz)?\\d{6}/i.test(text);
+  return /股票|行情|股价|涨跌|涨幅|跌幅|收盘|开盘|成交量|市值|贵州茅台|茅台|平安银行|比亚迪|宁德时代|五粮液|(?:sh|sz)?\d{6}/i.test(text);
 }
 
 export function resolveStockCode(value) {
@@ -18,7 +18,7 @@ export function resolveStockCode(value) {
     if (pattern.test(text)) return code;
   }
 
-  const match = text.match(/\\b(sh|sz)?(\\d{6})\\b/i);
+  const match = text.match(/\b(sh|sz)?(\d{6})\b/i);
   if (!match) return null;
   const prefix = (match[1] || "").toLowerCase();
   const digits = match[2];

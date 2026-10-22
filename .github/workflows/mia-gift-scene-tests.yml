@@ -1,0 +1,29 @@
+name: Mia Gift Scene Contract Tests
+
+on:
+  pull_request:
+    paths:
+      - "mia-chat.html"
+      - "mia/forest-corner.json"
+      - "tests/mia-gift-scene.test.mjs"
+      - ".github/workflows/mia-gift-scene-tests.yml"
+  push:
+    paths:
+      - "mia-chat.html"
+      - "mia/forest-corner.json"
+      - "tests/mia-gift-scene.test.mjs"
+      - ".github/workflows/mia-gift-scene-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  scene-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate Mia gift and scene contract
+        run: node --test tests/mia-gift-scene.test.mjs

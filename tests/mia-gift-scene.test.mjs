@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import vm from 'node:vm';
 
 const scene = JSON.parse(await readFile(new URL('../mia/forest-corner.json', import.meta.url), 'utf8'));
 const html = await readFile(new URL('../mia-chat.html', import.meta.url), 'utf8');
@@ -35,4 +36,12 @@ test('chat page renders gift fields from the scene manifest rather than hardcode
   assert.ok(html.includes('fetch("./mia/forest-corner.json?v=2"'));
   assert.ok(html.includes('gift.location.entity_id'));
   assert.ok(html.includes('article.dataset.bindingStatus="verified"'));
+});
+
+test('inline JavaScript blocks in Mia chat page parse successfully', () => {
+  const scripts = [...html.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/gi)];
+  assert.ok(scripts.length > 0, 'expected inline JavaScript blocks');
+  for (const [index, match] of scripts.entries()) {
+    assert.doesNotThrow(() => new vm.Script(match[1], { filename: 'mia-chat-inline-' + index + '.js' }));
+  }
 });

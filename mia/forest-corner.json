@@ -83,7 +83,40 @@
         "color": "white",
         "name": "白玫瑰",
         "count": 3
-      }
+      }，
+      {
+  "id": "forest-rabbit",
+  "name": "森林小白兔",
+  "type": "interactive_creature",
+  "status": "active",
+  "position": {
+    "x": 300,
+    "y": 280,
+    "coordinate_system": "forest-corner-local"
+  },
+  "appearance": {
+    "model": "white_rabbit",
+    "animation_set": [
+      "idle",
+      "hop",
+      "look_at_user",
+      "rest"
+    ]
+  },
+  "behavior": {
+    "autonomous_movement": true,
+    "movement_speed": "slow",
+    "interaction_range": 80,
+    "responses": {
+      "approach": "look_at_user",
+      "touch": "hop",
+      "idle": "rest"
+    }
+  },
+  "ai_interaction": {
+    "enabled": false
+  }，
+}
     ],
     "location": {
       "scene_slug": "mia-forest-corner",

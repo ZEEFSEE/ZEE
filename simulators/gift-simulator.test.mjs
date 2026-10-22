@@ -12,6 +12,22 @@ test('duplicate gift_id returns original receipt and causes one side effect', ()
  const s = new GiftSimulator(); const a = s.submit(fixture(), ctx); const b = s.submit(fixture(), ctx);
  assert.equal(a.receipt_id, b.receipt_id); assert.equal(b.duplicate, true); assert.equal(s.count, 1); assert.equal(s.sideEffectCount, 1);
 });
+test('duplicate receipt is not disclosed to an unauthenticated sender', () => {
+ const s = new GiftSimulator(); const first = s.submit(fixture(), ctx);
+ const retry = s.submit(fixture(), { ...ctx, authenticatedSenderId: 'zhi:attacker' });
+ assert.equal(first.status, 'delivered');
+ assert.equal(retry.reason_code, 'IDENTITY_MISMATCH');
+ assert.equal(retry.receipt_id, undefined);
+ assert.equal(s.count, 1);
+});
+test('reusing a gift_id with modified content is rejected', () => {
+ const s = new GiftSimulator(); s.submit(fixture(), ctx);
+ const changed = s.submit(fixture({ item_id: 'coffee.warm' }), ctx);
+ assert.equal(changed.status, 'rejected');
+ assert.equal(changed.reason_code, 'POLICY_REJECTED');
+ assert.equal(s.count, 1);
+ assert.equal(s.sideEffectCount, 1);
+});
 test('client-supplied payment claim without matching server evidence is rejected', () => {
  const s = new GiftSimulator(); const r = s.submit(fixture(), { ...ctx, verifiedPaymentRef: 'other-ref' });
  assert.equal(r.reason_code, 'PAYMENT_UNVERIFIED'); assert.equal(s.count, 0);

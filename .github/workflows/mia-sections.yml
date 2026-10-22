@@ -46,7 +46,7 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{}' \
             -o mia/sections.json
-          node -e 'const fs=require("fs");const p="mia/sections.json";const x=JSON.parse(fs.readFileSync(p,"utf8"));if(x.status!=="published"||x.safety_status!=="passed"||!Array.isArray(x.sections)||x.sections.length!==4||!x.updated_at||!x.generated_at)process.exit(1);for(const s of x.sections){if(typeof s.content!=="string"||s.content.trim().length<100||!Array.isArray(s.mood)||s.mood.length<1)process.exit(1)}fs.writeFileSync(p,JSON.stringify(x,null,2)+"\\n");'
+          node -e 'const fs=require("fs");const p="mia/sections.json";const x=JSON.parse(fs.readFileSync(p,"utf8"));if(x.status!=="published"||x.safety_status!=="passed"||!Array.isArray(x.sections)||x.sections.length!==4||!x.updated_at||!x.generated_at)process.exit(1);for(const s of x.sections){if(typeof s.content!=="string"||s.content.trim().length<100||!Array.isArray(s.mood)||s.mood.length<1)process.exit(1)}fs.writeFileSync(p,JSON.stringify(x,null,2)+"\n");'
 
       - name: Run local public-content safety gate
         run: node mia/sections-safety-check.mjs
@@ -86,7 +86,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           # Preserve the validated artifact outside the checkout while refreshing main.
@@ -95,7 +94,7 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
             install -m 0644 /tmp/mia-sections-reviewed.json mia/sections.json
-            node -e 'const fs=require("fs");const p="mia/sections.json";const x=JSON.parse(fs.readFileSync(p,"utf8"));fs.writeFileSync(p,JSON.stringify(x,null,2)+"\\n");'
+            node -e 'const fs=require("fs");const p="mia/sections.json";const x=JSON.parse(fs.readFileSync(p,"utf8"));fs.writeFileSync(p,JSON.stringify(x,null,2)+"\n");'
             node mia/sections-safety-check.mjs
             if git diff --quiet -- mia/sections.json; then
               echo "No public JSON change to commit."

@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 
 export const MIA_ID = 'cb6d01b4-0e3f-46ee-8946-360aa91db1ea';
 const CATALOG = {
@@ -11,6 +11,7 @@ const TAGS = new Set(['romantic','companionship','energizing','warmth','serenity
 export class GiftSimulator {
   #records = new Map();
   #sideEffects = new Set();
+  #fingerprints = new Map();
   constructor({ trustedIssuers = ['https://sender.example.invalid'], recipientIssuer = 'https://mia.example.invalid' } = {}) {
     this.trustedIssuers = new Set(trustedIssuers);
     this.recipientIssuer = recipientIssuer;
@@ -20,7 +21,6 @@ export class GiftSimulator {
     if (!input || typeof input !== 'object' || Array.isArray(input)) return fail('POLICY_REJECTED');
     if (input.protocol !== 'zhi-gift' || input.schema_version !== '1.0') return fail('POLICY_REJECTED');
     if (typeof input.gift_id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input.gift_id)) return fail('POLICY_REJECTED');
-    if (this.#records.has(input.gift_id)) return { ...this.#records.get(input.gift_id), duplicate: true };
     if (!input.sender || input.sender.zhi_id !== authenticatedSenderId || !this.trustedIssuers.has(input.sender.issuer)) return fail('IDENTITY_MISMATCH');
     if (!input.recipient || input.recipient.agent_id !== MIA_ID || input.recipient.issuer !== this.recipientIssuer) return fail('IDENTITY_MISMATCH');
     const item = CATALOG[input.item_id];
@@ -29,10 +29,29 @@ export class GiftSimulator {
     if (!input.payment_evidence || input.payment_evidence.method !== 'simulation' || input.payment_evidence.verification_status !== 'verified_by_sender_server' || !verifiedPaymentRef || input.payment_evidence.verification_ref !== verifiedPaymentRef) return fail('PAYMENT_UNVERIFIED');
     const sent = Date.parse(input.sent_at), expires = Date.parse(input.expires_at), nowMs = now.getTime();
     if (!Number.isFinite(sent) || !Number.isFinite(expires) || expires <= sent || nowMs < sent) return fail('POLICY_REJECTED');
-    if (nowMs >= expires) return { status: 'expired', reason_code: 'EXPIRED' };
     if (expires - sent > item.ttlMs) return fail('POLICY_REJECTED');
+    // Authenticate and validate the packet before exposing any prior receipt.
+    // Reusing a gift_id with different content is rejected, not treated as a duplicate.
+    const fingerprint = createHash('sha256').update(JSON.stringify({
+      protocol: input.protocol,
+      schema_version: input.schema_version,
+      gift_id: input.gift_id,
+      item_id: input.item_id,
+      sender: input.sender,
+      recipient: input.recipient,
+      sent_at: input.sent_at,
+      expires_at: input.expires_at,
+      emotion_tags: input.emotion_tags,
+      payment_evidence: input.payment_evidence,
+    })).digest('hex');
+    if (this.#records.has(input.gift_id)) {
+      if (this.#fingerprints.get(input.gift_id) !== fingerprint) return fail('POLICY_REJECTED');
+      return { ...this.#records.get(input.gift_id), duplicate: true };
+    }
+    if (nowMs >= expires) return { status: 'expired', reason_code: 'EXPIRED' };
     const record = { status: 'delivered', reason_code: 'NONE', gift_id: input.gift_id, receipt_id: randomUUID(), received_at: now.toISOString(), item_id: input.item_id, recipient_agent_id: MIA_ID, attempt: 1, experience_event: null };
     this.#records.set(input.gift_id, record);
+    this.#fingerprints.set(input.gift_id, fingerprint);
     this.#sideEffects.add(input.gift_id);
     return { ...record, duplicate: false };
   }

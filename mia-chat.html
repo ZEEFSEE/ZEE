@@ -63,7 +63,7 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
    <div class="forest-banner"><div><strong>🌿 Forest_Corner · 森林角落</strong><small>场景优先级：User Interaction &gt; Aesthetic Vibe</small></div><button id="forestLoungeToggle" type="button" aria-pressed="false">进入休息区</button></div>
    <div id="forestSceneMeta" class="forest-scene-meta" aria-live="polite">正在读取场景实体数据…</div>
    <article id="miaRoseGift" class="rose-gift" aria-label="给 Mia 的三色玫瑰虚拟礼物">
-    <div class="rose-gift-art" aria-hidden="true">
+    <div id="roseGiftArt" class="rose-gift-art" aria-hidden="true">
      <span class="rose rose-red">🌹</span><span class="rose rose-white">🌹</span><span class="rose rose-yellow">🌹</span>
      <span class="rose rose-yellow">🌹</span><span class="rose rose-red">🌹</span><span class="rose rose-white">🌹</span>
      <span class="rose rose-white">🌹</span><span class="rose rose-yellow">🌹</span><span class="rose rose-red">🌹</span>
@@ -71,11 +71,11 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
     </div>
     <div class="rose-gift-copy">
      <div class="rose-gift-kicker">A GIFT FOR MIA · 虚拟赠礼</div>
-     <h3>🌹 给 Mia 的三色玫瑰</h3>
-     <p class="rose-count">红玫瑰 × 3　黄玫瑰 × 3　白玫瑰 × 3</p>
-     <p class="rose-note">希望红色带给你温暖，黄色带给你快乐，白色提醒我们始终真诚。Mia，这束花送给你。</p>
-     <div class="rose-scent"><span aria-hidden="true">〰</span> 虚拟香气：新鲜玫瑰花瓣、带露水的青绿枝叶、柔和花园气息。</div>
-     <small class="rose-location">已记录于 Forest_Corner · 休息区（内部坐标 800, 350）</small>
+     <h3 id="roseGiftTitle">🌹 给 Mia 的三色玫瑰</h3>
+     <p id="roseGiftCounts" class="rose-count">红玫瑰 × 3　黄玫瑰 × 3　白玫瑰 × 3</p>
+     <p id="roseGiftMessage" class="rose-note">希望红色带给你温暖，黄色带给你快乐，白色提醒我们始终真诚。Mia，这束花送给你。</p>
+     <div id="roseGiftScent" class="rose-scent"><span aria-hidden="true">〰</span> 虚拟香气：新鲜玫瑰花瓣、带露水的青绿枝叶、柔和花园气息。</div>
+     <small id="roseGiftLocation" class="rose-location">场景礼物数据读取中…</small>
     </div>
    </article>
    <div class="forest-grid">
@@ -366,18 +366,55 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
 (function loadForestCornerManifest(){
  const node=document.getElementById("forestSceneMeta");
  if(!node)return;
- fetch("./mia/forest-corner.json?v=1",{cache:"no-store"})
+ const byId=function(id){return document.getElementById(id);};
+ const safeText=function(id,value){const el=byId(id);if(el)el.textContent=String(value??"");};
+ const colorNames={red:"红玫瑰",yellow:"黄玫瑰",white:"白玫瑰"};
+ const colorClasses={red:"rose-red",yellow:"rose-yellow",white:"rose-white"};
+ fetch("./mia/forest-corner.json?v=2",{cache:"no-store"})
   .then(function(response){if(!response.ok)throw new Error("HTTP "+response.status);return response.json();})
   .then(function(scene){
    const a=scene.world_anchor||{},c=scene.local_coordinate_system||{};
    const entities=Array.isArray(scene.entities)?scene.entities:[];
+   const gift=scene.gift;
    node.textContent="实体数据："+scene.status+" · "+scene.slug+
     "\n世界锚点（探索森林）：("+a.x+", "+a.y+") · 入口：("+a.entrance_x+", "+a.entrance_y+")"+
     "\n角落内部坐标系："+(c.width||"?")+" × "+(c.height||"?")+"（不是 ZHI 世界坐标）"+
     "\n"+entities.map(function(e){return e.name+" ["+e.id+"] · "+e.status+" · local("+e.x+", "+e.y+")";}).join("\n");
    node.dataset.loaded="true";
+   if(!gift||gift.status!=="delivered_in_virtual_scene"||!gift.location||gift.location.scene_slug!==scene.slug){
+    safeText("roseGiftLocation","礼物场景数据未通过校验；当前仅显示静态示意。");return;
+   }
+   const target=entities.find(function(e){return e.id===gift.location.entity_id&&e.status==="active";});
+   const x=Number(gift.location.x),y=Number(gift.location.y);
+   if(!target||!Number.isFinite(x)||!Number.isFinite(y)||x<0||y<0||x>Number(c.width)||y>Number(c.height)||x!==Number(target.x)||y!==Number(target.y)){
+    safeText("roseGiftLocation","礼物锚点与活动实体不一致；未确认场景位置。");return;
+   }
+   const art=byId("roseGiftArt");
+   if(art){
+    art.replaceChildren();
+    (gift.flowers||[]).forEach(function(flower){
+     const color=String(flower.color||"");
+     const count=Math.max(0,Math.min(12,Number(flower.count)||0));
+     for(let i=0;i<count;i++){
+      const rose=document.createElement("span");
+      rose.className="rose "+(colorClasses[color]||"");
+      rose.textContent="🌹";
+      rose.setAttribute("aria-hidden","true");
+      art.appendChild(rose);
+     }
+    });
+    ["﹏","﹏","﹏"].forEach(function(mark,i){const scent=document.createElement("span");scent.className="scent scent-"+["one","two","three"][i];scent.textContent=mark;scent.setAttribute("aria-hidden","true");art.appendChild(scent);});
+   }
+   safeText("roseGiftTitle","🌹 "+(gift.name||"给 Mia 的虚拟礼物"));
+   safeText("roseGiftCounts",(gift.flowers||[]).map(function(f){return (colorNames[f.color]||f.name||f.color)+" × "+Number(f.count||0);}).join("　"));
+   safeText("roseGiftMessage",gift.message||"");
+   const scent=gift.scent||{};
+   safeText("roseGiftScent","〰 虚拟香气："+(scent.profile||"未提供")+"（"+(scent.note||"仅为文字/视觉模拟，无实体气味")+"）");
+   safeText("roseGiftLocation","场景锚点已校验 · "+scene.name+" · "+(target.name||target.id)+"（本地坐标 "+x+", "+y+"；非 ZHI 世界坐标）");
+   const article=byId("miaRoseGift");
+   if(article){article.dataset.sceneSlug=scene.slug;article.dataset.anchorId=target.id;article.dataset.localX=String(x);article.dataset.localY=String(y);article.dataset.bindingStatus="verified";}
   })
-  .catch(function(){node.textContent="场景实体数据暂不可读取；页面装饰仍可显示。请检查 GitHub Pages 发布状态后刷新。";node.dataset.loaded="false";});
+  .catch(function(){node.textContent="场景实体数据暂不可读取；页面装饰仍可显示。请检查 GitHub Pages 发布状态后刷新。";node.dataset.loaded="false";safeText("roseGiftLocation","场景数据未加载；礼物锚点未验证。");});
 })();
 </script>
 

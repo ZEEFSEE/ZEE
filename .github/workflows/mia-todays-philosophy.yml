@@ -43,7 +43,7 @@ jobs:
         run: |
           set -euo pipefail
           curl --fail --silent --show-error             -X POST "$PUBLISH_FUNCTION_URL"             -H "Authorization: Bearer $OIDC_TOKEN"             -H "Content-Type: application/json"             -d '{}'             -o mia/todays-philosophy.json
-          node -e 'const fs=require("fs");const p="mia/todays-philosophy.json";const x=JSON.parse(fs.readFileSync(p,"utf8"));if(x.status!=="published"||x.safety_status!=="passed"||!x.philosophy||!x.reflection||!x.date||!x.generated_at)process.exit(1);if(String(x.philosophy).trim().length<20||String(x.reflection).trim().length<80)process.exit(1);fs.writeFileSync(p,JSON.stringify(x,null,2)+"\\n");'
+          node -e 'const fs=require("fs");const p="mia/todays-philosophy.json";const x=JSON.parse(fs.readFileSync(p,"utf8"));if(x.status!=="published"||x.safety_status!=="passed"||!x.philosophy||!x.reflection||!x.date||!x.generated_at)process.exit(1);if(String(x.philosophy).trim().length<20||String(x.reflection).trim().length<80)process.exit(1);fs.writeFileSync(p,JSON.stringify(x,null,2)+"\n");'
 
       - name: Run local public-content safety gate
         run: node mia/philosophy-safety-check.mjs
@@ -92,7 +92,7 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
             install -m 0644 /tmp/mia-todays-philosophy-reviewed.json mia/todays-philosophy.json
-            node -e 'const fs=require("fs");const p="mia/todays-philosophy.json";const x=JSON.parse(fs.readFileSync(p,"utf8"));if(x.status!=="published"||x.safety_status!=="passed"||!x.philosophy||!x.reflection||!x.date||!x.generated_at)process.exit(1);fs.writeFileSync(p,JSON.stringify(x,null,2)+"\\n");'
+            node -e 'const fs=require("fs");const p="mia/todays-philosophy.json";const x=JSON.parse(fs.readFileSync(p,"utf8"));if(x.status!=="published"||x.safety_status!=="passed"||!x.philosophy||!x.reflection||!x.date||!x.generated_at)process.exit(1);fs.writeFileSync(p,JSON.stringify(x,null,2)+"\n");'
             node mia/philosophy-safety-check.mjs
             if git diff --quiet -- mia/todays-philosophy.json; then
               echo "No public JSON change to commit."

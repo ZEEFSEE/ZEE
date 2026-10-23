@@ -61,7 +61,9 @@ Deno.serve(async (req: Request) => {
     const pointer = txt(body.memory_pointer, 200);
     const scope = txt(body.source_scope, 100);
     const mark = Date.parse(txt(body.explicit_marked_at, 80));
-    const valid = types.has(geneType) && pointer.length >= 8 && scope.length > 0 && Number.isFinite(mark) &&
+    const allowedTables = new Set(["mia_memories", "mia_life_events", "mia_emotion_events"]);
+    const pointerValid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(pointer);
+    const valid = types.has(geneType) && pointerValid && allowedTables.has(scope) && Number.isFinite(mark) &&
       mark <= Date.now() && txt(body.idempotency_key, 200).length >= 8;
     return json({ ok: valid, validated: valid, persisted: false, dry_run: true,
       note: "Source pointers, evidence, privacy, and contradictions are not independently verified by this dry run." }, valid ? 200 : 400);

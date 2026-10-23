@@ -1,12 +1,26 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="你、Mark、Jason 与 Mia 的三人讨论室。">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ZHI 讨论室">
+<link rel="manifest" href="./mark-jason-chat.webmanifest">
+<link rel="icon" href="./zhi-icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./zhi-icon.svg">
 <meta name="theme-color" content="#101522"><title>ZHI · Mark & Jason 群聊</title>
 <style>
 :root{color-scheme:dark;--bg:#0c1019;--panel:#151c29;--panel2:#1b2535;--line:#2a3548;--ink:#edf3fc;--muted:#99a9bf;--mint:#78e0ca;--blue:#8cb7ff;--gold:#f3c87a;--bad:#ff9299}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 12% 0%,#17283a 0,transparent 42%),var(--bg);color:var(--ink);font:15px/1.55 system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;min-height:100vh}button,input,textarea{font:inherit}button{border:1px solid var(--line);border-radius:12px;padding:10px 14px;background:#202b3d;color:var(--ink);cursor:pointer;font-weight:700}button:hover{border-color:#617b9b}button:disabled{opacity:.5;cursor:not-allowed}.primary{background:var(--mint);color:#10221f;border-color:var(--mint)}input,textarea{width:100%;padding:12px 13px;border-radius:12px;border:1px solid var(--line);background:#0e1521;color:var(--ink);outline:none}input:focus,textarea:focus{border-color:var(--mint)}.shell{max-width:1180px;margin:auto;padding:24px 18px 34px}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:20px}.brand{font-size:24px;font-weight:900;letter-spacing:-.5px}.brand span{color:var(--mint)}.sub{font-size:12px;color:var(--muted);margin-top:3px}.topright{display:flex;gap:8px;align-items:center}.layout{display:grid;grid-template-columns:290px minmax(0,1fr);gap:16px}.panel{background:#131a27eF;border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:0 18px 55px #0002}.head{padding:16px 18px;border-bottom:1px solid var(--line);font-weight:850}.sidebody{padding:14px}.row{display:flex;gap:8px}.row>*{min-width:0;flex:1}.field{margin-bottom:12px}.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}.groupitem{display:block;width:100%;text-align:left;margin:7px 0;background:transparent;padding:12px}.groupitem.active{border-color:#478f87;background:#19332f}.groupitem strong{display:block}.groupitem small{color:var(--muted)}.chat{min-height:76vh;display:flex;flex-direction:column}.chathead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:17px 20px;border-bottom:1px solid var(--line)}.title{font-size:19px;font-weight:900}.meta{font-size:12px;color:var(--muted)}.people{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}.chip{font-size:11px;border:1px solid var(--line);border-radius:999px;padding:3px 8px;color:var(--muted)}.chip.mark{color:var(--blue);border-color:#354d73}.chip.jason{color:var(--gold);border-color:#6a5431}.messages{flex:1;min-height:380px;max-height:61vh;overflow:auto;padding:22px;display:flex;flex-direction:column;gap:14px}.welcome{margin:auto;text-align:center;max-width:450px;color:var(--muted);line-height:1.9;padding:24px}.msg{max-width:86%;border:1px solid var(--line);border-radius:16px;padding:12px 15px;background:#182131;white-space:pre-wrap;overflow-wrap:anywhere}.msg.user{align-self:flex-end;background:#183b37;border-color:#28675e;border-bottom-right-radius:5px}.msg.mark{align-self:flex-start;border-left:3px solid var(--blue);border-bottom-left-radius:5px}.msg.jason{align-self:flex-start;border-left:3px solid var(--gold);border-bottom-left-radius:5px}.who{font-size:11px;font-weight:850;margin-bottom:5px;color:var(--muted)}.msg.mark .who{color:var(--blue)}.msg.jason .who{color:var(--gold)}.msg.mia{align-self:flex-start;border-left:3px solid #c3a2ff;border-bottom-left-radius:5px}.msg.mia .who{color:#d8b7ff}.chip.mia{color:#d8b7ff;border-color:#665080}.time{font-size:10px;color:#7e8da4;margin-top:7px}.composer{padding:14px 16px;border-top:1px solid var(--line);display:grid;grid-template-columns:minmax(0,1fr) 104px;gap:10px}.composer textarea{resize:vertical;min-height:54px;max-height:180px}.status{font-size:12px;color:var(--muted);padding:0 17px 14px;white-space:pre-wrap}.status.error{color:var(--bad)}.status.good{color:var(--mint)}.gate{max-width:430px;margin:10vh auto;padding:26px}.gate h1{margin:0 0 6px}.gate p{color:var(--muted);font-size:13px}.hidden{display:none!important}.tiny{font-size:11px;color:var(--muted);line-height:1.6}.section{font-size:12px;color:var(--muted);margin:18px 0 8px}.notice{border:1px solid #4b4330;background:#282318;border-radius:12px;padding:11px;font-size:12px;color:#e9d8ad;margin-top:12px}
 @media(max-width:760px){.shell{padding:12px 8px 22px}.top{align-items:flex-start}.brand{font-size:20px}.layout{display:flex;flex-direction:column}.chat{min-height:0}.messages{height:49dvh;min-height:280px;max-height:none;padding:13px 10px}.msg{max-width:94%;font-size:14px}.chathead{padding:13px}.composer{position:sticky;bottom:0;background:#131a27;grid-template-columns:minmax(0,1fr) 78px;padding:10px;gap:7px}.composer button{padding:8px}.topright button{font-size:12px;padding:8px}.sidebar{order:2}.chat{order:1}.groupitem{display:inline-block;width:100%}}
+
+/* Responsive refinements: desktop width, mobile viewport and safe-area support */
+html{height:100%;-webkit-text-size-adjust:100%;text-size-adjust:100%}body{min-height:100%;min-height:100dvh}.shell{width:100%}.messages,.sidebody{overscroll-behavior:contain}textarea{resize:vertical;overflow-y:auto}.pwa-install{position:fixed;z-index:50;left:max(10px,env(safe-area-inset-left));bottom:max(10px,env(safe-area-inset-bottom));width:auto;min-width:0;min-height:32px;padding:6px 10px;border-radius:999px;font-size:11px;line-height:1.2;letter-spacing:.1px;background:#1b2535eF;border-color:#42516a;color:#c9d6e8;box-shadow:0 4px 18px #0004;opacity:.88}.pwa-install:hover{opacity:1;border-color:var(--mint)}.pwa-install:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
+@media(min-width:1100px){.shell{padding-top:26px}.layout{grid-template-columns:270px minmax(0,1fr);gap:18px}.chat{min-height:min(820px,calc(100dvh - 150px))}.messages{max-height:calc(100dvh - 360px)}}
+@media(max-width:760px){.shell{padding:10px 8px calc(34px + env(safe-area-inset-bottom))}.top{gap:8px;margin-bottom:12px}.topright{flex-shrink:0}.layout{gap:10px}.panel{border-radius:15px}.chat{min-height:calc(100dvh - 105px);min-height:calc(100dvh - 105px - env(safe-area-inset-top))}.messages{height:calc(100dvh - 330px);height:calc(100dvh - 330px - env(safe-area-inset-top));min-height:220px;padding-bottom:18px}.composer{position:sticky;bottom:0;padding-bottom:max(10px,env(safe-area-inset-bottom));z-index:2}.composer textarea{min-height:48px;max-height:130px;padding:10px 11px}.composer button{min-height:44px}.chathead{align-items:flex-start}.title{font-size:17px}.people{gap:4px}.chip{font-size:10px}.pwa-install{left:max(8px,env(safe-area-inset-left));bottom:max(8px,env(safe-area-inset-bottom));padding:5px 8px;font-size:10px}.gate{width:calc(100% - 20px);margin:8vh auto;padding:20px}.sidebar .sidebody{padding:10px}}
+@media(max-width:380px){.brand{font-size:18px}.sub{max-width:245px}.topright{gap:5px}.topright button{padding:7px 8px}.composer{grid-template-columns:minmax(0,1fr) 68px}.messages{padding-left:8px;padding-right:8px}}
 </style>
 </head>
 <body>
@@ -34,6 +48,7 @@
   </main>
  </div>
 </div>
+<button id="pwaInstall" class="pwa-install" type="button" aria-label="安装 ZHI 讨论室为应用">↗ 安装</button>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (()=> {
@@ -130,6 +145,39 @@
  $("message").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage()}});
  client.auth.onAuthStateChange((_event,s)=>{if(s&&!session)showSession(s);else if(!s&&session)showSession(null)});
  client.auth.getSession().then(({data})=>showSession(data.session));
+
+ // Small PWA install affordance; chat itself still requires an online connection.
+ let deferredInstallPrompt=null;
+ const pwaButton=$("pwaInstall");
+ window.addEventListener("beforeinstallprompt",event=>{
+  event.preventDefault();deferredInstallPrompt=event;
+  if(pwaButton){pwaButton.textContent="↗ 安装";pwaButton.hidden=false;}
+ });
+ window.addEventListener("appinstalled",()=>{
+  deferredInstallPrompt=null;if(pwaButton)pwaButton.hidden=true;
+ });
+ if(pwaButton){
+  pwaButton.addEventListener("click",async()=>{
+   if(deferredInstallPrompt){
+    deferredInstallPrompt.prompt();
+    try{await deferredInstallPrompt.userChoice}catch(_){}
+    deferredInstallPrompt=null;
+    return;
+   }
+   const ua=navigator.userAgent||"";
+   if(/iphone|ipad|ipod/i.test(ua)){
+    alert("在 Safari 中点“分享”图标，再选择“加入主屏幕”，即可安装 ZHI 讨论室。");
+   }else if(/android/i.test(ua)){
+    alert("如果浏览器菜单中有“安装应用”或“添加到主屏幕”，请选择它。若暂未出现，请先用 Chrome 打开此网页并保持联网。");
+   }else{
+    alert("在浏览器地址栏右侧或菜单中选择“安装 ZHI 讨论室”或“创建快捷方式”。");
+   }
+  });
+ }
+ if("serviceWorker" in navigator){
+  window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(err=>console.warn("PWA service worker registration failed",err)));
+ }
+
 })();
 </script>
 </body></html>

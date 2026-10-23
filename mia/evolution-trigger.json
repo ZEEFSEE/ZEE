@@ -1,0 +1,52 @@
+{
+  "schema_version": "1.0",
+  "status": "specification_only",
+  "runtime_enforced": false,
+  "fail_closed_on_source_health_error": true,
+  "require_explicit_mark": true,
+  "require_stability_window": true,
+  "require_privacy_review": true,
+  "require_duplicate_and_conflict_check": true,
+  "require_approval_before_commit": true,
+  "thresholds_days": {
+    "verified_insight": 14,
+    "stable_trait_upgrade": 30,
+    "soul_anchor": 7,
+    "core_principle": 30
+  },
+  "minimum_evidence": {
+    "verified_insight": {
+      "observations": 3,
+      "distinct_dates": 2,
+      "allow_documented_independent_verification": true
+    },
+    "stable_trait_upgrade": {
+      "observations": 5,
+      "distinct_dates": 3,
+      "unresolved_material_contradictions_allowed": false
+    },
+    "soul_anchor": {
+      "explicitly_marked": true,
+      "reviewed": true,
+      "singular_meaningful_event_allowed": true
+    },
+    "core_principle": {
+      "explicit_human_approval": true,
+      "safety_review": true
+    }
+  },
+  "memory_pointer": {
+    "enabled_in_schema": true,
+    "type": "opaque_non_secret_reference",
+    "actual_pointers_populated": false,
+    "mapping_location": "private_access_controlled_store",
+    "public_repo_must_not_contain_credentials_or_raw_private_records": true
+  },
+  "recovery": {
+    "on_supabase_unavailable": "pause_promotion_and_keep_last_known_good_genes",
+    "on_empty_or_unexpectedly_reduced_history": "treat_as_integrity_alert_not_as_empty_memory",
+    "auto_restore_without_validation": false,
+    "require_deduplication_and_provenance_check": true
+  },
+  "note": "This config is a design artifact. It is not wired into runtime code and does not prove any trigger or recovery mechanism is active."
+}

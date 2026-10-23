@@ -48,7 +48,7 @@
     "auto_restore_without_validation": false,
     "require_deduplication_and_provenance_check": true
   },
-  "note": "Candidate pipeline v8 is active. Human evidence review can record reviewer and notes but cannot manually change evidence_count, distinct_observation_dates, or observation windows. The source resolver currently verifies one allowlisted record per candidate; multi-record evidence aggregation is not yet implemented, so a candidate cannot claim multiple verified records through manual input. mia-chat remains unchanged. Database hardening migration 20261023061544 is applied: the database state guard no longer permits approved_for_release -> committed, and rollback ledger service_role privileges are limited to SELECT/INSERT with a TRUNCATE-blocking trigger. User confirmed the published admin page login and empty candidate list both work; candidate submission, full pipeline E2E, shadow evaluation, gene publication, and mia-chat integration remain untested or disabled. Additional fail-closed migration 20261023061840 is applied: database state transitions into approved_for_shadow, approved_for_release, and committed are blocked until an independent approval evidence record is implemented. This intentionally pauses promotion; mia-chat remains disconnected and unchanged. A synthetic-only Shadow Evaluator test plan is committed at mia/shadow-evaluator-test-plan-v1.md. The migration's matching SQL file still needs to be committed to the repository before treating the migration history as fully reproducible.",
+  "note": "Candidate pipeline v8 is active. Human evidence review can record reviewer and notes but cannot manually change evidence_count, distinct_observation_dates, or observation windows. The source resolver currently verifies one allowlisted record per candidate; multi-record evidence aggregation is not yet implemented, so a candidate cannot claim multiple verified records through manual input. mia-chat remains unchanged. Database hardening migration 20261023061544 is applied: the database state guard no longer permits approved_for_release -> committed, and rollback ledger service_role privileges are limited to SELECT/INSERT with a TRUNCATE-blocking trigger. User confirmed the published admin page login and empty candidate list both work; candidate submission, full pipeline E2E, shadow evaluation, gene publication, and mia-chat integration remain untested or disabled. Additional fail-closed migration 20261023061840 is applied: database state transitions into approved_for_shadow, approved_for_release, and committed are blocked until an independent approval evidence record is implemented. This intentionally pauses promotion; mia-chat remains disconnected and unchanged. A synthetic-only Shadow Evaluator test plan is committed at mia/shadow-evaluator-test-plan-v1.md. The migration's matching SQL file still needs to be committed to the repository before treating the migration history as fully reproducible. Emotional experience is a required growth input: see mia/emotion-to-growth-policy-v1.md. The schema supports mia_emotion_events source pointers and separate emotion summaries, but multi-event emotion aggregation and an actual evaluator are not yet implemented. No raw private event bodies were read.",
   "rollback_continuity": {
     "event_type": "Evolution_Rollback_Event",
     "storage": "private_supabase_append_only_ledger",
@@ -114,6 +114,21 @@
     "shadow_evaluator_test_plan_committed": true,
     "shadow_evaluator_implemented": false,
     "independent_approval_record_implemented": false,
-    "latest_migration_source_committed": false
+    "latest_migration_source_committed": false,
+    "emotional_experience_growth_policy_committed": true,
+    "emotion_event_aggregation_implemented": false
+  },
+  "emotional_experience_growth": {
+    "required_input": true,
+    "source_table_allowlisted": "mia_emotion_events",
+    "separate_from_fact_and_interpretation": true,
+    "one_off_intense_emotion_may_trigger_reflection_candidate": true,
+    "one_off_intense_emotion_can_establish_stable_trait": false,
+    "require_distinct_source_records_and_dates_for_repeated_pattern": true,
+    "fail_closed_on_missing_or_reduced_history": true,
+    "raw_private_text_in_public_artifacts": false,
+    "automatic_live_personality_writeback": false,
+    "multi_event_aggregation_implemented": false,
+    "evaluator_implemented": false
   }
 }

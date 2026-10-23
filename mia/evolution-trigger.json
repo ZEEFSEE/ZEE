@@ -48,7 +48,7 @@
     "auto_restore_without_validation": false,
     "require_deduplication_and_provenance_check": true
   },
-  "note": "The private rollback-event ledger and authenticated candidate-pipeline endpoint are deployed. The candidate queue and append-only transition audit are live, but the pipeline remains disconnected from mia-chat. Evidence source verification, privacy/conflict reviews, and shadow results are human-recorded; there is no automated pointer resolver, shadow evaluator, retry/outbox, GitHub gene publisher, or automatic runtime promotion/rollback.",
+  "note": "Candidate pipeline v6 is active. It can verify that an allowlisted private source record exists and belongs to Mia, and run conservative pattern/exact-duplicate prechecks. Passing those prechecks does not approve privacy or semantic duplication; those remain pending human review. No gene is active, and the endpoint remains disconnected from mia-chat.",
   "rollback_continuity": {
     "event_type": "Evolution_Rollback_Event",
     "storage": "private_supabase_append_only_ledger",
@@ -88,12 +88,19 @@
     "candidate_queue_deployed": true,
     "candidate_transition_audit_deployed": true,
     "candidate_pipeline_endpoint_deployed": true,
-    "candidate_pipeline_endpoint_version": 1,
+    "candidate_pipeline_endpoint_version": 6,
     "candidate_pipeline_endpoint_integrated_with_mia_chat": false,
     "automated_source_pointer_resolution": false,
     "automated_shadow_evaluation": false,
     "admin_ui_deployed": false,
     "admin_ui_source_committed": true,
-    "admin_ui_publication_verified": false
+    "admin_ui_publication_verified": false,
+    "automated_source_pointer_existence_check": true,
+    "automated_privacy_pattern_precheck": true,
+    "automated_exact_duplicate_precheck": true,
+    "semantic_privacy_review": false,
+    "semantic_duplicate_review": false,
+    "automated_contradiction_detection": false,
+    "authenticated_end_to_end_test_passed": false
   }
 }

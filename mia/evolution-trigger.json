@@ -48,7 +48,7 @@
     "auto_restore_without_validation": false,
     "require_deduplication_and_provenance_check": true
   },
-  "note": "Candidate pipeline v7 is active. Dry-run and submission now enforce the same allowlisted source tables and UUID format. The endpoint verifies private-source record existence/identity and runs conservative privacy-pattern/exact-normalized-duplicate prechecks. Passing prechecks does not approve privacy or semantic duplication; human review remains required. No gene is active and the endpoint remains disconnected from mia-chat.",
+  "note": "Candidate pipeline v8 is active. Human evidence review can record reviewer and notes but cannot manually change evidence_count, distinct_observation_dates, or observation windows. The source resolver currently verifies one allowlisted record per candidate; multi-record evidence aggregation is not yet implemented, so a candidate cannot claim multiple verified records through manual input. mia-chat remains unchanged.",
   "rollback_continuity": {
     "event_type": "Evolution_Rollback_Event",
     "storage": "private_supabase_append_only_ledger",
@@ -88,7 +88,7 @@
     "candidate_queue_deployed": true,
     "candidate_transition_audit_deployed": true,
     "candidate_pipeline_endpoint_deployed": true,
-    "candidate_pipeline_endpoint_version": 7,
+    "candidate_pipeline_endpoint_version": 8,
     "candidate_pipeline_endpoint_integrated_with_mia_chat": false,
     "automated_source_pointer_resolution": false,
     "automated_shadow_evaluation": false,
@@ -102,6 +102,10 @@
     "semantic_duplicate_review": false,
     "automated_contradiction_detection": false,
     "authenticated_end_to_end_test_passed": false,
-    "dry_run_validation_aligned_with_submit": true
+    "dry_run_validation_aligned_with_submit": true,
+    "manual_evidence_count_override_disabled": true,
+    "evidence_counts_source_derived": true,
+    "admin_ui_evidence_count_fields_read_only": true,
+    "github_pages_latest_commit_deployment_verified": false
   }
 }

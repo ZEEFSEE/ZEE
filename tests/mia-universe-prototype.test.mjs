@@ -9,7 +9,7 @@ test('standalone universe is a real WebGL/Three.js scene, not a ZHI map embed', 
   assert.match(html, /three@0\.169\.0\/build\/three\.module\.js/);
   assert.match(html, /new THREE\.WebGLRenderer/);
   assert.match(html, /OrbitControls/);
-  assert.doesNotMatch(html, /SUPABASE_URL|service_role|zee-extension/i);
+  assert.doesNotMatch(html, /SUPABASE_URL|service_role|createClient\s*\(|supabase\.co\/rest\/v1/i);
 });
 
 test('universe includes live rhythm and creation controls', () => {

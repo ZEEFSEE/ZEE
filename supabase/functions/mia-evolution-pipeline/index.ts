@@ -181,13 +181,13 @@ Deno.serve(async (req: Request) => {
       duplicate = normalized.some(v=>existing.includes(v));
     }
     const upd = await db.from("mia_evolution_candidates").update({
-      privacy_review_status: privacyFlag ? "failed" : "passed",
-      duplicate_check_status: duplicate ? "failed" : "passed",
+      privacy_review_status: privacyFlag ? "failed" : "pending",
+      duplicate_check_status: duplicate ? "failed" : "pending",
       reviewer_decision: privacyFlag
         ? "Automated privacy pre-check flagged possible personal/contact/secret/URL content. Human review required; candidate must not advance."
         : duplicate
           ? "Automated exact-text duplicate pre-check found a matching normalized summary. Human review required."
-          : "Automated pre-check found no obvious PII pattern or exact normalized duplicate; semantic privacy and contradiction review still required."
+          : "Automated pre-check found no obvious PII pattern or exact normalized duplicate; privacy, semantic duplicate, and contradiction approvals remain pending human review."
     }).eq("candidate_id", candidateId).eq("state", c.state)
       .select("candidate_id,state,privacy_review_status,duplicate_check_status,contradiction_check_status,reviewer_decision").maybeSingle();
     if (upd.error || !upd.data) return json({ error: "Automated pre-check results were not saved; reload candidate." }, 409);

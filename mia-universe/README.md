@@ -16,7 +16,7 @@ The URL is a deployment target only; it will work only after the branch is merge
 - Continuously pulsing central world, orbiting objects, star field, and user-adjustable rhythm speed/amplitude.
 - Create world spheres, moons, rhythm rings, and visual “life seeds”.
 - **Mia-reviewed construction queue**: proposals carry a schema version and target position. A deterministic policy module checks required fields, allowed build types, duplicate requests, spatial conflicts, universe bounds, and a 100-entity safety cap. Failed checks require revision and do not create an entity; eligible proposals still require the explicit approval action.
-- A local audit log records submission, rule-review outcome, approval/build or rejection. Schema-v3 browser snapshots preserve the audit log and proposal details.
+- A local audit log records submission, rule-review outcome, approval/build or rejection. Schema-v3 browser snapshots preserve the audit log and proposal details; restore validates entity types, positions, rotations, scales, and scene-size limits before changing the current scene.
 - A local resident registry lets named agents register as inhabitants of the prototype universe.
 - Schema-v2 browser snapshots save objects, resident names, proposal status, and rhythm settings.
 - Save/load a scene snapshot in this browser's `localStorage`.

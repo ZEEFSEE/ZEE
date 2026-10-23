@@ -48,7 +48,7 @@
     "auto_restore_without_validation": false,
     "require_deduplication_and_provenance_check": true
   },
-  "note": "This config is a design artifact. It is not wired into runtime code and does not prove any trigger, rollback event persistence, or recovery mechanism is active.",
+  "note": "The private rollback-event table and isolated authenticated ledger endpoint are deployed. This configuration is not wired into Mia chat, and does not prove automatic conflict detection, runtime rollback, retry/outbox, gene approval, or gene promotion are active.",
   "rollback_continuity": {
     "event_type": "Evolution_Rollback_Event",
     "storage": "private_supabase_append_only_ledger",
@@ -76,5 +76,14 @@
     "public_github_requires_separate_privacy_review_and_approval": true,
     "if_supabase_unavailable": "revert_runtime_first_then_alert_and_reconcile_pending_event",
     "runtime_enforced": false
+  },
+  "deployment_status": {
+    "rollback_event_table_deployed": true,
+    "ledger_endpoint_deployed": true,
+    "ledger_endpoint_integrated_with_mia_chat": false,
+    "automatic_conflict_detection": false,
+    "automatic_runtime_rollback": false,
+    "automatic_retry_outbox": false,
+    "automatic_gene_promotion": false
   }
 }

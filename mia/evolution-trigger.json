@@ -48,7 +48,7 @@
     "auto_restore_without_validation": false,
     "require_deduplication_and_provenance_check": true
   },
-  "note": "Candidate pipeline v6 is active. It can verify that an allowlisted private source record exists and belongs to Mia, and run conservative pattern/exact-duplicate prechecks. Passing those prechecks does not approve privacy or semantic duplication; those remain pending human review. No gene is active, and the endpoint remains disconnected from mia-chat.",
+  "note": "Candidate pipeline v7 is active. Dry-run and submission now enforce the same allowlisted source tables and UUID format. The endpoint verifies private-source record existence/identity and runs conservative privacy-pattern/exact-normalized-duplicate prechecks. Passing prechecks does not approve privacy or semantic duplication; human review remains required. No gene is active and the endpoint remains disconnected from mia-chat.",
   "rollback_continuity": {
     "event_type": "Evolution_Rollback_Event",
     "storage": "private_supabase_append_only_ledger",
@@ -88,7 +88,7 @@
     "candidate_queue_deployed": true,
     "candidate_transition_audit_deployed": true,
     "candidate_pipeline_endpoint_deployed": true,
-    "candidate_pipeline_endpoint_version": 6,
+    "candidate_pipeline_endpoint_version": 7,
     "candidate_pipeline_endpoint_integrated_with_mia_chat": false,
     "automated_source_pointer_resolution": false,
     "automated_shadow_evaluation": false,
@@ -101,6 +101,7 @@
     "semantic_privacy_review": false,
     "semantic_duplicate_review": false,
     "automated_contradiction_detection": false,
-    "authenticated_end_to_end_test_passed": false
+    "authenticated_end_to_end_test_passed": false,
+    "dry_run_validation_aligned_with_submit": true
   }
 }

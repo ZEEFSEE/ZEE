@@ -1,0 +1,29 @@
+{
+  "id": "./mark-jason-chat.html",
+  "name": "ZHI · Mark & Jason 群聊",
+  "short_name": "ZHI 讨论室",
+  "description": "你、Mark、Jason 与 Mia 的三人讨论室。",
+  "lang": "zh-CN",
+  "start_url": "./mark-jason-chat.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "any",
+  "background_color": "#0c1019",
+  "theme_color": "#101522",
+  "categories": [
+    "social",
+    "communication"
+  ],
+  "icons": [
+    {
+      "src": "./zhi-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

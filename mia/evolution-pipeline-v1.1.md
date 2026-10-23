@@ -1,6 +1,6 @@
 # Mia Evolution Pipeline v1.1 — Candidate Intake and Shadow Review
 
-**Status: design specification only.** This document does not change Mia chat runtime, read or write private records, schedule jobs, or publish genes automatically.
+**Status: partially deployed control plane; runtime growth remains disconnected.** The candidate tables, review-gate columns, transition guard, append-only transition log, and authenticated `mia-evolution-pipeline` Edge Function are deployed in `zee-extension`. The existing `mia-chat` runtime has not been modified; evidence verification, privacy/conflict review, and shadow evaluation still require human action. This document is the operating specification, not proof that those checks run automatically.
 
 ## Goal
 
@@ -76,4 +76,6 @@ Track counts by state, oldest pending age, source-health failures, privacy block
 
 ## Current verified boundary
 
-The rollback-event table and isolated `mia-evolution-ledger` endpoint are deployed. The existing `mia-chat` function has not been modified. Candidate intake, stability automation, privacy review UI, shadow evaluation, automatic promotion, runtime gene loading, and automatic rollback are **not implemented by this specification**.
+Deployed in `zee-extension`: `mia_evolution_candidates`, `mia_evolution_candidate_events`, RLS/server-only grants, candidate state-transition guard, append-only transition audit, and the authenticated `mia-evolution-pipeline` endpoint (version 1). The candidate and event tables currently contain zero records. The endpoint supports dry-run validation, candidate submission/listing, human-attested evidence review, review-gate updates, manual shadow-result recording, and guarded state transitions.
+
+Not yet implemented: an opaque-pointer resolver that independently fetches source evidence, automatic source-health monitoring, an automated privacy/duplicate/contradiction evaluator, an actual shadow evaluator, an admin UI, a durable retry/outbox, GitHub gene publication/verification, or integration with `mia-chat`. The endpoint deliberately refuses to mark a candidate `committed`; the existing `mia-chat` function remains unchanged. Authenticated end-to-end invocation was not available in this deployment session, so only deployment metadata and database configuration have been verified.

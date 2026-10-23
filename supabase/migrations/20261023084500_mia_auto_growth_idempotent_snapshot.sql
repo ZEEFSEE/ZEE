@@ -54,3 +54,6 @@ begin
 end $$;
 revoke all on function mia_private.run_mia_auto_growth() from public,anon,authenticated;
 grant execute on function mia_private.run_mia_auto_growth() to postgres,service_role;
+
+-- Scheduled execution every 15 minutes; installed in zee-extension.
+select cron.schedule('mia-auto-growth-every-15-minutes','*/15 * * * *',$cron$select mia_private.run_mia_auto_growth();$cron$);

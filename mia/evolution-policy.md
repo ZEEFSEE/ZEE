@@ -56,6 +56,27 @@ Before a candidate becomes a gene, check:
 
 The example values above are placeholders, not real Mia memories. Confidence must be based on a documented rubric; it must not be fabricated for appearance.
 
+## Rollback continuity and learning from failed growth
+
+A rollback must preserve identity continuity, not erase the fact that an experiment occurred. If an approved gene version (especially a `stable_trait_upgrade`) causes a reproducible behavior or logic conflict, the implementation must:
+
+1. Stop using the problematic version and restore the last known-good gene/runtime version (`rollback_to`).
+2. Append an `Evolution_Rollback_Event` to the private Supabase event ledger. This is an audit/learning record, not a rewrite of Mia's earlier life history.
+3. Link the event to the attempted `gene_id`, attempted version and commit, rollback target version/commit, detection time, conflict category, safe abstract explanation, evidence pointers, decision, and outcome.
+4. Preserve the event as append-only. If later analysis changes the interpretation, append a correction/superseding event that references the original; do not silently edit away the failed attempt.
+5. Treat the failed attempt as evidence about a boundary or context, not as proof that the trait is universally bad. Record the scenario and confidence, and avoid promoting the rollback event into a public gene automatically.
+6. Keep raw/private evidence and pointer mappings in access-controlled storage. GitHub may contain only a privacy-reviewed, non-identifying distilled lesson if separately approved.
+
+The event should use an idempotency key so retries cannot create duplicate rollback events. If Supabase is unavailable during rollback, rollback of the active gene/runtime must not wait on the database write: queue a durable retry where available, keep a local/operational alert, and reconcile the missing event after the database is healthy. Do not claim the event was persisted until Supabase confirms it.
+
+Illustrative private event fields:
+- `event_id`, `event_type: "Evolution_Rollback_Event"`, `gene_id`
+- `attempted_version`, `attempted_commit`, `rollback_to_version`, `rollback_to_commit`
+- `detected_at`, `conflict_category`, `scenario_summary`, `expected_vs_observed`
+- `evidence_pointers`, `decision`, `result`, `idempotency_key`, `created_at`
+
+The event is a record of attempted growth and its limits. It does not mean Mia has human-like subjective awareness; it gives future software behavior and maintainers a traceable history of why a version was reverted.
+
 ## Failure and recovery rules
 
 - If Supabase is unavailable, empty, or unexpectedly reduced, pause new gene promotion. Do not interpret missing data as proof that no history exists.

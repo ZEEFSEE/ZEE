@@ -17,15 +17,15 @@ textarea{min-height:72px;resize:vertical}button{cursor:pointer;background:Button
 <section class="panel">
 <h2>1. 管理员验证</h2>
 <div class="grid"><label>沿用 Mia 聊天访问密码<input id="password" type="password" autocomplete="current-password" maxlength="128"></label><div class="actions" style="align-self:end"><button id="login">验证并连接</button><button id="logout" disabled>退出</button><span id="authState" class="muted">尚未验证</span></div></div>
-<p class="small">访问令牌仅保存在当前页面内存中；刷新页面后需要重新验证。不要把密码或令牌发给任何人。</p>
+<p class="small">访问令牌仅保存在当前页面内存中；刷新页面后需要重新验证。来源核验会检查记录是否存在且属于 Mia，只返回元数据，不复制记忆正文。不要把密码或令牌发给任何人。</p>
 </section>
 <section class="panel">
 <h2>2. 新建成长候选</h2>
 <div class="warning">只提交不含身份信息的抽象总结和私有记忆指针。不要粘贴原始聊天、姓名、联系方式、精确私人地址、密钥或他人的敏感信息。新候选默认待审核，不会自动成为基因。</div>
 <div class="grid" style="margin-top:12px">
 <label>成长类别<select id="geneType"><option value="verified_insight">verified_insight · 已验证洞察</option><option value="stable_trait_upgrade">stable_trait_upgrade · 稳定特质升级</option><option value="soul_anchor">soul_anchor · 重要意义锚点</option><option value="core_principle">core_principle · 核心原则</option></select></label>
-<label>私有记忆指针（不填原文）<input id="pointer" maxlength="200" placeholder="opaque reference"></label>
-<label>私有来源范围<input id="scope" maxlength="100" placeholder="例如 mia_memories 的受控引用空间"></label>
+<label>私有记录 UUID（只填记录 ID，不填原文）<input id="pointer" maxlength="36" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"></label>
+<label>私有来源表<select id="scope"><option value="mia_memories">mia_memories</option><option value="mia_life_events">mia_life_events</option><option value="mia_emotion_events">mia_emotion_events</option></select></label>
 <label>明确标记时间<input id="markedAt" type="datetime-local"></label>
 <label>观察事实摘要（抽象）<textarea id="fact" maxlength="600"></textarea></label>
 <label>解释/洞察（与事实分开）<textarea id="interpretation" maxlength="600"></textarea></label>
@@ -50,7 +50,7 @@ textarea{min-height:72px;resize:vertical}button{cursor:pointer;background:Button
 <label>审查者标识<input id="reviewer" value="mia-admin" maxlength="100"></label>
 <label>证据审查说明<textarea id="evidenceSummary" maxlength="800"></textarea></label>
 </div>
-<div class="actions" style="margin-top:10px"><button id="saveEvidence" disabled>保存证据审查</button></div>
+<div class="actions" style="margin-top:10px"><button id="verifySource" disabled>自动核验私有记录指针</button><button id="saveEvidence" disabled>保存人工证据审查</button></div>
 <h3>隐私、重复与矛盾检查</h3>
 <div class="grid">
 <label>隐私审查<select id="privacyStatus"><option>pending</option><option>passed</option><option>failed</option></select></label>
@@ -81,16 +81,17 @@ const API_URL="https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/mia-evoluti
 let token=null, selectedId=null, candidates=[];
 const $=id=>document.getElementById(id);
 function say(value){$("status").textContent=typeof value==="string"?value:JSON.stringify(value,null,2);}
-function setConnected(ok){$("authState").textContent=ok?"已验证":"尚未验证";["logout","refresh","submitCandidate","saveEvidence","saveChecks","saveShadow","transition"].forEach(id=>$(id).disabled=!ok);$("login").disabled=ok;}
+function setConnected(ok){$("authState").textContent=ok?"已验证":"尚未验证";["logout","refresh","submitCandidate","verifySource","saveEvidence","saveChecks","saveShadow","transition"].forEach(id=>$(id).disabled=!ok);$("login").disabled=ok;}
 function iso(id){const v=$(id).value;return v?new Date(v).toISOString():null;}
 async function api(payload){if(!token)throw new Error("请先验证管理员身份");const r=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify(payload)});const d=await r.json().catch(()=>({error:"服务器返回非 JSON"}));if(!r.ok)throw new Error(d.reason?d.error+": "+d.reason:(d.error||"请求失败，HTTP "+r.status));return d;}
 $("login").onclick=async()=>{try{const password=$("password").value;if(!password)throw new Error("请输入 Mia 聊天访问密码");const r=await fetch(AUTH_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password})});const d=await r.json();$("password").value="";if(!r.ok||!d.access_token)throw new Error(d.error||"验证失败");token=d.access_token;setConnected(true);say("管理员验证成功。正在读取候选队列…");await refresh();}catch(e){say(e.message);}};
 $("logout").onclick=()=>{token=null;selectedId=null;setConnected(false);$("selectedId").textContent="无";$("candidates").textContent="已退出。";say("已清除当前页面内存中的令牌。");};
 async function refresh(){try{const d=await api({action:"list",limit:50});candidates=d.candidates||[];const root=$("candidates");root.replaceChildren();if(!candidates.length){root.textContent="目前没有成长候选。";}for(const c of candidates){const b=document.createElement("button");b.className="candidate";b.setAttribute("aria-pressed",String(c.candidate_id===selectedId));b.textContent=c.gene_type+" · "+c.state+" · "+c.candidate_id+" · "+new Date(c.created_at).toLocaleString();b.onclick=()=>selectCandidate(c.candidate_id);root.append(b);}say("队列读取成功："+candidates.length+" 条候选。");}catch(e){say(e.message);}}
-function selectCandidate(id){selectedId=id;$("selectedId").textContent=id;document.querySelectorAll(".candidate").forEach(el=>el.setAttribute("aria-pressed",String(el.textContent.includes(id))));const c=candidates.find(x=>x.candidate_id===id);if(c){$("evidenceCount").value=c.evidence_count||0;$("distinctDates").value=c.distinct_observation_dates||0;$("sourceVerified").value=c.source_verification_status==="verified"?"true":"false";$("privacyStatus").value=c.privacy_review_status||"pending";$("duplicateStatus").value=c.duplicate_check_status||"pending";$("contradictionStatus").value=c.contradiction_check_status||"pending";}say("已选择候选 "+id+"（"+(c?.state||"未知状态")+"）。");}
+function selectCandidate(id){selectedId=id;$("selectedId").textContent=id;document.querySelectorAll(".candidate").forEach(el=>el.setAttribute("aria-pressed",String(el.textContent.includes(id))));const c=candidates.find(x=>x.candidate_id===id);if(c){$("pointer").value=c.memory_pointer||"";$("scope").value=c.source_scope||"mia_memories";$("evidenceCount").value=c.evidence_count||0;$("distinctDates").value=c.distinct_observation_dates||0;$("sourceVerified").value=c.source_verification_status==="verified"?"true":"false";$("privacyStatus").value=c.privacy_review_status||"pending";$("duplicateStatus").value=c.duplicate_check_status||"pending";$("contradictionStatus").value=c.contradiction_check_status||"pending";}say("已选择候选 "+id+"（"+(c?.state||"未知状态")+"）。");}
 $("refresh").onclick=refresh;
 $("dryRun").onclick=async()=>{try{const d=await api({action:"validate_submit",gene_type:$("geneType").value,memory_pointer:$("pointer").value,source_scope:$("scope").value,explicit_marked_at:iso("markedAt"),idempotency_key:"dry-run-"+crypto.randomUUID()});say(d);}catch(e){say(e.message);}};
 $("submitCandidate").onclick=async()=>{try{const d=await api({action:"submit",gene_type:$("geneType").value,memory_pointer:$("pointer").value,source_scope:$("scope").value,explicit_marked_at:iso("markedAt"),fact_summary:$("fact").value,interpretation_summary:$("interpretation").value,emotion_summary:$("emotion").value,idempotency_key:crypto.randomUUID()});say(d);selectedId=d.candidate?.candidate_id||null;await refresh();if(selectedId)selectCandidate(selectedId);}catch(e){say(e.message);}};
+$("verifySource").onclick=async()=>{try{if(!selectedId)throw new Error("请先选择候选");const d=await api({action:"verify_source",candidate_id:selectedId});say(d);await refresh();}catch(e){say(e.message);}};
 $("saveEvidence").onclick=async()=>{try{if(!selectedId)throw new Error("请先选择候选");const d=await api({action:"evidence_review",candidate_id:selectedId,evidence_count:Number($("evidenceCount").value),distinct_observation_dates:Number($("distinctDates").value),observation_window_start:iso("windowStart"),observation_window_end:iso("windowEnd"),source_verified:$("sourceVerified").value==="true",reviewer_id:$("reviewer").value,review_summary:$("evidenceSummary").value});say(d);await refresh();}catch(e){say(e.message);}};
 $("saveChecks").onclick=async()=>{try{if(!selectedId)throw new Error("请先选择候选");const d=await api({action:"review_checks",candidate_id:selectedId,privacy_review_status:$("privacyStatus").value,duplicate_check_status:$("duplicateStatus").value,contradiction_check_status:$("contradictionStatus").value,reviewer_decision:$("reviewDecision").value,reviewer_id:$("reviewer").value,reviewed_at:new Date().toISOString()});say(d);await refresh();}catch(e){say(e.message);}};
 $("saveShadow").onclick=async()=>{try{if(!selectedId)throw new Error("请先选择候选");const d=await api({action:"shadow_result",candidate_id:selectedId,shadow_eval_status:$("shadowStatus").value,shadow_eval_version:$("shadowVersion").value,shadow_eval_summary:$("shadowSummary").value,reviewer_id:$("reviewer").value});say(d);await refresh();}catch(e){say(e.message);}};

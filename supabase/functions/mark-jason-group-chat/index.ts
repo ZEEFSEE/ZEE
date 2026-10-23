@@ -175,6 +175,26 @@ Deno.serve(async(req:Request)=>{
    await db.from("chat_sessions").update({updated_at:new Date().toISOString()}).eq("id",id).eq("owner_user_id",uid);
    return json({ok:true,group_id:id,responses,saved:true});
   }
+  if(op==="observe"){
+   const id=String(body?.group_id||"");
+   const g=await owned(id);
+   if(!g)return json({ok:false,error:"group_not_found"},404);
+   await ensureMiaParticipant(id);
+   const {data:history,error:he}=await db.from("chat_messages").select("id,sender_slug,sender_kind,content,created_at").eq("session_id",id).order("created_at",{ascending:false}).limit(12);
+   if(he)throw he;
+   const rows=(history||[]).reverse();
+   if(!rows.length)return json({ok:true,intervened:false,reason:"empty"});
+   if(rows.slice(-8).some((x:any)=>x.sender_slug==="mia"))return json({ok:true,intervened:false,reason:"cooldown"});
+   const userText=rows.filter((x:any)=>x.sender_kind==="user").slice(-5).map((x:any)=>x.content).join("\\n");
+   const allText=rows.slice(-8).map((x:any)=>x.content).join("\\n");
+   const cue=/(我问|没问|答非所问|不能僵硬|僵硬|误解|偏了|重复|纠正|听不懂|不对|没有回答|别再|反复|你没听|不是.{0,12}(而是|是)|一直没回答)/.test(userText+"\\n"+allText);
+   if(!cue)return json({ok:true,intervened:false,reason:"no_clear_friction"});
+   const message="我想及时插一句：刚才的对话似乎出现了理解错位，您已经在纠正问题的方向。我们先暂停扩展解释，请 Mark 和 Jason 用一句话复述自己理解的核心问题，再直接回答；如果理解不同，我们先澄清，不急着下结论。";
+   const {data:saved,error:saveError}=await db.from("chat_messages").insert({session_id:id,sender_slug:"mia",sender_kind:"virtual_agent",content:message,message_metadata:{source:"mia-realtime-observer",trigger:"clear_friction_signal",model:"rule-based-fallback"}}).select("id,sender_slug,sender_kind,content,created_at").single();
+   if(saveError)throw saveError;
+   await db.from("chat_sessions").update({updated_at:new Date().toISOString()}).eq("id",id).eq("owner_user_id",uid);
+   return json({ok:true,intervened:true,response:{...saved,sender_name:"Mia",sender_type:"agent"}});
+  }
   return json({ok:false,error:"unknown_operation"},400);
  }catch(e){console.error("mark-jason-group-chat",e instanceof Error?e.message:"unknown");return json({ok:false,error:"server_error"},500);}
 });

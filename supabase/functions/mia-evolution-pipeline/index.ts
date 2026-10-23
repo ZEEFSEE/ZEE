@@ -202,21 +202,23 @@ Deno.serve(async (req: Request) => {
   }
 
   if (action === "evidence_review") {
-    const count = Number(body.evidence_count), dates = Number(body.distinct_observation_dates);
-        const reviewer = txt(body.reviewer_id, 100);
-    const start = body.observation_window_start ? Date.parse(txt(body.observation_window_start, 80)) : null;
-    const end = body.observation_window_end ? Date.parse(txt(body.observation_window_end, 80)) : null;
-    if (!Number.isInteger(count) || count < 0 || !Number.isInteger(dates) || dates < 0 ||
-        !reviewer || (start !== null && !Number.isFinite(start)) || (end !== null && !Number.isFinite(end)) ||
-        (start !== null && end !== null && start > end)) return json({ error: "Evidence review fields invalid" }, 400);
-    const patch: any = { evidence_count: count, distinct_observation_dates: dates,
-            observation_window_start: start === null ? null : new Date(start).toISOString(),
-      observation_window_end: end === null ? null : new Date(end).toISOString(),
-      reviewer_decision: txt(body.review_summary, 800) || "Human evidence review recorded; source pointer verification remains separate." };
-    const upd = await db.from("mia_evolution_candidates").update(patch).eq("candidate_id", candidateId)
-      .select("candidate_id,state,evidence_count,distinct_observation_dates,source_verification_status,source_verified_at").single();
-    if (upd.error) return json({ error: "Evidence review was not saved" }, 500);
-    return json({ ok: true, candidate: upd.data, note: "Evidence verification is a human attestation; the endpoint does not independently resolve the opaque pointer." });
+    const reviewer = txt(body.reviewer_id, 100);
+    const summary = txt(body.review_summary, 800);
+    if (!reviewer || !summary) return json({ error: "Reviewer ID and a concise evidence-review summary are required." }, 400);
+    const current = await db.from("mia_evolution_candidates")
+      .select("candidate_id,state,source_verification_status,evidence_count,distinct_observation_dates")
+      .eq("candidate_id", candidateId).maybeSingle();
+    if (current.error || !current.data) return json({ error: "Candidate could not be reloaded for evidence review." }, 404);
+    const now = new Date().toISOString();
+    const upd = await db.from("mia_evolution_candidates").update({
+      reviewer_id: reviewer,
+      reviewed_at: now,
+      reviewer_decision: "Human evidence review: " + summary
+    }).eq("candidate_id", candidateId).eq("state", current.data.state)
+      .select("candidate_id,state,source_verification_status,evidence_count,distinct_observation_dates,reviewer_id,reviewed_at,reviewer_decision").maybeSingle();
+    if (upd.error || !upd.data) return json({ error: "Evidence review was not saved; reload the candidate." }, 409);
+    return json({ ok: true, candidate: upd.data,
+      note: "Evidence counts and observation dates are source-derived and cannot be manually inflated. The currently verified pointer contributes at most one source record; multi-record evidence aggregation is not yet implemented." });
   }
 
   if (action === "review_checks") {

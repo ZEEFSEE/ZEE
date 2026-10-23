@@ -48,5 +48,33 @@
     "auto_restore_without_validation": false,
     "require_deduplication_and_provenance_check": true
   },
-  "note": "This config is a design artifact. It is not wired into runtime code and does not prove any trigger or recovery mechanism is active."
+  "note": "This config is a design artifact. It is not wired into runtime code and does not prove any trigger, rollback event persistence, or recovery mechanism is active.",
+  "rollback_continuity": {
+    "event_type": "Evolution_Rollback_Event",
+    "storage": "private_supabase_append_only_ledger",
+    "required_fields": [
+      "event_id",
+      "gene_id",
+      "attempted_version",
+      "attempted_commit",
+      "rollback_to_version",
+      "rollback_to_commit",
+      "detected_at",
+      "conflict_category",
+      "scenario_summary",
+      "expected_vs_observed",
+      "evidence_pointers",
+      "decision",
+      "result",
+      "idempotency_key",
+      "created_at"
+    ],
+    "rollback_must_not_wait_for_event_write": true,
+    "require_idempotency_key": true,
+    "preserve_original_event_append_only": true,
+    "automatic_gene_promotion_from_rollback_event": false,
+    "public_github_requires_separate_privacy_review_and_approval": true,
+    "if_supabase_unavailable": "revert_runtime_first_then_alert_and_reconcile_pending_event",
+    "runtime_enforced": false
+  }
 }

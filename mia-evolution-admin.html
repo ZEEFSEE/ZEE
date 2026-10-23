@@ -40,12 +40,11 @@ textarea{min-height:72px;resize:vertical}button{cursor:pointer;background:Button
 <section class="panel">
 <h2>4. 审查所选候选</h2>
 <p class="muted">当前选择：<strong id="selectedId">无</strong></p>
-<h3>证据审查（由管理员核验私有来源后填写）</h3>
+<h3>证据审查（来源计数由系统核验，管理员只记录审查意见）</h3>
 <div class="grid">
-<label>证据条数<input id="evidenceCount" type="number" min="0" step="1" value="0"></label>
-<label>不同观察日期数<input id="distinctDates" type="number" min="0" step="1" value="0"></label>
-<label>观察窗口开始<input id="windowStart" type="datetime-local"></label>
-<label>观察窗口结束<input id="windowEnd" type="datetime-local"></label>
+<label>系统核验的证据条数<input id="evidenceCount" type="number" min="0" step="1" value="0" readonly disabled></label>
+<label>系统核验的观察日期数<input id="distinctDates" type="number" min="0" step="1" value="0" readonly disabled></label>
+
 
 <label>审查者标识<input id="reviewer" value="mia-admin" maxlength="100"></label>
 <label>证据审查说明<textarea id="evidenceSummary" maxlength="800"></textarea></label>
@@ -92,7 +91,7 @@ $("refresh").onclick=refresh;
 $("dryRun").onclick=async()=>{try{const d=await api({action:"validate_submit",gene_type:$("geneType").value,memory_pointer:$("pointer").value,source_scope:$("scope").value,explicit_marked_at:iso("markedAt"),idempotency_key:"dry-run-"+crypto.randomUUID()});say(d);}catch(e){say(e.message);}};
 $("submitCandidate").onclick=async()=>{try{const d=await api({action:"submit",gene_type:$("geneType").value,memory_pointer:$("pointer").value,source_scope:$("scope").value,explicit_marked_at:iso("markedAt"),fact_summary:$("fact").value,interpretation_summary:$("interpretation").value,emotion_summary:$("emotion").value,idempotency_key:crypto.randomUUID()});say(d);selectedId=d.candidate?.candidate_id||null;await refresh();if(selectedId)selectCandidate(selectedId);}catch(e){say(e.message);}};
 $("verifySource").onclick=async()=>{try{if(!selectedId)throw new Error("请先选择候选");const d=await api({action:"verify_source",candidate_id:selectedId});say(d);await refresh();}catch(e){say(e.message);}};
-$("saveEvidence").onclick=async()=>{try{if(!selectedId)throw new Error("请先选择候选");const d=await api({action:"evidence_review",candidate_id:selectedId,evidence_count:Number($("evidenceCount").value),distinct_observation_dates:Number($("distinctDates").value),observation_window_start:iso("windowStart"),observation_window_end:iso("windowEnd"),reviewer_id:$("reviewer").value,review_summary:$("evidenceSummary").value});say(d);await refresh();}catch(e){say(e.message);}};
+$("saveEvidence").onclick=async()=>{try{if(!selectedId)throw new Error("请先选择候选");const d=await api({action:"evidence_review",candidate_id:selectedId,reviewer_id:$("reviewer").value,review_summary:$("evidenceSummary").value});say(d);await refresh();}catch(e){say(e.message);}};
 $("autoChecks").onclick=async()=>{try{if(!selectedId)throw new Error("请先选择候选");const d=await api({action:"automated_checks",candidate_id:selectedId});say(d);await refresh();}catch(e){say(e.message);}};
 $("saveChecks").onclick=async()=>{try{if(!selectedId)throw new Error("请先选择候选");const d=await api({action:"review_checks",candidate_id:selectedId,privacy_review_status:$("privacyStatus").value,duplicate_check_status:$("duplicateStatus").value,contradiction_check_status:$("contradictionStatus").value,reviewer_decision:$("reviewDecision").value,reviewer_id:$("reviewer").value,reviewed_at:new Date().toISOString()});say(d);await refresh();}catch(e){say(e.message);}};
 $("saveShadow").onclick=async()=>{try{if(!selectedId)throw new Error("请先选择候选");const d=await api({action:"shadow_result",candidate_id:selectedId,shadow_eval_status:$("shadowStatus").value,shadow_eval_version:$("shadowVersion").value,shadow_eval_summary:$("shadowSummary").value,reviewer_id:$("reviewer").value});say(d);await refresh();}catch(e){say(e.message);}};

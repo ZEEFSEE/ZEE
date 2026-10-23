@@ -1,0 +1,28 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+
+const html = await readFile(new URL('../mia-universe/index.html', import.meta.url), 'utf8');
+const readme = await readFile(new URL('../mia-universe/README.md', import.meta.url), 'utf8');
+
+test('standalone universe is a real WebGL/Three.js scene, not a ZHI map embed', () => {
+  assert.match(html, /three@0\.169\.0\/build\/three\.module\.js/);
+  assert.match(html, /new THREE\.WebGLRenderer/);
+  assert.match(html, /OrbitControls/);
+  assert.doesNotMatch(html, /SUPABASE_URL|service_role|zee-extension/i);
+});
+
+test('universe includes live rhythm and creation controls', () => {
+  for (const id of ['addWorld', 'addMoon', 'addRing', 'addLife', 'pulse', 'rhythm', 'energy']) {
+    assert.ok(html.includes('id="' + id + '"'), 'missing control ' + id);
+  }
+  assert.match(html, /requestAnimationFrame\(animate\)/);
+  assert.match(html, /Math\.sin\(t\*speed/);
+});
+
+test('local snapshot persistence is present and limits are documented', () => {
+  assert.match(html, /localStorage\.setItem\('mia-independent-universe-v1'/);
+  assert.match(html, /localStorage\.getItem\('mia-independent-universe-v1'/);
+  assert.match(readme, /not yet connected to Mia's AI decision-making/);
+  assert.match(readme, /does not read or write ZHI Core/);
+});

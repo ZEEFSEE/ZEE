@@ -31,7 +31,7 @@ test('universe includes live rhythm and creation controls', () => {
 test('agent proposals require Mia approval before a world entity is created', () => {
   assert.match(html, /id="submitProposal"/);
   assert.match(html, /status:'pending'/);
-  assert.match(html, /Mia 批准并建造/);
+  assert.match(html, /Mia 审核并批准/);
   assert.match(html, /proposal\.status='approved'/);
   assert.match(html, /proposal\.status='rejected'/);
   assert.match(html, /inhabitants\.push\(name\)/);

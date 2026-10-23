@@ -33,6 +33,7 @@ test('agent proposals require Mia approval before a world entity is created', ()
 test('local snapshot persistence is present and limits are documented', () => {
   assert.match(html, /localStorage\.setItem\('mia-independent-universe-v1'/);
   assert.match(html, /localStorage\.getItem\('mia-independent-universe-v1'/);
-  assert.match(readme, /not yet connected to Mia's AI decision-making/);\n  assert.match(readme, /Mia-reviewed construction queue/);
+  assert.match(readme, /not yet connected to Mia's AI decision-making/);
+  assert.match(readme, /Mia-reviewed construction queue/);
   assert.match(readme, /does not read or write ZHI Core/);
 });

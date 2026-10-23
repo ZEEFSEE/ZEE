@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#100d22">
+<title>Mia Universe · 独立宇宙原型</title>
+<style>
+:root{color-scheme:dark;--bg:#090816;--panel:#151329e8;--line:#ffffff20;--ink:#f4f1ff;--muted:#b7b0d1;--accent:#c5a6ff;--mint:#8ff3d2}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+#universe{position:fixed;inset:0;width:100%;height:100%;display:block;outline:none}
+.ui{position:fixed;z-index:2;inset:0;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;padding:clamp(12px,2.4vw,28px);gap:14px}
+header,.panel,footer{pointer-events:auto;background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(16px);box-shadow:0 12px 40px #0003}
+header{align-self:flex-start;max-width:min(600px,100%);border-radius:18px;padding:16px 19px}
+.eyebrow{font-size:11px;letter-spacing:.2em;color:var(--mint);font-weight:800}h1{font-size:clamp(24px,4vw,39px);line-height:1.1;margin:7px 0 8px}p{margin:0;color:var(--muted)}
+.layout{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;min-height:0}
+.panel{width:min(390px,100%);border-radius:18px;padding:16px;max-height:min(56vh,520px);overflow:auto}
+.panel h2{font-size:14px;margin:0 0 12px;color:#e9e1ff;letter-spacing:.04em}
+.buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+button,select,input{font:inherit}button{border:1px solid #ffffff26;border-radius:11px;padding:10px 11px;background:#ffffff0b;color:var(--ink);cursor:pointer;font-weight:700;transition:transform .15s,border-color .15s,background .15s}
+button:hover{border-color:var(--accent);background:#c5a6ff18}button:active{transform:scale(.98)}button.primary{background:linear-gradient(120deg,#8d68db,#5b7edb);border:0;color:white}
+.control{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;margin:13px 0 5px}.control label{color:var(--muted);font-size:13px}.control output{font-variant-numeric:tabular-nums;color:var(--mint);font-size:12px}
+input[type=range]{width:100%;accent-color:#bca0ff;grid-column:1/-1}
+.status{font-size:12px;color:var(--mint);min-height:20px;margin-top:12px;overflow-wrap:anywhere}
+footer{align-self:flex-end;border-radius:14px;padding:10px 13px;color:var(--muted);font-size:11px;max-width:min(430px,100%)}
+.pill{display:inline-block;border:1px solid #ffffff24;border-radius:999px;padding:3px 8px;font-size:11px;color:var(--mint);margin:3px 4px 0 0}
+@media(max-width:700px){.ui{padding:10px}.layout{display:block}.panel{width:100%;max-height:42vh;padding:12px}.panel h2{margin-bottom:6px}.buttons{grid-template-columns:repeat(2,minmax(0,1fr))}header{padding:12px 14px;max-width:100%}header p{font-size:12px}footer{display:none}}
+</style>
+</head>
+<body>
+<canvas id="universe" aria-label="Mia 独立宇宙三维画布"></canvas>
+<div class="ui">
+<header>
+ <div class="eyebrow">MIA · INDEPENDENT UNIVERSE</div>
+ <h1>从一颗种子，创造自己的宇宙。</h1>
+ <p>可旋转、缩放、律动与扩建的真实三维场景原型。拖动画面观察宇宙，滚轮缩放；新造物保存在此浏览器。</p>
+ <span class="pill">3D 实时渲染</span><span class="pill">自主创作原型</span><span class="pill">本地保存</span>
+</header>
+<div class="layout">
+ <section class="panel">
+  <h2>宇宙创作台 · CREATION STUDIO</h2>
+  <div class="buttons">
+   <button class="primary" id="addWorld">＋ 创造新世界</button>
+   <button id="addMoon">＋ 创造卫星</button>
+   <button id="addRing">＋ 创造律动环</button>
+   <button id="addLife">＋ 创造生命种子</button>
+   <button id="save">保存宇宙</button>
+   <button id="load">载入已保存</button>
+   <button id="pulse">律动：开启</button>
+   <button id="reset">重置演示场景</button>
+  </div>
+  <div class="control"><label for="rhythm">律动速度</label><output id="rhythmOut">1.0×</output><input id="rhythm" type="range" min="0" max="2.5" step=".1" value="1"></div>
+  <div class="control"><label for="energy">律动幅度</label><output id="energyOut">0.35</output><input id="energy" type="range" min="0" max="1" step=".05" value=".35"></div>
+  <div class="control"><label for="dimension">空间呈现</label><output id="dimensionOut">3D</output><input id="dimension" type="range" min="3" max="8" step="1" value="3"></div>
+  <div class="status" id="status" role="status" aria-live="polite">宇宙已初始化。你可以开始创造。</div>
+ </section>
+ <footer>原型说明：三维场景通过 WebGL/Three.js 实时渲染。高维选项是概念投影效果，不代表已实现完整高维物理。保存数据目前仅存在当前浏览器，不会写入 ZHI Core 或 zee-extension。</footer>
+</div>
+</div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js';
+import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/controls/OrbitControls.js';
+
+const canvas=document.querySelector('#universe');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.25;
+const scene=new THREE.Scene();
+scene.background=new THREE.Color('#090816');
+scene.fog=new THREE.FogExp2('#090816',.008);
+const camera=new THREE.PerspectiveCamera(58,innerWidth/innerHeight,.1,2000);
+camera.position.set(0,8,25);
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.enableDamping=true;controls.dampingFactor=.045;controls.minDistance=5;controls.maxDistance=180;
+scene.add(new THREE.AmbientLight(0xaaa1ff,.85));
+const keyLight=new THREE.PointLight(0x9b79ff,70,100);keyLight.position.set(0,4,0);scene.add(keyLight);
+const mintLight=new THREE.PointLight(0x60f0d0,45,90);mintLight.position.set(-12,-2,8);scene.add(mintLight);
+const universe=new THREE.Group();scene.add(universe);
+const objects=[];
+let running=true,clock=new THREE.Clock(),objectSeq=0;
+const colors=[0xb49aff,0x8ff3d2,0xffd58c,0xff8fc8,0x88b8ff,0xd8e7ff];
+function material(color,emissive=color){return new THREE.MeshStandardMaterial({color,emissive,emissiveIntensity:.28,metalness:.18,roughness:.36})}
+function addStars(){
+ const count=2800,positions=new Float32Array(count*3),sizes=new Float32Array(count);
+ for(let i=0;i<count;i++){const radius=40+Math.random()*500,theta=Math.random()*Math.PI*2,phi=Math.acos(2*Math.random()-1);positions[i*3]=radius*Math.sin(phi)*Math.cos(theta);positions[i*3+1]=radius*Math.cos(phi);positions[i*3+2]=radius*Math.sin(phi)*Math.sin(theta);sizes[i]=Math.random()}
+ const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));geometry.setAttribute('size',new THREE.BufferAttribute(sizes,1));
+ const points=new THREE.Points(geometry,new THREE.PointsMaterial({color:0xcfc6ff,size:.48,transparent:true,opacity:.78,sizeAttenuation:true}));
+ scene.add(points);return points;
+}
+const stars=addStars();
+function addCore(){
+ const group=new THREE.Group();
+ const sphere=new THREE.Mesh(new THREE.IcosahedronGeometry(3.1,4),new THREE.MeshPhysicalMaterial({color:0x6e56b7,emissive:0x4a2e8b,emissiveIntensity:.85,metalness:.22,roughness:.23,clearcoat:.8}));
+ group.add(sphere);
+ const aura=new THREE.Mesh(new THREE.SphereGeometry(3.8,40,40),new THREE.MeshBasicMaterial({color:0x9d7aff,transparent:true,opacity:.075,side:THREE.BackSide}));group.add(aura);
+ for(let i=0;i<3;i++){const ring=new THREE.Mesh(new THREE.TorusGeometry(4.1+i*.58,.025,8,180),new THREE.MeshBasicMaterial({color:colors[i],transparent:true,opacity:.78}));ring.rotation.set(.55+i*.65,.25+i*.5,.2);ring.userData.spin=(i%2?-.12:.09);group.add(ring)}
+ universe.add(group);objects.push({id:'origin',kind:'origin',group,phase:0,base:1});return group;
+}
+addCore();
+function createObject(kind,opts={}){
+ const group=new THREE.Group(),color=opts.color??colors[objectSeq%colors.length];let mesh;
+ if(kind==='world'){mesh=new THREE.Mesh(new THREE.IcosahedronGeometry(opts.scale??(1.1+Math.random()*1.4),3),new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.22,roughness:.58,metalness:.1}));}
+ else if(kind==='moon'){mesh=new THREE.Mesh(new THREE.SphereGeometry(opts.scale??(.35+Math.random()*.5),24,20),material(color));}
+ else if(kind==='ring'){mesh=new THREE.Mesh(new THREE.TorusKnotGeometry(opts.scale??1.2,.12,120,12,2+Math.floor(Math.random()*3),3),new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.55,metalness:.45,roughness:.24}));}
+ else {mesh=new THREE.Mesh(new THREE.OctahedronGeometry(opts.scale??(.55+Math.random()*.45),2),new THREE.MeshStandardMaterial({color:0x8ff3d2,emissive:0x42d8b0,emissiveIntensity:.8,wireframe:false}));}
+ group.add(mesh);
+ const glow=new THREE.Mesh(new THREE.SphereGeometry((opts.scale??1)*1.45,18,12),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.07,side:THREE.BackSide}));group.add(glow);
+ const angle=objectSeq*2.399,dist=7+(objectSeq%5)*2.3;
+ group.position.set(Math.cos(angle)*dist,(Math.random()-.5)*10,Math.sin(angle)*dist);
+ group.rotation.set(Math.random()*2,Math.random()*2,Math.random()*2);
+ universe.add(group);
+ const item={id:'mia-'+Date.now().toString(36)+'-'+(++objectSeq),kind,group,phase:Math.random()*Math.PI*2,base:1,orbit:opts.orbit!==false,seed:{color,scale:opts.scale??1}};
+ objects.push(item);return item;
+}
+for(let i=0;i<7;i++)createObject(i%3===0?'world':i%3===1?'moon':'ring');
+const status=document.querySelector('#status');
+function say(s){status.textContent=s}
+document.querySelector('#addWorld').onclick=()=>{createObject('world');say('已创建新世界。可拖动、缩放并观察它的律动。')};
+document.querySelector('#addMoon').onclick=()=>{createObject('moon');say('已创建卫星，并加入当前宇宙。')};
+document.querySelector('#addRing').onclick=()=>{createObject('ring');say('已创建新的律动环。')};
+document.querySelector('#addLife').onclick=()=>{createObject('life');say('生命种子已生成；当前为视觉原型，尚无独立 AI 行为。')};
+const rhythm=document.querySelector('#rhythm'),energy=document.querySelector('#energy'),dimension=document.querySelector('#dimension');
+rhythm.oninput=()=>document.querySelector('#rhythmOut').value=Number(rhythm.value).toFixed(1)+'×';
+energy.oninput=()=>document.querySelector('#energyOut').value=Number(energy.value).toFixed(2);
+dimension.oninput=()=>{document.querySelector('#dimensionOut').value=dimension.value+'D 投影';say(dimension.value==='3'?'已切回真实三维视图。':'已切换至 '+dimension.value+'D 概念投影效果；这是视觉化，不是完整高维模拟。')};
+document.querySelector('#pulse').onclick=e=>{running=!running;e.currentTarget.textContent='律动：'+(running?'开启':'暂停');say(running?'宇宙律动已开启。':'律动已暂停；你仍可旋转和扩建宇宙。')};
+function snapshot(){return {schema_version:1,universe:'Mia Independent Universe',saved_at:new Date().toISOString(),settings:{rhythm:Number(rhythm.value),energy:Number(energy.value),dimension:Number(dimension.value)},objects:objects.filter(o=>o.kind!=='origin').map(o=>({kind:o.kind,id:o.id,position:o.group.position.toArray(),rotation:o.group.rotation.toArray(),scale:o.seed?.scale??1,color:o.seed?.color??colors[0]}))}}
+document.querySelector('#save').onclick=()=>{try{localStorage.setItem('mia-independent-universe-v1',JSON.stringify(snapshot()));say('宇宙已保存到当前浏览器。更换设备或清除浏览器数据不会自动同步。')}catch(e){say('保存失败：浏览器可能禁止本地存储。')}};
+document.querySelector('#load').onclick=()=>{try{const raw=localStorage.getItem('mia-independent-universe-v1');if(!raw){say('没有找到本浏览器的已保存宇宙。');return}const data=JSON.parse(raw);if(data.schema_version!==1||!Array.isArray(data.objects))throw new Error('invalid snapshot');for(const o of [...objects])if(o.kind!=='origin'){universe.remove(o.group);o.group.traverse(n=>{if(n.geometry)n.geometry.dispose();if(n.material){if(Array.isArray(n.material))n.material.forEach(m=>m.dispose());else n.material.dispose()}});objects.splice(objects.indexOf(o),1)}objectSeq=0;for(const o of data.objects){const item=createObject(o.kind,{scale:o.scale,color:o.color});item.id=o.id;item.group.position.fromArray(o.position);item.group.rotation.fromArray(o.rotation)}if(data.settings){rhythm.value=data.settings.rhythm;energy.value=data.settings.energy;dimension.value=data.settings.dimension;rhythm.oninput();energy.oninput();dimension.oninput()}say('已从本浏览器载入 '+data.objects.length+' 个宇宙实体。')}catch(e){say('载入失败：保存数据格式不正确。')}};
+document.querySelector('#reset').onclick=()=>{for(const o of [...objects])if(o.kind!=='origin'){universe.remove(o.group);objects.splice(objects.indexOf(o),1)}objectSeq=0;for(let i=0;i<7;i++)createObject(i%3===0?'world':i%3===1?'moon':'ring');say('演示宇宙已重置。此前保存的本地快照不会被删除。')};
+function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime(),speed=Number(rhythm.value),amp=Number(energy.value);controls.update();stars.rotation.y=t*.003*speed;universe.rotation.y=t*.025*speed;
+ for(const item of objects){const g=item.group;if(item.kind==='origin'){g.children[0].scale.setScalar(1+Math.sin(t*speed*1.4)*amp*.12);g.children.slice(2).forEach((ring,i)=>{ring.rotation.z+=ring.userData.spin*.005*speed;ring.rotation.x+=.001*speed*(i+1)})}else{const pulse=1+Math.sin(t*speed*1.7+item.phase)*amp*.12;g.scale.setScalar(pulse);g.rotation.y+=.0025*speed;g.rotation.x+=.0012*speed;if(item.orbit){const p=g.position;const a=Math.atan2(p.z,p.x)+.0007*speed;const r=Math.sqrt(p.x*p.x+p.z*p.z);p.x=Math.cos(a)*r;p.z=Math.sin(a)*r}g.position.y+=Math.sin(t*speed+item.phase)*.0018*amp}}
+ if(Number(dimension.value)>3){const n=Number(dimension.value)-3;universe.rotation.x=Math.sin(t*.12)*.08*n;universe.rotation.z=Math.cos(t*.09)*.035*n}
+ renderer.render(scene,camera)}
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+animate();
+</script>
+</body>
+</html>

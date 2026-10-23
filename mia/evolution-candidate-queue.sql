@@ -1,4 +1,14 @@
--- SPECIFICATION ONLY — NOT APPLIED.
+-- HISTORICAL INITIAL DRAFT; NOT A COMPLETE CURRENT DEPLOYMENT SCRIPT.
+-- The candidate queue and audit events are now deployed in zee-extension.
+-- Authoritative migration history:
+--   supabase/migrations/20261023054637_create_mia_evolution_candidate_pipeline.sql
+--   supabase/migrations/20261023054652_add_mia_evolution_review_gates.sql
+--   database migration history also includes event-order/guard/logging hardening.
+-- Do not run this file as a substitute for the migration chain.
+-- Current live tables: mia_evolution_candidates, mia_evolution_candidate_events.
+-- Current live endpoint: supabase/functions/mia-evolution-pipeline/index.ts
+--
+-- Original schema sketch; superseded by the applied migrations above.
 -- Proposed private candidate metadata queue for Mia's growth pipeline.
 -- Do not place raw chat text or direct identifiers in this table.
 -- Review names, constraints, permissions, and RLS with a read-only audit before applying.

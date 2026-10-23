@@ -61,9 +61,14 @@ Deno.serve(async (req: Request) => {
   }
   if (!URL || !SERVICE_KEY) return json({ error: "Mia database is not configured." }, 503);
 
-  const length = Number(req.headers.get("content-length") || 0);
-  if (length > 32_000) return json({ error: "Request body too large." }, 413);
-  const body = await req.json().catch(() => null);
+  // Enforce the limit on the actual body bytes; Content-Length may be absent.
+  const rawBody = await req.text();
+  if (new TextEncoder().encode(rawBody).byteLength > 32_000) {
+    return json({ error: "Request body too large." }, 413);
+  }
+  const body = (() => {
+    try { return JSON.parse(rawBody); } catch { return null; }
+  })();
   if (!body || typeof body !== "object" || Array.isArray(body)) {
     return json({ error: "Invalid JSON body." }, 400);
   }

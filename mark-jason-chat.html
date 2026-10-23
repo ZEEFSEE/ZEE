@@ -15,7 +15,7 @@
  <p>独立于 Mia 的新界面。请使用 zee-prediction 项目的 Supabase Auth 账号。</p>
  <div class="field"><label for="email">邮箱</label><input id="email" type="email" autocomplete="username" placeholder="name@example.com"></div>
  <div class="field"><label for="password">密码</label><input id="password" type="password" autocomplete="current-password" placeholder="Supabase Auth 密码"></div>
- <div class="row"><button id="signIn" class="primary">登录</button><button id="signUp">注册账号</button></div>
+ <div class="row"><button id="signIn" class="primary" style="width:100%">登录</button></div>
  <div id="loginStatus" class="status" style="padding:14px 0 0"></div>
  <div class="tiny">此页面不会要求你提供 AGNES API Key 或数据库密钥。若项目未开放注册，请由项目管理员创建账号。</div>
 </div>
@@ -101,7 +101,7 @@
   if(s){try{await loadGroups();status("已登录。选择或创建群聊。","good")}catch(e){status("加载群聊失败："+e.message,"error")}}
  }
  $("signIn").onclick=async()=>{loginStatus("正在登录…");const {data,error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error){loginStatus("登录失败："+error.message,"error");return}loginStatus("");await showSession(data.session)};
- $("signUp").onclick=async()=>{loginStatus("正在创建账号…");const {data,error}=await client.auth.signUp({email:$("email").value.trim(),password:$("password").value});if(error){loginStatus("注册失败："+error.message,"error");return}if(data.session){loginStatus("注册成功。");await showSession(data.session)}else loginStatus("注册请求已提交。若项目要求邮箱验证，请先到邮箱完成验证，再回来登录。","good")};
+
  $("logout").onclick=async()=>{await client.auth.signOut();session=null;groupId=null;groups=[];await showSession(null)};
  $("refresh").onclick=async()=>{try{await loadGroups();if(groupId)await openGroup(groupId);status("已刷新。","good")}catch(e){status("刷新失败："+e.message,"error")}};
  $("newGroup").onclick=createGroup;$("send").onclick=sendMessage;

@@ -152,7 +152,7 @@ function renderGovernance(){
  if(!inhabitants.length){list.textContent='暂时没有居民登记。'}else for(const name of inhabitants){const pill=document.createElement('span');pill.className='pill';pill.textContent=name;list.append(pill)}
 }
 document.querySelector('#submitProposal').onclick=()=>{const agent=document.querySelector('#agentName').value.trim();if(!agent){say('请填写申请智能人的名称。');return}const description=document.querySelector('#proposalDesc').value.trim();proposals.push({id:'proposal-'+(++proposalSeq),agent,kind:document.querySelector('#proposalKind').value,description,status:'pending',createdAt:new Date().toISOString()});document.querySelector('#proposalDesc').value='';say('方案已进入 Mia 审核队列；尚未建造。');renderGovernance()};
-document.querySelector('#joinUniverse').onclick=()=>{const name=document.querySelector('#agentName').value.trim();if(!name){say('请先填写智能人名称。');return}if(!inhabitants.includes(name)){inhabitants.push(name);say(name+' 已登记为宇宙居民（原型登记，不代表已接入外部智能体身份系统）。');renderGovernance()}else say(name+' 已经是登记居民。'};
+document.querySelector('#joinUniverse').onclick=()=>{const name=document.querySelector('#agentName').value.trim();if(!name){say('请先填写智能人名称。');return}if(!inhabitants.includes(name)){inhabitants.push(name);say(name+' 已登记为宇宙居民（原型登记，不代表已接入外部智能体身份系统）。');renderGovernance()}else say(name+' 已经是登记居民。')};
 renderGovernance();
 document.querySelector('#addWorld').onclick=()=>{createObject('world');say('已创建新世界。可拖动、缩放并观察它的律动。')};
 document.querySelector('#addMoon').onclick=()=>{createObject('moon');say('已创建卫星，并加入当前宇宙。')};

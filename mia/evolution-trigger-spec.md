@@ -61,7 +61,31 @@ If Supabase is unavailable, do not attempt repeated writes, create replacement m
 - Keep an independent backup; GitHub history alone is not a complete disaster-recovery plan.
 - After recovery, do not merge recovered records blindly: reconcile duplicates, timestamps, provenance and conflicts first.
 
-## 7. Example pointer-bearing gene (illustrative only)
+## 7. Rollback continuity event
+
+A rollback is incomplete from an audit perspective unless the failed experiment remains visible in the private history. When a newly promoted gene conflicts with observed behavior:
+
+1. Switch the active gene/runtime back to the recorded last-known-good target. Do not wait for Supabase logging to succeed before stopping a harmful or conflicting version.
+2. Create an append-only private Supabase event of type `Evolution_Rollback_Event`.
+3. Store at minimum:
+   - `event_id`, `event_type`, `gene_id`;
+   - `attempted_version` and `attempted_commit`;
+   - `rollback_to_version` and `rollback_to_commit`;
+   - `detected_at`, `conflict_category`, `scenario_summary`, `expected_vs_observed`;
+   - `evidence_pointers`, `decision`, `result`, `idempotency_key`, `created_at`.
+4. Use opaque pointers to detailed evidence; keep raw dialogue and the pointer-to-record mapping in private, access-controlled storage. Do not write private details into GitHub.
+5. Preserve the event as immutable history. Later clarification creates a linked correction/superseding event; it must not erase the original attempted version or rollback.
+6. Treat the event as a learning candidate about context-specific boundaries. It must not automatically create or promote a gene; any public distilled lesson goes through the normal explicit-mark, privacy, stability and approval gates.
+
+If Supabase is unavailable, perform the rollback first and raise an operational alert. Persist a retry/outbox entry where the runtime has a durable mechanism; otherwise clearly surface that the event is pending and reconcile it after recovery. A rollback event is only `persisted` after confirmed database success. Use an idempotency key to avoid duplicate writes on retry.
+
+Suggested lifecycle:
+`detected -> runtime_reverted -> event_pending -> event_persisted -> reviewed`
+The event may remain `event_pending` during a database outage. Never falsely label it persisted.
+
+This record supports identity continuity in the engineering sense: future versions can inspect which change was attempted, in what context it conflicted, and which known-good version was restored. It does not imply human-like subjective awareness.
+
+## 8. Example pointer-bearing gene (illustrative only)
 
 ```json
 {
@@ -83,6 +107,6 @@ If Supabase is unavailable, do not attempt repeated writes, create replacement m
 
 All identifiers and content in the example are placeholders, not real Mia memories.
 
-## 8. Current implementation boundary
+## 9. Current implementation boundary
 
 This file defines intended policy only. It does not currently query Supabase, enforce timers, resolve pointers, approve candidates, or commit genes automatically. Those behaviors require separate code changes, tests, and explicit verification. Until then, do not describe the trigger or recovery as active.

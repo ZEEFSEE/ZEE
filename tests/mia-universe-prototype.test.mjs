@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { validateProposal, reviewProposal } from '../mia-universe/governance.mjs';
+import { validateProposal, reviewProposal, validateSnapshot } from '../mia-universe/governance.mjs';
 
 const html = await readFile(new URL('../mia-universe/index.html', import.meta.url), 'utf8');
 const readme = await readFile(new URL('../mia-universe/README.md', import.meta.url), 'utf8');
@@ -53,6 +53,14 @@ test('governance policy blocks spatial collisions and enforces entity cap', () =
   assert.equal(validateProposal(base, { objects: [nearObject], proposals: [] }).ok, false);
   const farProposal = { ...base, position: [20, 0, 20] };
   assert.equal(validateProposal(farProposal, { objects: Array.from({ length: 100 }, () => ({ kind: 'world' })), proposals: [] }).ok, false);
+});
+
+test('snapshot validator blocks malformed positions, scales and oversized scenes', () => {
+  const valid = { schema_version: 3, objects: [{ kind: 'world', position: [1, 0, 1], rotation: [0, 0, 0], scale: 1 }] };
+  assert.equal(validateSnapshot(valid).ok, true);
+  assert.equal(validateSnapshot({ ...valid, objects: [{ ...valid.objects[0], position: [Infinity, 0, 0] }] }).ok, false);
+  assert.equal(validateSnapshot({ ...valid, objects: [{ ...valid.objects[0], scale: 999 }] }).ok, false);
+  assert.equal(validateSnapshot({ schema_version: 3, objects: Array.from({ length: 101 }, () => valid.objects[0]) }).ok, false);
 });
 
 test('local snapshot persistence is present and limits are documented', () => {

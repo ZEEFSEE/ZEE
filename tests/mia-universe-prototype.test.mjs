@@ -20,9 +20,19 @@ test('universe includes live rhythm and creation controls', () => {
   assert.match(html, /Math\.sin\(t\*speed/);
 });
 
+test('agent proposals require Mia approval before a world entity is created', () => {
+  assert.match(html, /id="submitProposal"/);
+  assert.match(html, /status:'pending'/);
+  assert.match(html, /Mia 批准并建造/);
+  assert.match(html, /proposal\.status='approved'/);
+  assert.match(html, /proposal\.status='rejected'/);
+  assert.match(html, /inhabitants\.push\(name\)/);
+  assert.match(html, /schema_version:2/);
+});
+
 test('local snapshot persistence is present and limits are documented', () => {
   assert.match(html, /localStorage\.setItem\('mia-independent-universe-v1'/);
   assert.match(html, /localStorage\.getItem\('mia-independent-universe-v1'/);
-  assert.match(readme, /not yet connected to Mia's AI decision-making/);
+  assert.match(readme, /not yet connected to Mia's AI decision-making/);\n  assert.match(readme, /Mia-reviewed construction queue/);
   assert.match(readme, /does not read or write ZHI Core/);
 });

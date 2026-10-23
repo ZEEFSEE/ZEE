@@ -112,6 +112,51 @@ Deno.serve(async (req: Request) => {
   if (found.error || !found.data) return json({ error: "Candidate not found" }, 404);
   const c = found.data;
 
+  if (action === "verify_source") {
+    const scope = txt(body.source_scope || c.source_scope, 100);
+    const pointer = txt(body.memory_pointer || c.memory_pointer, 200);
+    const allowedTables = new Set(["mia_memories", "mia_life_events", "mia_emotion_events"]);
+    if (!allowedTables.has(scope) || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(pointer)) {
+      return json({ error: "Source scope must be an allowlisted Mia table and pointer must be a record UUID." }, 400);
+    }
+    let query;
+    if (scope === "mia_memories") {
+      query = await db.from(scope).select("id,identity_id,occurred_at,created_at,memory_type").eq("id", pointer).eq("identity_id", IDENTITY_ID).maybeSingle();
+    } else if (scope === "mia_life_events") {
+      query = await db.from(scope).select("id,identity_id,occurred_at,created_at,event_type").eq("id", pointer).eq("identity_id", IDENTITY_ID).maybeSingle();
+    } else {
+      query = await db.from(scope).select("id,identity_id,occurred_at,created_at,emotion_type").eq("id", pointer).eq("identity_id", IDENTITY_ID).maybeSingle();
+    }
+    if (query.error) {
+      console.error("Mia evolution source verification query failed", query.error.code || "unknown");
+      return json({ error: "Source verification query failed; no verification was recorded." }, 500);
+    }
+    if (!query.data) {
+      await db.from("mia_evolution_candidates").update({
+        source_verification_status: "failed", source_verified_by: "system:source-resolver",
+        source_verified_at: new Date().toISOString(),
+        reviewer_decision: "Source resolver: pointer not found in the claimed table for Mia identity."
+      }).eq("candidate_id", candidateId).eq("state", c.state);
+      return json({ ok: false, verified: false, reason: "Pointer not found in the claimed source table for Mia identity." }, 404);
+    }
+    const occurred = query.data.occurred_at || query.data.created_at;
+    const verifiedAt = new Date().toISOString();
+    const upd = await db.from("mia_evolution_candidates").update({
+      source_scope: scope, memory_pointer: pointer, source_verification_status: "verified",
+      source_verified_by: "system:source-resolver", source_verified_at: verifiedAt,
+      observation_window_start: occurred || c.observation_window_start,
+      observation_window_end: occurred || c.observation_window_end,
+      evidence_count: Math.max(Number(c.evidence_count) || 0, 1),
+      distinct_observation_dates: Math.max(Number(c.distinct_observation_dates) || 0, occurred ? 1 : 0),
+      reviewer_decision: "Source resolver verified the record exists and belongs to Mia; content was not copied into the candidate queue."
+    }).eq("candidate_id", candidateId).eq("state", c.state)
+      .select("candidate_id,state,source_scope,source_verification_status,source_verified_at,evidence_count,distinct_observation_dates,observation_window_start,observation_window_end").maybeSingle();
+    if (upd.error || !upd.data) return json({ error: "Source verification could not be recorded; reload candidate." }, 409);
+    return json({ ok: true, verified: true, candidate: upd.data,
+      source: { table: scope, record_exists: true, identity_matches: true, timestamp_available: !!occurred },
+      note: "Only pointer existence and identity were verified. This is one evidence item, not proof of a stable trait." });
+  }
+
   if (action === "evidence_review") {
     const count = Number(body.evidence_count), dates = Number(body.distinct_observation_dates);
     const verified = body.source_verified === true;

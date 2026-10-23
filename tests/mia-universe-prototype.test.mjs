@@ -34,6 +34,8 @@ test('agent proposals require Mia approval before a world entity is created', ()
   assert.match(html, /Mia 审核并批准/);
   assert.match(html, /proposal\.status='approved'/);
   assert.match(html, /proposal\.status='rejected'/);
+  assert.match(html, /保存修改并重新审核/);
+  assert.match(html, /proposal\.revisions\.push/);
   assert.match(html, /inhabitants\.push\(name\)/);
   assert.match(html, /schema_version:1/);
   assert.match(html, /schema_version:3/);

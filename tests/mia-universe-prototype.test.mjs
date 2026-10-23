@@ -12,6 +12,13 @@ test('standalone universe is a real WebGL/Three.js scene, not a ZHI map embed', 
   assert.doesNotMatch(html, /SUPABASE_URL|service_role|createClient\s*\(|supabase\.co\/rest\/v1/i);
 });
 
+test('inline Three.js module parses as JavaScript', () => {
+  const match = html.match(/<script type="module">([\\s\\S]*?)<\\/script>/);
+  assert.ok(match, 'missing module script');
+  const source = match[1].replace(/^import .*;\\s*$/gm, '');
+  assert.doesNotThrow(() => new Function(source));
+});
+
 test('universe includes live rhythm and creation controls', () => {
   for (const id of ['addWorld', 'addMoon', 'addRing', 'addLife', 'pulse', 'rhythm', 'energy']) {
     assert.ok(html.includes('id="' + id + '"'), 'missing control ' + id);

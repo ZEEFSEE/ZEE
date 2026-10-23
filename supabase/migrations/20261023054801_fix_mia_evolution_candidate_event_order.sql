@@ -1,0 +1,6 @@
+-- Source-control replay note:
+-- The initial candidate guard is intentionally not installed by the base migration.
+-- The hardened BEFORE guard is installed by 20261023054808_restore_mia_evolution_candidate_guard.sql,
+-- and the AFTER transition audit is installed by 20261023054815_add_mia_evolution_candidate_transition_log.sql.
+-- This migration is intentionally a no-op in a clean replay; production originally used it
+-- to remove the earlier BEFORE-trigger audit insert before the hardened triggers were installed.

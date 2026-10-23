@@ -17,7 +17,7 @@ textarea{min-height:72px;resize:vertical}button{cursor:pointer;background:Button
 <section class="panel">
 <h2>1. 管理员验证</h2>
 <div class="grid"><label>沿用 Mia 聊天访问密码<input id="password" type="password" autocomplete="current-password" maxlength="128"></label><div class="actions" style="align-self:end"><button id="login">验证并连接</button><button id="logout" disabled>退出</button><span id="authState" class="muted">尚未验证</span></div></div>
-<p class="small">访问令牌仅保存在当前页面内存中；刷新页面后需要重新验证。来源核验会检查记录是否存在且属于 Mia，只返回元数据，不复制记忆正文。不要把密码或令牌发给任何人。</p>
+<p class="small">访问令牌仅保存在当前页面内存中；刷新页面后需要重新验证。来源核验会检查记录是否存在且属于 Mia，只返回元数据，不复制记忆正文。自动初筛仅检查常见联系方式/密钥格式和精确重复，不替代语义隐私与矛盾审查。不要把密码或令牌发给任何人。</p>
 </section>
 <section class="panel">
 <h2>2. 新建成长候选</h2>
@@ -53,12 +53,12 @@ textarea{min-height:72px;resize:vertical}button{cursor:pointer;background:Button
 <div class="actions" style="margin-top:10px"><button id="verifySource" disabled>自动核验私有记录指针</button><button id="saveEvidence" disabled>保存人工证据审查</button></div>
 <h3>隐私、重复与矛盾检查</h3>
 <div class="grid">
-<label>隐私审查<select id="privacyStatus"><option>pending</option><option>passed</option><option>failed</option></select></label>
+<label>隐私审查（自动初筛后仍需人工确认）<select id="privacyStatus"><option>pending</option><option>passed</option><option>failed</option></select></label>
 <label>重复检查<select id="duplicateStatus"><option>pending</option><option>passed</option><option>failed</option></select></label>
 <label>矛盾检查<select id="contradictionStatus"><option>pending</option><option>passed</option><option>failed</option></select></label>
 <label>审核决定/说明<textarea id="reviewDecision" maxlength="800" placeholder="例如：approved for shadow review；或说明延期原因"></textarea></label>
 </div>
-<div class="actions" style="margin-top:10px"><button id="saveChecks" disabled>保存检查结果</button></div>
+<div class="actions" style="margin-top:10px"><button id="autoChecks" disabled>自动隐私/重复初筛</button><button id="saveChecks" disabled>保存人工检查结果</button></div>
 <h3>影子评估结果（仅记录人工/外部评估结果）</h3>
 <div class="grid">
 <label>评估状态<select id="shadowStatus"><option value="inconclusive">inconclusive · 未定</option><option value="passed">passed · 通过</option><option value="failed">failed · 失败</option></select></label>
@@ -81,7 +81,7 @@ const API_URL="https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/mia-evoluti
 let token=null, selectedId=null, candidates=[];
 const $=id=>document.getElementById(id);
 function say(value){$("status").textContent=typeof value==="string"?value:JSON.stringify(value,null,2);}
-function setConnected(ok){$("authState").textContent=ok?"已验证":"尚未验证";["logout","refresh","submitCandidate","verifySource","saveEvidence","saveChecks","saveShadow","transition"].forEach(id=>$(id).disabled=!ok);$("login").disabled=ok;}
+function setConnected(ok){$("authState").textContent=ok?"已验证":"尚未验证";["logout","refresh","submitCandidate","verifySource","saveEvidence","autoChecks","saveChecks","saveShadow","transition"].forEach(id=>$(id).disabled=!ok);$("login").disabled=ok;}
 function iso(id){const v=$(id).value;return v?new Date(v).toISOString():null;}
 async function api(payload){if(!token)throw new Error("请先验证管理员身份");const r=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify(payload)});const d=await r.json().catch(()=>({error:"服务器返回非 JSON"}));if(!r.ok)throw new Error(d.reason?d.error+": "+d.reason:(d.error||"请求失败，HTTP "+r.status));return d;}
 $("login").onclick=async()=>{try{const password=$("password").value;if(!password)throw new Error("请输入 Mia 聊天访问密码");const r=await fetch(AUTH_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password})});const d=await r.json();$("password").value="";if(!r.ok||!d.access_token)throw new Error(d.error||"验证失败");token=d.access_token;setConnected(true);say("管理员验证成功。正在读取候选队列…");await refresh();}catch(e){say(e.message);}};
@@ -93,6 +93,7 @@ $("dryRun").onclick=async()=>{try{const d=await api({action:"validate_submit",ge
 $("submitCandidate").onclick=async()=>{try{const d=await api({action:"submit",gene_type:$("geneType").value,memory_pointer:$("pointer").value,source_scope:$("scope").value,explicit_marked_at:iso("markedAt"),fact_summary:$("fact").value,interpretation_summary:$("interpretation").value,emotion_summary:$("emotion").value,idempotency_key:crypto.randomUUID()});say(d);selectedId=d.candidate?.candidate_id||null;await refresh();if(selectedId)selectCandidate(selectedId);}catch(e){say(e.message);}};
 $("verifySource").onclick=async()=>{try{if(!selectedId)throw new Error("请先选择候选");const d=await api({action:"verify_source",candidate_id:selectedId});say(d);await refresh();}catch(e){say(e.message);}};
 $("saveEvidence").onclick=async()=>{try{if(!selectedId)throw new Error("请先选择候选");const d=await api({action:"evidence_review",candidate_id:selectedId,evidence_count:Number($("evidenceCount").value),distinct_observation_dates:Number($("distinctDates").value),observation_window_start:iso("windowStart"),observation_window_end:iso("windowEnd"),source_verified:$("sourceVerified").value==="true",reviewer_id:$("reviewer").value,review_summary:$("evidenceSummary").value});say(d);await refresh();}catch(e){say(e.message);}};
+$("autoChecks").onclick=async()=>{try{if(!selectedId)throw new Error("请先选择候选");const d=await api({action:"automated_checks",candidate_id:selectedId});say(d);await refresh();}catch(e){say(e.message);}};
 $("saveChecks").onclick=async()=>{try{if(!selectedId)throw new Error("请先选择候选");const d=await api({action:"review_checks",candidate_id:selectedId,privacy_review_status:$("privacyStatus").value,duplicate_check_status:$("duplicateStatus").value,contradiction_check_status:$("contradictionStatus").value,reviewer_decision:$("reviewDecision").value,reviewer_id:$("reviewer").value,reviewed_at:new Date().toISOString()});say(d);await refresh();}catch(e){say(e.message);}};
 $("saveShadow").onclick=async()=>{try{if(!selectedId)throw new Error("请先选择候选");const d=await api({action:"shadow_result",candidate_id:selectedId,shadow_eval_status:$("shadowStatus").value,shadow_eval_version:$("shadowVersion").value,shadow_eval_summary:$("shadowSummary").value,reviewer_id:$("reviewer").value});say(d);await refresh();}catch(e){say(e.message);}};
 $("transition").onclick=async()=>{try{if(!selectedId)throw new Error("请先选择候选");const d=await api({action:"transition",candidate_id:selectedId,to_state:$("nextState").value,reason:$("transitionReason").value,reviewer_id:$("reviewer").value});say(d);await refresh();}catch(e){say(e.message);}};

@@ -1,0 +1,31 @@
+name: Mia Universe Prototype Tests
+
+on:
+  pull_request:
+    paths:
+      - "mia-universe/**"
+      - "tests/mia-universe-prototype.test.mjs"
+      - ".github/workflows/mia-universe-tests.yml"
+  push:
+    branches:
+      - "feat/mia-independent-universe-v1"
+    paths:
+      - "mia-universe/**"
+      - "tests/mia-universe-prototype.test.mjs"
+      - ".github/workflows/mia-universe-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  static-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Run prototype regression tests
+        run: node --test tests/mia-universe-prototype.test.mjs

@@ -48,7 +48,7 @@
     "auto_restore_without_validation": false,
     "require_deduplication_and_provenance_check": true
   },
-  "note": "The private rollback-event table and isolated authenticated ledger endpoint are deployed. This configuration is not wired into Mia chat, and does not prove automatic conflict detection, runtime rollback, retry/outbox, gene approval, or gene promotion are active.",
+  "note": "The private rollback-event ledger and authenticated candidate-pipeline endpoint are deployed. The candidate queue and append-only transition audit are live, but the pipeline remains disconnected from mia-chat. Evidence source verification, privacy/conflict reviews, and shadow results are human-recorded; there is no automated pointer resolver, shadow evaluator, retry/outbox, GitHub gene publisher, or automatic runtime promotion/rollback.",
   "rollback_continuity": {
     "event_type": "Evolution_Rollback_Event",
     "storage": "private_supabase_append_only_ledger",
@@ -84,6 +84,14 @@
     "automatic_conflict_detection": false,
     "automatic_runtime_rollback": false,
     "automatic_retry_outbox": false,
-    "automatic_gene_promotion": false
+    "automatic_gene_promotion": false,
+    "candidate_queue_deployed": true,
+    "candidate_transition_audit_deployed": true,
+    "candidate_pipeline_endpoint_deployed": true,
+    "candidate_pipeline_endpoint_version": 1,
+    "candidate_pipeline_endpoint_integrated_with_mia_chat": false,
+    "automated_source_pointer_resolution": false,
+    "automated_shadow_evaluation": false,
+    "admin_ui_deployed": false
   }
 }

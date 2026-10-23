@@ -94,7 +94,7 @@
   busy=true;$("send").disabled=true;$("newGroup").disabled=true;$("message").value="";
   bubble({sender_slug:"user",sender_name:"你",sender_type:"user",content:message,created_at:new Date().toISOString()});status("正在保存消息，并依次等待 Mark、Jason 回应…");
   try{const d=chatMode==="private"?await invoke({op:"send_private",session_id:groupId,agent_slug:privateAgent,message}):await invoke({op:"send",group_id:groupId,message});(d.responses||[]).forEach(bubble);status("消息和回应已保存。","good");if(chatMode==="group")await loadGroups();}
-  catch(e){status("发送未完整成功："+e.message+"。如果显示部分保存，请刷新群聊确认已保存内容。","error");if(chatMode==="private"){try{const h=await invoke({op:"private_history",session_id:groupId,agent_slug:privateAgent});$("messages").innerHTML="";if(!(h.messages||[]).length)$("messages").innerHTML="<div class=\\\"welcome\\\">开始单独交流。</div>";(h.messages||[]).forEach(bubble)}catch(_){}}else{try{await openGroup(groupId)}catch(_){}}}
+  catch(e){status("发送未完整成功："+e.message+"。如果显示部分保存，请刷新群聊确认已保存内容。","error");if(chatMode==="private"){try{const h=await invoke({op:"private_history",session_id:groupId,agent_slug:privateAgent});$("messages").innerHTML="";if(!(h.messages||[]).length)$("messages").innerHTML='<div class="welcome">开始单独交流。</div>';(h.messages||[]).forEach(bubble)}catch(_){}}else{try{await openGroup(groupId)}catch(_){}}}
   finally{busy=false;$("send").disabled=!groupId;$("newGroup").disabled=false;$("message").focus()}
  }
  async function showSession(s){

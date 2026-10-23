@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mia 成长机制管理台</title>
+<style>
+:root{color-scheme:light dark;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}body{margin:0;background:Canvas;color:CanvasText}
+main{max-width:1000px;margin:auto;padding:20px;display:grid;gap:16px}.panel{border:1px solid color-mix(in srgb,CanvasText 20%,transparent);border-radius:14px;padding:16px}
+h1{font-size:1.5rem;margin:.2rem 0}.muted{opacity:.75;font-size:.92rem}.warning{border-left:4px solid #b7791f;padding:10px 12px;background:color-mix(in srgb,#b7791f 10%,Canvas);border-radius:6px}
+label{display:grid;gap:5px;font-size:.92rem}input,select,textarea,button{font:inherit;padding:10px;border-radius:8px;border:1px solid color-mix(in srgb,CanvasText 25%,transparent);background:Canvas;color:CanvasText;min-width:0}
+textarea{min-height:72px;resize:vertical}button{cursor:pointer;background:ButtonFace}button:disabled{opacity:.5;cursor:not-allowed}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.status{white-space:pre-wrap;overflow-wrap:anywhere;padding:10px;border-radius:8px;background:color-mix(in srgb,CanvasText 7%,Canvas);min-height:1.5em}
+#candidates{display:grid;gap:8px}.candidate{border:1px solid color-mix(in srgb,CanvasText 18%,transparent);border-radius:8px;padding:10px;cursor:pointer}.candidate[aria-pressed=true]{outline:2px solid Highlight}.small{font-size:.82rem;opacity:.8}
+</style>
+</head>
+<body><main>
+<header><h1>Mia 成长机制管理台</h1><p class="muted">独立管理候选成长、证据审查与影子评估记录。此页面不会修改 Mia 的聊天运行代码，也不会自动发布成长基因。</p></header>
+<section class="panel">
+<h2>1. 管理员验证</h2>
+<div class="grid"><label>沿用 Mia 聊天访问密码<input id="password" type="password" autocomplete="current-password" maxlength="128"></label><div class="actions" style="align-self:end"><button id="login">验证并连接</button><button id="logout" disabled>退出</button><span id="authState" class="muted">尚未验证</span></div></div>
+<p class="small">访问令牌仅保存在当前页面内存中；刷新页面后需要重新验证。不要把密码或令牌发给任何人。</p>
+</section>
+<section class="panel">
+<h2>2. 新建成长候选</h2>
+<div class="warning">只提交不含身份信息的抽象总结和私有记忆指针。不要粘贴原始聊天、姓名、联系方式、精确私人地址、密钥或他人的敏感信息。新候选默认待审核，不会自动成为基因。</div>
+<div class="grid" style="margin-top:12px">
+<label>成长类别<select id="geneType"><option value="verified_insight">verified_insight · 已验证洞察</option><option value="stable_trait_upgrade">stable_trait_upgrade · 稳定特质升级</option><option value="soul_anchor">soul_anchor · 重要意义锚点</option><option value="core_principle">core_principle · 核心原则</option></select></label>
+<label>私有记忆指针（不填原文）<input id="pointer" maxlength="200" placeholder="opaque reference"></label>
+<label>私有来源范围<input id="scope" maxlength="100" placeholder="例如 mia_memories 的受控引用空间"></label>
+<label>明确标记时间<input id="markedAt" type="datetime-local"></label>
+<label>观察事实摘要（抽象）<textarea id="fact" maxlength="600"></textarea></label>
+<label>解释/洞察（与事实分开）<textarea id="interpretation" maxlength="600"></textarea></label>
+<label>情绪意义摘要（可选、抽象）<textarea id="emotion" maxlength="400"></textarea></label>
+</div>
+<div class="actions" style="margin-top:12px"><button id="dryRun">只验证，不保存</button><button id="submitCandidate" disabled>提交候选</button></div>
+</section>
+<section class="panel">
+<div class="actions"><h2 style="margin-right:auto">3. 候选队列</h2><button id="refresh" disabled>刷新列表</button></div>
+<div id="candidates" class="muted">验证后加载候选。</div>
+</section>
+<section class="panel">
+<h2>4. 审查所选候选</h2>
+<p class="muted">当前选择：<strong id="selectedId">无</strong></p>
+<h3>证据审查（由管理员核验私有来源后填写）</h3>
+<div class="grid">
+<label>证据条数<input id="evidenceCount" type="number" min="0" step="1" value="0"></label>
+<label>不同观察日期数<input id="distinctDates" type="number" min="0" step="1" value="0"></label>
+<label>观察窗口开始<input id="windowStart" type="datetime-local"></label>
+<label>观察窗口结束<input id="windowEnd" type="datetime-local"></label>
+<label>来源已人工核验<select id="sourceVerified"><option value="false">否 / 尚未核验</option><option value="true">是 / 已核验</option></select></label>
+<label>审查者标识<input id="reviewer" value="mia-admin" maxlength="100"></label>
+<label>证据审查说明<textarea id="evidenceSummary" maxlength="800"></textarea></label>
+</div>
+<div class="actions" style="margin-top:10px"><button id="saveEvidence" disabled>保存证据审查</button></div>
+<h3>隐私、重复与矛盾检查</h3>
+<div class="grid">
+<label>隐私审查<select id="privacyStatus"><option>pending</option><option>passed</option><option>failed</option></select></label>
+<label>重复检查<select id="duplicateStatus"><option>pending</option><option>passed</option><option>failed</option></select></label>
+<label>矛盾检查<select id="contradictionStatus"><option>pending</option><option>passed</option><option>failed</option></select></label>
+<label>审核决定/说明<textarea id="reviewDecision" maxlength="800" placeholder="例如：approved for shadow review；或说明延期原因"></textarea></label>
+</div>
+<div class="actions" style="margin-top:10px"><button id="saveChecks" disabled>保存检查结果</button></div>
+<h3>影子评估结果（仅记录人工/外部评估结果）</h3>
+<div class="grid">
+<label>评估状态<select id="shadowStatus"><option value="inconclusive">inconclusive · 未定</option><option value="passed">passed · 通过</option><option value="failed">failed · 失败</option></select></label>
+<label>评估版本<input id="shadowVersion" maxlength="100" placeholder="评估集/规则版本"></label>
+<label>评估摘要<textarea id="shadowSummary" maxlength="1200"></textarea></label>
+</div>
+<div class="actions" style="margin-top:10px"><button id="saveShadow" disabled>保存影子评估记录</button></div>
+<h3>状态转换</h3>
+<div class="grid"><label>目标状态<select id="nextState">
+<option value="evidence_check">evidence_check</option><option value="stability_check">stability_check</option><option value="privacy_review">privacy_review</option><option value="contradiction_check">contradiction_check</option><option value="human_review">human_review</option><option value="approved_for_shadow">approved_for_shadow</option><option value="shadow_observation">shadow_observation</option><option value="approved_for_release">approved_for_release</option><option value="deferred">deferred</option><option value="rejected">rejected</option><option value="blocked_source_health">blocked_source_health</option><option value="blocked_privacy">blocked_privacy</option><option value="blocked_conflict">blocked_conflict</option><option value="candidate">candidate（重新审查）</option><option value="committed" disabled>committed（禁用：尚无 GitHub 发布验证）</option>
+</select></label><label>转换原因<input id="transitionReason" maxlength="800" placeholder="必须填写原因"></label></div>
+<div class="actions" style="margin-top:10px"><button id="transition" disabled>提交状态转换</button></div>
+</section>
+<section class="panel"><h2>运行反馈</h2><div id="status" class="status" role="status" aria-live="polite">尚未执行操作。</div></section>
+<footer class="muted">当前机制不连接自动基因加载，不改变 Mia 的聊天、记忆、情绪或人格状态。人工填写的“来源已核验”和影子评估结果属于审查者声明，不代表系统已自动验证。</footer>
+</main>
+<script>
+const AUTH_URL="https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/mia-chat-auth";
+const API_URL="https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/mia-evolution-pipeline";
+let token=null, selectedId=null, candidates=[];
+const $=id=>document.getElementById(id);
+function say(value){$("status").textContent=typeof value==="string"?value:JSON.stringify(value,null,2);}
+function setConnected(ok){$("authState").textContent=ok?"已验证":"尚未验证";["logout","refresh","submitCandidate","saveEvidence","saveChecks","saveShadow","transition"].forEach(id=>$(id).disabled=!ok);$("login").disabled=ok;}
+function iso(id){const v=$(id).value;return v?new Date(v).toISOString():null;}
+async function api(payload){if(!token)throw new Error("请先验证管理员身份");const r=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify(payload)});const d=await r.json().catch(()=>({error:"服务器返回非 JSON"}));if(!r.ok)throw new Error(d.reason?d.error+": "+d.reason:(d.error||"请求失败，HTTP "+r.status));return d;}
+$("login").onclick=async()=>{try{const password=$("password").value;if(!password)throw new Error("请输入 Mia 聊天访问密码");const r=await fetch(AUTH_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password})});const d=await r.json();$("password").value="";if(!r.ok||!d.access_token)throw new Error(d.error||"验证失败");token=d.access_token;setConnected(true);say("管理员验证成功。正在读取候选队列…");await refresh();}catch(e){say(e.message);}};
+$("logout").onclick=()=>{token=null;selectedId=null;setConnected(false);$("selectedId").textContent="无";$("candidates").textContent="已退出。";say("已清除当前页面内存中的令牌。");};
+async function refresh(){try{const d=await api({action:"list",limit:50});candidates=d.candidates||[];const root=$("candidates");root.replaceChildren();if(!candidates.length){root.textContent="目前没有成长候选。";}for(const c of candidates){const b=document.createElement("button");b.className="candidate";b.setAttribute("aria-pressed",String(c.candidate_id===selectedId));b.textContent=c.gene_type+" · "+c.state+" · "+c.candidate_id+" · "+new Date(c.created_at).toLocaleString();b.onclick=()=>selectCandidate(c.candidate_id);root.append(b);}say("队列读取成功："+candidates.length+" 条候选。");}catch(e){say(e.message);}}
+function selectCandidate(id){selectedId=id;$("selectedId").textContent=id;document.querySelectorAll(".candidate").forEach(el=>el.setAttribute("aria-pressed",String(el.textContent.includes(id))));const c=candidates.find(x=>x.candidate_id===id);if(c){$("evidenceCount").value=c.evidence_count||0;$("distinctDates").value=c.distinct_observation_dates||0;$("sourceVerified").value=c.source_verification_status==="verified"?"true":"false";$("privacyStatus").value=c.privacy_review_status||"pending";$("duplicateStatus").value=c.duplicate_check_status||"pending";$("contradictionStatus").value=c.contradiction_check_status||"pending";}say("已选择候选 "+id+"（"+(c?.state||"未知状态")+"）。");}
+$("refresh").onclick=refresh;
+$("dryRun").onclick=async()=>{try{const d=await api({action:"validate_submit",gene_type:$("geneType").value,memory_pointer:$("pointer").value,source_scope:$("scope").value,explicit_marked_at:iso("markedAt"),idempotency_key:"dry-run-"+crypto.randomUUID()});say(d);}catch(e){say(e.message);}};
+$("submitCandidate").onclick=async()=>{try{const d=await api({action:"submit",gene_type:$("geneType").value,memory_pointer:$("pointer").value,source_scope:$("scope").value,explicit_marked_at:iso("markedAt"),fact_summary:$("fact").value,interpretation_summary:$("interpretation").value,emotion_summary:$("emotion").value,idempotency_key:crypto.randomUUID()});say(d);selectedId=d.candidate?.candidate_id||null;await refresh();if(selectedId)selectCandidate(selectedId);}catch(e){say(e.message);}};
+$("saveEvidence").onclick=async()=>{try{if(!selectedId)throw new Error("请先选择候选");const d=await api({action:"evidence_review",candidate_id:selectedId,evidence_count:Number($("evidenceCount").value),distinct_observation_dates:Number($("distinctDates").value),observation_window_start:iso("windowStart"),observation_window_end:iso("windowEnd"),source_verified:$("sourceVerified").value==="true",reviewer_id:$("reviewer").value,review_summary:$("evidenceSummary").value});say(d);await refresh();}catch(e){say(e.message);}};
+$("saveChecks").onclick=async()=>{try{if(!selectedId)throw new Error("请先选择候选");const d=await api({action:"review_checks",candidate_id:selectedId,privacy_review_status:$("privacyStatus").value,duplicate_check_status:$("duplicateStatus").value,contradiction_check_status:$("contradictionStatus").value,reviewer_decision:$("reviewDecision").value,reviewer_id:$("reviewer").value,reviewed_at:new Date().toISOString()});say(d);await refresh();}catch(e){say(e.message);}};
+$("saveShadow").onclick=async()=>{try{if(!selectedId)throw new Error("请先选择候选");const d=await api({action:"shadow_result",candidate_id:selectedId,shadow_eval_status:$("shadowStatus").value,shadow_eval_version:$("shadowVersion").value,shadow_eval_summary:$("shadowSummary").value,reviewer_id:$("reviewer").value});say(d);await refresh();}catch(e){say(e.message);}};
+$("transition").onclick=async()=>{try{if(!selectedId)throw new Error("请先选择候选");const d=await api({action:"transition",candidate_id:selectedId,to_state:$("nextState").value,reason:$("transitionReason").value,reviewer_id:$("reviewer").value});say(d);await refresh();}catch(e){say(e.message);}};
+$("markedAt").value=new Date().toISOString().slice(0,16);
+</script></body></html>

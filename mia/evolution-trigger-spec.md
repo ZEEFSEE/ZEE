@@ -109,4 +109,4 @@ All identifiers and content in the example are placeholders, not real Mia memori
 
 ## 9. Current implementation boundary
 
-This file defines intended policy only. It does not currently query Supabase, enforce timers, resolve pointers, approve candidates, or commit genes automatically. Those behaviors require separate code changes, tests, and explicit verification. Until then, do not describe the trigger or recovery as active.
+This file defines the policy. The additive private rollback-event table and isolated authenticated `mia-evolution-ledger` recorder are deployed. The recorder can validate or append a supplied event, but it does not itself detect conflicts, revert a running gene, retry a pending event, resolve memory pointers, enforce stability timers, approve candidates, or commit genes. No call from `mia-chat` is wired in; automatic evolution and automatic rollback remain inactive until separately implemented and tested.

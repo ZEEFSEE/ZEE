@@ -1,6 +1,6 @@
 {
-  "schema_version": "1.1",
-  "status": "policy_updated_runtime_implementation_pending",
+  "schema_version": "1.2",
+  "status": "aggregate_runtime_deployed_behavioral_integration_pending",
   "runtime_enforced": false,
   "fail_closed_on_source_health_error": true,
   "require_explicit_mark": true,
@@ -156,5 +156,55 @@
     "negative_emotion_alone_is_high_risk": false,
     "rollback_requires_last_known_good_version": true,
     "append_only_rollback_audit": true
-  }
+  },
+  "runtime_components": {
+    "auto_growth_engine": {
+      "deployed": true,
+      "function_slug": "mia-auto-growth-engine",
+      "version": 2
+    },
+    "aggregate_scheduler": {
+      "configured": true,
+      "schedule": "*/15 * * * *",
+      "verified_runs": true
+    },
+    "aggregate_window_snapshot": {
+      "implemented": true,
+      "idempotent_same_window": true
+    },
+    "run_ledger": {
+      "implemented": true,
+      "table": "mia_growth_runs"
+    },
+    "versioned_growth_state": {
+      "implemented": true,
+      "table": "mia_growth_state_versions"
+    },
+    "manager_revocation_api": {
+      "deployed": true,
+      "version": 2,
+      "audit_table": "mia_growth_admin_audit",
+      "end_to_end_tested": false
+    },
+    "mia_chat_behavioral_integration": {
+      "implemented": false
+    },
+    "content_based_learning": {
+      "implemented": false
+    },
+    "automatic_low_risk_behavior_change": {
+      "implemented": false
+    },
+    "verified_rollback_restore": {
+      "implemented": false
+    },
+    "migration_source_committed": false
+  },
+  "notes": [
+    "The scheduled database job has succeeded repeatedly; last checked cron.job_run_details showed five recent succeeded runs.",
+    "The growth worker uses aggregate counts and does not read raw chat or memory content.",
+    "Same rolling-window counts do not create duplicate growth-state versions.",
+    "The worker records reflection metadata and a versioned aggregate state; it does not yet change Mia's personality or chat behavior.",
+    "Do not claim full autonomous behavioral growth until runtime integration, safe evaluator, and rollback end-to-end verification are complete."
+  ]
 }

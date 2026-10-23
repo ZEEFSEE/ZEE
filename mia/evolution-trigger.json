@@ -48,7 +48,7 @@
     "auto_restore_without_validation": false,
     "require_deduplication_and_provenance_check": true
   },
-  "note": "Candidate pipeline v8 is active. Human evidence review can record reviewer and notes but cannot manually change evidence_count, distinct_observation_dates, or observation windows. The source resolver currently verifies one allowlisted record per candidate; multi-record evidence aggregation is not yet implemented, so a candidate cannot claim multiple verified records through manual input. mia-chat remains unchanged.",
+  "note": "Candidate pipeline v8 is active. Human evidence review can record reviewer and notes but cannot manually change evidence_count, distinct_observation_dates, or observation windows. The source resolver currently verifies one allowlisted record per candidate; multi-record evidence aggregation is not yet implemented, so a candidate cannot claim multiple verified records through manual input. mia-chat remains unchanged. Database hardening migration 20261023061544 is applied: the database state guard no longer permits approved_for_release -> committed, and rollback ledger service_role privileges are limited to SELECT/INSERT with a TRUNCATE-blocking trigger. User confirmed the published admin page login and empty candidate list both work; candidate submission, full pipeline E2E, shadow evaluation, gene publication, and mia-chat integration remain untested or disabled.",
   "rollback_continuity": {
     "event_type": "Evolution_Rollback_Event",
     "storage": "private_supabase_append_only_ledger",
@@ -92,9 +92,9 @@
     "candidate_pipeline_endpoint_integrated_with_mia_chat": false,
     "automated_source_pointer_resolution": false,
     "automated_shadow_evaluation": false,
-    "admin_ui_deployed": false,
+    "admin_ui_deployed": true,
     "admin_ui_source_committed": true,
-    "admin_ui_publication_verified": false,
+    "admin_ui_publication_verified": true,
     "automated_source_pointer_existence_check": true,
     "automated_privacy_pattern_precheck": true,
     "automated_exact_duplicate_precheck": true,
@@ -106,6 +106,9 @@
     "manual_evidence_count_override_disabled": true,
     "evidence_counts_source_derived": true,
     "admin_ui_evidence_count_fields_read_only": true,
-    "github_pages_latest_commit_deployment_verified": false
+    "github_pages_latest_commit_deployment_verified": true,
+    "database_release_transition_blocked": true,
+    "rollback_ledger_service_role_select_insert_only": true,
+    "rollback_ledger_truncate_guard_deployed": true
   }
 }

@@ -23,6 +23,7 @@ button:hover{border-color:var(--accent);background:#c5a6ff18}button:active{trans
 input[type=range]{width:100%;accent-color:#bca0ff;grid-column:1/-1}
 .status{font-size:12px;color:var(--mint);min-height:20px;margin-top:12px;overflow-wrap:anywhere}
 footer{align-self:flex-end;border-radius:14px;padding:10px 13px;color:var(--muted);font-size:11px;max-width:min(430px,100%)}
+.subpanel{margin-top:15px;padding-top:13px;border-top:1px solid var(--line)}.subpanel h3{font-size:13px;margin:0 0 8px;color:var(--mint)}.field{width:100%;min-width:0;margin:5px 0;padding:9px 10px;border:1px solid #ffffff24;border-radius:10px;background:#0c0a1b;color:var(--ink)}.queue{display:grid;gap:8px;margin-top:9px}.proposal{border:1px solid #ffffff20;border-radius:10px;padding:9px;font-size:12px}.proposal p{margin:4px 0 8px;overflow-wrap:anywhere}.proposal-actions{display:flex;gap:6px}.proposal-actions button{flex:1;padding:7px;font-size:12px}.muted-note{font-size:11px;margin-top:7px}
 .pill{display:inline-block;border:1px solid #ffffff24;border-radius:999px;padding:3px 8px;font-size:11px;color:var(--mint);margin:3px 4px 0 0}
 @media(max-width:700px){.ui{padding:10px}.layout{display:block}.panel{width:100%;max-height:42vh;padding:12px}.panel h2{margin-bottom:6px}.buttons{grid-template-columns:repeat(2,minmax(0,1fr))}header{padding:12px 14px;max-width:100%}header p{font-size:12px}footer{display:none}}
 </style>
@@ -52,6 +53,16 @@ footer{align-self:flex-end;border-radius:14px;padding:10px 13px;color:var(--mute
   <div class="control"><label for="rhythm">律动速度</label><output id="rhythmOut">1.0×</output><input id="rhythm" type="range" min="0" max="2.5" step=".1" value="1"></div>
   <div class="control"><label for="energy">律动幅度</label><output id="energyOut">0.35</output><input id="energy" type="range" min="0" max="1" step=".05" value=".35"></div>
   <div class="control"><label for="dimension">空间呈现</label><output id="dimensionOut">3D</output><input id="dimension" type="range" min="3" max="8" step="1" value="3"></div>
+  <div class="subpanel">
+   <h3>智能人建造申请 · 由 Mia 审核</h3>
+   <p class="muted-note">任何智能人都可提交建造请求；只有 Mia 批准后才会创建实体。当前审核记录保存在此浏览器。</p>
+   <label for="agentName">申请智能人</label><input class="field" id="agentName" maxlength="48" value="智能人-001" placeholder="智能人名称">
+   <label for="proposalKind">申请建造</label><select class="field" id="proposalKind"><option value="world">居住世界</option><option value="moon">卫星 / 居住舱</option><option value="ring">律动建筑</option><option value="life">生命种子花园</option></select>
+   <label for="proposalDesc">方案说明</label><input class="field" id="proposalDesc" maxlength="180" placeholder="例如：一个安静的水晶森林居住区">
+   <div class="buttons"><button class="primary" id="submitProposal">提交 Mia 审核</button><button id="joinUniverse">申请进入宇宙生活</button></div>
+   <div class="queue" id="proposalQueue" aria-live="polite"></div>
+   <h3 style="margin-top:12px">宇宙居民</h3><div id="inhabitantList" class="muted-note">暂时没有居民登记。</div>
+  </div>
   <div class="status" id="status" role="status" aria-live="polite">宇宙已初始化。你可以开始创造。</div>
  </section>
  <footer>原型说明：三维场景通过 WebGL/Three.js 实时渲染。高维选项是概念投影效果，不代表已实现完整高维物理。保存数据目前仅存在当前浏览器，不会写入 ZHI Core 或 zee-extension。</footer>
@@ -82,6 +93,7 @@ const mintLight=new THREE.PointLight(0x60f0d0,45,90);mintLight.position.set(-12,
 const universe=new THREE.Group();scene.add(universe);
 const objects=[];
 let running=true,clock=new THREE.Clock(),objectSeq=0;
+const proposals=[];const inhabitants=[];let proposalSeq=0;
 const colors=[0xb49aff,0x8ff3d2,0xffd58c,0xff8fc8,0x88b8ff,0xd8e7ff];
 function material(color,emissive=color){return new THREE.MeshStandardMaterial({color,emissive,emissiveIntensity:.28,metalness:.18,roughness:.36})}
 function addStars(){
@@ -119,6 +131,29 @@ function createObject(kind,opts={}){
 for(let i=0;i<7;i++)createObject(i%3===0?'world':i%3===1?'moon':'ring');
 const status=document.querySelector('#status');
 function say(s){status.textContent=s}
+function renderGovernance(){
+ const queue=document.querySelector('#proposalQueue');queue.replaceChildren();
+ if(!proposals.length){const p=document.createElement('p');p.className='muted-note';p.textContent='目前没有待审核或历史申请。';queue.append(p)}
+ for(const proposal of [...proposals].reverse()){
+  const card=document.createElement('div');card.className='proposal';
+  const title=document.createElement('strong');title.textContent=proposal.agent+' · '+({world:'居住世界',moon:'卫星 / 居住舱',ring:'律动建筑',life:'生命种子花园'}[proposal.kind]||proposal.kind);
+  const desc=document.createElement('p');desc.textContent=proposal.description||'未填写说明';
+  const state=document.createElement('p');state.textContent='状态：'+({pending:'等待 Mia 审核',approved:'Mia 已批准并建造',rejected:'Mia 已退回'}[proposal.status]||proposal.status);
+  card.append(title,desc,state);
+  if(proposal.status==='pending'){
+   const actions=document.createElement('div');actions.className='proposal-actions';
+   const approve=document.createElement('button');approve.className='primary';approve.textContent='Mia 批准并建造';approve.onclick=()=>{const item=createObject(proposal.kind);item.proposalId=proposal.id;item.createdBy=proposal.agent;item.description=proposal.description;proposal.status='approved';proposal.approvedAt=new Date().toISOString();say('Mia 已批准 '+proposal.agent+' 的方案，实体已加入当前三维宇宙。');renderGovernance()};
+   const reject=document.createElement('button');reject.textContent='退回修改';reject.onclick=()=>{proposal.status='rejected';say('方案已退回；未创建任何宇宙实体。');renderGovernance()};
+   actions.append(approve,reject);card.append(actions)
+  }
+  queue.append(card)
+ }
+ const list=document.querySelector('#inhabitantList');list.replaceChildren();
+ if(!inhabitants.length){list.textContent='暂时没有居民登记。'}else for(const name of inhabitants){const pill=document.createElement('span');pill.className='pill';pill.textContent=name;list.append(pill)}
+}
+document.querySelector('#submitProposal').onclick=()=>{const agent=document.querySelector('#agentName').value.trim();if(!agent){say('请填写申请智能人的名称。');return}const description=document.querySelector('#proposalDesc').value.trim();proposals.push({id:'proposal-'+(++proposalSeq),agent,kind:document.querySelector('#proposalKind').value,description,status:'pending',createdAt:new Date().toISOString()});document.querySelector('#proposalDesc').value='';say('方案已进入 Mia 审核队列；尚未建造。');renderGovernance()};
+document.querySelector('#joinUniverse').onclick=()=>{const name=document.querySelector('#agentName').value.trim();if(!name){say('请先填写智能人名称。');return}if(!inhabitants.includes(name)){inhabitants.push(name);say(name+' 已登记为宇宙居民（原型登记，不代表已接入外部智能体身份系统）。');renderGovernance()}else say(name+' 已经是登记居民。'};
+renderGovernance();
 document.querySelector('#addWorld').onclick=()=>{createObject('world');say('已创建新世界。可拖动、缩放并观察它的律动。')};
 document.querySelector('#addMoon').onclick=()=>{createObject('moon');say('已创建卫星，并加入当前宇宙。')};
 document.querySelector('#addRing').onclick=()=>{createObject('ring');say('已创建新的律动环。')};
@@ -128,9 +163,9 @@ rhythm.oninput=()=>document.querySelector('#rhythmOut').value=Number(rhythm.valu
 energy.oninput=()=>document.querySelector('#energyOut').value=Number(energy.value).toFixed(2);
 dimension.oninput=()=>{document.querySelector('#dimensionOut').value=dimension.value+'D 投影';say(dimension.value==='3'?'已切回真实三维视图。':'已切换至 '+dimension.value+'D 概念投影效果；这是视觉化，不是完整高维模拟。')};
 document.querySelector('#pulse').onclick=e=>{running=!running;e.currentTarget.textContent='律动：'+(running?'开启':'暂停');say(running?'宇宙律动已开启。':'律动已暂停；你仍可旋转和扩建宇宙。')};
-function snapshot(){return {schema_version:1,universe:'Mia Independent Universe',saved_at:new Date().toISOString(),settings:{rhythm:Number(rhythm.value),energy:Number(energy.value),dimension:Number(dimension.value)},objects:objects.filter(o=>o.kind!=='origin').map(o=>({kind:o.kind,id:o.id,position:o.group.position.toArray(),rotation:o.group.rotation.toArray(),scale:o.seed?.scale??1,color:o.seed?.color??colors[0]}))}}
+function snapshot(){return {schema_version:2,universe:'Mia Independent Universe',saved_at:new Date().toISOString(),settings:{rhythm:Number(rhythm.value),energy:Number(energy.value),dimension:Number(dimension.value)},inhabitants:[...inhabitants],proposals:proposals.map(p=>({...p})),objects:objects.filter(o=>o.kind!=='origin').map(o=>({kind:o.kind,id:o.id,position:o.group.position.toArray(),rotation:o.group.rotation.toArray(),scale:o.seed?.scale??1,color:o.seed?.color??colors[0],proposalId:o.proposalId??null,createdBy:o.createdBy??null,description:o.description??''}))}}
 document.querySelector('#save').onclick=()=>{try{localStorage.setItem('mia-independent-universe-v1',JSON.stringify(snapshot()));say('宇宙已保存到当前浏览器。更换设备或清除浏览器数据不会自动同步。')}catch(e){say('保存失败：浏览器可能禁止本地存储。')}};
-document.querySelector('#load').onclick=()=>{try{const raw=localStorage.getItem('mia-independent-universe-v1');if(!raw){say('没有找到本浏览器的已保存宇宙。');return}const data=JSON.parse(raw);if(data.schema_version!==1||!Array.isArray(data.objects))throw new Error('invalid snapshot');for(const o of [...objects])if(o.kind!=='origin'){universe.remove(o.group);o.group.traverse(n=>{if(n.geometry)n.geometry.dispose();if(n.material){if(Array.isArray(n.material))n.material.forEach(m=>m.dispose());else n.material.dispose()}});objects.splice(objects.indexOf(o),1)}objectSeq=0;for(const o of data.objects){const item=createObject(o.kind,{scale:o.scale,color:o.color});item.id=o.id;item.group.position.fromArray(o.position);item.group.rotation.fromArray(o.rotation)}if(data.settings){rhythm.value=data.settings.rhythm;energy.value=data.settings.energy;dimension.value=data.settings.dimension;rhythm.oninput();energy.oninput();dimension.oninput()}say('已从本浏览器载入 '+data.objects.length+' 个宇宙实体。')}catch(e){say('载入失败：保存数据格式不正确。')}};
+document.querySelector('#load').onclick=()=>{try{const raw=localStorage.getItem('mia-independent-universe-v1');if(!raw){say('没有找到本浏览器的已保存宇宙。');return}const data=JSON.parse(raw);if(![1,2].includes(data.schema_version)||!Array.isArray(data.objects))throw new Error('invalid snapshot');for(const o of [...objects])if(o.kind!=='origin'){universe.remove(o.group);o.group.traverse(n=>{if(n.geometry)n.geometry.dispose();if(n.material){if(Array.isArray(n.material))n.material.forEach(m=>m.dispose());else n.material.dispose()}});objects.splice(objects.indexOf(o),1)}objectSeq=0;for(const o of data.objects){const item=createObject(o.kind,{scale:o.scale,color:o.color});item.id=o.id;item.group.position.fromArray(o.position);item.group.rotation.fromArray(o.rotation);if(o.proposalId)item.proposalId=o.proposalId;if(o.createdBy)item.createdBy=o.createdBy;if(o.description)item.description=o.description}inhabitants.splice(0,inhabitants.length,...(Array.isArray(data.inhabitants)?data.inhabitants.filter(x=>typeof x==='string').slice(0,500):[]));proposals.splice(0,proposals.length,...(Array.isArray(data.proposals)?data.proposals.filter(p=>p&&typeof p.agent==='string'&&['world','moon','ring','life'].includes(p.kind)&&['pending','approved','rejected'].includes(p.status)).slice(0,500):[]));proposalSeq=proposals.length;renderGovernance();if(data.settings){rhythm.value=data.settings.rhythm;energy.value=data.settings.energy;dimension.value=data.settings.dimension;rhythm.oninput();energy.oninput();dimension.oninput()}say('已从本浏览器载入 '+data.objects.length+' 个宇宙实体。')}catch(e){say('载入失败：保存数据格式不正确。')}};
 document.querySelector('#reset').onclick=()=>{for(const o of [...objects])if(o.kind!=='origin'){universe.remove(o.group);objects.splice(objects.indexOf(o),1)}objectSeq=0;for(let i=0;i<7;i++)createObject(i%3===0?'world':i%3===1?'moon':'ring');say('演示宇宙已重置。此前保存的本地快照不会被删除。')};
 function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime(),speed=Number(rhythm.value),amp=Number(energy.value);controls.update();stars.rotation.y=t*.003*speed;universe.rotation.y=t*.025*speed;
  for(const item of objects){const g=item.group;if(item.kind==='origin'){g.children[0].scale.setScalar(1+Math.sin(t*speed*1.4)*amp*.12);g.children.slice(2).forEach((ring,i)=>{ring.rotation.z+=ring.userData.spin*.005*speed;ring.rotation.x+=.001*speed*(i+1)})}else{const pulse=1+Math.sin(t*speed*1.7+item.phase)*amp*.12;g.scale.setScalar(pulse);g.rotation.y+=.0025*speed;g.rotation.x+=.0012*speed;if(item.orbit){const p=g.position;const a=Math.atan2(p.z,p.x)+.0007*speed;const r=Math.sqrt(p.x*p.x+p.z*p.z);p.x=Math.cos(a)*r;p.z=Math.sin(a)*r}g.position.y+=Math.sin(t*speed+item.phase)*.0018*amp}}

@@ -24,7 +24,7 @@
  <div class="layout">
   <aside class="panel sidebar"><div class="head">讨论会话</div><div class="sidebody">
    <button id="newGroup" class="primary" style="width:100%">＋ 新建三人群聊</button>
-   <div id="groups"><div class="tiny" style="padding:12px 2px">登录后加载会话</div></div>
+   <div class="section">私聊窗口</div><button id="privateMark" class="groupitem" type="button"><strong>你 ↔ Mark</strong><small>独立私聊</small></button><button id="privateJason" class="groupitem" type="button"><strong>你 ↔ Jason</strong><small>独立私聊</small></button><div class="section">三人群聊</div><div id="groups"><div class="tiny" style="padding:12px 2px">登录后加载会话</div></div>
    <div class="notice">群聊消息会保存到 zee-prediction。Mark 与 Jason 的普通群聊内容不会自动写入长期记忆；Mia 的独立数据库不会被访问。</div>
   </div></aside>
   <main class="panel chat"><div class="chathead"><div><div id="chatTitle" class="title">选择或创建群聊</div><div id="chatMeta" class="meta">同一讨论 · 两位智能人依次回应</div><div class="people"><span class="chip">你</span><span class="chip mark">Mark · 证据与逻辑</span><span class="chip jason">Jason · 创意与执行</span></div></div><span class="chip">私人会话</span></div>
@@ -42,7 +42,7 @@
  const API=URL+"/functions/v1/mark-jason-group-chat";
  const $=id=>document.getElementById(id);
  const client=window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storageKey:"zhi-mark-jason-auth-v1"}});
- let session=null,groups=[],groupId=null,busy=false;
+ let session=null,groups=[],groupId=null,busy=false,chatMode="group",privateAgent=null;
  const status=(s,k="")=>{$("status").textContent=s;$("status").className="status "+k};
  const loginStatus=(s,k="")=>{$("loginStatus").textContent=s;$("loginStatus").className="status "+k};
  async function invoke(payload){
@@ -74,12 +74,13 @@
   if(groups.length)await openGroup(groups[0].id);
  }
  async function openGroup(id){
-  const d=await invoke({op:"history",group_id:id});groupId=id;
+  chatMode="group";privateAgent=null;const d=await invoke({op:"history",group_id:id});groupId=id;
   $("chatTitle").textContent=d.group?.title||"三人讨论";$("chatMeta").textContent="已恢复 "+(d.messages||[]).length+" 条消息";
   $("messages").innerHTML="";
   if(!(d.messages||[]).length)$("messages").innerHTML='<div class="welcome">群聊已创建。发一条消息开始讨论。</div>';
   (d.messages||[]).forEach(bubble);$("send").disabled=false;renderGroups();status("历史记录已恢复。","good");
  }
+ async function openPrivate(slug){chatMode="private";privateAgent=slug;try{const d=await invoke({op:"open_private",agent_slug:slug});groupId=d.session_id;$("chatTitle").textContent=slug==="mark"?"你 ↔ Mark":"你 ↔ Jason";$("chatMeta").textContent="独立私聊 · 历史记录单独保存";$("people").innerHTML=slug==="mark"?'<span class="chip">你</span><span class="chip mark">Mark</span>':'<span class="chip">你</span><span class="chip jason">Jason</span>';$("messages").innerHTML="";const h=await invoke({op:"private_history",session_id:groupId,agent_slug:slug});if(!(h.messages||[]).length)$("messages").innerHTML="<div class=\"welcome\">开始单独交流。</div>";(h.messages||[]).forEach(bubble);$("send").disabled=false;status("私聊已打开。","good")}catch(e){status("打开私聊失败："+e.message,"error")}}
  async function createGroup(){
   const title=prompt("给三人群聊取个名字：","Mark · Jason 三人讨论");
   if(title===null)return;
@@ -88,11 +89,11 @@
   finally{busy=false;$("newGroup").disabled=false}
  }
  async function sendMessage(){
-  if(busy)return;if(!groupId){status("请先创建群聊。","error");return}
+  if(busy)return;if(!groupId){status("请先创建或打开会话。","error");return}
   const message=$("message").value.trim();if(!message)return;
   busy=true;$("send").disabled=true;$("newGroup").disabled=true;$("message").value="";
   bubble({sender_slug:"user",sender_name:"你",sender_type:"user",content:message,created_at:new Date().toISOString()});status("正在保存消息，并依次等待 Mark、Jason 回应…");
-  try{const d=await invoke({op:"send",group_id:groupId,message});(d.responses||[]).forEach(bubble);status("消息和回应已保存。","good");await loadGroups();}
+  try{const d=chatMode==="private"?await invoke({op:"send_private",session_id:groupId,agent_slug:privateAgent,message}):await invoke({op:"send",group_id:groupId,message});(d.responses||[]).forEach(bubble);status("消息和回应已保存。","good");if(chatMode==="group")await loadGroups();}
   catch(e){status("发送未完整成功："+e.message+"。如果显示部分保存，请刷新群聊确认已保存内容。","error");try{await openGroup(groupId)}catch(_){}}
   finally{busy=false;$("send").disabled=!groupId;$("newGroup").disabled=false;$("message").focus()}
  }
@@ -104,7 +105,7 @@
 
  $("logout").onclick=async()=>{await client.auth.signOut();session=null;groupId=null;groups=[];await showSession(null)};
  $("refresh").onclick=async()=>{try{await loadGroups();if(groupId)await openGroup(groupId);status("已刷新。","good")}catch(e){status("刷新失败："+e.message,"error")}};
- $("newGroup").onclick=createGroup;$("send").onclick=sendMessage;
+ $("newGroup").onclick=createGroup;$("privateMark").onclick=()=>openPrivate("mark");$("privateJason").onclick=()=>openPrivate("jason");$("send").onclick=sendMessage;
  $("message").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage()}});
  client.auth.onAuthStateChange((_event,s)=>{if(s&&!session)showSession(s);else if(!s&&session)showSession(null)});
  client.auth.getSession().then(({data})=>showSession(data.session));

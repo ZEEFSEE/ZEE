@@ -1,6 +1,6 @@
 {
-  "schema_version": "1.0",
-  "status": "specification_only",
+  "schema_version": "1.1",
+  "status": "policy_updated_runtime_implementation_pending",
   "runtime_enforced": false,
   "fail_closed_on_source_health_error": true,
   "require_explicit_mark": true,
@@ -48,7 +48,7 @@
     "auto_restore_without_validation": false,
     "require_deduplication_and_provenance_check": true
   },
-  "note": "Candidate pipeline v8 is active. Human evidence review can record reviewer and notes but cannot manually change evidence_count, distinct_observation_dates, or observation windows. The source resolver currently verifies one allowlisted record per candidate; multi-record evidence aggregation is not yet implemented, so a candidate cannot claim multiple verified records through manual input. mia-chat remains unchanged. Database hardening migration 20261023061544 is applied: the database state guard no longer permits approved_for_release -> committed, and rollback ledger service_role privileges are limited to SELECT/INSERT with a TRUNCATE-blocking trigger. User confirmed the published admin page login and empty candidate list both work; candidate submission, full pipeline E2E, shadow evaluation, gene publication, and mia-chat integration remain untested or disabled. Additional fail-closed migration 20261023061840 is applied: database state transitions into approved_for_shadow, approved_for_release, and committed are blocked until an independent approval evidence record is implemented. This intentionally pauses promotion; mia-chat remains disconnected and unchanged. A synthetic-only Shadow Evaluator test plan is committed at mia/shadow-evaluator-test-plan-v1.md. The migration's matching SQL file still needs to be committed to the repository before treating the migration history as fully reproducible. Emotional experience is a required growth input: see mia/emotion-to-growth-policy-v1.md. The schema supports mia_emotion_events source pointers and separate emotion summaries, but multi-event emotion aggregation and an actual evaluator are not yet implemented. No raw private event bodies were read.",
+  "note": "Policy v1.1: routine positive and negative learning should proceed automatically without per-candidate approval; extreme emotion may trigger immediate reflection and bounded reversible adaptation. Only high-impact, irreversible, privacy/security, safety-boundary, or core-principle changes pause for manager approval. Manager must be able to revoke any applied growth change using a verified last-known-good version and append-only rollback event. Runtime aggregation, evaluator, scheduler, safe auto-application, and end-to-end revocation remain unimplemented; mia-chat remains untouched.",
   "rollback_continuity": {
     "event_type": "Evolution_Rollback_Event",
     "storage": "private_supabase_append_only_ledger",
@@ -129,6 +129,32 @@
     "raw_private_text_in_public_artifacts": false,
     "automatic_live_personality_writeback": false,
     "multi_event_aggregation_implemented": false,
-    "evaluator_implemented": false
+    "evaluator_implemented": false,
+    "positive_and_negative_valence_eligible": true,
+    "extreme_event_triggers_reflection": true,
+    "bounded_reversible_adaptation_may_be_automatic": true,
+    "manager_revocation_required_capability": true,
+    "scheduled_automatic_runs_implemented": false,
+    "low_risk_auto_application_implemented": false,
+    "end_to_end_manager_revocation_implemented": false
+  },
+  "automatic_growth": {
+    "default": "automatic_without_per_candidate_approval",
+    "positive_emotion_events": "eligible_for_automatic_learning",
+    "negative_emotion_events": "eligible_for_automatic_learning",
+    "extreme_emotion_events": "trigger_immediate_reflection_and_bounded_reversible_adaptation",
+    "extreme_event_permanent_trait_change": "requires_repeated_evidence_and_stability_checks",
+    "manager_can_revoke": "true",
+    "manager_approval_required_only_for": [
+      "privacy_or_security_boundary_change",
+      "memory_deletion_or_corruption",
+      "permission_or_safety_boundary_change",
+      "irreversible_external_action",
+      "core_principle_or_identity_change",
+      "other_high_impact_irreversible_change"
+    ],
+    "negative_emotion_alone_is_high_risk": false,
+    "rollback_requires_last_known_good_version": true,
+    "append_only_rollback_audit": true
   }
 }

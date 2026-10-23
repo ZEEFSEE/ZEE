@@ -159,7 +159,19 @@ Deno.serve(async(req:Request)=>{
       }
      }
     }
-   }catch(e){console.error("mia_intervention_check_failed",e instanceof Error?e.message:"unknown");}
+   }catch(e){
+    console.error("mia_intervention_check_failed",e instanceof Error?e.message:"unknown");
+    // Reliable fallback: if the model check times out or returns malformed JSON,
+    // use explicit correction/friction cues already present in the recent chat.
+    const recentUserText=context.filter((x:any)=>x.role==="user").slice(-5).map((x:any)=>x.content).join("\\n");
+    const frictionCue=/(我问|没问|答非所问|不能僵硬|僵硬|误解|偏了|重复|纠正|听不懂|不对|不是.{0,12}(而是|是)|没有回答|别再|反复)/.test(recentUserText);
+    if(frictionCue){
+      const fallbackMessage="我想插一句：刚才几轮里，您在反复把问题拉回原意，而我们可能仍在解释自己的框架，没有先准确回应核心问题。我们先停一下：您最希望我们直接回答的关键问题是哪一句？我会先确认理解，再让 Mark 和 Jason 回应。";
+      const {data:fallbackSaved,error:fallbackError}=await db.from("chat_messages").insert({session_id:id,sender_slug:"mia",sender_kind:"virtual_agent",content:fallbackMessage,message_metadata:{source:"mia-proactive-mediator",model,trigger:"communication_friction_fallback",reason:"analysis_timeout_or_parse_failure"}}).select("id,sender_slug,sender_kind,content,created_at").single();
+      if(!fallbackError&&fallbackSaved){responses.push({...fallbackSaved,sender_name:"Mia",sender_type:"agent"});context.push({role:"assistant",name:"mia",content:fallbackMessage});}
+      else console.error("mia_intervention_fallback_save_failed",fallbackError?fallbackError.message:"unknown");
+    }
+  }
    await db.from("chat_sessions").update({updated_at:new Date().toISOString()}).eq("id",id).eq("owner_user_id",uid);
    return json({ok:true,group_id:id,responses,saved:true});
   }

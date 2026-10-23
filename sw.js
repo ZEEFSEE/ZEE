@@ -1,5 +1,5 @@
-const CACHE_NAME = "zhi-pwa-shell-v19";
-const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./mia-chat.html", "./mia-chat.webmanifest", "./agent-talk.html", "./agent-talk.webmanifest", "./zhi-icon.svg"];
+const CACHE_NAME = "zhi-pwa-shell-v20";
+const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./mia-chat.html", "./mia-chat.webmanifest", "./mark-jason-chat.html", "./mark-jason-chat.webmanifest", "./agent-talk.html", "./agent-talk.webmanifest", "./zhi-icon.svg"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting()));
 });

@@ -87,4 +87,4 @@ The event is a record of attempted growth and its limits. It does not mean Mia h
 
 ## Runtime status
 
-This document is a policy/specification only. No automatic extraction, database read, approval workflow, or runtime loading is implemented by this file alone. Any implementation must be audited and tested separately before being described as active.
+This document remains a policy specification. The private rollback-event table and isolated authenticated ledger endpoint have been deployed, but no automatic extraction, gene approval, runtime gene loading, or rollback executor is wired into Mia's chat path. Do not describe those automatic behaviors as active.

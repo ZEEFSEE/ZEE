@@ -46,3 +46,38 @@ export function reviewProposal(proposal, context = {}) {
     engine: 'deterministic-rules-v1'
   };
 }
+
+export function validateSnapshot(data) {
+  const errors = [];
+  if (!data || typeof data !== 'object' || ![1, 2, 3].includes(data.schema_version)) {
+    return { ok: false, reasons: ['保存快照版本不受支持。'] };
+  }
+  if (!Array.isArray(data.objects) || data.objects.length > MAX_OBJECTS) {
+    errors.push(`宇宙实体列表无效或超过安全上限（${MAX_OBJECTS}）。`);
+  } else {
+    for (const [index, object] of data.objects.entries()) {
+      if (!object || !ALLOWED_KINDS.includes(object.kind)) {
+        errors.push(`第 ${index + 1} 个实体类型无效。`);
+        continue;
+      }
+      if (!Array.isArray(object.position) || object.position.length !== 3 ||
+          !object.position.every(n => Number.isFinite(n) && Math.abs(n) <= MAX_COORD)) {
+        errors.push(`第 ${index + 1} 个实体位置无效。`);
+      }
+      if (!Array.isArray(object.rotation) || object.rotation.length !== 3 ||
+          !object.rotation.every(Number.isFinite)) {
+        errors.push(`第 ${index + 1} 个实体旋转值无效。`);
+      }
+      if (!Number.isFinite(object.scale) || object.scale <= 0 || object.scale > 20) {
+        errors.push(`第 ${index + 1} 个实体缩放值无效。`);
+      }
+    }
+  }
+  if (data.proposals !== undefined && (!Array.isArray(data.proposals) || data.proposals.length > 500)) {
+    errors.push('建造申请列表无效或超过安全上限。');
+  }
+  if (data.inhabitants !== undefined && (!Array.isArray(data.inhabitants) || data.inhabitants.length > 500)) {
+    errors.push('居民列表无效或超过安全上限。');
+  }
+  return { ok: errors.length === 0, reasons: errors };
+}

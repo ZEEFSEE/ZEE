@@ -35,7 +35,7 @@ test('agent proposals require Mia approval before a world entity is created', ()
   assert.match(html, /proposal\.status='approved'/);
   assert.match(html, /proposal\.status='rejected'/);
   assert.match(html, /inhabitants\.push\(name\)/);
-  assert.match(html, /schema_version:2/);
+  assert.match(html, /schema_version:1/);\n  assert.match(html, /schema_version:3/);
 });
 
 test('governance policy rejects malformed proposals and duplicate submissions', () => {

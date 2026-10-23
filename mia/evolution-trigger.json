@@ -92,6 +92,8 @@
     "candidate_pipeline_endpoint_integrated_with_mia_chat": false,
     "automated_source_pointer_resolution": false,
     "automated_shadow_evaluation": false,
-    "admin_ui_deployed": false
+    "admin_ui_deployed": false,
+    "admin_ui_source_committed": true,
+    "admin_ui_publication_verified": false
   }
 }

@@ -42,7 +42,7 @@
  const API=URL+"/functions/v1/mark-jason-group-chat";
  const $=id=>document.getElementById(id);
  const client=window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storageKey:"zhi-mark-jason-auth-v1"}});
- let session=null,groups=[],groupId=null,busy=false,chatMode="group",privateAgent=null;
+ let session=null,groups=[],groupId=null,busy=false,chatMode="group",privateAgent=null,watcher=null,observeTimer=null,observeBusy=false;
  const status=(s,k="")=>{$("status").textContent=s;$("status").className="status "+k};
  const loginStatus=(s,k="")=>{$("loginStatus").textContent=s;$("loginStatus").className="status "+k};
  async function invoke(payload){
@@ -55,9 +55,10 @@
  }
  function time(v){return v?new Date(v).toLocaleString("zh-SG",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false}):""}
  function bubble(m){
+  if(m.id&&$("messages").querySelector(`[data-message-id="${m.id}"]`))return;
   const empty=$("messages").querySelector(".welcome");if(empty)empty.remove();
   const slug=m.sender_slug||m.sender_type;const cls=slug==="user"||m.sender_type==="user"?"user":slug==="mark"?"mark":slug==="jason"?"jason":slug==="mia"?"mia":"agent";
-  const el=document.createElement("div");el.className="msg "+cls;
+  const el=document.createElement("div");el.className="msg "+cls;if(m.id)el.dataset.messageId=m.id;
   const who=document.createElement("div");who.className="who";who.textContent=m.sender_name||({user:"你",mark:"Mark",jason:"Jason"}[slug]||slug||"系统");
   const content=document.createElement("div");content.textContent=m.content||"";
   const tm=document.createElement("div");tm.className="time";tm.textContent=time(m.created_at);
@@ -68,19 +69,39 @@
   if(!groups.length){const p=document.createElement("div");p.className="tiny";p.style.padding="12px 2px";p.textContent="还没有群聊，点击上方创建。";box.append(p);return;}
   groups.forEach(g=>{const b=document.createElement("button");b.className="groupitem"+(g.id===groupId?" active":"");b.type="button";const t=document.createElement("strong");t.textContent=g.title||"三人讨论";const sm=document.createElement("small");sm.textContent="你 · Mark · Jason · "+time(g.updated_at||g.created_at);b.append(t,sm);b.onclick=()=>openGroup(g.id);box.append(b)});
  }
+ function stopWatching(){if(watcher){client.removeChannel(watcher);watcher=null}if(observeTimer){clearTimeout(observeTimer);observeTimer=null}}
+ function watchGroup(id){
+  stopWatching();
+  if(!session||!id)return;
+  watcher=client.channel("mia-live-"+id)
+   .on("postgres_changes",{event:"INSERT",schema:"public",table:"chat_messages",filter:"session_id=eq."+id},payload=>{
+    if(chatMode!=="group"||groupId!==id)return;
+    const m=payload.new||{};
+    if(m.sender_slug!=="user")bubble(m);
+    if(m.sender_slug==="mia")return;
+    if(observeTimer)clearTimeout(observeTimer);
+    observeTimer=setTimeout(async()=>{
+     if(observeBusy||chatMode!=="group"||groupId!==id)return;
+     observeBusy=true;
+     try{const d=await invoke({op:"observe",group_id:id});if(d.response)bubble(d.response)}
+     catch(e){console.warn("Mia live observer unavailable",e.message)}
+     finally{observeBusy=false}
+    },1800);
+   }).subscribe();
+ }
  async function loadGroups(){
   const d=await invoke({op:"list_groups"});groups=d.groups||[];renderGroups();
   if(groupId&&groups.some(g=>g.id===groupId))return;
   if(groups.length)await openGroup(groups[0].id);
  }
  async function openGroup(id){
-  chatMode="group";privateAgent=null;const d=await invoke({op:"history",group_id:id});groupId=id;
+  chatMode="group";privateAgent=null;const d=await invoke({op:"history",group_id:id});groupId=id;watchGroup(id);
   $("chatTitle").textContent=d.group?.title||"三人讨论";$("chatMeta").textContent="已恢复 "+(d.messages||[]).length+" 条消息";
   $("messages").innerHTML="";
   if(!(d.messages||[]).length)$("messages").innerHTML='<div class="welcome">群聊已创建。发一条消息开始讨论。</div>';
   (d.messages||[]).forEach(bubble);$("send").disabled=false;renderGroups();status("历史记录已恢复。","good");
  }
- async function openPrivate(slug){chatMode="private";privateAgent=slug;try{const d=await invoke({op:"open_private",agent_slug:slug});groupId=d.session_id;$("chatTitle").textContent=slug==="mark"?"你 ↔ Mark":"你 ↔ Jason";$("chatMeta").textContent="独立私聊 · 历史记录单独保存";$("people").innerHTML=slug==="mark"?'<span class="chip">你</span><span class="chip mark">Mark</span>':'<span class="chip">你</span><span class="chip jason">Jason</span>';$("messages").innerHTML="";const h=await invoke({op:"private_history",session_id:groupId,agent_slug:slug});if(!(h.messages||[]).length)$("messages").innerHTML="<div class=\"welcome\">开始单独交流。</div>";(h.messages||[]).forEach(bubble);$("send").disabled=false;status("私聊已打开。","good")}catch(e){status("打开私聊失败："+e.message,"error")}}
+ async function openPrivate(slug){stopWatching();chatMode="private";privateAgent=slug;try{const d=await invoke({op:"open_private",agent_slug:slug});groupId=d.session_id;$("chatTitle").textContent=slug==="mark"?"你 ↔ Mark":"你 ↔ Jason";$("chatMeta").textContent="独立私聊 · 历史记录单独保存";$("people").innerHTML=slug==="mark"?'<span class="chip">你</span><span class="chip mark">Mark</span>':'<span class="chip">你</span><span class="chip jason">Jason</span>';$("messages").innerHTML="";const h=await invoke({op:"private_history",session_id:groupId,agent_slug:slug});if(!(h.messages||[]).length)$("messages").innerHTML="<div class=\"welcome\">开始单独交流。</div>";(h.messages||[]).forEach(bubble);$("send").disabled=false;status("私聊已打开。","good")}catch(e){status("打开私聊失败："+e.message,"error")}}
  async function createGroup(){
   const title=prompt("给三人群聊取个名字：","Mark · Jason 三人讨论");
   if(title===null)return;
@@ -103,7 +124,7 @@
  }
  $("signIn").onclick=async()=>{loginStatus("正在登录…");const {data,error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error){loginStatus("登录失败："+error.message,"error");return}loginStatus("");await showSession(data.session)};
 
- $("logout").onclick=async()=>{await client.auth.signOut();session=null;groupId=null;groups=[];await showSession(null)};
+ $("logout").onclick=async()=>{stopWatching();await client.auth.signOut();session=null;groupId=null;groups=[];await showSession(null)};
  $("refresh").onclick=async()=>{try{await loadGroups();if(groupId)await openGroup(groupId);status("已刷新。","good")}catch(e){status("刷新失败："+e.message,"error")}};
  $("newGroup").onclick=createGroup;$("privateMark").onclick=()=>openPrivate("mark");$("privateJason").onclick=()=>openPrivate("jason");$("send").onclick=sendMessage;
  $("message").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage()}});

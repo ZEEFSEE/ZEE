@@ -73,7 +73,9 @@ Deno.serve(async (req: Request) => {
     const scope = txt(body.source_scope, 100);
     const markedAt = Date.parse(txt(body.explicit_marked_at, 80));
     const key = txt(body.idempotency_key, 200);
-    if (!types.has(geneType) || pointer.length < 8 || !scope || !Number.isFinite(markedAt) ||
+    const allowedTables = new Set(["mia_memories", "mia_life_events", "mia_emotion_events"]);
+    const pointerValid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(pointer);
+    if (!types.has(geneType) || !pointerValid || !allowedTables.has(scope) || !Number.isFinite(markedAt) ||
         markedAt > Date.now() || key.length < 8) return json({ error: "Candidate validation failed" }, 400);
     const insert = await db.from("mia_evolution_candidates").insert({
       identity_id: IDENTITY_ID, gene_type: geneType, memory_pointer: pointer, source_scope: scope,
@@ -98,7 +100,7 @@ Deno.serve(async (req: Request) => {
   if (action === "list") {
     const limit = Math.min(50, Math.max(1, Number(body.limit) || 20));
     const { data, error } = await db.from("mia_evolution_candidates")
-      .select("candidate_id,gene_id,gene_type,state,explicit_marked_at,evidence_count,distinct_observation_dates,source_verification_status,duplicate_check_status,contradiction_check_status,privacy_review_status,shadow_eval_status,reviewer_decision,created_at,updated_at")
+      .select("candidate_id,gene_id,gene_type,state,memory_pointer,source_scope,explicit_marked_at,evidence_count,distinct_observation_dates,source_verification_status,duplicate_check_status,contradiction_check_status,privacy_review_status,shadow_eval_status,reviewer_decision,created_at,updated_at")
       .eq("identity_id", IDENTITY_ID).order("created_at", { ascending: false }).limit(limit);
     if (error) return json({ error: "Unable to read candidate queue" }, 500);
     return json({ ok: true, candidates: data || [] });
@@ -157,21 +159,58 @@ Deno.serve(async (req: Request) => {
       note: "Only pointer existence and identity were verified. This is one evidence item, not proof of a stable trait." });
   }
 
+  if (action === "automated_checks") {
+    const summaries = [txt(c.fact_summary,600), txt(c.interpretation_summary,600), txt(c.emotion_summary,400)].filter(Boolean);
+    const joined = summaries.join("\n");
+    const piiPatterns = [
+      /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i,
+      /(?:\+?\d[\s().-]*){8,}/,
+      /(?:api[_-]?key|service[_-]?role|password|secret)\s*[:=]\s*\S+/i,
+      /https?:\/\/[^\s]+/i
+    ];
+    const privacyFlag = piiPatterns.some(re => re.test(joined));
+    const normalize = (v: string) => v.toLocaleLowerCase().normalize("NFKC").replace(/[^\p{L}\p{N}]+/gu," ").trim();
+    const normalized = summaries.map(normalize).filter(v=>v.length>=20);
+    let duplicate = false;
+    if (normalized.length) {
+      const { data: others, error } = await db.from("mia_evolution_candidates")
+        .select("candidate_id,fact_summary,interpretation_summary,emotion_summary")
+        .eq("identity_id", IDENTITY_ID).eq("gene_type", c.gene_type).neq("candidate_id", candidateId).limit(50);
+      if (error) return json({ error: "Duplicate pre-check failed; no check results saved." }, 500);
+      const existing = (others||[]).flatMap((o:any)=>[txt(o.fact_summary,600),txt(o.interpretation_summary,600),txt(o.emotion_summary,400)]).map(normalize).filter(v=>v.length>=20);
+      duplicate = normalized.some(v=>existing.includes(v));
+    }
+    const upd = await db.from("mia_evolution_candidates").update({
+      privacy_review_status: privacyFlag ? "failed" : "passed",
+      duplicate_check_status: duplicate ? "failed" : "passed",
+      reviewer_decision: privacyFlag
+        ? "Automated privacy pre-check flagged possible personal/contact/secret/URL content. Human review required; candidate must not advance."
+        : duplicate
+          ? "Automated exact-text duplicate pre-check found a matching normalized summary. Human review required."
+          : "Automated pre-check found no obvious PII pattern or exact normalized duplicate; semantic privacy and contradiction review still required."
+    }).eq("candidate_id", candidateId).eq("state", c.state)
+      .select("candidate_id,state,privacy_review_status,duplicate_check_status,contradiction_check_status,reviewer_decision").maybeSingle();
+    if (upd.error || !upd.data) return json({ error: "Automated pre-check results were not saved; reload candidate." }, 409);
+    return json({ ok: true, candidate: upd.data, checks: {
+      privacy_pattern_scan: privacyFlag ? "flagged" : "no_obvious_pattern",
+      exact_normalized_duplicate_scan: duplicate ? "match_found" : "no_exact_match",
+      semantic_privacy_review: "not_automated",
+      contradiction_review: "not_automated"
+    }});
+  }
+
   if (action === "evidence_review") {
     const count = Number(body.evidence_count), dates = Number(body.distinct_observation_dates);
-    const verified = body.source_verified === true;
-    const reviewer = txt(body.reviewer_id, 100);
+        const reviewer = txt(body.reviewer_id, 100);
     const start = body.observation_window_start ? Date.parse(txt(body.observation_window_start, 80)) : null;
     const end = body.observation_window_end ? Date.parse(txt(body.observation_window_end, 80)) : null;
     if (!Number.isInteger(count) || count < 0 || !Number.isInteger(dates) || dates < 0 ||
         !reviewer || (start !== null && !Number.isFinite(start)) || (end !== null && !Number.isFinite(end)) ||
         (start !== null && end !== null && start > end)) return json({ error: "Evidence review fields invalid" }, 400);
     const patch: any = { evidence_count: count, distinct_observation_dates: dates,
-      source_verification_status: verified ? "verified" : "failed",
-      source_verified_by: reviewer, source_verified_at: new Date().toISOString(),
-      observation_window_start: start === null ? null : new Date(start).toISOString(),
+            observation_window_start: start === null ? null : new Date(start).toISOString(),
       observation_window_end: end === null ? null : new Date(end).toISOString(),
-      reviewer_decision: txt(body.review_summary, 800) || (verified ? "Source manually reviewed" : "Source verification failed") };
+      reviewer_decision: txt(body.review_summary, 800) || "Human evidence review recorded; source pointer verification remains separate." };
     const upd = await db.from("mia_evolution_candidates").update(patch).eq("candidate_id", candidateId)
       .select("candidate_id,state,evidence_count,distinct_observation_dates,source_verification_status,source_verified_at").single();
     if (upd.error) return json({ error: "Evidence review was not saved" }, 500);

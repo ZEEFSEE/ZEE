@@ -13,9 +13,9 @@ test('standalone universe is a real WebGL/Three.js scene, not a ZHI map embed', 
 });
 
 test('inline Three.js module parses as JavaScript', () => {
-  const match = html.match(/<script type="module">([\\s\\S]*?)<\\/script>/);
+  const match = html.match(/<script type="module">([\s\S]*?)<\/script>/);
   assert.ok(match, 'missing module script');
-  const source = match[1].replace(/^import .*;\\s*$/gm, '');
+  const source = match[1].replace(/^import .*;\s*$/gm, '');
   assert.doesNotThrow(() => new Function(source));
 });
 

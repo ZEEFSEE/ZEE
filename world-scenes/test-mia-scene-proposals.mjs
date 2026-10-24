@@ -19,6 +19,11 @@ assert.match(source, /duplicate_scene_id/);
 assert.doesNotMatch(source, /\.update\(\{[^}]*global_paused\s*:/s, "Endpoint must never unpause the builder");
 assert.doesNotMatch(source, /production_writes_enabled\s*:\s*true/, "Endpoint must never enable production writes");
 assert.match(readme, /deployed ACTIVE v1 on zee-extension/i);
-assert.match(readme, /The global pause is a hard stop/i);\nassert.match(workshop, /functions\\/v1\\/mia-scene-proposals/);\nassert.match(workshop, /if\\(!canSubmit\\)/);\nassert.match(workshop, /mia_scene_workshop_draft_v1/);\nassert.match(workshop, /不会解除全局暂停/);\nassert.doesNotMatch(workshop, /SUPABASE_SERVICE_ROLE_KEY|service_role/i, "Browser workshop must not expose service-role credentials");
+assert.match(readme, /The global pause is a hard stop/i);
+assert.ok(workshop.includes("functions/v1/mia-scene-proposals"), "Workshop must call the proposal endpoint");
+assert.ok(workshop.includes("if(!canSubmit)"), "Workshop must refuse submission when the sandbox is paused");
+assert.ok(workshop.includes("mia_scene_workshop_draft_v1"), "Workshop must support local draft saving");
+assert.ok(workshop.includes("不会解除全局暂停"), "Workshop must explain that it will not unpause the builder");
+assert.doesNotMatch(workshop, /SUPABASE_SERVICE_ROLE_KEY|service_role/i, "Browser workshop must not expose service-role credentials");
 
 console.log("Mia scene proposal endpoint safety assertions passed.");

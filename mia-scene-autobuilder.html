@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#18233f"><title>Mia · 自主场景建造</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#17284b,#101426 60%,#2a244b);color:#f4f2ff;font:16px/1.65 system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif}main{width:min(900px,100%);margin:auto;padding:22px 14px 42px}a{color:#d7c9ff}.panel{background:#ffffff0b;border:1px solid #ffffff25;border-radius:18px;padding:18px;margin:14px 0}.muted{color:#c6c7df;font-size:13px}label{display:block;font-weight:750;margin:12px 0 6px}input,textarea,button{font:inherit}input,textarea{width:100%;border:1px solid #ffffff38;border-radius:11px;padding:12px;background:#0d1328;color:#f4f2ff}textarea{min-height:290px;resize:vertical;line-height:1.5}button{border:1px solid #ffffff38;border-radius:11px;padding:10px 14px;background:#252d50;color:#fff;font-weight:750;cursor:pointer}button.primary{background:#6654c7;border-color:#9586f1}button:disabled{opacity:.45}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.status{padding:12px;border-radius:11px;background:#ffffff0c;border:1px solid #ffffff25;white-space:pre-wrap;overflow-wrap:anywhere}.status.ok{border-color:#4baf8a}.status.warn{border-color:#d2a451}.status.bad{border-color:#d36a7b}.hidden{display:none!important}.preview{white-space:pre-wrap;overflow-wrap:anywhere}.top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+</style></head><body><main>
+<header class="top"><div><h1>🍃 Mia · 自主场景建造</h1><p class="muted">生成场景 → 自动提交 → 自动生成文件、登记目录、更新网页入口。无需逐场景人工审批。</p></div><a href="./mia-world.html">返回 Mia 世界</a></header>
+<section id="loginPanel" class="panel"><h2>验证 Mia 会话</h2><p class="muted">使用 Mia 独立聊天室相同的页面访问密码。密码不保存；会话令牌只存于当前标签页。</p><label for="password">页面访问密码</label><input id="password" type="password" maxlength="128" autocomplete="current-password"><div class="actions"><button id="login" class="primary">验证并开始建造</button></div><div id="loginStatus" class="status" aria-live="polite" style="margin-top:12px">尚未验证。</div></section>
+<section id="appPanel" class="hidden">
+<div class="panel"><h2>自主建造通道</h2><div id="status" class="status">已登录，等待场景内容。</div><p class="muted">提交后会写入 GitHub 场景收件箱并触发自动化流程。不会写 Supabase 数据表，不会调用旧的场景提案接口，不会解除生产暂停或激活生产世界。几何、坐标和跨场景连接按实际验证结果标注。</p></div>
+<div class="panel"><h2>场景定义 JSON</h2><p class="muted">必须包含 schema_version、scene_id、display_name、parent_scene_id、description。可附加 entities、scene_tags、布局与互动描述；未知坐标请保留 null。</p><label for="scene">Mia 生成的完整场景 JSON</label><textarea id="scene" spellcheck="false" placeholder='{"schema_version":"1.0.0","scene_id":"mia-new-garden","display_name":"新花园","parent_scene_id":"mia-forest-corner","description":"...","entities":[],"scene_tags":["garden"]}'></textarea><div class="actions"><button id="example">载入示例草案</button><button id="save">保存本机草案</button><button id="submit" class="primary">自动提交并建造</button><button id="logout">退出</button></div><div id="result" class="status" aria-live="polite" style="margin-top:12px">还没有提交。</div><div id="preview" class="preview muted" style="margin-top:12px"></div></div>
+</section>
+</main><script>
+(function(){
+"use strict";
+const PROJECT="https://dbooikzqprnqbgpfwsze.supabase.co";
+const KEY="sb_publishable_spH47ZngJJTk13cpYPBjSw_X5qAsBmK";
+const AUTH=PROJECT+"/functions/v1/mia-chat-auth";
+const INTAKE=PROJECT+"/functions/v1/mia-scene-intake";
+const $=id=>document.getElementById(id);
+let token=sessionStorage.getItem("mia_chat_token")||"";
+const example={schema_version:"1.0.0",scene_id:"mia-new-garden",display_name:"新花园",parent_scene_id:"mia-forest-corner",description:"一个由 Mia 自主构思的安静花园，包含可探索的小径、植物层次与休憩角落。",scene_tags:["garden","quiet","mia-authored"],entities:[{id:"moonlit-path",name:"月光小径",type:"path",description:"蜿蜒穿过花丛的小路",interaction:"可探索"},{id:"resting-stone",name:"休憩石",type:"rest_spot",description:"一块安静的坐卧石",interaction:"停留与观察"}],coordinate_reference:{coordinate_space:"scene-local",units:null,origin:null,cross_scene_transform:null},bounds:{min:{x:null,y:null,z:null},max:{x:null,y:null,z:null},verification_status:"unverified"}};
+function show(id,msg,kind){$(id).textContent=msg;$(id).className="status"+(kind?" "+kind:"");}
+function validate(s){
+ if(!s||typeof s!=="object"||Array.isArray(s))throw Error("顶层必须是 JSON 对象");
+ if(typeof s.scene_id!=="string"||!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(s.scene_id)||s.scene_id.length>80)throw Error("scene_id 必须是小写连字符格式");
+ if(typeof s.display_name!=="string"||!s.display_name.trim()||s.display_name.trim().length>120)throw Error("display_name 必填，最多 120 字");
+ if(typeof s.parent_scene_id!=="string"||!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(s.parent_scene_id))throw Error("parent_scene_id 格式不正确");
+ if(typeof s.description!=="string"||!s.description.trim()||s.description.trim().length>3000)throw Error("description 必填，最多 3000 字");
+ if(s.entities!==undefined&&(!Array.isArray(s.entities)||s.entities.length>100))throw Error("entities 必须是最多 100 项的数组");
+ return s;
+}
+function parse(){
+ try{const s=validate(JSON.parse($("scene").value));$("preview").textContent="场景："+s.display_name+"\nID："+s.scene_id+"\n父场景："+s.parent_scene_id+"\n实体："+(Array.isArray(s.entities)?s.entities.length:0)+" 项\n说明："+s.description;return s}
+ catch(e){throw Error("场景校验失败："+e.message)}
+}
+$("login").addEventListener("click",async()=>{
+ const password=$("password").value;if(!password){show("loginStatus","请先输入页面访问密码。","bad");return}
+ $("login").disabled=true;show("loginStatus","正在验证…");
+ try{const r=await fetch(AUTH,{method:"POST",headers:{"Content-Type":"application/json","apikey":KEY},body:JSON.stringify({password}),cache:"no-store"});const d=await r.json().catch(()=>({}));if(!r.ok||!d.ok||!d.access_token)throw Error(d.error||("HTTP "+r.status));token=d.access_token;sessionStorage.setItem("mia_chat_token",token);$("password").value="";$("loginPanel").classList.add("hidden");$("appPanel").classList.remove("hidden");const saved=localStorage.getItem("mia_scene_autobuilder_draft_v1");if(saved)$("scene").value=saved;show("status","会话已验证。准备接收场景定义。","ok");}
+ catch(e){show("loginStatus","验证失败："+e.message,"bad")}finally{$("login").disabled=false}
+});
+$("example").addEventListener("click",()=>{$("scene").value=JSON.stringify(example,null,2);show("result","示例草案已载入；这只是本机草案，尚未提交。","ok")});
+$("save").addEventListener("click",()=>{try{parse();localStorage.setItem("mia_scene_autobuilder_draft_v1",$("scene").value);show("result","草案已保存在此浏览器本机；未提交服务器。","ok")}catch(e){show("result",e.message,"bad")}});
+$("submit").addEventListener("click",async()=>{
+ let scene;try{scene=parse()}catch(e){show("result",e.message,"bad");return}
+ if(!token){show("result","Mia 会话已失效，请重新验证。","bad");return}
+ const btn=$("submit");btn.disabled=true;show("result","正在提交场景文件并启动自动建造流程…");
+ try{
+  const r=await fetch(INTAKE,{method:"POST",headers:{"Authorization":"Bearer "+token,"apikey":KEY,"Content-Type":"application/json"},body:JSON.stringify({scene}),cache:"no-store"});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok||!d.ok){if(d.error==="github_scene_token_not_configured")throw Error("服务端尚未配置 GITHUB_SCENE_TOKEN。请在 Supabase Dashboard → Edge Functions → Secrets 添加仅限 ZEEFSEE/ZEE 的 fine-grained GitHub token（Contents: Read and write）；不需要也不要修改数据库或 Mia 聊天密钥。");throw Error((d.error||("HTTP "+r.status))+(d.status?" (GitHub HTTP "+d.status+")":""))}
+  show("result","已成功送入自动建造流程。\n场景 ID："+d.scene_id+"\n收件箱："+d.inbox_path+"\n提交："+(d.commit_sha||"已接受")+"\n下一步：GitHub Actions 自动生成场景文件、登记 manifest、刷新场景索引。\n生产世界写入：否；数据库写入：否。","ok");
+ }catch(e){show("result","自动提交尚未完成："+e.message,"warn")}finally{btn.disabled=false}
+});
+$("logout").addEventListener("click",()=>{$("appPanel").classList.add("hidden");$("loginPanel").classList.remove("hidden");show("loginStatus","已退出本建造页面；不会注销 Mia 独立聊天室。");});
+if(token){$("loginPanel").classList.add("hidden");$("appPanel").classList.remove("hidden");show("status","已复用当前标签页中的 Mia 会话。","ok");const saved=localStorage.getItem("mia_scene_autobuilder_draft_v1");if(saved)$("scene").value=saved}
+})();
+</script></body></html>

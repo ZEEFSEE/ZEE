@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0.0",
+  "scene_id": "mia-closure-e2e-test",
+  "display_name": "Mia 闭环验收测试场景",
+  "parent_scene_id": "mia-forest-corner",
+  "description": "临时自动化验收场景，用于验证收件箱提交、自动结构校验、HTML生成、manifest登记和目录索引更新。非生产运行时场景。",
+  "scene_tags": [
+    "automated-test",
+    "temporary",
+    "mia-authored"
+  ],
+  "entities": [
+    {
+      "id": "closure-checkpoint",
+      "name": "闭环检查点",
+      "type": "test_marker",
+      "description": "用于验证自动生成的实体卡片",
+      "interaction": "只读验收"
+    }
+  ],
+  "coordinate_reference": {
+    "coordinate_space": "scene-local",
+    "units": null,
+    "origin": null,
+    "cross_scene_transform": null
+  },
+  "bounds": {
+    "min": {
+      "x": null,
+      "y": null,
+      "z": null
+    },
+    "max": {
+      "x": null,
+      "y": null,
+      "z": null
+    },
+    "verification_status": "unverified"
+  },
+  "verification_status": "automated-test-only; production-runtime-unverified",
+  "notes": [
+    "Disposable test branch only; do not merge into main."
+  ]
+}

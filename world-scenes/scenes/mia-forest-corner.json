@@ -1,0 +1,53 @@
+{
+  "schema_version": "1.0.0",
+  "scene_id": "mia-forest-corner",
+  "display_name": "Mia 森林角落",
+  "status": "draft",
+  "parent_scene_id": null,
+  "source_reference": {
+    "kind": "existing_mia_virtual_scene",
+    "source_path": "mia/forest-corner.json",
+    "source_record_id": "mia-forest-corner",
+    "created_by": "scene-data-foundation",
+    "created_at": null
+  },
+  "verification_status": "source-backed-local-layout",
+  "coordinate_reference": {
+    "coordinate_space": "scene-local",
+    "system_name": "Forest_Corner local layout",
+    "units": "relative layout units",
+    "origin": "scene origin",
+    "source_reference": "mia/forest-corner.json#/local_coordinate_system",
+    "cross_scene_transform": null
+  },
+  "bounds": {
+    "min": {
+      "x": 0,
+      "y": 0,
+      "z": null
+    },
+    "max": {
+      "x": 1000,
+      "y": 700,
+      "z": null
+    },
+    "verification_status": "source-backed-2d-layout; z-depth-unverified"
+  },
+  "files": {
+    "geometry": "../mia-assets/geometry.json",
+    "entities": "../mia-assets/entities.json",
+    "navigation": "../mia-assets/navigation.json",
+    "interactions": "../mia-assets/interactions.json"
+  },
+  "scene_tags": [
+    "mia-world",
+    "forest",
+    "root",
+    "existing-source"
+  ],
+  "notes": [
+    "Local layout dimensions and entity positions are sourced from mia/forest-corner.json.",
+    "This is not a verified ZHI world coordinate map.",
+    "Cross-scene exits and travel transforms are not yet defined; future scenes must connect to this root through a validated scene graph."
+  ]
+}

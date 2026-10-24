@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0.0",
+  "scene_id": "nebula-breathing-hub",
+  "interactions": [
+    {
+      "interaction_id": "nebula-panorama-view",
+      "target_ref": "nebula-viewpoint",
+      "action": "view_nebula_panorama",
+      "status": "proposed",
+      "verification_status": "concept-only",
+      "permission_contract": "visual proposal only; runtime not connected"
+    },
+    {
+      "interaction_id": "breathing-light-ambience",
+      "target_ref": "breathing-light-field",
+      "action": "slow_light_transition",
+      "status": "proposed",
+      "verification_status": "concept-only",
+      "permission_contract": "ambient visual proposal only; no sound playback or runtime execution asserted"
+    },
+    {
+      "interaction_id": "quiet-reflection",
+      "target_ref": "quiet-reflection-seat",
+      "action": "open_scene_journal",
+      "status": "proposed",
+      "verification_status": "concept-only",
+      "permission_contract": "journal storage and memory writes are not implemented by this scene file"
+    }
+  ],
+  "notes": [
+    "Proposed interaction contracts only. No executable actions, memory writes, or runtime permissions are granted."
+  ]
+}

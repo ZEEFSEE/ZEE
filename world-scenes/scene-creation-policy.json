@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0.0",
+  "policy_id": "mia-connected-world-scene-creation",
+  "status": "development-policy",
+  "principle": "The scene catalog grows without a fixed limit from Mia's existing virtual world. Every catalogued scene must connect to the root through a valid parent chain.",
+  "root_scene_id": "mia-forest-corner",
+  "creation_authority": {
+    "mia_may_author_create_scene_files_on_authorized_branch": true,
+    "mia_may_invent_authoritative_external_coordinates": false,
+    "mia_may_modify_production_world_state": false,
+    "mia_may_deploy_or_write_database": false
+  },
+  "creation_rules": [
+    "Use mia/forest-corner.json as the source for the initial root scene.",
+    "Add each new scene as a stable JSON file under world-scenes/scenes/ and register it in world-manifest.json.",
+    "The root scene has parent_scene_id null; every other catalogued scene must specify a parent_scene_id that already exists in the catalog.",
+    "A scene is part of Mia's world only if its parent chain reaches mia-forest-corner; do not register disconnected scenes.",
+    "Keep each scene's own local coordinate system. Cross-scene travel requires explicit, validated connection transforms; do not assume local coordinates share a coordinate space.",
+    "Copy source-backed local dimensions and entity positions only when their source is identified. Unknown values stay null and unverified.",
+    "Scene creation does not imply rendering, live runtime connection, database persistence, or autonomous GitHub access outside an authorized development branch.",
+    "Do not modify existing Mia source data or production state as part of scene-file creation.",
+    "If an unconnected file is discovered, flag it as orphaned and exclude it from the manifest; do not delete the original source file automatically."
+  ],
+  "required_fields": [
+    "schema_version",
+    "scene_id",
+    "display_name",
+    "status",
+    "parent_scene_id",
+    "source_reference",
+    "verification_status",
+    "coordinate_reference",
+    "bounds",
+    "files"
+  ],
+  "scene_id_policy": "lowercase-kebab-case; stable after publication; never reuse retired IDs",
+  "statuses": [
+    "idea",
+    "draft",
+    "review_required",
+    "validated",
+    "integrated",
+    "deprecated"
+  ]
+}

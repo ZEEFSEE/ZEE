@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0.0",
+  "mapping_policy": "explicit_reversible_only",
+  "mappings": [],
+  "required_fields": ["mapping_id", "source_coordinate_system", "target_coordinate_system", "verified_by", "verified_at", "transform"],
+  "transform_fields": ["scale", "rotation_degrees", "translation", "axis_mapping"],
+  "safety": {
+    "unknown_values_remain_null": true,
+    "unverified_mappings_must_not_be_used_for_navigation": true,
+    "no_inferred_production_coordinates": true
+  },
+  "notes": ["No authoritative coordinate mapping has been verified yet."]
+}

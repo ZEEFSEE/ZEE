@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0.0",
+  "scene_id": "nebula-breathing-hub",
+  "coordinate_space": "scene-local",
+  "verification_status": "unverified",
+  "features": [
+    {
+      "feature_id": "nebula-observation-dome",
+      "kind": "conceptual-enclosure",
+      "dimensions": {
+        "width": null,
+        "height": null,
+        "depth": null,
+        "units": "scene-defined units"
+      },
+      "vertices": [],
+      "asset_uri": null,
+      "verification_status": "unverified"
+    },
+    {
+      "feature_id": "breathing-light-field",
+      "kind": "ambient-light-field",
+      "dimensions": {
+        "width": null,
+        "height": null,
+        "depth": null,
+        "units": "scene-defined units"
+      },
+      "vertices": [],
+      "asset_uri": null,
+      "verification_status": "concept-only"
+    }
+  ],
+  "notes": [
+    "Conceptual draft only; no authoritative dimensions, mesh, terrain, or physical-scale mapping has been supplied.",
+    "Do not infer world coordinates or cross-scene transforms from this file."
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0.0",
+  "scene_id": "mia-forest-corner",
+  "coordinate_space": "scene-local",
+  "verification_status": "source-backed-2d-layout",
+  "features": [
+    {
+      "feature_id": "forest-corner-layout",
+      "kind": "layout-bounds",
+      "coordinate_space": "scene-local",
+      "dimensions": {
+        "width": 1000,
+        "height": 700,
+        "depth": null,
+        "units": "relative layout units"
+      },
+      "vertices": [],
+      "asset_uri": null,
+      "verification_status": "source-backed-2d-layout"
+    }
+  ],
+  "notes": [
+    "The source specifies width 1000 and height 700; it does not define a 3D mesh, terrain, z-axis, or physical-scale mapping."
+  ]
+}

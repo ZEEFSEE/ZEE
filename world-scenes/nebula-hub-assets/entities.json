@@ -1,0 +1,64 @@
+{
+  "schema_version": "1.0.0",
+  "scene_id": "nebula-breathing-hub",
+  "coordinate_space": "scene-local",
+  "entities": [
+    {
+      "entity_id": "nebula-viewpoint",
+      "entity_type": "observation_zone",
+      "position": {
+        "x": null,
+        "y": null,
+        "z": null
+      },
+      "coordinate_space": "scene-local",
+      "verification_status": "unverified",
+      "status": "draft",
+      "purpose": "Observe a slowly changing nebula panorama",
+      "ai_interaction": {
+        "enabled": false,
+        "planned": true
+      }
+    },
+    {
+      "entity_id": "breathing-light-field",
+      "entity_type": "ambient_visual_asset",
+      "position": {
+        "x": null,
+        "y": null,
+        "z": null
+      },
+      "coordinate_space": "scene-local",
+      "verification_status": "unverified",
+      "status": "draft",
+      "behavior": {
+        "concept": "slow color and luminosity transitions",
+        "audio": "optional low-volume ambient tone"
+      },
+      "ai_interaction": {
+        "enabled": false
+      }
+    },
+    {
+      "entity_id": "quiet-reflection-seat",
+      "entity_type": "rest_interaction_zone",
+      "position": {
+        "x": null,
+        "y": null,
+        "z": null
+      },
+      "coordinate_space": "scene-local",
+      "verification_status": "unverified",
+      "status": "draft",
+      "purpose": "Quiet reflection and scene journaling",
+      "ai_interaction": {
+        "enabled": false,
+        "planned": true
+      }
+    }
+  ],
+  "notes": [
+    "Entity placements are intentionally null until Mia authors and verifies local layout.",
+    "This data describes a proposal draft; it does not enable runtime interactions."
+  ]
+}

@@ -1,0 +1,48 @@
+name: ZHI Scene Data Checks
+
+on:
+  pull_request:
+    paths:
+      - "world-scenes/**"
+      - "nebula-preview.html"
+      - ".github/workflows/zhi-scene-data-check.yml"
+  push:
+    branches:
+      - "feat/zhi-3d-scene-data-foundation"
+    paths:
+      - "world-scenes/**"
+      - ".github/workflows/zhi-scene-data-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  structural-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check scene tool syntax
+        run: |
+          node --check world-scenes/validate-scenes.mjs
+          node --check world-scenes/create-scene.mjs
+      - name: Parse scene proposal contract
+        run: node -e "JSON.parse(require('node:fs').readFileSync('world-scenes/scene-proposal.schema.json', 'utf8'))"
+      - name: Validate base scene catalog
+        run: node world-scenes/validate-scenes.mjs
+      - name: Test connected scene authoring in ephemeral checkout
+        run: |
+          node world-scenes/create-scene.mjs --id ci-test-garden --name "CI Test Garden" --parent mia-forest-corner
+          node world-scenes/validate-scenes.mjs
+          if node world-scenes/create-scene.mjs --id ci-test-garden --name "Duplicate" --parent mia-forest-corner; then
+            echo "ERROR: duplicate scene ID was unexpectedly accepted"
+            exit 1
+          fi
+          if node world-scenes/create-scene.mjs --id ci-test-orphan --name "Orphan" --parent missing-parent; then
+            echo "ERROR: unregistered parent was unexpectedly accepted"
+            exit 1
+          fi

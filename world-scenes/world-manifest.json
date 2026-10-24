@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0.0",
+  "world_id": "mia-extensible-world",
+  "title": "Mia Extensible Virtual World",
+  "status": "scene_data_foundation",
+  "source_of_truth": {
+    "existing_scene": "mia/forest-corner.json",
+    "scene_metadata": "world-scenes/scenes/*.json",
+    "rule": "The Mia scene catalog is a connected scene graph. Only scenes reachable from the root belong to the catalog. Scene data does not imply runtime rendering or persistence."
+  },
+  "root_scene_id": "mia-forest-corner",
+  "catalog_policy": "scene-creation-policy.json",
+  "catalog_is_exhaustive": false,
+  "connectivity_policy": {
+    "graph_type": "directed_parent_tree",
+    "every_non_root_scene_requires_parent_scene_id": true,
+    "parent_must_be_registered": true,
+    "disconnected_scenes_are_not_catalog_members": true,
+    "no_automatic_deletion_of_unregistered_source_files": true
+  },
+  "coordinate_system": {
+    "scene_local": {
+      "name": "scene-local",
+      "units": "scene-defined layout units",
+      "origin": "scene origin",
+      "verification_status": "source-backed-per-scene"
+    },
+    "cross_scene_mapping": {
+      "required_for_travel": true,
+      "default_status": "unverified",
+      "must_not_be_guessed": true
+    }
+  },
+  "scenes": [
+    {
+      "scene_id": "mia-forest-corner",
+      "path": "scenes/mia-forest-corner.json",
+      "parent_scene_id": null,
+      "verification_status": "source-backed-local-layout"
+    },
+    {
+      "scene_id": "nebula-breathing-hub",
+      "path": "scenes/nebula-breathing-hub.json",
+      "parent_scene_id": "mia-forest-corner",
+      "verification_status": "concept-only; geometry-and-runtime-unverified"
+    }
+  ],
+  "safety": {
+    "database_writes": false,
+    "production_deployment": false,
+    "agent_state_mutation": false,
+    "coordinate_guessing": false,
+    "authoritative_mia_source_preserved": true
+  },
+  "scene_creation_policy_summary": "Open-ended catalog rooted in Mia's existing Forest_Corner. New scenes must connect to a registered parent scene. Unconnected scenes are excluded from the manifest."
+}

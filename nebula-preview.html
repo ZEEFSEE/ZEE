@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080b2a">
+<title>星云呼吸枢纽 · ZHI / Mia 场景预览</title>
+<style>
+:root{color-scheme:dark;--ink:#f5f2ff;--muted:#b9bbdf;--panel:#14183b;--line:#444a83;--glow:#b7a5ff}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#080b2a;color:var(--ink);font:15px/1.6 system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+main{width:min(1120px,100%);margin:auto;padding:24px 16px 40px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.eyebrow{color:#b6a9ff;font-size:12px;letter-spacing:.15em;text-transform:uppercase}.title{font-size:clamp(27px,5vw,44px);line-height:1.15;margin:8px 0}.sub{color:var(--muted);max-width:720px}.pill{border:1px solid #7d70c2;border-radius:999px;padding:5px 10px;color:#ddd4ff;font-size:12px}
+.scene{position:relative;isolation:isolate;overflow:hidden;margin-top:22px;min-height:470px;border:1px solid #55528f;border-radius:24px;background:radial-gradient(ellipse at 50% 45%,#493b91 0,#22265f 30%,#10143d 59%,#080b2a 100%);box-shadow:0 20px 70px #03051d}
+.scene:before,.scene:after{content:"";position:absolute;inset:-25%;z-index:-1;filter:blur(28px);opacity:.72;animation:drift 22s ease-in-out infinite alternate;background:conic-gradient(from 25deg at 45% 50%,transparent,#9d5cff66,#3bc8e866,transparent,#f08bd755,transparent)}
+.scene:after{animation-duration:31s;animation-direction:alternate-reverse;opacity:.5;transform:rotate(38deg);background:conic-gradient(from 190deg at 55% 48%,transparent,#5d6dff99,transparent,#e78aff66,transparent,#70e9e055)}
+@keyframes drift{to{transform:translate(5%, -4%) rotate(25deg) scale(1.12)}}
+.stars{position:absolute;inset:0;background-image:radial-gradient(2px 2px at 15% 22%,#fff 50%,transparent 70%),radial-gradient(1px 1px at 71% 16%,#fff 50%,transparent 70%),radial-gradient(2px 2px at 82% 61%,#d8d5ff 50%,transparent 70%),radial-gradient(1px 1px at 30% 73%,#fff 50%,transparent 70%),radial-gradient(1px 1px at 56% 32%,#fff 50%,transparent 70%),radial-gradient(2px 2px at 43% 86%,#c7f5ff 50%,transparent 70%),radial-gradient(1px 1px at 92% 29%,#fff 50%,transparent 70%);opacity:.8}
+.orbit{position:absolute;left:50%;top:48%;width:min(70%,620px);aspect-ratio:1.8/1;border:1px solid #d8ceff55;border-radius:50%;transform:translate(-50%,-50%) rotate(-16deg);box-shadow:0 0 32px #a38aff22,inset 0 0 24px #a38aff11}
+.core{position:absolute;left:50%;top:48%;width:170px;height:170px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle at 40% 35%,#fff7ff 0,#c6b7ff 5%,#8b72ff 17%,#5645c9 36%,#1e2c78 62%,transparent 72%);box-shadow:0 0 45px #9d8bff99,0 0 110px #7c5cff77;animation:pulse 7s ease-in-out infinite}
+@keyframes pulse{50%{transform:translate(-50%,-50%) scale(1.09);filter:hue-rotate(18deg)}}
+.node{position:absolute;display:flex;align-items:center;gap:8px;padding:9px 12px;background:#10143ddd;border:1px solid #9286d8;border-radius:14px;backdrop-filter:blur(10px);box-shadow:0 6px 24px #04061c88;font-size:13px}.node b{display:block;font-size:13px}.node small{display:block;color:#c2c2e7;font-size:11px}.node:before{content:"";width:9px;height:9px;flex:none;border-radius:50%;background:#b9f5ff;box-shadow:0 0 12px #8eefff}.n1{left:8%;top:19%}.n2{right:7%;top:27%}.n3{left:50%;bottom:12%;transform:translateX(-50%)}
+.caption{position:absolute;left:20px;bottom:18px;color:#d7d2ff;font-size:11px;letter-spacing:.08em}.side{display:grid;grid-template-columns:1.2fr 1fr;gap:14px;margin-top:16px}.card{border:1px solid var(--line);border-radius:18px;padding:18px;background:#111536cc}.card h2{font-size:16px;margin:0 0 10px}.card p{color:var(--muted);margin:8px 0}.list{display:grid;gap:10px}.item{display:flex;gap:10px;align-items:flex-start}.dot{width:8px;height:8px;border-radius:50%;background:#bca8ff;margin-top:7px;flex:none}.status{font-size:12px;color:#e7dfff}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}button{border:1px solid #8276c5;border-radius:11px;padding:9px 12px;color:#f5f2ff;background:#272257;cursor:pointer;font:inherit}button:hover{background:#383174}.notice{margin-top:14px;border-left:3px solid #f4c96b;padding:10px 13px;background:#322a252e;color:#f3dfaa;font-size:12px}.foot{margin-top:18px;color:#a7acd6;font-size:12px;overflow-wrap:anywhere}
+@media(max-width:700px){.scene{min-height:400px}.core{width:125px;height:125px}.node{padding:7px 9px;font-size:11px}.n1{left:3%;top:14%}.n2{right:3%;top:23%}.side{grid-template-columns:1fr}.orbit{width:82%}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<main>
+  <div class="top"><div><div class="eyebrow">ZHI · MIA VIRTUAL WORLD</div><h1 class="title">星云呼吸枢纽</h1><div class="sub">一个围绕星云观测、缓慢光影与安静思考构想的空间。光场在这里轻柔流动，像宇宙深处一次悠长的呼吸。</div></div><span class="pill" id="load-status">预览构想 · 未接入运行时</span></div>
+  <section class="scene" aria-label="星云呼吸枢纽视觉预览">
+    <div class="stars"></div><div class="orbit"></div><div class="core"></div>
+    <div class="node n1"><div><b>星云观测台</b><small>NEBULA VIEWPOINT</small></div></div>
+    <div class="node n2"><div><b>呼吸光场</b><small>BREATHING LIGHT</small></div></div>
+    <div class="node n3"><div><b>静思休息区</b><small>QUIET REFLECTION</small></div></div>
+    <div class="caption">CONCEPTUAL VISUAL · NOT A LIVE WORLD LOCATION</div>
+  </section>
+  <section class="side">
+    <article class="card"><h2>空间构想</h2><div class="list">
+      <div class="item"><span class="dot"></span><div><b>星云观测台</b><p>凝视星云全景；具体视角与场景尺寸待 Mia 审阅和定义。</p></div></div>
+      <div class="item"><span class="dot"></span><div><b>呼吸光场</b><p>缓慢改变色彩与亮度的环境视觉效果。当前仅为页面动画示意。</p></div></div>
+      <div class="item"><span class="dot"></span><div><b>静思休息区</b><p>预留给安静停留与日记交互；尚未连接记忆写入或数据库。</p></div></div>
+    </div></article>
+    <article class="card"><h2>数据与验证状态</h2><p id="data-status">正在读取场景草稿……</p><p>几何边界：未定义</p><p>局部坐标：未校准</p><p>跨场景传送：未配置</p><p>服务端审批接口：未实现</p><div class="actions"><button id="reload">重新读取场景数据</button><button id="source">查看场景 JSON</button></div></article>
+  </section>
+  <div class="notice">重要说明：这是独立的静态视觉预览，不会移动 Mia、修改 ZHI 世界状态、写入记忆或访问数据库。目录中的父子关系仅是逻辑登记，不代表已经存在可通行入口。</div>
+  <div class="foot">Scene ID: <code>nebula-breathing-hub</code> · Parent: <code>mia-forest-corner</code> · <span id="commit-state">场景数据状态读取中</span></div>
+</main>
+<script>
+const statusEl=document.getElementById('data-status');
+async function loadScene(){
+ statusEl.textContent='正在读取场景定义与登记目录……';
+ try{
+  const [sceneRes,manifestRes]=await Promise.all([
+   fetch('./world-scenes/scenes/nebula-breathing-hub.json',{cache:'no-store'}),
+   fetch('./world-scenes/world-manifest.json',{cache:'no-store'})
+  ]);
+  if(!sceneRes.ok||!manifestRes.ok)throw new Error('场景文件 HTTP '+sceneRes.status+' / 目录 HTTP '+manifestRes.status);
+  const [scene,manifest]=await Promise.all([sceneRes.json(),manifestRes.json()]);
+  const entry=manifest.scenes.find(s=>s.scene_id===scene.scene_id);
+  if(!entry)throw new Error('场景文件存在，但未登记到目录');
+  statusEl.textContent='读取成功：'+scene.display_name+'；目录登记已确认。数据仍是草稿，未接入实时世界。';
+  document.getElementById('load-status').textContent='数据已读取 · 预览模式';
+  document.getElementById('commit-state').textContent='Manifest 已登记 · '+scene.verification_status;
+ }catch(e){
+  statusEl.textContent='无法从当前站点读取场景 JSON：'+e.message+'。如果此页面以 file:// 打开，需通过网站服务器访问。';
+  document.getElementById('load-status').textContent='静态演示 · 数据未连接';
+  document.getElementById('commit-state').textContent='场景数据读取未验证';
+ }
+}
+document.getElementById('reload').addEventListener('click',loadScene);
+document.getElementById('source').addEventListener('click',()=>window.open('./world-scenes/scenes/nebula-breathing-hub.json','_blank','noopener'));
+loadScene();
+</script>
+</body>
+</html>

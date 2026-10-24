@@ -17,7 +17,8 @@ assert.match(source, /parent_scene_not_registered/);
 assert.match(source, /duplicate_scene_id/);
 assert.doesNotMatch(source, /\.update\(\{[^}]*global_paused\s*:/s, "Endpoint must never unpause the builder");
 assert.doesNotMatch(source, /production_writes_enabled\s*:\s*true/, "Endpoint must never enable production writes");
-assert.match(readme, /source-only, not deployed/i);
+assert.match(readme, /deployed to the `zee-extension` Supabase project/i);
 assert.match(readme, /The global pause is a hard stop/i);
+assert.match(readme, /No Mia decision runner/i);
 
 console.log("Mia scene proposal endpoint safety assertions passed.");

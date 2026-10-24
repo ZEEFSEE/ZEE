@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { validateProposal, reviewProposal, validateSnapshot } from '../mia-universe/governance.mjs';
-import { validateAIReview, AI_REVIEW_CONTRACT } from '../mia-universe/review-contract.mjs';
+import { validateAIReview, runAIReview, AI_REVIEW_CONTRACT } from '../mia-universe/review-contract.mjs';
 
 const html = await readFile(new URL('../mia-universe/index.html', import.meta.url), 'utf8');
 const readme = await readFile(new URL('../mia-universe/README.md', import.meta.url), 'utf8');
@@ -107,4 +107,46 @@ test('local snapshot persistence is present and limits are documented', () => {
   assert.match(readme, /Mia-reviewed construction queue/);
   assert.match(readme, /does not read or write ZHI Core/);
   assert.match(readme, /not connected to any AI provider, network endpoint, database/);
+});
+
+
+test('AI orchestration checks deterministic safety first and fails closed on provider errors/timeouts', async () => {
+  const proposal = { id: 'p-live-test', revision: 3, description: 'A quiet garden' };
+  let providerCalled = false;
+  const unsafe = await runAIReview({
+    proposal,
+    safetyReview: { ok: false, reasons: ['space conflict'] },
+    invokeAI: async () => { providerCalled = true; return { proposal_id: proposal.id, proposal_revision: 3, decision: 'approve', rationale: 'looks good' }; }
+  });
+  assert.equal(unsafe.eligibleForApproval, false);
+  assert.equal(providerCalled, false, 'provider must not be called for unsafe proposal');
+
+  const noProvider = await runAIReview({ proposal, safetyReview: { ok: true, reasons: [] } });
+  assert.equal(noProvider.eligibleForApproval, false);
+
+  const providerError = await runAIReview({
+    proposal, safetyReview: { ok: true, reasons: [] },
+    invokeAI: async () => { throw new Error('simulated provider outage'); }
+  });
+  assert.equal(providerError.eligibleForApproval, false);
+  assert.match(providerError.rationale, /失败或超时/);
+
+  const timeout = await runAIReview({
+    proposal, safetyReview: { ok: true, reasons: [] }, timeoutMs: 5,
+    invokeAI: async () => new Promise(resolve => setTimeout(() => resolve({
+      proposal_id: proposal.id, proposal_revision: 3, decision: 'approve', rationale: '位置合理，描述清楚。'
+    }), 30))
+  });
+  assert.equal(timeout.eligibleForApproval, false);
+
+  const success = await runAIReview({
+    proposal, safetyReview: { ok: true, reasons: [] },
+    invokeAI: async ({ proposal: submitted, requiredResponse }) => {
+      assert.equal(submitted.id, proposal.id);
+      assert.deepEqual(requiredResponse.decisions, ['approve', 'revise', 'reject']);
+      return { proposal_id: proposal.id, proposal_revision: 3, decision: 'approve', rationale: '位置合理，描述清楚。' };
+    }
+  });
+  assert.equal(success.eligibleForApproval, true);
+  assert.equal(success.execution, 'not-authorized');
 });

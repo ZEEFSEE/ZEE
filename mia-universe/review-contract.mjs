@@ -88,3 +88,39 @@ export const AI_REVIEW_CONTRACT = Object.freeze({
   maxRationaleLength: MAX_REASON_LENGTH,
   approvalMeans: 'eligible for a separate guarded approval step; not permission to execute a build',
 });
+
+
+/**
+ * Provider-neutral orchestration seam for a future server-only AI adapter.
+ * invokeAI must be injected by trusted server code; this module never reads secrets.
+ * No database writes or build execution occur here.
+ */
+export async function runAIReview({ proposal, safetyReview, invokeAI, timeoutMs = 8000 }) {
+  if (!safetyReview || safetyReview.ok !== true) {
+    return validateAIReview(null, proposal, safetyReview);
+  }
+  if (typeof invokeAI !== 'function') {
+    return failClosed('尚未配置可信的服务端 AI 审核提供方。', proposal);
+  }
+  if (!Number.isFinite(timeoutMs) || timeoutMs < 1 || timeoutMs > 30000) {
+    return failClosed('审核超时参数无效；必须修改后重新审核。', proposal);
+  }
+
+  let timeoutHandle;
+  try {
+    const rawReview = await Promise.race([
+      Promise.resolve().then(() => invokeAI({
+        proposal: structuredClone(proposal),
+        requiredResponse: AI_REVIEW_CONTRACT,
+      })),
+      new Promise((_, reject) => {
+        timeoutHandle = setTimeout(() => reject(new Error('AI review timeout')), timeoutMs);
+      }),
+    ]);
+    return validateAIReview(rawReview, proposal, safetyReview);
+  } catch {
+    return failClosed('AI 审核服务失败或超时；未批准建造，请稍后重试。', proposal);
+  } finally {
+    if (timeoutHandle) clearTimeout(timeoutHandle);
+  }
+}

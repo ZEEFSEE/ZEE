@@ -6,6 +6,7 @@ import { validateAIReview, runAIReview, AI_REVIEW_CONTRACT } from '../mia-univer
 
 const html = await readFile(new URL('../mia-universe/index.html', import.meta.url), 'utf8');
 const readme = await readFile(new URL('../mia-universe/README.md', import.meta.url), 'utf8');
+const serviceContract = await readFile(new URL('../mia-universe/REVIEW_SERVICE_CONTRACT.md', import.meta.url), 'utf8');
 
 test('standalone universe is a real WebGL/Three.js scene, not a ZHI map embed', () => {
   assert.match(html, /three@0\.169\.0\/build\/three\.module\.js/);
@@ -150,4 +151,15 @@ test('AI orchestration checks deterministic safety first and fails closed on pro
   });
   assert.equal(success.eligibleForApproval, true);
   assert.equal(success.execution, 'not-authorized');
+});
+
+
+test('dedicated review service contract documents isolation and fail-closed trust boundaries', () => {
+  assert.match(serviceContract, /No endpoint is deployed/);
+  assert.match(serviceContract, /must not reuse the existing ZHI AGNES chat function/);
+  assert.match(serviceContract, /must never be embedded in HTML, JavaScript bundles/);
+  assert.match(serviceContract, /failed deterministic policy never calls the AI provider/i);
+  assert.match(serviceContract, /The endpoint never executes a build/);
+  assert.match(serviceContract, /Do not write to ZHI Core, `zee-extension`/);
+  assert.match(serviceContract, /stale proposal revision cannot be approved/);
 });

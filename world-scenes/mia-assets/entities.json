@@ -1,0 +1,91 @@
+{
+  "schema_version": "1.0.0",
+  "scene_id": "mia-forest-corner",
+  "coordinate_space": "scene-local",
+  "entities": [
+    {
+      "schema_version": "1.0.0",
+      "entity_id": "greenhouse",
+      "entity_type": "ambient_asset",
+      "authoritative_ref": "mia/forest-corner.json#/entities/0",
+      "position": {
+        "x": 180,
+        "y": 120,
+        "z": null
+      },
+      "coordinate_space": "scene-local",
+      "verification_status": "source-backed-local-position",
+      "status": "active",
+      "behavior": "slow_light_variation",
+      "ai_interaction": false
+    },
+    {
+      "schema_version": "1.0.0",
+      "entity_id": "data-shelf",
+      "entity_type": "memory_anchor",
+      "authoritative_ref": "mia/forest-corner.json#/entities/1",
+      "position": {
+        "x": 500,
+        "y": 140,
+        "z": null
+      },
+      "coordinate_space": "scene-local",
+      "verification_status": "source-backed-local-position",
+      "status": "active",
+      "storage": "local_vault",
+      "write_mode": "append_only",
+      "scope": "browser_device_local"
+    },
+    {
+      "schema_version": "1.0.0",
+      "entity_id": "lounge",
+      "entity_type": "interaction_zone",
+      "authoritative_ref": "mia/forest-corner.json#/entities/2",
+      "position": {
+        "x": 800,
+        "y": 350,
+        "z": null
+      },
+      "coordinate_space": "scene-local",
+      "verification_status": "source-backed-local-position",
+      "status": "active",
+      "interaction_mode": "idle/listening",
+      "priority": "user_interaction_over_aesthetic_vibe"
+    },
+    {
+      "schema_version": "1.0.0",
+      "entity_id": "forest-rabbit",
+      "entity_type": "interactive_creature",
+      "authoritative_ref": "mia/forest-corner.json#/entities/3",
+      "position": {
+        "x": 300,
+        "y": 280,
+        "z": null
+      },
+      "coordinate_space": "scene-local",
+      "verification_status": "source-backed-local-position",
+      "status": "active",
+      "appearance": {
+        "model": "white_rabbit",
+        "animation_set": [
+          "idle",
+          "hop",
+          "look_at_user",
+          "rest"
+        ]
+      },
+      "behavior": {
+        "autonomous_movement": true,
+        "movement_speed": "slow",
+        "interaction_range": 80
+      },
+      "ai_interaction": {
+        "enabled": false
+      }
+    }
+  ],
+  "notes": [
+    "Entity coordinates are local layout coordinates, not ZHI world coordinates.",
+    "z positions remain null because the source does not specify depth."
+  ]
+}

@@ -41,7 +41,7 @@ jobs:
           import pathlib, re, subprocess
           for filename in ("mia-world.html", "mia-chat.html"):
               html = pathlib.Path(filename).read_text(encoding="utf-8")
-              scripts = re.findall(r"<script(?:\\s[^>]*)?>(.*?)</script>", html, re.I | re.S)
+              scripts = re.findall(r"<script>(.*?)</script>", html, re.I | re.S)
               if not scripts:
                   raise SystemExit(f"No inline scripts found in {filename}")
               for index, script in enumerate(scripts, 1):

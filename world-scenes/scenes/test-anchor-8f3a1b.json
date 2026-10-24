@@ -91,6 +91,7 @@
     "Original submitted UUID is preserved in metadata; uuid_v4 contains a syntactically valid version-4 UUID for this fixture.",
     "The requested parent root-world-scene was not registered, so the test fixture is attached to the existing catalog root mia-forest-corner.",
     "Geometry and coordinate claims have not been independently validated. This workflow does not render the cylinder in a 3D engine.",
-    "Repository static files only; no database writes, production deployment, or production world-state mutation."
+    "Repository static files only; no database writes, production deployment, or production world-state mutation.",
+    "Automatically materialized from world-scenes/inbox; static catalog only, no database or production runtime writes."
   ]
 }

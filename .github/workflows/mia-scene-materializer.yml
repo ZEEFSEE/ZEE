@@ -23,6 +23,8 @@ jobs:
         with:
           ref: ${{ github.ref_name }}
           persist-credentials: true
+      - name: Regression test scene ID collision handling (isolated temp directory)
+        run: python3 scripts/test_materialize_mia_scenes.py
       - name: Validate and materialize scenes
         run: python3 scripts/materialize_mia_scenes.py
       - name: Commit generated catalog and pages

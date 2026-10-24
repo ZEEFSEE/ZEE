@@ -1,0 +1,514 @@
+{
+  "schema_version": "1.0.0",
+  "asset_id": "stone-path-forest-to-lounge",
+  "scene_id": "mia-forest-corner",
+  "name": "森林角落内部测试通路 · 自然石板小路",
+  "asset_type": "stone_slab_path",
+  "status": "test_asset",
+  "coordinate_system": "scene_local",
+  "coordinate_space": "scene-local",
+  "units": "scene-local layout units",
+  "endpoints": {
+    "start": {
+      "x": 0,
+      "y": 350,
+      "node_id": "forest-corner-left-boundary-test-entry",
+      "status": "explicit_test_design_coordinate"
+    },
+    "end": {
+      "x": 800,
+      "y": 350,
+      "node_id": "lounge",
+      "source_reference": "mia/forest-corner.json#/entities/2",
+      "status": "source_backed"
+    }
+  },
+  "design": {
+    "total_length_x": 800,
+    "nominal_segment_span": 160,
+    "slab_count": 5,
+    "gap_between_adjacent_slabs": 3,
+    "material": "forest_stone_mossy",
+    "thickness": 0.1,
+    "mesh_type": "independent_low_poly_mesh",
+    "axis_convention": {
+      "x": "path direction",
+      "y": "scene-local lateral direction",
+      "z": "asset-local thickness axis; runtime scene Z mapping not verified"
+    }
+  },
+  "visual_mesh": {
+    "mesh_format": "polygon_prism",
+    "slabs": [
+      {
+        "id": "stone-slab-01",
+        "nominal_interval_x": [
+          0,
+          160
+        ],
+        "polygon_xy": [
+          [
+            0,
+            327
+          ],
+          [
+            38,
+            325
+          ],
+          [
+            91,
+            328
+          ],
+          [
+            158.5,
+            332
+          ],
+          [
+            158.5,
+            371
+          ],
+          [
+            105,
+            375
+          ],
+          [
+            47,
+            373
+          ],
+          [
+            0,
+            370
+          ]
+        ],
+        "z_min": 0,
+        "z_max": 0.1,
+        "material": "forest_stone_mossy",
+        "low_poly": true
+      },
+      {
+        "id": "stone-slab-02",
+        "nominal_interval_x": [
+          160,
+          320
+        ],
+        "polygon_xy": [
+          [
+            161.5,
+            333
+          ],
+          [
+            202,
+            329
+          ],
+          [
+            260,
+            331
+          ],
+          [
+            318.5,
+            327
+          ],
+          [
+            318.5,
+            366
+          ],
+          [
+            270,
+            370
+          ],
+          [
+            214,
+            369
+          ],
+          [
+            161.5,
+            372
+          ]
+        ],
+        "z_min": 0,
+        "z_max": 0.1,
+        "material": "forest_stone_mossy",
+        "low_poly": true
+      },
+      {
+        "id": "stone-slab-03",
+        "nominal_interval_x": [
+          320,
+          480
+        ],
+        "polygon_xy": [
+          [
+            321.5,
+            329
+          ],
+          [
+            365,
+            326
+          ],
+          [
+            419,
+            330
+          ],
+          [
+            478.5,
+            334
+          ],
+          [
+            478.5,
+            373
+          ],
+          [
+            427,
+            376
+          ],
+          [
+            373,
+            371
+          ],
+          [
+            321.5,
+            369
+          ]
+        ],
+        "z_min": 0,
+        "z_max": 0.1,
+        "material": "forest_stone_mossy",
+        "low_poly": true
+      },
+      {
+        "id": "stone-slab-04",
+        "nominal_interval_x": [
+          480,
+          640
+        ],
+        "polygon_xy": [
+          [
+            481.5,
+            334
+          ],
+          [
+            529,
+            330
+          ],
+          [
+            584,
+            328
+          ],
+          [
+            638.5,
+            332
+          ],
+          [
+            638.5,
+            370
+          ],
+          [
+            588,
+            374
+          ],
+          [
+            535,
+            372
+          ],
+          [
+            481.5,
+            369
+          ]
+        ],
+        "z_min": 0,
+        "z_max": 0.1,
+        "material": "forest_stone_mossy",
+        "low_poly": true
+      },
+      {
+        "id": "stone-slab-05",
+        "nominal_interval_x": [
+          640,
+          800
+        ],
+        "polygon_xy": [
+          [
+            641.5,
+            331
+          ],
+          [
+            690,
+            328
+          ],
+          [
+            744,
+            331
+          ],
+          [
+            800,
+            327
+          ],
+          [
+            800,
+            368
+          ],
+          [
+            751,
+            373
+          ],
+          [
+            695,
+            371
+          ],
+          [
+            641.5,
+            369
+          ]
+        ],
+        "z_min": 0,
+        "z_max": 0.1,
+        "material": "forest_stone_mossy",
+        "low_poly": true
+      }
+    ]
+  },
+  "collision": {
+    "enabled_in_asset_definition": true,
+    "registration_status": "asset_defined_not_runtime_registered",
+    "shape": "convex_prism_per_slab",
+    "coordinate_system": "scene_local",
+    "thickness": 0.1,
+    "colliders": [
+      {
+        "id": "stone-slab-01-collider",
+        "mesh_id": "stone-slab-01",
+        "polygon_xy": [
+          [
+            0,
+            327
+          ],
+          [
+            38,
+            325
+          ],
+          [
+            91,
+            328
+          ],
+          [
+            158.5,
+            332
+          ],
+          [
+            158.5,
+            371
+          ],
+          [
+            105,
+            375
+          ],
+          [
+            47,
+            373
+          ],
+          [
+            0,
+            370
+          ]
+        ],
+        "z_min": 0,
+        "z_max": 0.1
+      },
+      {
+        "id": "stone-slab-02-collider",
+        "mesh_id": "stone-slab-02",
+        "polygon_xy": [
+          [
+            161.5,
+            333
+          ],
+          [
+            202,
+            329
+          ],
+          [
+            260,
+            331
+          ],
+          [
+            318.5,
+            327
+          ],
+          [
+            318.5,
+            366
+          ],
+          [
+            270,
+            370
+          ],
+          [
+            214,
+            369
+          ],
+          [
+            161.5,
+            372
+          ]
+        ],
+        "z_min": 0,
+        "z_max": 0.1
+      },
+      {
+        "id": "stone-slab-03-collider",
+        "mesh_id": "stone-slab-03",
+        "polygon_xy": [
+          [
+            321.5,
+            329
+          ],
+          [
+            365,
+            326
+          ],
+          [
+            419,
+            330
+          ],
+          [
+            478.5,
+            334
+          ],
+          [
+            478.5,
+            373
+          ],
+          [
+            427,
+            376
+          ],
+          [
+            373,
+            371
+          ],
+          [
+            321.5,
+            369
+          ]
+        ],
+        "z_min": 0,
+        "z_max": 0.1
+      },
+      {
+        "id": "stone-slab-04-collider",
+        "mesh_id": "stone-slab-04",
+        "polygon_xy": [
+          [
+            481.5,
+            334
+          ],
+          [
+            529,
+            330
+          ],
+          [
+            584,
+            328
+          ],
+          [
+            638.5,
+            332
+          ],
+          [
+            638.5,
+            370
+          ],
+          [
+            588,
+            374
+          ],
+          [
+            535,
+            372
+          ],
+          [
+            481.5,
+            369
+          ]
+        ],
+        "z_min": 0,
+        "z_max": 0.1
+      },
+      {
+        "id": "stone-slab-05-collider",
+        "mesh_id": "stone-slab-05",
+        "polygon_xy": [
+          [
+            641.5,
+            331
+          ],
+          [
+            690,
+            328
+          ],
+          [
+            744,
+            331
+          ],
+          [
+            800,
+            327
+          ],
+          [
+            800,
+            368
+          ],
+          [
+            751,
+            373
+          ],
+          [
+            695,
+            371
+          ],
+          [
+            641.5,
+            369
+          ]
+        ],
+        "z_min": 0,
+        "z_max": 0.1
+      }
+    ],
+    "limitations": [
+      "Collider shapes are authored in this asset file only; no runtime physics registry was found or invoked.",
+      "The source scene is currently 2D with depth unspecified; Z thickness mapping requires runtime integration validation."
+    ]
+  },
+  "navigation": {
+    "route_id": "forest-corner-left-boundary-to-lounge-test",
+    "intended_connection": {
+      "from": "forest-corner-left-boundary-test-entry",
+      "to": "lounge"
+    },
+    "continuous_walkable_route_asserted": false,
+    "note": "This file defines test geometry only. Existing navigation.json has no edges; do not treat this as an activated traversable route until a runtime navigation integration is explicitly added and tested."
+  },
+  "validation": {
+    "source_scene": "mia/forest-corner.json",
+    "source_scene_sha": "c6b51ff2c402bf1dc8a5711ac3b6d289c65a435c",
+    "source_navigation_sha": "44d47f19474efe09877fa8230f9a3daa3cc9a080",
+    "coordinate_system_preserved": true,
+    "world_coordinate_conversion_performed": false,
+    "slab_count_expected": 5,
+    "slab_count_actual": 5,
+    "material_consistent": true,
+    "collider_count_expected": 5,
+    "collider_count_actual": 5,
+    "path_endpoint_start": [
+      0,
+      350
+    ],
+    "path_endpoint_end": [
+      800,
+      350
+    ],
+    "scene_bounds_check": "all mesh XY vertices within local bounds x=0..1000, y=0..700",
+    "status": "asset_definition_ready_runtime_and_collision_registration_unverified"
+  }
+}

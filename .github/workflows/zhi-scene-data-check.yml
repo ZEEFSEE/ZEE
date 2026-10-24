@@ -11,6 +11,7 @@ on:
   push:
     branches:
       - "feat/zhi-3d-scene-data-foundation"
+      - "feat/mia-world-entry-builder-2026-10-24"
     paths:
       - "world-scenes/**"
       - "mia-world.html"
@@ -34,6 +35,20 @@ jobs:
         run: |
           node --check world-scenes/validate-scenes.mjs
           node --check world-scenes/create-scene.mjs
+      - name: Check inline browser JavaScript syntax
+        run: |
+          python3 - <<'PY'
+          import pathlib, re, subprocess
+          for filename in ("mia-world.html", "mia-chat.html"):
+              html = pathlib.Path(filename).read_text(encoding="utf-8")
+              scripts = re.findall(r"<script(?:\\s[^>]*)?>(.*?)</script>", html, re.I | re.S)
+              if not scripts:
+                  raise SystemExit(f"No inline scripts found in {filename}")
+              for index, script in enumerate(scripts, 1):
+                  path = pathlib.Path(f"/tmp/{pathlib.Path(filename).stem}-{index}.js")
+                  path.write_text(script, encoding="utf-8")
+                  subprocess.run(["node", "--check", str(path)], check=True)
+          PY
       - name: Parse scene proposal contract
         run: node -e "JSON.parse(require('node:fs').readFileSync('world-scenes/scene-proposal.schema.json', 'utf8'))"
       - name: Validate base scene catalog

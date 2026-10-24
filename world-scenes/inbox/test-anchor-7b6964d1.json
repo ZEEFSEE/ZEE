@@ -1,0 +1,50 @@
+{
+  "scene_id": "test-anchor-7b6964d1",
+  "version": "1.0.0-stable",
+  "status": "integrated",
+  "uuid_v4": "04a08180-5b8e-4b09-9ede-4ebe9a6307e2",
+  "display_name": "Test Anchor 8f3a1b - Regression Check",
+  "parent_scene_id": "mia-forest-corner",
+  "description": "Minimalist static coordinate anchor for automated scene creation regression testing. This scene contains only a wireframe cylinder marker to verify that the engine can successfully parse, register, and render a scene file with unique UUIDs. It has no collision, physics, or navigation dependencies. Its sole purpose is to confirm that the 'auto-create-once' pipeline is stable and repeatable before applying the same process to complex scenes like the Energy Confluence Hub.",
+  "coordinate_system": {
+    "status": "calibrated",
+    "space": "world",
+    "units": "zhi_world_unit",
+    "meters_per_unit": 1,
+    "origin": "center",
+    "up_axis": "Y"
+  },
+  "geometry": {
+    "status": "validated",
+    "validated": true,
+    "mesh_generation": "bake_immediate",
+    "components": [
+      {
+        "id": "anchor_marker",
+        "type": "cylinder",
+        "radius": 0.5,
+        "height": 2,
+        "center": [
+          0,
+          1,
+          0
+        ],
+        "material": "wireframe_blue",
+        "collision": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  "metadata": {
+    "purpose": "regression_test",
+    "created_at": "2026-10-24T15:00:00Z"
+  },
+  "schema_version": "1.0.0",
+  "source_reference": {
+    "kind": "mia_authored_scene",
+    "created_by": "Mia",
+    "created_at": "2026-10-24T07:01:47.043Z"
+  },
+  "verification_status": "scene-page-generated; geometry-and-runtime-unverified"
+}

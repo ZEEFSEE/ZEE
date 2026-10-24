@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#147d79">
+<title>Mia · 场景工作台</title>
+<style>
+:root{color-scheme:light;--bg:#f3f7f6;--panel:#fff;--ink:#172a35;--muted:#627582;--line:#dbe6e8;--accent:#147d79;--warn:#8a5300;--warnbg:#fff4d8;--ok:#166534;--bad:#a51d2d}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#eaf6f3,#f4f7fb 340px);color:var(--ink);font:15px/1.6 system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}.wrap{width:min(900px,100%);margin:auto;padding:22px 14px 40px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}.brand{font-size:25px;font-weight:900}.muted{color:var(--muted);font-size:13px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;margin:12px 0;box-shadow:0 8px 28px #23414b0b}h1,h2{margin:0 0 8px}h1{font-size:23px}h2{font-size:17px}label{display:block;font-weight:800;margin:12px 0 6px}input,textarea,button{font:inherit}input,textarea{width:100%;border:1px solid #cddcde;border-radius:11px;padding:12px;background:#fbfdfd;color:var(--ink)}textarea{min-height:210px;resize:vertical;line-height:1.5}button{border:1px solid #cddcde;background:#fff;color:var(--ink);border-radius:11px;padding:10px 14px;font-weight:800;cursor:pointer}button.primary{background:var(--accent);border-color:var(--accent);color:#fff}button:disabled{opacity:.45;cursor:not-allowed}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.status{padding:11px 12px;background:#f3f7f8;border:1px solid var(--line);border-radius:11px;white-space:pre-wrap;overflow-wrap:anywhere}.status.warn{background:var(--warnbg);color:var(--warn);border-color:#ecd49c}.status.ok{background:#edf9ef;color:var(--ok);border-color:#c6e7cd}.status.bad{background:#fff0f1;color:var(--bad);border-color:#f1c7cc}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.pill{display:inline-block;border-radius:999px;background:#edf4f4;padding:3px 9px;font-size:12px;font-weight:800}.preview{white-space:pre-wrap;overflow-wrap:anywhere;background:#f7faf9;border:1px dashed #cbdcda;padding:12px;border-radius:12px;max-height:240px;overflow:auto}.gate{max-width:440px;margin:10vh auto;padding:22px}.hidden{display:none!important}a{color:var(--accent);font-weight:800}@media(max-width:600px){.wrap{padding:12px 8px 30px}.panel{padding:13px}.grid{grid-template-columns:1fr}.brand{font-size:21px}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header class="top"><div><div class="brand">🍃 Mia · 场景工作台</div><div class="muted">把 Mia 生成的场景草案送入受控沙箱提案流程</div></div><a href="./mia-chat.html">返回 Mia 聊天</a></header>
+<section id="loginPanel" class="panel gate">
+<h1>验证 Mia 会话</h1>
+<p class="muted">使用与 Mia 独立聊天室相同的页面访问密码。不会在此页面保存密码；访问令牌只保存在当前标签页会话中。</p>
+<label for="password">页面访问密码</label><input id="password" type="password" maxlength="128" autocomplete="current-password" placeholder="输入页面访问密码">
+<div class="actions"><button id="login" class="primary">验证并读取构建器状态</button></div>
+<div id="loginStatus" class="status" style="margin-top:12px" aria-live="polite">尚未验证。</div>
+</section>
+<section id="appPanel" class="hidden">
+<section class="panel">
+<h2>1 · 当前构建器状态</h2>
+<div id="builderStatus" class="status" aria-live="polite">正在读取…</div>
+<div class="actions"><button id="refreshStatus">重新读取状态</button><button id="logout">退出当前会话</button></div>
+<p class="muted">安全规则：全局暂停开启时，不提交服务器提案；本工具不会解除暂停、启用 AIGC 或打开生产写入。</p>
+</section>
+<section class="panel">
+<h2>2 · 导入 Mia 的场景 JSON</h2>
+<p class="muted">将 Mia 输出的完整场景 JSON 粘贴在下方。此步骤只解析草案，不注册场景、不改坐标，也不激活运行时。</p>
+<label for="sceneJson">场景 JSON</label>
+<textarea id="sceneJson" spellcheck="false" placeholder='粘贴 Mia 生成的 JSON，例如包含 scene_id、display_name、parent_scene_id、description 的对象。'></textarea>
+<div class="actions"><button id="parse" class="primary">解析并预览</button><button id="saveLocal">仅保存到本机</button></div>
+<div id="parseStatus" class="status" style="margin-top:12px" aria-live="polite">尚未解析。</div>
+</section>
+<section class="panel">
+<h2>3 · 草案预览</h2>
+<div id="preview" class="preview">解析后的场景信息会显示在这里。</div>
+<div class="actions"><button id="submit" class="primary" disabled>提交到服务器沙箱</button></div>
+<div id="submitStatus" class="status" style="margin-top:12px" aria-live="polite">尚未提交。</div>
+<p class="muted">成功提交只代表服务器收到一个待审查提案，不代表已写入场景清单、已生成几何文件或已在 ZHI 世界运行。</p>
+</section>
+</section>
+</main>
+<script>
+(function(){
+'use strict';
+const PROJECT_URL='https://dbooikzqprnqbgpfwsze.supabase.co';
+const PUBLISHABLE_KEY='sb_publishable_spH47ZngJJTk13cpYPBjSw_X5qAsBmK';
+const AUTH_URL=PROJECT_URL+'/functions/v1/mia-chat-auth';
+const PROPOSAL_URL=PROJECT_URL+'/functions/v1/mia-scene-proposals';
+const $=id=>document.getElementById(id);
+let token=sessionStorage.getItem('mia_chat_token')||'';
+let parsedScene=null;
+let canSubmit=false;
+function showStatus(id,message,kind){const el=$(id);el.textContent=message;el.className='status'+(kind?' '+kind:'');}
+function headers(){return {'Authorization':'Bearer '+token,'apikey':PUBLISHABLE_KEY,'Content-Type':'application/json'};}
+async function callProposal(action,payload){const response=await fetch(PROPOSAL_URL,{method:'POST',headers:headers(),body:JSON.stringify(Object.assign({action},payload||{})),cache:'no-store'});const data=await response.json().catch(()=>({}));if(!response.ok||!data.ok){const error=new Error(data.error||('HTTP '+response.status));error.status=response.status;throw error;}return data;}
+async function readStatus(){canSubmit=false;$('submit').disabled=true;showStatus('builderStatus','正在读取服务器构建器状态…');try{const data=await callProposal('status');const c=data.capabilities||{};canSubmit=!!c.submit_sandbox_proposal;$('submit').disabled=!canSubmit;const lines=['接口：'+data.service,'模式：'+data.mode,'全局暂停：'+(data.paused?'开启':'关闭'),'AIGC：'+(data.aigc_enabled?'开启':'关闭'),'生产写入：'+(data.production_writes_enabled?'开启':'关闭'),'可提交沙箱提案：'+(canSubmit?'是':'否'),'场景注册：'+(c.register_scene?'支持':'不支持'),'运行时激活：'+(c.activate_runtime_scene?'支持':'不支持')];showStatus('builderStatus',lines.join('\n'),canSubmit?'ok':'warn');if(!canSubmit)showStatus('submitStatus','服务器当前不接受提案写入。请保持草案在本机；本页面不会解除全局暂停或开启生产写入。','warn');}catch(e){showStatus('builderStatus','状态读取失败：'+e.message,'bad');}}
+function validateScene(value){if(!value||typeof value!=='object'||Array.isArray(value))throw new Error('JSON 顶层必须是对象。');const id=value.scene_id||value.id;const name=value.display_name||value.name;const parent=value.parent_scene_id;const description=value.description;if(typeof id!=='string'||!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id)||id.length>80)throw new Error('scene_id 缺失或格式不正确。');if(typeof name!=='string'||!name.trim()||name.trim().length>120)throw new Error('display_name 缺失或超过 120 字。');if(typeof parent!=='string'||!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(parent))throw new Error('parent_scene_id 缺失或格式不正确。');if(typeof description!=='string'||!description.trim()||description.trim().length>3000)throw new Error('description 必须为 1–3000 字。');return {scene_id:id,display_name:name.trim(),parent_scene_id:parent,description:description.trim(),verification_status:value.verification_status||'concept-only; geometry-and-runtime-unverified',coordinate_reference:value.coordinate_reference||null,bounds:value.bounds||null};}
+function parse(){try{const raw=JSON.parse($('sceneJson').value);parsedScene=validateScene(raw);$('preview').textContent=['场景：'+parsedScene.display_name,'ID：'+parsedScene.scene_id,'父场景：'+parsedScene.parent_scene_id,'验证状态：'+parsedScene.verification_status,'坐标：保持来源值；未知值不补猜','说明：',parsedScene.description].join('\n');$('submit').disabled=!canSubmit;showStatus('parseStatus','解析成功。草案未上传，未注册，未激活。', 'ok');return true;}catch(e){parsedScene=null;$('submit').disabled=true;showStatus('parseStatus','解析失败：'+e.message,'bad');$('preview').textContent='请修正 JSON 后重新解析。';return false;}}
+$('login').addEventListener('click',async()=>{const password=$('password').value;if(!password){showStatus('loginStatus','请先输入页面访问密码。','bad');return;}const btn=$('login');btn.disabled=true;showStatus('loginStatus','正在验证…');try{const response=await fetch(AUTH_URL,{method:'POST',headers:{'Content-Type':'application/json','apikey':PUBLISHABLE_KEY},body:JSON.stringify({password}),cache:'no-store'});const data=await response.json().catch(()=>({}));if(!response.ok||!data.ok||!data.access_token)throw new Error(data.error||('HTTP '+response.status));token=data.access_token;sessionStorage.setItem('mia_chat_token',token);$('password').value='';$('loginPanel').classList.add('hidden');$('appPanel').classList.remove('hidden');await readStatus();const saved=localStorage.getItem('mia_scene_workshop_draft_v1');if(saved){$('sceneJson').value=saved;parse();}showStatus('loginStatus','验证成功。');}catch(e){showStatus('loginStatus','验证失败：'+e.message,'bad');}finally{btn.disabled=false;}});
+$('refreshStatus').addEventListener('click',readStatus);
+$('logout').addEventListener('click',()=>{token='';sessionStorage.removeItem('mia_chat_token');parsedScene=null;canSubmit=false;$('appPanel').classList.add('hidden');$('loginPanel').classList.remove('hidden');$('submit').disabled=true;showStatus('loginStatus','已退出当前会话。');});
+$('parse').addEventListener('click',parse);
+$('saveLocal').addEventListener('click',()=>{if(!parse())return;try{localStorage.setItem('mia_scene_workshop_draft_v1',$('sceneJson').value);showStatus('parseStatus','已保存到此浏览器本机。未写入服务器。','ok');}catch(e){showStatus('parseStatus','本机保存失败：'+e.message,'bad');}});
+$('submit').addEventListener('click',async()=>{if(!parsedScene&& !parse())return;if(!canSubmit){showStatus('submitStatus','服务器全局暂停或安全条件未满足，拒绝提交。','warn');return;}const btn=$('submit');btn.disabled=true;showStatus('submitStatus','正在提交沙箱提案…');try{const data=await callProposal('submit_mia_scene',{scene_id:parsedScene.scene_id,display_name:parsedScene.display_name,parent_scene_id:parsedScene.parent_scene_id,description:parsedScene.description});showStatus('submitStatus','服务器已接收提案。\n提案 ID：'+(data.proposal&&data.proposal.id||'未返回')+'\n状态：'+(data.proposal&&data.proposal.status||'proposed')+'\n场景已注册：否\n运行时已激活：否\n生产写入：否','ok');}catch(e){showStatus('submitStatus','提交失败：'+e.message+(e.status===423?'。当前暂停保护仍生效。':''),'warn');await readStatus();}finally{btn.disabled=!canSubmit;}});
+if(token){$('loginPanel').classList.add('hidden');$('appPanel').classList.remove('hidden');readStatus().then(()=>{const saved=localStorage.getItem('mia_scene_workshop_draft_v1');if(saved){$('sceneJson').value=saved;parse();}});}
+})();
+</script>
+</body>
+</html>

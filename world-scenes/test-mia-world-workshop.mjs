@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { simulateBreathPulse } from "./nebula-hub-assets/simulate-breath-feedback.mjs";
 
 const worldPage = readFileSync(new URL("../mia-world.html", import.meta.url), "utf8");
 const chatPage = readFileSync(new URL("../mia-chat.html", import.meta.url), "utf8");
@@ -45,9 +46,29 @@ for (const exit of calibration.exits) {
   assert.equal(exit.verified_connection, false);
 }
 
+// Proposed offline model: gradual response and hard ±10% clamp.
+const atBaseline = simulateBreathPulse({ breathsPerMinute: 8 });
+assert.equal(atBaseline.targetModulation, 0);
+assert.equal(atBaseline.modulation, 0);
+assert.equal(atBaseline.pulseAmplitudeScale, 1);
+assert.equal(atBaseline.simulationOnly, true);
+
+const rapidBreath = simulateBreathPulse({ breathsPerMinute: 16 });
+assert.equal(rapidBreath.targetModulation, 0.1);
+assert.ok(Math.abs(rapidBreath.modulation - 0.02) < 1e-12);
+assert.ok(rapidBreath.pulseAmplitudeScale <= 1.1);
+
+const slowBreath = simulateBreathPulse({ breathsPerMinute: 0 });
+assert.equal(slowBreath.targetModulation, -0.1);
+assert.ok(Math.abs(slowBreath.modulation - (-0.02)) < 1e-12);
+assert.ok(slowBreath.pulseAmplitudeScale >= 0.9);
+
+assert.throws(() => simulateBreathPulse({ breathsPerMinute: Number.NaN }), /finite numbers/);
+assert.throws(() => simulateBreathPulse({ breathsPerMinute: 8, smoothingCoefficient: 1.1 }), /between 0 and 1/);
+
 // Runtime navigation must remain disconnected until coordinates are verified.
 assert.deepEqual(navigation.edges, []);
 assert.deepEqual(navigation.scene_exits, []);
 assert.deepEqual(navigation.cross_scene_transforms, []);
 
-console.log("Mia world workshop and nebula calibration safety assertions passed.");
+console.log("Mia world workshop, nebula calibration, and offline feedback simulation safety assertions passed.");

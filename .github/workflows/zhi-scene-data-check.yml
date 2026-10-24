@@ -8,6 +8,7 @@ on:
       - "nebula-preview.html"
       - "mia-world.html"
       - "mia-chat.html"
+      - "mia-scene-workshop.html"
       - ".github/workflows/zhi-scene-data-check.yml"
   push:
     branches:
@@ -18,6 +19,7 @@ on:
       - "world-scenes/**"
       - "mia-world.html"
       - "mia-chat.html"
+      - "mia-scene-workshop.html"
       - ".github/workflows/zhi-scene-data-check.yml"
 
 permissions:

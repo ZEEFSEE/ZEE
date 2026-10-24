@@ -70,5 +70,8 @@
     "agent_state_mutation": false,
     "invent_coordinates": false,
     "require_authoritative_arrival_confirmation": true
-  }
+  },
+  "scene_catalog_policy": "scene-creation-policy.json",
+  "catalog_is_exhaustive": false,
+  "scene_creation_policy_summary": "Open-ended catalog: Mia may add new scene files on an authorized development branch. Unknown coordinates remain unverified; file creation does not imply runtime integration."
 }

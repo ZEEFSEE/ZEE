@@ -24,6 +24,8 @@ The URL is a deployment target only; it will work only after the branch is merge
 
 ## AI review contract (not yet connected)
 
+- `REVIEW_SERVICE_CONTRACT.md` specifies a proposed isolated server API, authentication boundaries, provider-secret handling, failure behavior, and acceptance tests. It is a design document only; no endpoint is deployed.
+
 - `review-contract.mjs` defines the structured review boundary and provider-neutral orchestration function: exact proposal ID, revision number, decision (`approve`, `revise`, `reject`), and a bounded rationale.
 - Malformed responses, stale proposal versions, unknown decisions, missing rationale, provider errors, missing provider configuration, and timeouts fail closed to `revise`.
 - A model's `approve` result only means “eligible for a separate guarded approval step”; it never authorizes build execution by itself.

@@ -1,0 +1,47 @@
+name: Mia scene catalog acceptance and receipt
+
+on:
+  workflow_run:
+    workflows: ["Mia autonomous scene materializer"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  acceptance:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the completed materializer revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - name: Run autonomous structural acceptance
+        run: python3 scripts/validate_mia_scene_catalog.py
+      - name: Verify published catalog is reachable
+        if: ${{ success() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://zeefsee.github.io/ZEE/world-scenes/scene-index.html"
+          ok=0
+          for attempt in 1 2 3 4 5 6; do
+            code="$(curl -L -sS -o /tmp/mia-scene-index.html -w '%{http_code}' "$url" || true)"
+            if [ "$code" = "200" ] && grep -q "Mia 自主场景目录" /tmp/mia-scene-index.html; then
+              ok=1
+              break
+            fi
+            sleep 10
+          done
+          if [ "$ok" != "1" ]; then
+            echo "::error::Published scene index was not verified after retries. HTTP=$code"
+            exit 1
+          fi
+          echo "Published scene index is reachable (HTTP 200)." >> "$GITHUB_STEP_SUMMARY"
+      - name: Report rejected materializer run
+        if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.conclusion != 'success' }}
+        run: |
+          echo "Materializer failed or was cancelled; acceptance was not run. Inspect the upstream run and retry after repair." >> "$GITHUB_STEP_SUMMARY"
+          exit 1

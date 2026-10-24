@@ -3,9 +3,9 @@
   "scene_id": "replace-with-unique-kebab-case-id",
   "display_name": "待填写场景名称",
   "status": "idea",
-  "parent_scene_id": null,
+  "parent_scene_id": "mia-forest-corner",
   "source_reference": {
-    "kind": "user_request_or_world_event",
+    "kind": "user_request_or_mia_world_event",
     "source_path": null,
     "source_record_id": null,
     "created_by": "Mia",
@@ -13,21 +13,10 @@
   },
   "verification_status": "unverified",
   "coordinate_reference": {
-    "world_anchor": {
-      "x": null,
-      "y": null,
-      "z": null,
-      "verification_status": "unverified",
-      "source_reference": null
-    },
-    "local_origin_world": {
-      "x": null,
-      "y": null,
-      "z": null,
-      "verification_status": "unverified",
-      "source_reference": null
-    },
-    "mapping_id": null
+    "coordinate_space": "scene-local",
+    "origin": "scene origin",
+    "units": "scene-defined layout units",
+    "cross_scene_transform": null
   },
   "bounds": {
     "min": {
@@ -50,7 +39,8 @@
   },
   "scene_tags": [],
   "notes": [
-    "Replace all template values before use.",
-    "Unknown coordinates and dimensions must remain null; do not estimate them as authoritative facts."
+    "Set parent_scene_id to an existing registered scene.",
+    "Unknown values remain null; never guess authoritative coordinates.",
+    "Register the scene in world-manifest.json; the validator checks that it connects to the Mia root."
   ]
 }

@@ -1,0 +1,54 @@
+{
+  "schema_version": "1.0.0",
+  "scene_id": "mia-new-garden",
+  "display_name": "新花园",
+  "parent_scene_id": "mia-forest-corner",
+  "description": "一个由 Mia 自主构思的安静花园，包含可探索的小径、植物层次与休憩角落。",
+  "scene_tags": [
+    "garden",
+    "quiet",
+    "mia-authored"
+  ],
+  "entities": [
+    {
+      "id": "moonlit-path",
+      "name": "月光小径",
+      "type": "path",
+      "description": "蜿蜒穿过花丛的小路",
+      "interaction": "可探索"
+    },
+    {
+      "id": "resting-stone",
+      "name": "休憩石",
+      "type": "rest_spot",
+      "description": "一块安静的坐卧石",
+      "interaction": "停留与观察"
+    }
+  ],
+  "coordinate_reference": {
+    "coordinate_space": "scene-local",
+    "units": null,
+    "origin": null,
+    "cross_scene_transform": null
+  },
+  "bounds": {
+    "min": {
+      "x": null,
+      "y": null,
+      "z": null
+    },
+    "max": {
+      "x": null,
+      "y": null,
+      "z": null
+    },
+    "verification_status": "unverified"
+  },
+  "source_reference": {
+    "kind": "mia_authored_scene",
+    "created_by": "Mia",
+    "created_at": "2026-10-24T05:27:18.361Z"
+  },
+  "verification_status": "scene-page-generated; geometry-and-runtime-unverified",
+  "status": "integrated"
+}

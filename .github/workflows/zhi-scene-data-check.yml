@@ -41,7 +41,7 @@ jobs:
         run: |
           python3 - <<'PY'
           import pathlib, re, subprocess
-          for filename in ("mia-world.html", "mia-chat.html"):
+          for filename in ("mia-world.html", "mia-chat.html", "mia-scene-workshop.html"):
               html = pathlib.Path(filename).read_text(encoding="utf-8")
               scripts = re.findall(r"<script>(.*?)</script>", html, re.I | re.S)
               if not scripts:

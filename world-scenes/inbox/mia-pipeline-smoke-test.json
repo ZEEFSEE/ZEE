@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0.0",
+  "scene_id": "mia-pipeline-smoke-test",
+  "display_name": "Mia 自动建造通道测试场景",
+  "parent_scene_id": "mia-forest-corner",
+  "description": "仅用于验证场景文件生成、目录登记与入口更新流程。不会部署到生产世界。",
+  "scene_tags": [
+    "test",
+    "smoke-test"
+  ],
+  "entities": [
+    {
+      "id": "test-orb",
+      "name": "测试光球",
+      "type": "visual_entity",
+      "description": "验证实体信息能进入自动生成的场景网页。"
+    }
+  ],
+  "coordinate_reference": {
+    "coordinate_space": "scene-local",
+    "units": null,
+    "origin": null,
+    "cross_scene_transform": null
+  },
+  "bounds": {
+    "min": {
+      "x": null,
+      "y": null,
+      "z": null
+    },
+    "max": {
+      "x": null,
+      "y": null,
+      "z": null
+    },
+    "verification_status": "unverified"
+  }
+}

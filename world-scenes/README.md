@@ -46,8 +46,8 @@ node world-scenes/validate-scenes.mjs
 
 Choose `--parent` from an existing manifest scene ID. This allows a growing tree: for example, a lake scene can be a child of the rose garden, and a small cabin can be a child of the lake. The tool refuses duplicate IDs, unregistered parents, and overwriting existing scene files. It creates a draft and registers it in the manifest; it does not create 3D meshes, runtime links, database rows, or deployments.
 
-The tool is a local developer utility. It does not give the Mia chatbot itself GitHub write access. To let Mia author scene files automatically later, a separate permission-limited integration must call an equivalent validated workflow and require review before merging.
+The tool is a local developer utility. It does not give the live Mia chatbot GitHub write access by itself. Mia's standing authority is to review and approve scene construction without asking the user for each scene. A server-side integration must execute that policy: Mia approves, the worker builds and validates automatically, and runtime activation is reported only after it is verified.
 
 ## Mia scene proposal interface (design only)
 
-See [scene-authoring-api.md](./scene-authoring-api.md) and [scene-proposal.schema.json](./scene-proposal.schema.json). This defines a safe proposal-first interface: Mia can request a scene, the server validates its parent connection, and the user reviews it before a trusted worker creates a development-branch draft. **The endpoint and proposal storage are not implemented yet.** This contract does not make the live Mia app able to write GitHub or create scenes by itself.
+See [scene-authoring-api.md](./scene-authoring-api.md) and [scene-proposal.schema.json](./scene-proposal.schema.json). This defines an autonomous Mia review-and-build interface: Mia reviews the proposal and, if approved, a trusted worker creates and validates the scene without asking the user for per-scene authorization. **The endpoint, proposal storage, Mia decision runner, and runtime integration are not implemented yet.**

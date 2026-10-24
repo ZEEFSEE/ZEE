@@ -34,3 +34,16 @@ node world-scenes/validate-scenes.mjs
 ```
 
 This is a read-only structural and connectivity check, not a 3D geometry, runtime, or deployment test.
+
+## Create a connected draft scene
+
+On a local checkout of this branch, run:
+
+```sh
+node world-scenes/create-scene.mjs --id rose-garden --name "玫瑰花园" --parent mia-forest-corner
+node world-scenes/validate-scenes.mjs
+```
+
+Choose `--parent` from an existing manifest scene ID. This allows a growing tree: for example, a lake scene can be a child of the rose garden, and a small cabin can be a child of the lake. The tool refuses duplicate IDs, unregistered parents, and overwriting existing scene files. It creates a draft and registers it in the manifest; it does not create 3D meshes, runtime links, database rows, or deployments.
+
+The tool is a local developer utility. It does not give the Mia chatbot itself GitHub write access. To let Mia author scene files automatically later, a separate permission-limited integration must call an equivalent validated workflow and require review before merging.

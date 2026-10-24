@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0.0",
+  "scene_id": "mia-forest-corner",
+  "coordinate_space": "scene-local",
+  "nodes": [
+    {
+      "node_id": "greenhouse",
+      "position": {
+        "x": 180,
+        "y": 120,
+        "z": null
+      },
+      "coordinate_space": "scene-local",
+      "source_reference": "mia/forest-corner.json#/entities/0"
+    },
+    {
+      "node_id": "data-shelf",
+      "position": {
+        "x": 500,
+        "y": 140,
+        "z": null
+      },
+      "coordinate_space": "scene-local",
+      "source_reference": "mia/forest-corner.json#/entities/1"
+    },
+    {
+      "node_id": "lounge",
+      "position": {
+        "x": 800,
+        "y": 350,
+        "z": null
+      },
+      "coordinate_space": "scene-local",
+      "source_reference": "mia/forest-corner.json#/entities/2"
+    },
+    {
+      "node_id": "forest-rabbit",
+      "position": {
+        "x": 300,
+        "y": 280,
+        "z": null
+      },
+      "coordinate_space": "scene-local",
+      "source_reference": "mia/forest-corner.json#/entities/3"
+    }
+  ],
+  "edges": [],
+  "notes": [
+    "No traversable paths, exits, collision geometry, or cross-scene transitions are asserted by the source. Add only when authored and verified."
+  ]
+}

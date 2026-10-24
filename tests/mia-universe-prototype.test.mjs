@@ -106,5 +106,5 @@ test('local snapshot persistence is present and limits are documented', () => {
   assert.match(readme, /not a live Mia AI judgment/);
   assert.match(readme, /Mia-reviewed construction queue/);
   assert.match(readme, /does not read or write ZHI Core/);
-  assert.match(readme, /not connected to any AI provider or database/);
+  assert.match(readme, /not connected to any AI provider, network endpoint, database/);
 });

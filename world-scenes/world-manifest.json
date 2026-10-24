@@ -1,77 +1,50 @@
 {
   "schema_version": "1.0.0",
-  "world_id": "zhi-world",
-  "title": "ZHI World 3D Scene Data Catalog",
-  "status": "schema_foundation",
+  "world_id": "mia-extensible-world",
+  "title": "Mia Extensible Virtual World",
+  "status": "scene_data_foundation",
   "source_of_truth": {
-    "world_state": "existing ZHI world backend",
+    "existing_scene": "mia/forest-corner.json",
     "scene_metadata": "world-scenes/scenes/*.json",
-    "rule": "Scene files describe spatial representation; they do not override authoritative agent state, movement, relationships, or world rules."
+    "rule": "The Mia scene catalog is a connected scene graph. Only scenes reachable from the root belong to the catalog. Scene data does not imply runtime rendering or persistence."
+  },
+  "root_scene_id": "mia-forest-corner",
+  "catalog_policy": "scene-creation-policy.json",
+  "catalog_is_exhaustive": false,
+  "connectivity_policy": {
+    "graph_type": "directed_parent_tree",
+    "every_non_root_scene_requires_parent_scene_id": true,
+    "parent_must_be_registered": true,
+    "disconnected_scenes_are_not_catalog_members": true,
+    "no_automatic_deletion_of_unregistered_source_files": true
   },
   "coordinate_system": {
-    "world_coordinates": {
-      "name": "zhi-world-coordinates",
-      "units": "unverified",
-      "origin": null,
-      "axes": null,
-      "extent": {
-        "x": null,
-        "y": null,
-        "z": null
-      },
-      "verification_status": "unverified",
-      "notes": "Must be read from authoritative ZHI world configuration before any conversion or 3D placement."
-    },
-    "scene_local_coordinates": {
+    "scene_local": {
       "name": "scene-local",
-      "units": "scene-defined units",
+      "units": "scene-defined layout units",
       "origin": "scene origin",
-      "axes": null,
-      "verification_status": "schema_only",
-      "notes": "Local coordinates must never be treated as world coordinates without an explicit verified mapping."
+      "verification_status": "source-backed-per-scene"
     },
-    "vertical_axis": null,
-    "scale_to_meters": null
+    "cross_scene_mapping": {
+      "required_for_travel": true,
+      "default_status": "unverified",
+      "must_not_be_guessed": true
+    }
   },
   "scenes": [
     {
-      "scene_id": "central-plaza",
-      "path": "scenes/central-plaza.json",
-      "verification_status": "metadata_pending"
-    },
-    {
-      "scene_id": "palace",
-      "path": "scenes/palace.json",
-      "verification_status": "metadata_pending"
-    },
-    {
-      "scene_id": "forest",
-      "path": "scenes/forest.json",
-      "verification_status": "metadata_pending"
-    },
-    {
-      "scene_id": "education-center",
-      "path": "scenes/education-center.json",
-      "verification_status": "metadata_pending"
+      "scene_id": "mia-forest-corner",
+      "path": "scenes/mia-forest-corner.json",
+      "parent_scene_id": null,
+      "verification_status": "source-backed-local-layout"
     }
   ],
-  "asset_formats": {
-    "preferred_model": "glTF/GLB",
-    "metadata": "JSON",
-    "textures": [
-      "PNG",
-      "JPEG",
-      "WebP"
-    ]
-  },
   "safety": {
     "database_writes": false,
     "production_deployment": false,
     "agent_state_mutation": false,
-    "invent_coordinates": false,
-    "require_authoritative_arrival_confirmation": true
+    "coordinate_guessing": false,
+    "authoritative_mia_source_preserved": true
   },
-  "scene_catalog_policy": "scene-creation-policy.json",
-  "catalog_is_exhaustive": false,
-  "scene_creation_policy_summary": "Open-ended catalog: Mia may add new scene files on an authorized development branch. Unknown coordinates remain unverified; file creation does not imply runtime integration."
+  "scene_creation_policy_summary": "Open-ended catalog rooted in Mia's existing Forest_Corner. New scenes must connect to a registered parent scene. Unconnected scenes are excluded from the manifest."
 }

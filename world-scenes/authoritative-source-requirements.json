@@ -1,0 +1,59 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Read-only checklist for identifying authoritative ZHI world-place and agent-position data before assigning scene coordinates.",
+  "current_status": "source_not_identified",
+  "repository_audit": {
+    "ref": "main",
+    "checked_paths": [
+      "mia/forest-corner.json",
+      "supabase/migrations/20261016190000_zhi_creator_world_entity.sql",
+      "supabase/migrations/20261016210000_creator_persistent_world_position.sql",
+      "supabase/functions/zhi-world-builder/index.ts",
+      "supabase/migrations/20261022040643_create_zhi_world_builder_sandbox.sql",
+      "supabase/migrations/20261022043000_add_zhi_world_builder_stability_oracle.sql",
+      "docs/mia-world-builder-v1.md"
+    ],
+    "result": "No complete authoritative place catalog, world coordinate convention, or general agent movement endpoint was identified in the inspected repository sources.",
+    "important_limit": "Repository search results are not a substitute for a read-only schema/data inspection of the actual ZHI production project."
+  },
+  "required_read_only_evidence": [
+    {
+      "category": "place_catalog",
+      "fields": ["stable_place_id", "display_name", "parent_place_id", "status", "source_updated_at"],
+      "acceptance": "Stable identifiers map existing ZHI locations without creating duplicates."
+    },
+    {
+      "category": "world_coordinates",
+      "fields": ["coordinate_system_id", "origin", "axis_directions", "units", "world_bounds", "scale"],
+      "acceptance": "A documented authoritative coordinate system and verified bounds exist."
+    },
+    {
+      "category": "place_geometry_and_entrances",
+      "fields": ["place_id", "anchor", "entrances", "bounds_or_geometry", "coordinate_system_id"],
+      "acceptance": "Coordinates and geometry can be traced to an authoritative source; unknown values stay null."
+    },
+    {
+      "category": "agent_location_and_navigation",
+      "fields": ["agent_id", "current_place_id", "position", "coordinate_system_id", "movement_action_contract"],
+      "acceptance": "Scene navigation can refer to existing agent state without writing or replacing it."
+    }
+  ],
+  "safety_gates": {
+    "database_access": "read_only_only_after_explicit_project_identification_and_authorization",
+    "writes": false,
+    "migrations": false,
+    "deployment": false,
+    "coordinate_guessing": false,
+    "do_not_assume_creator_position_defaults_define_world_bounds": true,
+    "do_not_treat_sandbox_proposals_as_production_places": true,
+    "do_not_treat_local_scene_layout_coordinates_as_world_coordinates": true
+  },
+  "candidate_coordinates": {
+    "education_center": {"anchor": null, "entrance": null, "status": "unverified"},
+    "entertainment": {"anchor": null, "entrance": null, "status": "unverified"},
+    "arena": {"anchor": null, "entrance": null, "status": "missing"},
+    "central_plaza": {"anchor": null, "entrance": null, "status": "unverified"},
+    "palace": {"anchor": null, "entrance": null, "status": "unverified"},
+    "forest": {"anchor": null, "entrance": null, "status": "partial_source_requires_authoritative_reverification"}
+  }
+}

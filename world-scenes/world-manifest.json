@@ -49,6 +49,12 @@
       "path": "scenes/mia-listening-rain-leaf-gap.json",
       "parent_scene_id": "mia-forest-corner",
       "verification_status": "visual-scene-source-backed; cross-scene-navigation-unverified"
+    },
+    {
+      "scene_id": "mia-new-garden",
+      "path": "scenes/mia-new-garden.json",
+      "parent_scene_id": "mia-forest-corner",
+      "verification_status": "scene-page-generated; geometry-and-runtime-unverified"
     }
   ],
   "safety": {
@@ -59,5 +65,5 @@
     "authoritative_mia_source_preserved": true
   },
   "scene_creation_policy_summary": "Open-ended catalog rooted in Mia's existing Forest_Corner. New scenes must connect to a registered parent scene. Unconnected scenes are excluded from the manifest.",
-  "catalog_policy_summary": "Open-ended connected scene catalog. Mia may author and add her own scenes without per-scene human approval; structural validation remains automatic and unknown geometry stays explicitly unverified."
+  "catalog_policy_summary": "Mia-authored scenes are automatically materialized after structural checks; no per-scene human approval. Production deployment remains disabled."
 }

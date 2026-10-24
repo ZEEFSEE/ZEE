@@ -50,5 +50,11 @@
     "created_at": "2026-10-24T05:27:18.361Z"
   },
   "verification_status": "scene-page-generated; geometry-and-runtime-unverified",
-  "status": "integrated"
+  "status": "integrated",
+  "files": {
+    "interactions": "mia-new-garden.html"
+  },
+  "notes": [
+    "Automatically materialized from world-scenes/inbox; static catalog only, no database or production runtime writes."
+  ]
 }

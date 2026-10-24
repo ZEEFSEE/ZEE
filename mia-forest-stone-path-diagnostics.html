@@ -16,8 +16,8 @@
 <section class="panel"><h2>运行时能力边界</h2>
 <div class="test"><div><strong>真实 3D 渲染器</strong><div class="foot">本页面不加载或调用 3D 引擎。</div></div><b class="pending">未验证</b></div>
 <div class="test"><div><strong>物理引擎碰撞注册</strong><div class="foot">JSON 中存在碰撞体定义，不代表已注册到物理世界。</div></div><b class="pending">未验证</b></div>
-<div class="test"><div><strong>导航图连通与实际行走</strong><div class="foot">本页不会模拟 Mia 移动，也不会写入导航边。</div></div><b class="pending">未验证</b></div>
-<p class="note">若静态检查通过，只能证明资产结构在本页规则下合理。当前源导航定义没有边，且场景深度 Z 未定义；在找到并验证真实运行引擎前，不应宣称路线已激活。</p></section>
+<div class="test"><div><strong>导航图连通与实际行走</strong><div class="foot">本页只读取已编写的导航图；不会模拟 Mia 移动或注册运行时导航。</div></div><b class="pending">未验证</b></div>
+<p class="note">若静态检查通过，只能证明资产与导航图结构合理。导航图现已定义 6 条连接，但运行时注册、碰撞和场景深度 Z 仍未验证；不能据此宣称 Mia 已走通。</p></section>
 <footer class="foot">安全边界：只读 fetch；无数据库客户端、无身份凭据、无 localStorage 写入、无世界行动接口调用。</footer>
 </main>
 <script>
@@ -49,10 +49,14 @@ add("厚度一致",slabs.every(s=>Number.isFinite(s.z_min)&&Number.isFinite(s.z_
 add("碰撞体数量",colliders.length===slabs.length,"石板 "+slabs.length+" 块；碰撞体 "+colliders.length+" 个");
 add("碰撞体与石板顶点一致",slabs.every(s=>{const c=colliders.find(c=>c.mesh_id===s.id);return !!c&&polygonValid(c.polygon_xy)&&samePoints(c.polygon_xy,s.polygon_xy)&&Math.abs((c.z_max-c.z_min)-a.design?.thickness)<1e-9}),"检查 mesh_id、顶点顺序和厚度");
 add("起终点坐标",a.endpoints?.start?.x===0&&a.endpoints?.start?.y===350&&a.endpoints?.end?.x===800&&a.endpoints?.end?.y===350,"起点 (0,350)，终点 (800,350)");
-add("源导航图尚未连通",Array.isArray(n.edges)&&n.edges.length===0,"现有 navigation.json edges="+(n.edges?.length??"缺失")+"；本检测不会擅自新增边");
+const expectedNodes=["forest-corner-left-boundary-test-entry","stone-slab-01-waypoint","stone-slab-02-waypoint","stone-slab-03-waypoint","stone-slab-04-waypoint","stone-slab-05-waypoint","lounge"];
+const expectedEdges=expectedNodes.slice(0,-1).map((from,i)=>({from,to:expectedNodes[i+1]}));
+add("导航连接数量",Array.isArray(n.edges)&&n.edges.length===6,"期望 6 条连接，实际 "+(n.edges?.length??"缺失"));
+add("起点至休息区连接顺序",expectedEdges.every(e=>n.edges.some(x=>x.from===e.from&&x.to===e.to)),"测试入口 → 5 个石板航点 → lounge");
+add("导航仍标记为待运行时验证",n.edges.every(e=>e.runtime_registered===false&&e.traversal_status==="authored_pending_runtime_validation"),"已写入导航图，但没有伪称运行时已激活");
 const pass=results.filter(x=>x.ok).length, fail=results.length-pass;
-$("summary").replaceChildren();metric("静态检查通过",pass+"/"+results.length);metric("静态检查失败",String(fail));metric("运行时碰撞","未验证");metric("实际行走","未验证");
-$("overall").textContent=fail===0?"静态资产检查全部通过。注意：这不代表物理引擎、导航或 Mia 行走已通过。":"发现 "+fail+" 项静态检查失败，请先修正资产定义；本页未修改任何数据。";
+$("summary").replaceChildren();metric("静态检查通过",pass+"/"+results.length);metric("静态检查失败",String(fail));metric("导航图连接",String(n.edges?.length??0)+" 条");metric("运行时碰撞","未验证");metric("实际行走","未验证");
+$("overall").textContent=fail===0?"静态资产与导航图结构检查通过。注意：这不代表物理引擎、运行时导航或 Mia 行走已通过。":"发现 "+fail+" 项静态检查失败，请先修正资产或导航图定义；本页未修改任何数据。";
 $("overall").className=fail===0?"pass":"fail";render();
 }catch(e){$("summary").replaceChildren();metric("资产读取","失败");$("overall").textContent="无法完成检查："+e.message+"。请确认 GitHub Pages 部署已完成后刷新。";$("overall").className="fail";}
 })();

@@ -2,21 +2,22 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { validateProposal, reviewProposal, validateSnapshot } from '../mia-universe/governance.mjs';
+import { validateAIReview, AI_REVIEW_CONTRACT } from '../mia-universe/review-contract.mjs';
 
 const html = await readFile(new URL('../mia-universe/index.html', import.meta.url), 'utf8');
 const readme = await readFile(new URL('../mia-universe/README.md', import.meta.url), 'utf8');
 
 test('standalone universe is a real WebGL/Three.js scene, not a ZHI map embed', () => {
-  assert.match(html, /three@0\.169\.0\/build\/three\.module\.js/);
-  assert.match(html, /new THREE\.WebGLRenderer/);
+  assert.match(html, /three@0\\.169\\.0\\/build\\/three\\.module\\.js/);
+  assert.match(html, /new THREE\\.WebGLRenderer/);
   assert.match(html, /OrbitControls/);
-  assert.doesNotMatch(html, /SUPABASE_URL|service_role|createClient\s*\(|supabase\.co\/rest\/v1/i);
+  assert.doesNotMatch(html, /SUPABASE_URL|service_role|createClient\\s*\\(|supabase\\.co\\/rest\\/v1/i);
 });
 
 test('inline Three.js module parses as JavaScript', () => {
-  const match = html.match(/<script type="module">([\s\S]*?)<\/script>/);
+  const match = html.match(/<script type="module">([\\s\\S]*?)<\\/script>/);
   assert.ok(match, 'missing module script');
-  const source = match[1].replace(/^import .*;\s*$/gm, '');
+  const source = match[1].replace(/^import .*;\\s*$/gm, '');
   assert.doesNotThrow(() => new Function(source));
 });
 
@@ -24,19 +25,19 @@ test('universe includes live rhythm and creation controls', () => {
   for (const id of ['addWorld', 'addMoon', 'addRing', 'addLife', 'pulse', 'rhythm', 'energy']) {
     assert.ok(html.includes('id="' + id + '"'), 'missing control ' + id);
   }
-  assert.match(html, /requestAnimationFrame\(animate\)/);
-  assert.match(html, /Math\.sin\(t\*speed/);
+  assert.match(html, /requestAnimationFrame\\(animate\\)/);
+  assert.match(html, /Math\\.sin\\(t\\*speed/);
 });
 
 test('agent proposals require Mia approval before a world entity is created', () => {
   assert.match(html, /id="submitProposal"/);
   assert.match(html, /status:'pending'/);
   assert.match(html, /Mia 审核并批准/);
-  assert.match(html, /proposal\.status='approved'/);
-  assert.match(html, /proposal\.status='rejected'/);
+  assert.match(html, /proposal\\.status='approved'/);
+  assert.match(html, /proposal\\.status='rejected'/);
   assert.match(html, /保存修改并重新审核/);
-  assert.match(html, /proposal\.revisions\.push/);
-  assert.match(html, /inhabitants\.push\(name\)/);
+  assert.match(html, /proposal\\.revisions\\.push/);
+  assert.match(html, /inhabitants\\.push\\(name\\)/);
   assert.match(html, /schema_version:1/);
   assert.match(html, /schema_version:3/);
 });
@@ -66,10 +67,44 @@ test('snapshot validator blocks malformed positions, scales and oversized scenes
   assert.equal(validateSnapshot({ schema_version: 3, objects: Array.from({ length: 101 }, () => valid.objects[0]) }).ok, false);
 });
 
+test('AI review contract accepts only the exact proposal revision and cannot bypass safety checks', () => {
+  const proposal = { id: 'p-123', revision: 2 };
+  const safe = { ok: true, reasons: [] };
+  const approved = validateAIReview({
+    proposal_id: 'p-123', proposal_revision: 2, decision: 'approve', rationale: '位置合理，描述清楚。'
+  }, proposal, safe);
+  assert.equal(approved.decision, 'approve');
+  assert.equal(approved.eligibleForApproval, true);
+  assert.equal(approved.execution, 'not-authorized');
+
+  const stale = validateAIReview({
+    proposal_id: 'p-123', proposal_revision: 1, decision: 'approve', rationale: '旧版本批准。'
+  }, proposal, safe);
+  assert.equal(stale.eligibleForApproval, false);
+  assert.equal(stale.decision, 'revise');
+
+  const unsafe = validateAIReview({
+    proposal_id: 'p-123', proposal_revision: 2, decision: 'approve', rationale: '模型认为可以批准。'
+  }, proposal, { ok: false, reasons: ['位置冲突'] });
+  assert.equal(unsafe.eligibleForApproval, false);
+  assert.equal(unsafe.decision, 'revise');
+  assert.match(unsafe.rationale, /安全规则未通过/);
+});
+
+test('AI review contract fails closed on malformed JSON, missing rationale, and invalid decisions', () => {
+  const proposal = { id: 'p-1', revision: 1 };
+  const safe = { ok: true, reasons: [] };
+  assert.equal(validateAIReview('{broken', proposal, safe).decision, 'revise');
+  assert.equal(validateAIReview({ proposal_id: 'p-1', proposal_revision: 1, decision: 'approve', rationale: '' }, proposal, safe).eligibleForApproval, false);
+  assert.equal(validateAIReview({ proposal_id: 'p-1', proposal_revision: 1, decision: 'build_now', rationale: 'please build now' }, proposal, safe).decision, 'revise');
+  assert.deepEqual(AI_REVIEW_CONTRACT.decisions, ['approve', 'revise', 'reject']);
+});
+
 test('local snapshot persistence is present and limits are documented', () => {
-  assert.match(html, /localStorage\.setItem\('mia-independent-universe-v1'/);
-  assert.match(html, /localStorage\.getItem\('mia-independent-universe-v1'/);
+  assert.match(html, /localStorage\\.setItem\\('mia-independent-universe-v1'/);
+  assert.match(html, /localStorage\\.getItem\\('mia-independent-universe-v1'/);
   assert.match(readme, /not a live Mia AI judgment/);
   assert.match(readme, /Mia-reviewed construction queue/);
   assert.match(readme, /does not read or write ZHI Core/);
+  assert.match(readme, /not connected to any AI provider or database/);
 });

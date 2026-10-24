@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0.0",
+  "scene_id": "mia-forest-corner",
+  "interactions": [
+    {
+      "schema_version": "1.0.0",
+      "interaction_id": "greenhouse-ambient-light",
+      "target_ref": "greenhouse",
+      "action": "slow_light_variation",
+      "permission_contract": "ambient visual behavior only; no AI interaction",
+      "verification_status": "source-backed"
+    },
+    {
+      "schema_version": "1.0.0",
+      "interaction_id": "data-shelf-local-vault",
+      "target_ref": "data-shelf",
+      "action": "append_only_local_memory_anchor",
+      "permission_contract": "browser-device-local storage; no cross-device sync asserted",
+      "verification_status": "source-backed"
+    },
+    {
+      "schema_version": "1.0.0",
+      "interaction_id": "lounge-idle-listening",
+      "target_ref": "lounge",
+      "action": "idle_or_listening",
+      "permission_contract": "user interaction takes priority over ambience",
+      "verification_status": "source-backed"
+    },
+    {
+      "schema_version": "1.0.0",
+      "interaction_id": "forest-rabbit-response",
+      "target_ref": "forest-rabbit",
+      "action": "idle_hop_look_at_user_rest",
+      "permission_contract": "source states AI interaction disabled; do not imply chat capability",
+      "verification_status": "source-backed"
+    }
+  ],
+  "notes": [
+    "This file documents source-described scene behaviors; it does not execute them or enable new permissions."
+  ]
+}

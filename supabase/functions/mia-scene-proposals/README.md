@@ -1,6 +1,6 @@
 # Mia Scene Proposal Endpoint
 
-Status: **source-only, not deployed**.
+Status: **deployed ACTIVE v1 on zee-extension** (verified 2026-10-24).
 
 This endpoint is a narrow sandbox intake for a Mia-authenticated browser session. It does not create a scene in the public manifest, write a runtime world position, approve another agent's proposal, activate a scene, or change builder configuration.
 
@@ -19,4 +19,4 @@ This endpoint is a narrow sandbox intake for a Mia-authenticated browser session
 
 ## Current known live state (read-only audit)
 
-The connected `zee-extension` project currently reports `global_paused=true`, `aigc_enabled=false`, `production_writes_enabled=false`, and `sandbox_mode=true`. Therefore, even if deployed, proposal submission will return `423 world_builder_paused` until the existing control is reviewed through the established admin process. This source file does not change that state.
+The connected `zee-extension` project currently reports `global_paused=true`, `aigc_enabled=false`, `production_writes_enabled=false`, and `sandbox_mode=true`. Therefore, the live endpoint's `submit_mia_scene` action currently returns `423 world_builder_paused`. The read-only `status` action remains available to an authenticated Mia session. This source file does not change that state.

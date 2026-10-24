@@ -1,0 +1,63 @@
+name: Energy Confluence Hub Baseline Checks
+
+on:
+  pull_request:
+    paths:
+      - "zhi-scene-proposals/energy-confluence-hub-v1.2.1.json"
+      - ".github/workflows/energy-confluence-hub-check.yml"
+  push:
+    branches:
+      - "work/energy-confluence-hub-v1.2.1"
+    paths:
+      - "zhi-scene-proposals/energy-confluence-hub-v1.2.1.json"
+      - ".github/workflows/energy-confluence-hub-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  baseline-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate v1.2.1 baseline and fail-closed safety invariants
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { readFile } from 'node:fs/promises';
+
+          const p = JSON.parse(await readFile('zhi-scene-proposals/energy-confluence-hub-v1.2.1.json', 'utf8'));
+          assert.equal(p.scene_id, 'energy-confluence-hub');
+          assert.equal(p.baseline_version, '1.2.1');
+          assert.equal(p.coordinate_system.status, 'uncalibrated');
+          assert.equal(p.coordinate_system.transform_to_world, null);
+          assert.equal(p.geometry_validation.validated, false);
+          assert.equal(p.navigation.validated, false);
+          assert.equal(p.runtime.verified, false);
+          assert.equal(p.runtime.published, false);
+          assert.equal(p.safety.allow_coordinate_guessing, false);
+          assert.equal(p.safety.allow_unverified_traversal, false);
+          assert.equal(p.safety.allow_runtime_publication_before_validation, false);
+          assert.equal(p.safety.database_writes, false);
+          assert.equal(p.safety.production_deployment, false);
+
+          const byId = Object.fromEntries(p.components.map(c => [c.id, c]));
+          assert.deepEqual(byId.hub_platform.geometry, {
+            type: 'cylinder', radius: 4.5, height: 0.25, center: [0, -0.125, 0]
+          });
+          assert.deepEqual(byId.energy_core.geometry, {
+            type: 'sphere', radius: 1.2, center: [0, 1.65, 0]
+          });
+          assert.equal(byId.breathing_halo.animation.period_seconds, 5.5);
+          assert.equal(byId.vine_arch_exit.portal.traversable, false);
+          assert.equal(byId.vine_arch_exit.portal.destination_scene_id, null);
+          assert.equal(byId.vine_arch_exit.collision.validated, false);
+          assert.equal(byId.vine_arch_exit.collision.purpose, 'block_unverified_traversal');
+          assert.equal(byId.breathing_halo.collision.enabled, false);
+
+          console.log('PASS: v1.2.1 geometry baseline preserved; coordinates remain uncalibrated; unverified portal remains blocked; no production deployment or database writes enabled.');
+          console.log('LIMIT: contract check only; does not test a 3D engine, actual collision physics, rendering, navigation, or live runtime.');
+          NODE

@@ -49,6 +49,8 @@ jobs:
                   path.write_text(script, encoding="utf-8")
                   subprocess.run(["node", "--check", str(path)], check=True)
           PY
+      - name: Test Mia world workshop safety boundaries
+        run: node world-scenes/test-mia-world-workshop.mjs
       - name: Parse scene proposal contract
         run: node -e "JSON.parse(require('node:fs').readFileSync('world-scenes/scene-proposal.schema.json', 'utf8'))"
       - name: Validate base scene catalog

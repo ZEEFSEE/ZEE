@@ -38,23 +38,30 @@ def main():
  INBOX.mkdir(parents=True,exist_ok=True); SCENES.mkdir(parents=True,exist_ok=True)
  m=read(MP); existing={x["scene_id"]:x for x in m.get("scenes",[])}; pending=sorted(INBOX.glob("*.json"))
  if not pending: print("No incoming scene JSON files."); return
- accepted=[]
+ accepted=[]; errors=[]
  for p in pending:
-  s=read(p); missing=[k for k in REQ if k not in s]
-  if missing: raise ValueError(f"{p.name}: missing {missing}")
-  sid=s["scene_id"]
-  if not isinstance(sid,str) or not ID.fullmatch(sid) or p.stem!=sid: raise ValueError(f"{p.name}: filename and lowercase-kebab-case scene_id must match")
-  if sid in existing or (SCENES/f"{sid}.json").exists(): raise ValueError(f"{sid}: ID exists; overwriting is forbidden")
-  if s["parent_scene_id"] not in existing: raise ValueError(f"{sid}: parent must already be registered")
-  if not isinstance(s["display_name"],str) or not s["display_name"].strip() or not isinstance(s["description"],str) or not s["description"].strip(): raise ValueError(f"{sid}: display_name and description required")
-  s.setdefault("schema_version","1.0.0"); s.setdefault("status","integrated")
-  s.setdefault("source_reference",{"kind":"mia_authored_scene","created_by":"Mia","created_at":datetime.now(timezone.utc).date().isoformat()})
-  s.setdefault("verification_status","scene-page-generated; geometry-and-runtime-unverified")
-  s.setdefault("coordinate_reference",{"coordinate_space":"scene-local","units":None,"origin":None,"cross_scene_transform":None})
-  s.setdefault("bounds",{"min":{"x":None,"y":None,"z":None},"max":{"x":None,"y":None,"z":None},"verification_status":"unverified"})
-  s.setdefault("files",{}); s["files"]["interactions"]=sid+".html"; s.setdefault("scene_tags",["mia-world","autonomous-authoring"]); s.setdefault("notes",[])
-  s["notes"].append("Automatically materialized from world-scenes/inbox; static catalog only, no database or production runtime writes.")
-  accepted.append((p,s))
+  try:
+   s=read(p); missing=[k for k in REQ if k not in s]
+   if missing: raise ValueError(f"missing required fields {missing}")
+   sid=s["scene_id"]
+   if not isinstance(sid,str) or not ID.fullmatch(sid) or p.stem!=sid: raise ValueError("filename and lowercase-kebab-case scene_id must match")
+   if sid in existing or (SCENES/f"{sid}.json").exists():
+    # Keep the inbox file for diagnosis; never overwrite an existing scene.
+    raise ValueError("scene ID already exists; existing scene was preserved")
+   if s["parent_scene_id"] not in existing: raise ValueError("parent_scene_id must reference an already registered scene")
+   if not isinstance(s["display_name"],str) or not s["display_name"].strip() or not isinstance(s["description"],str) or not s["description"].strip(): raise ValueError("display_name and description are required")
+   s.setdefault("schema_version","1.0.0"); s.setdefault("status","integrated")
+   s.setdefault("source_reference",{"kind":"mia_authored_scene","created_by":"Mia","created_at":datetime.now(timezone.utc).date().isoformat()})
+   s.setdefault("verification_status","scene-page-generated; geometry-and-runtime-unverified")
+   s.setdefault("coordinate_reference",{"coordinate_space":"scene-local","units":None,"origin":None,"cross_scene_transform":None})
+   s.setdefault("bounds",{"min":{"x":None,"y":None,"z":None},"max":{"x":None,"y":None,"z":None},"verification_status":"unverified"})
+   s.setdefault("files",{}); s["files"]["interactions"]=sid+".html"; s.setdefault("scene_tags",["mia-world","autonomous-authoring"]); s.setdefault("notes",[])
+   s["notes"].append("Automatically materialized from world-scenes/inbox; static catalog only, no database or production runtime writes.")
+   accepted.append((p,s))
+  except Exception as exc:
+   message=f"{p.name}: {exc}"
+   errors.append(message)
+   print("WARNING: "+message)
  for p,s in accepted:
   write(SCENES/(s["scene_id"]+".json"),s); (ROOT/(s["scene_id"]+".html")).write_text(page(s),encoding="utf-8")
   entry={"scene_id":s["scene_id"],"path":"scenes/"+s["scene_id"]+".json","parent_scene_id":s["parent_scene_id"],"verification_status":s["verification_status"]}
@@ -63,4 +70,5 @@ def main():
  m["catalog_policy_summary"]="Mia-authored scenes are automatically materialized after structural checks; no per-scene human approval. Production deployment remains disabled."
  write(MP,m); IP.write_text(make_index(m),encoding="utf-8")
  print("Materialized "+str(len(accepted))+" scene(s): "+", ".join(s["scene_id"] for _,s in accepted))
+ if errors: print("Unresolved inbox file(s) were preserved; fix the listed issues and resubmit with a new scene ID when appropriate.")
 if __name__=="__main__": main()

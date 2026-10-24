@@ -19,3 +19,15 @@ This directory defines data contracts for adding 3D scenes to the existing ZHI w
 - `schemas/*.schema.json`: JSON Schema contracts for geometry, entities, navigation, interactions, and coordinate mappings.
 
 The initial scene files are deliberately skeletal. They are not a claim that their coordinates or geometry have been verified. Populate them only after read-only verification against the authoritative ZHI world data.
+
+## Adding scenes and validating the catalog
+
+The catalog is intentionally open-ended. Add a new `scenes/<stable-scene-id>.json` file from `scene-template.json`, then add its `scene_id`, `path`, and verification status to `world-manifest.json`. Keep unverified coordinates as `null`; do not mark a scene runtime-ready merely because its JSON file exists. Mia may author proposals on an authorized development branch, but file creation alone does not grant production write or deployment access.
+
+Run the dependency-free structural validator with Node.js:
+
+```sh
+node world-scenes/validate-scenes.mjs
+```
+
+The validator checks JSON parsing, manifest IDs/paths, basic required fields, referenced JSON files, and whether coordinate verification is still pending. It is read-only. A passing result does not validate geometry quality, authoritative coordinates, live ZHI integration, or deployment.

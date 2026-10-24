@@ -37,6 +37,12 @@
       "path": "scenes/mia-forest-corner.json",
       "parent_scene_id": null,
       "verification_status": "source-backed-local-layout"
+    },
+    {
+      "scene_id": "nebula-breathing-hub",
+      "path": "scenes/nebula-breathing-hub.json",
+      "parent_scene_id": "mia-forest-corner",
+      "verification_status": "concept-only; geometry-and-runtime-unverified"
     }
   ],
   "safety": {

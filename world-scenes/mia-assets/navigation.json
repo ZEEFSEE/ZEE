@@ -4,6 +4,18 @@
   "coordinate_space": "scene-local",
   "nodes": [
     {
+      "node_id": "forest-corner-left-boundary-test-entry",
+      "position": {
+        "x": 0,
+        "y": 350,
+        "z": null
+      },
+      "coordinate_space": "scene-local",
+      "source_reference": "world-scenes/mia-assets/stone-path-forest-to-lounge.json#/endpoints/start",
+      "node_type": "test_entry",
+      "verification_status": "asset-defined-runtime-unverified"
+    },
+    {
       "node_id": "greenhouse",
       "position": {
         "x": 180,
@@ -24,16 +36,6 @@
       "source_reference": "mia/forest-corner.json#/entities/1"
     },
     {
-      "node_id": "lounge",
-      "position": {
-        "x": 800,
-        "y": 350,
-        "z": null
-      },
-      "coordinate_space": "scene-local",
-      "source_reference": "mia/forest-corner.json#/entities/2"
-    },
-    {
       "node_id": "forest-rabbit",
       "position": {
         "x": 300,
@@ -42,10 +44,156 @@
       },
       "coordinate_space": "scene-local",
       "source_reference": "mia/forest-corner.json#/entities/3"
+    },
+    {
+      "node_id": "stone-slab-01-waypoint",
+      "position": {
+        "x": 80,
+        "y": 350,
+        "z": null
+      },
+      "coordinate_space": "scene-local",
+      "source_reference": "world-scenes/mia-assets/stone-path-forest-to-lounge.json#/visual_mesh/slabs/0",
+      "asset_id": "stone-path-forest-to-lounge",
+      "verification_status": "authored-waypoint-runtime-unverified"
+    },
+    {
+      "node_id": "stone-slab-02-waypoint",
+      "position": {
+        "x": 240,
+        "y": 350,
+        "z": null
+      },
+      "coordinate_space": "scene-local",
+      "source_reference": "world-scenes/mia-assets/stone-path-forest-to-lounge.json#/visual_mesh/slabs/1",
+      "asset_id": "stone-path-forest-to-lounge",
+      "verification_status": "authored-waypoint-runtime-unverified"
+    },
+    {
+      "node_id": "stone-slab-03-waypoint",
+      "position": {
+        "x": 400,
+        "y": 350,
+        "z": null
+      },
+      "coordinate_space": "scene-local",
+      "source_reference": "world-scenes/mia-assets/stone-path-forest-to-lounge.json#/visual_mesh/slabs/2",
+      "asset_id": "stone-path-forest-to-lounge",
+      "verification_status": "authored-waypoint-runtime-unverified"
+    },
+    {
+      "node_id": "stone-slab-04-waypoint",
+      "position": {
+        "x": 560,
+        "y": 350,
+        "z": null
+      },
+      "coordinate_space": "scene-local",
+      "source_reference": "world-scenes/mia-assets/stone-path-forest-to-lounge.json#/visual_mesh/slabs/3",
+      "asset_id": "stone-path-forest-to-lounge",
+      "verification_status": "authored-waypoint-runtime-unverified"
+    },
+    {
+      "node_id": "stone-slab-05-waypoint",
+      "position": {
+        "x": 720,
+        "y": 350,
+        "z": null
+      },
+      "coordinate_space": "scene-local",
+      "source_reference": "world-scenes/mia-assets/stone-path-forest-to-lounge.json#/visual_mesh/slabs/4",
+      "asset_id": "stone-path-forest-to-lounge",
+      "verification_status": "authored-waypoint-runtime-unverified"
+    },
+    {
+      "node_id": "lounge",
+      "position": {
+        "x": 800,
+        "y": 350,
+        "z": null
+      },
+      "coordinate_space": "scene-local",
+      "source_reference": "mia/forest-corner.json#/entities/2"
     }
   ],
-  "edges": [],
+  "edges": [
+    {
+      "edge_id": "forest-stone-path-segment-01",
+      "from": "forest-corner-left-boundary-test-entry",
+      "to": "stone-slab-01-waypoint",
+      "edge_type": "stone_path_segment",
+      "asset_id": "stone-path-forest-to-lounge",
+      "coordinate_space": "scene-local",
+      "traversal_status": "authored_pending_runtime_validation",
+      "runtime_registered": false,
+      "geometry_reference": "world-scenes/mia-assets/stone-path-forest-to-lounge.json",
+      "notes": "Navigation graph connection is authored only; runtime movement, collider registration, Z mapping, and traversability remain unverified."
+    },
+    {
+      "edge_id": "forest-stone-path-segment-02",
+      "from": "stone-slab-01-waypoint",
+      "to": "stone-slab-02-waypoint",
+      "edge_type": "stone_path_segment",
+      "asset_id": "stone-path-forest-to-lounge",
+      "coordinate_space": "scene-local",
+      "traversal_status": "authored_pending_runtime_validation",
+      "runtime_registered": false,
+      "geometry_reference": "world-scenes/mia-assets/stone-path-forest-to-lounge.json",
+      "notes": "Navigation graph connection is authored only; runtime movement, collider registration, Z mapping, and traversability remain unverified."
+    },
+    {
+      "edge_id": "forest-stone-path-segment-03",
+      "from": "stone-slab-02-waypoint",
+      "to": "stone-slab-03-waypoint",
+      "edge_type": "stone_path_segment",
+      "asset_id": "stone-path-forest-to-lounge",
+      "coordinate_space": "scene-local",
+      "traversal_status": "authored_pending_runtime_validation",
+      "runtime_registered": false,
+      "geometry_reference": "world-scenes/mia-assets/stone-path-forest-to-lounge.json",
+      "notes": "Navigation graph connection is authored only; runtime movement, collider registration, Z mapping, and traversability remain unverified."
+    },
+    {
+      "edge_id": "forest-stone-path-segment-04",
+      "from": "stone-slab-03-waypoint",
+      "to": "stone-slab-04-waypoint",
+      "edge_type": "stone_path_segment",
+      "asset_id": "stone-path-forest-to-lounge",
+      "coordinate_space": "scene-local",
+      "traversal_status": "authored_pending_runtime_validation",
+      "runtime_registered": false,
+      "geometry_reference": "world-scenes/mia-assets/stone-path-forest-to-lounge.json",
+      "notes": "Navigation graph connection is authored only; runtime movement, collider registration, Z mapping, and traversability remain unverified."
+    },
+    {
+      "edge_id": "forest-stone-path-segment-05",
+      "from": "stone-slab-04-waypoint",
+      "to": "stone-slab-05-waypoint",
+      "edge_type": "stone_path_segment",
+      "asset_id": "stone-path-forest-to-lounge",
+      "coordinate_space": "scene-local",
+      "traversal_status": "authored_pending_runtime_validation",
+      "runtime_registered": false,
+      "geometry_reference": "world-scenes/mia-assets/stone-path-forest-to-lounge.json",
+      "notes": "Navigation graph connection is authored only; runtime movement, collider registration, Z mapping, and traversability remain unverified."
+    },
+    {
+      "edge_id": "forest-stone-path-segment-06",
+      "from": "stone-slab-05-waypoint",
+      "to": "lounge",
+      "edge_type": "stone_path_segment",
+      "asset_id": "stone-path-forest-to-lounge",
+      "coordinate_space": "scene-local",
+      "traversal_status": "authored_pending_runtime_validation",
+      "runtime_registered": false,
+      "geometry_reference": "world-scenes/mia-assets/stone-path-forest-to-lounge.json",
+      "notes": "Navigation graph connection is authored only; runtime movement, collider registration, Z mapping, and traversability remain unverified."
+    }
+  ],
   "notes": [
-    "No traversable paths, exits, collision geometry, or cross-scene transitions are asserted by the source. Add only when authored and verified."
+    "Authored scene-local navigation graph from the forest-corner left-boundary test entry through five stone-slab waypoints to lounge.",
+    "Graph connectivity is data-defined only. It does not prove runtime navigation registration, physical collision, or successful Mia movement.",
+    "Coordinates remain scene-local; z is null because the source scene has no verified depth mapping.",
+    "Do not report the route as activated until runtime integration and an end-to-end movement test succeed."
   ]
 }

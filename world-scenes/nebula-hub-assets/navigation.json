@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0.0",
+  "scene_id": "nebula-breathing-hub",
+  "coordinate_space": "scene-local",
+  "verification_status": "unverified",
+  "nodes": [
+    {
+      "node_id": "nebula-viewpoint",
+      "position": {
+        "x": null,
+        "y": null,
+        "z": null
+      },
+      "coordinate_space": "scene-local"
+    },
+    {
+      "node_id": "breathing-light-field",
+      "position": {
+        "x": null,
+        "y": null,
+        "z": null
+      },
+      "coordinate_space": "scene-local"
+    },
+    {
+      "node_id": "quiet-reflection-seat",
+      "position": {
+        "x": null,
+        "y": null,
+        "z": null
+      },
+      "coordinate_space": "scene-local"
+    }
+  ],
+  "edges": [],
+  "scene_exits": [],
+  "cross_scene_transforms": [],
+  "notes": [
+    "No traversable paths or scene exits have been asserted.",
+    "Parent-scene linkage in the catalog is a logical relationship, not proof of physical travel connectivity."
+  ]
+}

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#183c36">
+<title>Mia · 听雨叶隙</title>
+<style>
+:root{color-scheme:dark;--ink:#eef8ed;--muted:#bfd0c1;--glass:#102b27c9;--line:#d7f0d633;--mint:#c4e8c9;--gold:#e5d8a5}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;color:var(--ink);background:#102b27}body{min-height:100svh;overflow-x:hidden}
+.scene{position:relative;isolation:isolate;min-height:100svh;overflow:hidden;background:linear-gradient(180deg,#193a3b 0%,#45665a 34%,#203f34 66%,#102b25 100%)}
+.mist{position:absolute;inset:12% -20% auto;height:42%;background:radial-gradient(ellipse at 50% 50%,#d8e9d52b,transparent 68%);filter:blur(22px);pointer-events:none;animation:mist 18s ease-in-out infinite alternate}
+.canopy{position:absolute;inset:-7% -5% auto;height:43%;background:radial-gradient(ellipse at 12% 8%,#10291e 0 17%,transparent 18%),radial-gradient(ellipse at 31% 0%,#234a30 0 20%,transparent 21%),radial-gradient(ellipse at 54% -4%,#173b29 0 25%,transparent 26%),radial-gradient(ellipse at 78% 2%,#244c30 0 23%,transparent 24%),radial-gradient(ellipse at 99% 7%,#102b20 0 18%,transparent 19%);filter:drop-shadow(0 16px 12px #091b15a6);z-index:2}
+.leaf{position:absolute;width:clamp(80px,16vw,220px);height:clamp(34px,6vw,78px);border-radius:100% 0 100% 0;background:linear-gradient(135deg,#6f9b61,#244d34 65%,#193b2a);box-shadow:inset 0 2px 1px #d5ef9b3b,0 8px 16px #071b13a6;transform-origin:0 50%;animation:sway 7s ease-in-out infinite alternate;z-index:3}
+.leaf:after{content:"";position:absolute;left:8%;right:8%;top:50%;height:1px;background:#d5e9a34d;transform:rotate(-8deg)}
+.leaf.l1{top:14%;left:-3%;transform:rotate(19deg)}.leaf.l2{top:21%;left:13%;transform:rotate(37deg);animation-delay:-2s}.leaf.l3{top:10%;right:3%;transform:rotate(156deg);background:linear-gradient(135deg,#789e62,#24482f)}.leaf.l4{top:26%;right:12%;transform:rotate(142deg);animation-delay:-3s}.leaf.l5{top:3%;left:42%;transform:rotate(67deg);animation-delay:-4s}
+.ground{position:absolute;z-index:1;inset:47% -10% -12%;background:radial-gradient(ellipse at 48% 25%,#70936a 0%,#3b6046 26%,#1b3d30 58%,#0d251f 80%);border-radius:48% 52% 0 0/14% 16% 0 0;box-shadow:0 -18px 45px #d7f3ca14}
+.pond{position:absolute;z-index:2;left:50%;top:65%;width:min(72vw,720px);height:min(24vw,230px);min-height:140px;transform:translate(-50%,-50%);border-radius:50%;border:1px solid #c7e7d064;background:radial-gradient(ellipse at 50% 42%,#8bb9a557,#396e665c 40%,#142f2b 72%);box-shadow:0 0 45px #a5e4ca1c,inset 0 0 28px #d8f4dc18;cursor:pointer;overflow:hidden;outline:none}
+.pond:before,.pond:after{content:"";position:absolute;inset:18% 12%;border:1px solid #d6f4dd40;border-radius:50%;animation:ripple 5s ease-out infinite}.pond:after{animation-delay:2.4s}
+.pondHint{position:absolute;inset:auto 0 13%;text-align:center;font-size:12px;letter-spacing:.18em;color:#d7f2de9e}
+.stone{position:absolute;z-index:3;bottom:18%;left:14%;width:clamp(70px,12vw,145px);height:38px;border-radius:50%;background:linear-gradient(#71816b,#273e32);box-shadow:0 13px 12px #071a13a8}
+.arch{position:absolute;z-index:2;right:12%;bottom:29%;width:clamp(80px,15vw,180px);height:clamp(100px,19vw,210px);border:10px solid #4a6042;border-bottom:0;border-radius:90px 90px 0 0;filter:drop-shadow(0 0 10px #c6e9b51a);opacity:.95}
+.arch:before{content:"";position:absolute;inset:-7px;border:2px solid #9bb77b65;border-bottom:0;border-radius:90px 90px 0 0}.arch:after{content:"";position:absolute;left:-14px;right:-14px;bottom:-3px;height:8px;background:#344c35;border-radius:50%}
+.firefly{position:absolute;z-index:4;width:4px;height:4px;border-radius:50%;background:#e5e9a6;box-shadow:0 0 12px 3px #d6ed9b88;animation:float 8s ease-in-out infinite}
+.rain{position:absolute;z-index:5;inset:-20% 0 0;pointer-events:none;opacity:.36;transition:opacity .4s}
+.drop{position:absolute;top:-12%;width:1px;height:40px;background:linear-gradient(transparent,#dcefe8a6);animation:fall var(--dur,1.2s) linear infinite;animation-delay:var(--delay,0s)}
+.vignette{position:absolute;z-index:6;inset:0;pointer-events:none;background:linear-gradient(180deg,#071c1a55,transparent 32%,transparent 64%,#071c1ac9)}
+.ui{position:relative;z-index:8;min-height:100svh;display:flex;flex-direction:column;padding:max(18px,env(safe-area-inset-top)) clamp(14px,4vw,42px) max(18px,env(safe-area-inset-bottom));gap:14px}
+.top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}.eyebrow{font-size:11px;letter-spacing:.28em;color:#c9e6c7;text-transform:uppercase}.title{font-size:clamp(27px,5vw,48px);font-weight:800;letter-spacing:.08em;margin:5px 0 3px;text-shadow:0 4px 24px #061c18}.subtitle{color:#d4e4d3;font-size:13px}
+.chip{border:1px solid #d7f0d64c;background:#102b2780;border-radius:999px;padding:8px 12px;font-size:12px;color:#e0efdb;backdrop-filter:blur(12px);white-space:nowrap}
+.spacer{flex:1;min-height:140px}.quote{align-self:center;max-width:600px;text-align:center;padding:16px 24px;color:#e6f2dc;text-shadow:0 2px 15px #0a211a;font-size:clamp(14px,2.2vw,19px);letter-spacing:.05em;line-height:1.9}.quote small{display:block;color:#c3d8be9e;font-size:10px;letter-spacing:.24em;margin-top:8px}
+.panel{align-self:center;width:min(900px,100%);display:grid;grid-template-columns:1.15fr 1fr;gap:12px;padding:13px;border:1px solid var(--line);border-radius:20px;background:var(--glass);backdrop-filter:blur(18px);box-shadow:0 12px 45px #061a1680}
+.card{padding:8px 10px}.label{font-size:11px;letter-spacing:.14em;color:#b9d2bc;margin-bottom:8px}.controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+button{font:inherit;color:var(--ink);background:#d8ebd916;border:1px solid #d8ebd938;border-radius:12px;padding:10px 12px;cursor:pointer;transition:background .2s,border-color .2s,transform .2s}button:hover{background:#d8ebd928;border-color:#d8ebd97a}button:active{transform:scale(.98)}button[aria-pressed=true]{background:#d5e9d92b;border-color:#c8e8c4a3}
+.range{width:100%;accent-color:#c7e5b5}.micro{font-size:11px;color:#c2d6c3;margin-top:5px;line-height:1.6}.footer{display:flex;justify-content:space-between;align-items:center;gap:12px;color:#b9d1bd;font-size:11px}.toast{position:fixed;z-index:20;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#0d2824ed;border:1px solid #d7f0d64d;border-radius:14px;padding:11px 16px;transition:.25s;max-width:90vw;text-align:center}.toast.show{opacity:1;transform:translate(-50%,0)}
+.rest{position:fixed;z-index:15;inset:0;display:none;place-items:center;padding:20px;background:#071b18b8;backdrop-filter:blur(12px)}.rest.open{display:grid}.restbox{width:min(520px,100%);padding:26px;border-radius:22px;border:1px solid #d7f0d64a;background:linear-gradient(145deg,#234538,#102b27);box-shadow:0 25px 90px #0008}.restbox h2{margin:0 0 8px}.restbox p{color:#c7d9c7;line-height:1.8}.restbox button{margin-top:8px}
+@keyframes fall{to{transform:translate3d(30px,125vh,0)}}@keyframes ripple{0%{transform:scale(.25);opacity:0}20%{opacity:.8}100%{transform:scale(1.5);opacity:0}}@keyframes sway{from{margin-top:-2px}to{margin-top:7px;filter:brightness(1.12)}}@keyframes float{0%,100%{transform:translate(0,0);opacity:.25}50%{transform:translate(18px,-24px);opacity:1}}@keyframes mist{from{transform:translateX(-4%)}to{transform:translateX(5%)}}@media(max-width:640px){.panel{grid-template-columns:1fr}.spacer{min-height:90px}.arch{right:8%;bottom:34%}.pond{top:64%;width:88vw;height:180px}.footer{align-items:flex-start;flex-direction:column}.chip{font-size:10px}.ui{gap:10px}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<main class="scene" id="scene" aria-label="听雨叶隙互动场景">
+  <div class="mist"></div><div class="canopy"></div>
+  <i class="leaf l1"></i><i class="leaf l2"></i><i class="leaf l3"></i><i class="leaf l4"></i><i class="leaf l5"></i>
+  <div class="ground"></div>
+  <button class="pond" id="pond" aria-label="轻触苔藓池，观察水波"><span class="pondHint">轻触水面 · LISTEN TO THE RAIN</span></button>
+  <div class="stone"></div><div class="arch" aria-hidden="true"></div>
+  <div id="fireflies"></div><div class="rain" id="rain" aria-hidden="true"></div><div class="vignette"></div>
+  <section class="ui">
+    <header class="top">
+      <div><div class="eyebrow">MIA'S QUIET PLACE · 01</div><h1 class="title">听雨叶隙</h1><div class="subtitle">一片叶子留下的安静，一池雨水记住的光。</div></div>
+      <div class="chip" id="weatherChip">🌧 细雨 · 静听模式</div>
+    </header>
+    <div class="spacer"></div>
+    <div class="quote">“有些话不用说完。让雨替我们留一会儿。”<small>雨落叶隙，心有余温</small></div>
+    <section class="panel" aria-label="场景互动控制">
+      <div class="card">
+        <div class="label">雨势 · RAIN INTENSITY</div>
+        <input class="range" id="rainRange" type="range" min="0" max="3" value="1" step="1" aria-label="雨势">
+        <div class="controls"><button data-rain="0">停雨</button><button data-rain="1" aria-pressed="true">细雨</button><button data-rain="2">中雨</button><button data-rain="3">密雨</button></div>
+        <div class="micro" id="rainNote">雨丝轻轻落在叶缘，水池泛起一圈圈涟漪。</div>
+      </div>
+      <div class="card">
+        <div class="label">声音与去处 · AMBIENCE</div>
+        <div class="controls"><button id="soundBtn" aria-pressed="false">♫ 开启雨声</button><button id="restBtn">进入藤门后的休息角</button></div>
+        <div class="micro" id="soundNote">声音只在你主动开启后播放；不会自动播放或上传任何数据。</div>
+      </div>
+    </section>
+    <footer class="footer"><span>本地交互场景 · 不连接数据库 · 不写入世界状态</span><span>坐标与跨场景通道尚未校准</span></footer>
+  </section>
+</main>
+<div class="rest" id="rest" role="dialog" aria-modal="true" aria-labelledby="restTitle"><div class="restbox"><div class="eyebrow">HIDDEN REST NOOK</div><h2 id="restTitle">藤门后的休息角</h2><p>这里的雨声更轻。苔藓沿着石阶慢慢生长，叶尖托住最后一滴水。你可以在这里停一会儿，不需要完成任何事。</p><p>这是一处本页面内的氛围切换，不代表已经建立真实的跨场景传送点。</p><button id="backBtn">回到听雨叶隙</button></div></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+(function(){
+'use strict';
+const rain=document.getElementById('rain'),range=document.getElementById('rainRange'),note=document.getElementById('rainNote'),chip=document.getElementById('weatherChip'),pond=document.getElementById('pond'),toast=document.getElementById('toast');
+const rainLabels=['停雨','细雨','中雨','密雨'];
+const rainNotes=['雨暂时停了，只剩叶尖的水滴与池面的余波。','雨丝轻轻落在叶缘，水池泛起一圈圈涟漪。','雨声渐密，叶片轻颤，苔藓池面明暗交叠。','雨幕连成细线，森林深处传来丰沛而温柔的回响。'];
+let audioCtx=null,noiseSource=null,gain=null,filter=null,soundOn=false,toastTimer=null;
+function showToast(message){toast.textContent=message;toast.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.remove('show'),2300);}
+function setRain(level){level=Number(level);range.value=level;const drops=rain.querySelectorAll('.drop');drops.forEach((d,i)=>d.remove());const count=[0,32,75,135][level];for(let i=0;i<count;i++){const d=document.createElement('i');d.className='drop';d.style.left=(Math.random()*100)+'%';d.style.setProperty('--dur',(0.7+Math.random()*1.25/(Math.max(1,level)))+'s');d.style.setProperty('--delay',(-Math.random()*2)+'s');d.style.opacity=(.25+Math.random()*.65).toFixed(2);rain.appendChild(d);}rain.style.opacity=String([0,.32,.52,.78][level]);note.textContent=rainNotes[level];chip.textContent=['☁️ 雨停 · 听叶尖滴水','🌧 细雨 · 静听模式','🌦 中雨 · 叶声渐密','🌧 密雨 · 森林回响'][level];document.querySelectorAll('[data-rain]').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.rain)===level)));if(soundOn)updateAudio(level);}
+function makeFireflies(){const host=document.getElementById('fireflies');for(let i=0;i<19;i++){const f=document.createElement('i');f.className='firefly';f.style.left=(8+Math.random()*84)+'%';f.style.top=(24+Math.random()*52)+'%';f.style.animationDelay=(-Math.random()*8)+'s';f.style.animationDuration=(5+Math.random()*7)+'s';host.appendChild(f);}}
+function makeNoise(){const size=2*44100;const buffer=audioCtx.createBuffer(1,size,44100);const data=buffer.getChannelData(0);let last=0;for(let i=0;i<size;i++){const white=Math.random()*2-1;last=(last+0.025*white)/1.025;data[i]=last*3.5;}noiseSource=audioCtx.createBufferSource();noiseSource.buffer=buffer;noiseSource.loop=true;filter=audioCtx.createBiquadFilter();filter.type='lowpass';filter.frequency.value=1100;gain=audioCtx.createGain();gain.gain.value=0;noiseSource.connect(filter).connect(gain).connect(audioCtx.destination);noiseSource.start();}
+function updateAudio(level){if(!gain||!filter)return;const vols=[0,.025,.045,.07];gain.gain.setTargetAtTime(vols[level],audioCtx.currentTime,.25);filter.frequency.setTargetAtTime([700,1100,1500,2100][level],audioCtx.currentTime,.3);}
+async function toggleSound(){const btn=document.getElementById('soundBtn');if(!soundOn){try{const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)throw new Error('浏览器不支持本地音频');audioCtx=audioCtx||new Ctx();if(audioCtx.state==='suspended')await audioCtx.resume();if(!noiseSource)makeNoise();soundOn=true;updateAudio(Number(range.value));btn.textContent='♫ 关闭雨声';btn.setAttribute('aria-pressed','true');document.getElementById('soundNote').textContent='本地生成的柔和雨噪；再次点击即可关闭。';showToast('雨声已开启，只在此设备本地播放。');}catch(e){showToast(e.message||'无法开启声音');}}else{soundOn=false;if(gain&&audioCtx)gain.gain.setTargetAtTime(0,audioCtx.currentTime,.12);btn.textContent='♫ 开启雨声';btn.setAttribute('aria-pressed','false');document.getElementById('soundNote').textContent='雨声已关闭；需要时可以再次开启。';}}
+range.addEventListener('input',()=>setRain(range.value));document.querySelectorAll('[data-rain]').forEach(b=>b.addEventListener('click',()=>setRain(b.dataset.rain)));document.getElementById('soundBtn').addEventListener('click',toggleSound);
+pond.addEventListener('click',()=>{pond.animate([{filter:'brightness(1)'},{filter:'brightness(1.55)'},{filter:'brightness(1)'}],{duration:850});showToast('水波把一小片天光，轻轻推向岸边。');});
+document.getElementById('restBtn').addEventListener('click',()=>document.getElementById('rest').classList.add('open'));document.getElementById('backBtn').addEventListener('click',()=>document.getElementById('rest').classList.remove('open'));document.getElementById('rest').addEventListener('click',e=>{if(e.target.id==='rest')e.currentTarget.classList.remove('open')});document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('rest').classList.remove('open')});
+makeFireflies();setRain(1);
+})();
+</script>
+</body>
+</html>

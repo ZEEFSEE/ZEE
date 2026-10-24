@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zeefsee.github.io/ZEE/world-scenes/schemas/navigation.schema.json",
+  "title": "ZHI Scene Navigation Graph",
+  "type": "object",
+  "required": ["schema_version", "nodes", "edges"],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "nodes": {"type": "array", "items": {"type": "object", "required": ["node_id"], "properties": {"node_id": {"type": "string"}, "position": {"type": ["object", "null"]}, "coordinate_space": {"enum": ["scene-local", "zhi-world", "unverified"]}}, "additionalProperties": true}},
+    "edges": {"type": "array", "items": {"type": "object", "required": ["from", "to"], "properties": {"from": {"type": "string"}, "to": {"type": "string"}, "status": {"type": "string"}}, "additionalProperties": true}}
+  },
+  "additionalProperties": true
+}

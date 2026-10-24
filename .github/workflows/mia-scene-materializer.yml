@@ -25,8 +25,12 @@ jobs:
           persist-credentials: true
       - name: Regression test scene ID collision handling (isolated temp directory)
         run: python3 scripts/test_materialize_mia_scenes.py
+      - name: Validate existing scene catalog before build
+        run: node world-scenes/validate-scenes.mjs
       - name: Validate and materialize scenes
         run: python3 scripts/materialize_mia_scenes.py
+      - name: Validate generated scene catalog before publishing
+        run: node world-scenes/validate-scenes.mjs
       - name: Commit generated catalog and pages
         run: |
           if git diff --quiet; then echo "No scenes to materialize."; exit 0; fi

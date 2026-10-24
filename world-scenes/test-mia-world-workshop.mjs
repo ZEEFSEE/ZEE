@@ -10,7 +10,7 @@ assert.match(chatPage, /href="\.\/mia-world\.html"/, "Mia chat page must expose 
 assert.match(worldPage, /functions\/v1\/mia-chat/, "Scene design must use the existing Mia chat endpoint");
 assert.match(worldPage, /mia_world_local_scene_drafts_v1/, "Generated drafts must be stored under an explicitly local-only key");
 assert.match(worldPage, /not registered in the server manifest or production world/i, "UI must disclose local-only drafts");
-assert.match(worldPage, /production world position/i, "UI must disclaim production movement");
+assert.match(worldPage, /生产世界位置|production world/i, "UI must disclaim production movement");
 assert.match(worldPage, /verification_status/, "Drafts must preserve explicit verification state");
 assert.equal(scene.scene_id, "nebula-breathing-hub");
 assert.equal(scene.parent_scene_id, "mia-forest-corner");

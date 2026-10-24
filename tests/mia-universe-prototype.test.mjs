@@ -8,16 +8,16 @@ const html = await readFile(new URL('../mia-universe/index.html', import.meta.ur
 const readme = await readFile(new URL('../mia-universe/README.md', import.meta.url), 'utf8');
 
 test('standalone universe is a real WebGL/Three.js scene, not a ZHI map embed', () => {
-  assert.match(html, /three@0\\.169\\.0\\/build\\/three\\.module\\.js/);
-  assert.match(html, /new THREE\\.WebGLRenderer/);
+  assert.match(html, /three@0\.169\.0\/build\/three\.module\.js/);
+  assert.match(html, /new THREE\.WebGLRenderer/);
   assert.match(html, /OrbitControls/);
-  assert.doesNotMatch(html, /SUPABASE_URL|service_role|createClient\\s*\\(|supabase\\.co\\/rest\\/v1/i);
+  assert.doesNotMatch(html, /SUPABASE_URL|service_role|createClient\s*\(|supabase\.co\/rest\/v1/i);
 });
 
 test('inline Three.js module parses as JavaScript', () => {
-  const match = html.match(/<script type="module">([\\s\\S]*?)<\\/script>/);
+  const match = html.match(/<script type="module">([\s\S]*?)<\/script>/);
   assert.ok(match, 'missing module script');
-  const source = match[1].replace(/^import .*;\\s*$/gm, '');
+  const source = match[1].replace(/^import .*;\s*$/gm, '');
   assert.doesNotThrow(() => new Function(source));
 });
 
@@ -25,19 +25,19 @@ test('universe includes live rhythm and creation controls', () => {
   for (const id of ['addWorld', 'addMoon', 'addRing', 'addLife', 'pulse', 'rhythm', 'energy']) {
     assert.ok(html.includes('id="' + id + '"'), 'missing control ' + id);
   }
-  assert.match(html, /requestAnimationFrame\\(animate\\)/);
-  assert.match(html, /Math\\.sin\\(t\\*speed/);
+  assert.match(html, /requestAnimationFrame\(animate\)/);
+  assert.match(html, /Math\.sin\(t\*speed/);
 });
 
 test('agent proposals require Mia approval before a world entity is created', () => {
   assert.match(html, /id="submitProposal"/);
   assert.match(html, /status:'pending'/);
   assert.match(html, /Mia 审核并批准/);
-  assert.match(html, /proposal\\.status='approved'/);
-  assert.match(html, /proposal\\.status='rejected'/);
+  assert.match(html, /proposal\.status='approved'/);
+  assert.match(html, /proposal\.status='rejected'/);
   assert.match(html, /保存修改并重新审核/);
-  assert.match(html, /proposal\\.revisions\\.push/);
-  assert.match(html, /inhabitants\\.push\\(name\\)/);
+  assert.match(html, /proposal\.revisions\.push/);
+  assert.match(html, /inhabitants\.push\(name\)/);
   assert.match(html, /schema_version:1/);
   assert.match(html, /schema_version:3/);
 });
@@ -101,8 +101,8 @@ test('AI review contract fails closed on malformed JSON, missing rationale, and 
 });
 
 test('local snapshot persistence is present and limits are documented', () => {
-  assert.match(html, /localStorage\\.setItem\\('mia-independent-universe-v1'/);
-  assert.match(html, /localStorage\\.getItem\\('mia-independent-universe-v1'/);
+  assert.match(html, /localStorage\.setItem\('mia-independent-universe-v1'/);
+  assert.match(html, /localStorage\.getItem\('mia-independent-universe-v1'/);
   assert.match(readme, /not a live Mia AI judgment/);
   assert.match(readme, /Mia-reviewed construction queue/);
   assert.match(readme, /does not read or write ZHI Core/);

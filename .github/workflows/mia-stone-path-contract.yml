@@ -6,6 +6,8 @@ on:
       - "world-scenes/mia-assets/stone-path-forest-to-lounge.json"
       - "world-scenes/mia-assets/navigation.json"
       - "world-scenes/mia-assets/validate-stone-path.mjs"
+      - "world-scenes/mia-assets/stone-path-runtime-adapter.mjs"
+      - "world-scenes/mia-assets/stone-path-runtime-adapter.test.mjs"
       - ".github/workflows/mia-stone-path-contract.yml"
   pull_request:
     paths:
@@ -27,3 +29,5 @@ jobs:
           node-version: 22
       - name: Validate authored stone path and navigation contract
         run: node world-scenes/mia-assets/validate-stone-path.mjs
+      - name: Test fail-closed runtime adapter with isolated mocks
+        run: node --test world-scenes/mia-assets/stone-path-runtime-adapter.test.mjs

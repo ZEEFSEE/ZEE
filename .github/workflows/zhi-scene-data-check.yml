@@ -1,0 +1,31 @@
+name: ZHI Scene Data Checks
+
+on:
+  pull_request:
+    paths:
+      - "world-scenes/**"
+      - ".github/workflows/zhi-scene-data-check.yml"
+  push:
+    branches:
+      - "feat/zhi-3d-scene-data-foundation"
+    paths:
+      - "world-scenes/**"
+      - ".github/workflows/zhi-scene-data-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  structural-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check validator syntax
+        run: node --check world-scenes/validate-scenes.mjs
+      - name: Validate scene catalog structure
+        run: node world-scenes/validate-scenes.mjs

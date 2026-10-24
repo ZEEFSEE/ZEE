@@ -1,0 +1,35 @@
+name: Mia autonomous scene materializer
+
+on:
+  push:
+    paths:
+      - "world-scenes/inbox/*.json"
+      - "scripts/materialize_mia_scenes.py"
+      - ".github/workflows/mia-scene-materializer.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mia-scene-materializer
+  cancel-in-progress: false
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          persist-credentials: true
+      - name: Validate and materialize scenes
+        run: python3 scripts/materialize_mia_scenes.py
+      - name: Commit generated catalog and pages
+        run: |
+          if git diff --quiet; then echo "No scenes to materialize."; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add world-scenes *.html
+          git commit -m "Build Mia-authored scenes from inbox"
+          git push

@@ -66,6 +66,7 @@ if (!manifest || !Array.isArray(manifest.scenes)) {
       warnings.push(`${entry.scene_id}: verification is ${String(scene.verification_status ?? "missing")}; not runtime-ready`);
     }
     for (const [kind, relative] of Object.entries(scene.files ?? {})) {
+      if (relative === null) continue;
       const referenced = safeRelative(path.dirname(sceneFile), relative);
       if (!referenced) {
         errors.push(`${entry.path}: unsafe ${kind} file reference: ${String(relative)}`);

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zeefsee.github.io/ZEE/world-scenes/schemas/geometry.schema.json",
+  "title": "ZHI Scene Geometry Feature",
+  "type": "object",
+  "required": ["schema_version", "feature_id", "kind", "coordinate_space"],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "feature_id": {"type": "string", "minLength": 1},
+    "kind": {"type": "string", "minLength": 1},
+    "coordinate_space": {"enum": ["scene-local", "zhi-world", "unverified"]},
+    "dimensions": {"type": ["object", "null"]},
+    "vertices": {"type": "array"},
+    "asset_uri": {"type": ["string", "null"]},
+    "verification_status": {"enum": ["verified", "unverified", "pending"]}
+  },
+  "additionalProperties": true
+}

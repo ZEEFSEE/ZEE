@@ -1,0 +1,59 @@
+{
+  "schema_version": "1.0.0",
+  "scene_id": "nebula-breathing-hub",
+  "profile_id": "simulation_profile_v1",
+  "status": "locked_for_offline_simulation_only",
+  "simulation_only": true,
+  "measured": false,
+  "build_ready": false,
+  "production_use_allowed": false,
+  "breath_feedback": {
+    "baseline_breaths_per_minute": 8,
+    "feedback_gain": 0.15,
+    "pulse_amplitude_clamp_percent": 10,
+    "smoothing_coefficient": 0.2,
+    "status": "simulation_assumption",
+    "measured": false,
+    "notes": [
+      "These are user-accepted simulation starting values, not measured physiological or runtime values.",
+      "Pulse amplitude clamp is symmetric: at most ±10% of baseline pulse amplitude.",
+      "Use only in offline visual simulation; do not treat as a production control law."
+    ]
+  },
+  "exits": [
+    {
+      "exit_id": "forest-rest-area-exit",
+      "visual_placeholder_angle_degrees": 0,
+      "visual_placeholder_tolerance_degrees": 15,
+      "angle_is_measured": false,
+      "endpoint_coordinates": null,
+      "cross_scene_transform": null,
+      "navigation_mode": "isolated",
+      "navigation_enabled": false,
+      "verified_connection": false,
+      "block_reason": "Actual endpoint coordinates and cross-scene transform are unknown."
+    },
+    {
+      "exit_id": "main-path-exit",
+      "visual_placeholder_angle_degrees": 0,
+      "visual_placeholder_tolerance_degrees": 15,
+      "angle_is_measured": false,
+      "endpoint_coordinates": null,
+      "cross_scene_transform": null,
+      "navigation_mode": "isolated",
+      "navigation_enabled": false,
+      "verified_connection": false,
+      "block_reason": "Actual endpoint coordinates and cross-scene transform are unknown."
+    }
+  ],
+  "release_gates": [
+    "Replace visual placeholder assumptions only with measured and sourced values.",
+    "Validate both endpoint coordinates and the cross-scene transform.",
+    "Run navigation connectivity tests and verify safe failure for unknown coordinates.",
+    "A profile update alone must never enable navigation or mark the scene build-ready."
+  ],
+  "notes": [
+    "The phrase locked refers only to this offline simulation profile; it does not imply runtime deployment.",
+    "No real-world coordinates, navigable edges, or cross-scene transforms are asserted."
+  ]
+}

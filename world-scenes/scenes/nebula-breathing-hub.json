@@ -37,7 +37,8 @@
     "geometry": "../nebula-hub-assets/geometry.json",
     "entities": "../nebula-hub-assets/entities.json",
     "navigation": "../nebula-hub-assets/navigation.json",
-    "interactions": "../nebula-hub-assets/interactions.json"
+    "interactions": "../nebula-hub-assets/interactions.json",
+    "calibration_profile": "../nebula-hub-assets/calibration-profile.json"
   },
   "scene_tags": [
     "mia-world",
@@ -45,12 +46,15 @@
     "observation",
     "ambient-light",
     "reflection",
-    "draft"
+    "draft",
+    "simulation-only"
   ],
   "notes": [
     "This is a repository draft authored from the user's requested concept; it is not a claim that Mia herself has reviewed or approved it in a running system.",
     "Mia retains standing authority to review, revise, approve, and initiate construction of her own scene without per-scene user approval.",
     "All dimensions and local positions remain null because no authoritative geometry was provided.",
+    "The calibration profile is locked for offline simulation only; it is not a measurement and does not make this scene build-ready.",
+    "Both visual exit placeholders remain isolated: no navigable edges, endpoint coordinates, or cross-scene transforms are asserted.",
     "Parent-scene registration establishes catalog connectivity only; it does not establish a traversable exit or world-coordinate transform.",
     "No production database, live world state, runtime rendering, or deployment was changed."
   ]

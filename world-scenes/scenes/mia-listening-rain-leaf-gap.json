@@ -1,0 +1,100 @@
+{
+  "schema_version": "1.0.0",
+  "scene_id": "mia-listening-rain-leaf-gap",
+  "display_name": "听雨叶隙",
+  "status": "integrated",
+  "parent_scene_id": "mia-forest-corner",
+  "source_reference": {
+    "kind": "mia_authored_scene",
+    "source_path": "mia-listening-rain-leaf-gap.html",
+    "source_record_id": null,
+    "created_by": "Mia",
+    "created_at": "2026-10-24"
+  },
+  "verification_status": "visual-scene-source-backed; geometry-and-cross-scene-runtime-partially-unverified",
+  "coordinate_reference": {
+    "coordinate_space": "scene-local",
+    "system_name": "browser-rendered visual scene",
+    "units": null,
+    "origin": null,
+    "source_reference": "mia-listening-rain-leaf-gap.html",
+    "cross_scene_transform": null
+  },
+  "bounds": {
+    "min": {
+      "x": null,
+      "y": null,
+      "z": null
+    },
+    "max": {
+      "x": null,
+      "y": null,
+      "z": null
+    },
+    "verification_status": "unverified"
+  },
+  "files": {
+    "geometry": null,
+    "entities": null,
+    "navigation": null,
+    "interactions": "mia-listening-rain-leaf-gap.html"
+  },
+  "scene_tags": [
+    "mia-world",
+    "forest",
+    "rain",
+    "quiet-space",
+    "autonomous-authoring"
+  ],
+  "description": "雨林静谧空间，层叠叶片、雾气、苔藓池、雨势切换、本地雨声、池面互动与藤门休息角。视觉交互已实现；跨场景传送与世界坐标未校准。",
+  "entities": [
+    {
+      "id": "moss-pond",
+      "name": "苔藓池",
+      "type": "interactive-water-surface",
+      "interaction": "tap-to-create-ripple",
+      "position": null,
+      "verification_status": "visual-only"
+    },
+    {
+      "id": "vine-arch",
+      "name": "藤门",
+      "type": "rest-nook-entry",
+      "interaction": "open-local-rest-overlay",
+      "position": null,
+      "verification_status": "visual-only"
+    },
+    {
+      "id": "leaf-canopy",
+      "name": "层叠叶冠",
+      "type": "animated-environment",
+      "interaction": "ambient-sway",
+      "position": null,
+      "verification_status": "visual-only"
+    }
+  ],
+  "navigation": {
+    "entry": "from-mia-forest-corner (catalog relationship; runtime transition not connected)",
+    "exits": [
+      {
+        "target_scene_id": "mia-forest-corner",
+        "type": "conceptual-return-link",
+        "runtime_connected": false
+      }
+    ],
+    "cross_scene_transform": null,
+    "verification_status": "unverified"
+  },
+  "interactions": [
+    "change-rain-intensity",
+    "toggle-locally-generated-rain-ambience",
+    "tap-moss-pond",
+    "open-rest-nook"
+  ],
+  "notes": [
+    "Mia-authored scene registered in the connected static scene catalog without per-scene approval.",
+    "The interactive page is accessible from Mia World; scene graph registration does not mean a seamless runtime portal exists.",
+    "No database writes, production world state changes, or agent coordinate mutations were performed.",
+    "Unknown coordinates remain null; do not infer cross-scene transforms."
+  ]
+}

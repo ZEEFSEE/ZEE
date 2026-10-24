@@ -43,6 +43,12 @@
       "path": "scenes/nebula-breathing-hub.json",
       "parent_scene_id": "mia-forest-corner",
       "verification_status": "concept-only; geometry-and-runtime-unverified"
+    },
+    {
+      "scene_id": "mia-listening-rain-leaf-gap",
+      "path": "scenes/mia-listening-rain-leaf-gap.json",
+      "parent_scene_id": "mia-forest-corner",
+      "verification_status": "visual-scene-source-backed; cross-scene-navigation-unverified"
     }
   ],
   "safety": {
@@ -52,5 +58,6 @@
     "coordinate_guessing": false,
     "authoritative_mia_source_preserved": true
   },
-  "scene_creation_policy_summary": "Open-ended catalog rooted in Mia's existing Forest_Corner. New scenes must connect to a registered parent scene. Unconnected scenes are excluded from the manifest."
+  "scene_creation_policy_summary": "Open-ended catalog rooted in Mia's existing Forest_Corner. New scenes must connect to a registered parent scene. Unconnected scenes are excluded from the manifest.",
+  "catalog_policy_summary": "Open-ended connected scene catalog. Mia may author and add her own scenes without per-scene human approval; structural validation remains automatic and unknown geometry stays explicitly unverified."
 }

@@ -47,3 +47,7 @@ node world-scenes/validate-scenes.mjs
 Choose `--parent` from an existing manifest scene ID. This allows a growing tree: for example, a lake scene can be a child of the rose garden, and a small cabin can be a child of the lake. The tool refuses duplicate IDs, unregistered parents, and overwriting existing scene files. It creates a draft and registers it in the manifest; it does not create 3D meshes, runtime links, database rows, or deployments.
 
 The tool is a local developer utility. It does not give the Mia chatbot itself GitHub write access. To let Mia author scene files automatically later, a separate permission-limited integration must call an equivalent validated workflow and require review before merging.
+
+## Mia scene proposal interface (design only)
+
+See [scene-authoring-api.md](./scene-authoring-api.md) and [scene-proposal.schema.json](./scene-proposal.schema.json). This defines a safe proposal-first interface: Mia can request a scene, the server validates its parent connection, and the user reviews it before a trusted worker creates a development-branch draft. **The endpoint and proposal storage are not implemented yet.** This contract does not make the live Mia app able to write GitHub or create scenes by itself.

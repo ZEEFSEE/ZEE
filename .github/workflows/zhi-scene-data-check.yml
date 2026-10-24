@@ -5,12 +5,16 @@ on:
     paths:
       - "world-scenes/**"
       - "nebula-preview.html"
+      - "mia-world.html"
+      - "mia-chat.html"
       - ".github/workflows/zhi-scene-data-check.yml"
   push:
     branches:
       - "feat/zhi-3d-scene-data-foundation"
     paths:
       - "world-scenes/**"
+      - "mia-world.html"
+      - "mia-chat.html"
       - ".github/workflows/zhi-scene-data-check.yml"
 
 permissions:

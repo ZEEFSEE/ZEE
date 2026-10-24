@@ -1,0 +1,182 @@
+{
+  "schema_version": "1.0.0",
+  "scene_id": "energy-confluence-hub",
+  "baseline_version": "1.2.1",
+  "scene_type": "energy_hub",
+  "status": "draft",
+  "source_of_truth": "user-confirmed baseline in conversation",
+  "coordinate_system": {
+    "status": "uncalibrated",
+    "space": "scene_local",
+    "units": "zhi_world_unit",
+    "meters_per_unit": 1,
+    "meters_per_unit_status": "assumption_unverified",
+    "origin": "platform_top_center",
+    "up_axis": "Y",
+    "transform_to_world": null
+  },
+  "components": [
+    {
+      "id": "hub_platform",
+      "geometry": {
+        "type": "cylinder",
+        "radius": 4.5,
+        "height": 0.25,
+        "center": [
+          0,
+          -0.125,
+          0
+        ]
+      },
+      "material": "moss_stone",
+      "collision": {
+        "enabled": true,
+        "shape": "cylinder",
+        "walkable": true,
+        "validated": false
+      }
+    },
+    {
+      "id": "energy_core",
+      "geometry": {
+        "type": "sphere",
+        "radius": 1.2,
+        "center": [
+          0,
+          1.65,
+          0
+        ]
+      },
+      "material": "translucent_warm_amber",
+      "collision": {
+        "enabled": true,
+        "shape": "sphere",
+        "radius": 1.2,
+        "mode": "solid",
+        "blocks_character": true,
+        "validated": false
+      }
+    },
+    {
+      "id": "breathing_halo",
+      "geometry": {
+        "type": "torus",
+        "major_radius": 1.6,
+        "tube_radius": 0.12,
+        "center": [
+          0,
+          1.65,
+          0
+        ],
+        "orientation": "horizontal_XZ"
+      },
+      "collision": {
+        "enabled": false
+      },
+      "animation": {
+        "behavior": "breathing",
+        "period_seconds": 5.5,
+        "intensity_min": 0.35,
+        "intensity_max": 0.8
+      }
+    },
+    {
+      "id": "vine_arch_exit",
+      "geometry": {
+        "type": "arch_frame",
+        "width": 2.2,
+        "height": 3,
+        "depth": 0.45,
+        "frame_thickness": 0.22,
+        "local_position": [
+          0,
+          0,
+          4.275
+        ],
+        "orientation": "provisional_toward_platform_center"
+      },
+      "collision": {
+        "enabled": true,
+        "shape": "box",
+        "size": [
+          2.2,
+          3,
+          0.45
+        ],
+        "center_offset": [
+          0,
+          1.5,
+          0
+        ],
+        "purpose": "block_unverified_traversal",
+        "validated": false
+      },
+      "portal": {
+        "status": "unverified",
+        "access": "blocked",
+        "traversable": false,
+        "destination_scene_id": null,
+        "destination_anchor": null
+      }
+    }
+  ],
+  "clearance_zones": [
+    {
+      "id": "core_approach_zone",
+      "geometry": {
+        "type": "cylinder",
+        "radius": 1.5,
+        "height": 2.5,
+        "center": [
+          0,
+          1.25,
+          0
+        ]
+      },
+      "purpose": "keep_approach_area_clear",
+      "validated": false
+    }
+  ],
+  "geometry_validation": {
+    "status": "draft",
+    "validated": false,
+    "mesh_generation": "pending",
+    "vertices": [],
+    "faces": [],
+    "collision_volumes": [],
+    "validation_checks": [
+      "platform_dimensions_valid",
+      "core_and_halo_clearance_valid",
+      "arch_clearance_valid",
+      "collision_overlap_checked",
+      "walkable_surface_checked"
+    ]
+  },
+  "navigation": {
+    "status": "isolated_until_validated",
+    "navmesh_version": 1,
+    "polygons": [],
+    "nodes": [],
+    "edges": [],
+    "validated": false
+  },
+  "safety": {
+    "allow_coordinate_guessing": false,
+    "allow_unverified_traversal": false,
+    "allow_runtime_publication_before_validation": false,
+    "database_writes": false,
+    "production_deployment": false,
+    "agent_state_mutation": false
+  },
+  "runtime": {
+    "verified": false,
+    "published": false
+  },
+  "notes": [
+    "This file is a source-controlled proposal baseline, not a claim of runtime integration.",
+    "meters_per_unit=1.0 is an unverified assumption and must not be used to infer a world transform.",
+    "The exit collider intentionally blocks unverified traversal until a real engine adapter and boundary tests are validated.",
+    "Do not add this ZHI scene to the Mia scene catalog merely to reuse its static materializer.",
+    "No database or production runtime is modified by this proposal."
+  ]
+}

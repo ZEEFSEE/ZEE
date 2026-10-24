@@ -61,6 +61,12 @@
       "path": "scenes/test-anchor-8f3a1b.json",
       "parent_scene_id": "mia-forest-corner",
       "verification_status": "static-materializer-regression-only; geometry-and-runtime-unverified"
+    },
+    {
+      "scene_id": "test-anchor-7b6964d1",
+      "path": "scenes/test-anchor-7b6964d1.json",
+      "parent_scene_id": "mia-forest-corner",
+      "verification_status": "scene-page-generated; geometry-and-runtime-unverified"
     }
   ],
   "safety": {

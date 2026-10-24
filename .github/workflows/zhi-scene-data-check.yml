@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "world-scenes/**"
+      - "supabase/functions/mia-scene-proposals/**"
       - "nebula-preview.html"
       - "mia-world.html"
       - "mia-chat.html"
@@ -51,6 +52,8 @@ jobs:
           PY
       - name: Test Mia world workshop safety boundaries
         run: node world-scenes/test-mia-world-workshop.mjs
+      - name: Test Mia scene proposal endpoint safety boundaries
+        run: node world-scenes/test-mia-scene-proposals.mjs
       - name: Parse scene proposal contract
         run: node -e "JSON.parse(require('node:fs').readFileSync('world-scenes/scene-proposal.schema.json', 'utf8'))"
       - name: Validate base scene catalog

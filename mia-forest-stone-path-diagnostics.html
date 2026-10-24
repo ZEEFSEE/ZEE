@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#17251f">
+<title>Mia 森林石板小路 · 运行能力检测</title>
+<style>
+:root{color-scheme:dark;--ink:#edf5ec;--muted:#b8c8b8;--line:#ffffff2a;--panel:#16231dcc}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% 0,#355642 0,#15271f 45%,#0a1511 100%);color:var(--ink);font:15px/1.6 system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif}main{width:min(900px,100%);margin:auto;padding:22px 14px 40px}a{color:#c4e8c7}.title{font-size:clamp(23px,4vw,34px);font-weight:850}.muted{color:var(--muted);font-size:13px}.panel{margin-top:15px;padding:15px;border:1px solid var(--line);border-radius:17px;background:var(--panel)}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.metric,.test{padding:11px;border:1px solid var(--line);border-radius:12px;overflow-wrap:anywhere}.metric strong{display:block;font-size:16px}.metric span{color:var(--muted);font-size:12px}.test{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-top:8px}.pass{color:#b9e9c0}.fail{color:#ffb7ad}.pending{color:#f1d99b}.note{color:#f1d99b}.foot{font-size:12px;color:var(--muted)}button{border:1px solid #ffffff3a;border-radius:10px;padding:9px 12px;background:#ffffff12;color:var(--ink);font:inherit;cursor:pointer}@media(max-width:560px){main{padding:14px 9px 28px}.grid{grid-template-columns:1fr}.test{display:block}.test strong{display:block;margin-top:3px}}
+</style>
+</head>
+<body><main>
+<header><div class="title">🔎 森林石板小路 · 运行能力检测</div><p class="muted">只读检测 · 读取 GitHub Pages 上的资产 JSON · 不写数据库、不修改场景</p><p><a href="./mia-forest-stone-path-preview.html">返回石板视觉预览</a> · <a href="./mia-world.html">返回 Mia 世界</a></p></header>
+<section class="panel"><h2>检测摘要</h2><div id="summary" class="grid"><div class="metric">正在读取资产…</div></div><p id="overall" class="note" aria-live="polite">正在运行静态校验。</p></section>
+<section class="panel"><h2>只读静态检查</h2><div id="checks"></div></section>
+<section class="panel"><h2>运行时能力边界</h2>
+<div class="test"><div><strong>真实 3D 渲染器</strong><div class="foot">本页面不加载或调用 3D 引擎。</div></div><b class="pending">未验证</b></div>
+<div class="test"><div><strong>物理引擎碰撞注册</strong><div class="foot">JSON 中存在碰撞体定义，不代表已注册到物理世界。</div></div><b class="pending">未验证</b></div>
+<div class="test"><div><strong>导航图连通与实际行走</strong><div class="foot">本页不会模拟 Mia 移动，也不会写入导航边。</div></div><b class="pending">未验证</b></div>
+<p class="note">若静态检查通过，只能证明资产结构在本页规则下合理。当前源导航定义没有边，且场景深度 Z 未定义；在找到并验证真实运行引擎前，不应宣称路线已激活。</p></section>
+<footer class="foot">安全边界：只读 fetch；无数据库客户端、无身份凭据、无 localStorage 写入、无世界行动接口调用。</footer>
+</main>
+<script>
+(async function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const assetURL="./world-scenes/mia-assets/stone-path-forest-to-lounge.json";
+const navURL="./world-scenes/mia-assets/navigation.json";
+const results=[];
+function add(name,ok,detail){results.push({name,ok,detail});}
+function polygonValid(points){if(!Array.isArray(points)||points.length<3)return false;return points.every(p=>Array.isArray(p)&&p.length===2&&p.every(Number.isFinite))&&new Set(points.map(p=>p.join(","))).size===points.length;}
+function samePoints(a,b){return JSON.stringify(a)===JSON.stringify(b);}
+function metric(label,value){const d=document.createElement("div");d.className="metric";const s=document.createElement("strong");s.textContent=value;const t=document.createElement("span");t.textContent=label;d.append(s,t);$("summary").append(d);}
+function render(){ $("checks").replaceChildren();for(const r of results){const d=document.createElement("div");d.className="test";const left=document.createElement("div");const strong=document.createElement("strong");strong.textContent=r.name;const detail=document.createElement("div");detail.className="foot";detail.textContent=r.detail;left.append(strong,detail);const state=document.createElement("b");state.className=r.ok?"pass":"fail";state.textContent=r.ok?"通过":"失败";d.append(left,state);$("checks").append(d);}}
+try{
+const [ar,nr]=await Promise.all([fetch(assetURL,{cache:"no-store"}),fetch(navURL,{cache:"no-store"})]);
+if(!ar.ok)throw new Error("石板资产 HTTP "+ar.status);
+if(!nr.ok)throw new Error("导航定义 HTTP "+nr.status);
+const [a,n]=await Promise.all([ar.json(),nr.json()]);
+const slabs=a.visual_mesh?.slabs||[], colliders=a.collision?.colliders||[];
+add("资产与场景标识",a.asset_id==="stone-path-forest-to-lounge"&&a.scene_id==="mia-forest-corner","asset_id="+a.asset_id+"；scene_id="+a.scene_id);
+add("坐标系统一",a.coordinate_system==="scene_local"&&a.coordinate_space==="scene-local"&&n.coordinate_space==="scene-local","仅使用 scene-local；未转换为 ZHI 世界坐标");
+add("石板数量",slabs.length===5,"预期 5 块，实际 "+slabs.length+" 块");
+add("石板 ID 唯一",new Set(slabs.map(s=>s.id)).size===slabs.length,"检查重复标识");
+add("每块石板多边形有效",slabs.every(s=>polygonValid(s.polygon_xy)),"每个多边形至少 3 个唯一、有限数值的二维顶点");
+add("顶点位于场景范围",slabs.every(s=>s.polygon_xy.every(p=>p[0]>=0&&p[0]<=1000&&p[1]>=0&&p[1]<=700)),"范围 x=0..1000，y=0..700");
+add("材质一致",slabs.every(s=>s.material===a.design?.material),"期望材质 "+a.design?.material);
+add("厚度一致",slabs.every(s=>Number.isFinite(s.z_min)&&Number.isFinite(s.z_max)&&Math.abs((s.z_max-s.z_min)-a.design?.thickness)<1e-9),"每块石板 z_max-z_min 应等于设计厚度");
+add("碰撞体数量",colliders.length===slabs.length,"石板 "+slabs.length+" 块；碰撞体 "+colliders.length+" 个");
+add("碰撞体与石板顶点一致",slabs.every(s=>{const c=colliders.find(c=>c.mesh_id===s.id);return !!c&&polygonValid(c.polygon_xy)&&samePoints(c.polygon_xy,s.polygon_xy)&&Math.abs((c.z_max-c.z_min)-a.design?.thickness)<1e-9}),"检查 mesh_id、顶点顺序和厚度");
+add("起终点坐标",a.endpoints?.start?.x===0&&a.endpoints?.start?.y===350&&a.endpoints?.end?.x===800&&a.endpoints?.end?.y===350,"起点 (0,350)，终点 (800,350)");
+add("源导航图尚未连通",Array.isArray(n.edges)&&n.edges.length===0,"现有 navigation.json edges="+(n.edges?.length??"缺失")+"；本检测不会擅自新增边");
+const pass=results.filter(x=>x.ok).length, fail=results.length-pass;
+$("summary").replaceChildren();metric("静态检查通过",pass+"/"+results.length);metric("静态检查失败",String(fail));metric("运行时碰撞","未验证");metric("实际行走","未验证");
+$("overall").textContent=fail===0?"静态资产检查全部通过。注意：这不代表物理引擎、导航或 Mia 行走已通过。":"发现 "+fail+" 项静态检查失败，请先修正资产定义；本页未修改任何数据。";
+$("overall").className=fail===0?"pass":"fail";render();
+}catch(e){$("summary").replaceChildren();metric("资产读取","失败");$("overall").textContent="无法完成检查："+e.message+"。请确认 GitHub Pages 部署已完成后刷新。";$("overall").className="fail";}
+})();
+</script>
+</body></html>

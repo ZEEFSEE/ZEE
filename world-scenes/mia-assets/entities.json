@@ -82,6 +82,41 @@
       "ai_interaction": {
         "enabled": false
       }
+    },
+    {
+      "schema_version": "1.0.0",
+      "entity_id": "gift-mia-three-color-rose",
+      "entity_type": "virtual_gift",
+      "authoritative_ref": "mia/forest-corner.json#/gift",
+      "position": {
+        "x": 800,
+        "y": 350,
+        "z": null
+      },
+      "coordinate_space": "scene-local",
+      "verification_status": "source-backed-local-position",
+      "status": "delivered_in_virtual_scene",
+      "gift": {
+        "flower_count": 9,
+        "flowers": [
+          {
+            "color": "red",
+            "count": 3
+          },
+          {
+            "color": "yellow",
+            "count": 3
+          },
+          {
+            "color": "white",
+            "count": 3
+          }
+        ],
+        "scent": {
+          "mode": "virtual_scent_imagery",
+          "physical_scent_emitted": false
+        }
+      }
     }
   ],
   "notes": [

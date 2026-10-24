@@ -48,7 +48,7 @@ assert.equal(asset.endpoints?.start?.y, 350);
 assert.equal(asset.endpoints?.start?.node_id, "forest-corner-left-boundary-test-entry");
 assert.equal(asset.endpoints?.end?.x, 800);
 assert.equal(asset.endpoints?.end?.y, 350);
-assert.equal(asset.endpoints?.end?.z, null);
+assert.ok(asset.endpoints?.end?.z == null, "endpoint z must remain unspecified until depth is calibrated");
 assert.equal(asset.continuous_walkable_route_asserted, false, "authored data must not claim a verified continuous runtime route");
 
 const nodes = new Map((nav.nodes ?? []).map((n) => [n.node_id, n]));

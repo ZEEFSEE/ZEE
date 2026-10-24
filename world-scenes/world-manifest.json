@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.0.0",
+  "world_id": "zhi-world",
+  "title": "ZHI World 3D Scene Data Catalog",
+  "status": "schema_foundation",
+  "source_of_truth": {
+    "world_state": "existing ZHI world backend",
+    "scene_metadata": "world-scenes/scenes/*.json",
+    "rule": "Scene files describe spatial representation; they do not override authoritative agent state, movement, relationships, or world rules."
+  },
+  "coordinate_system": {
+    "world_coordinates": {
+      "name": "zhi-world-coordinates",
+      "units": "unverified",
+      "origin": null,
+      "axes": null,
+      "extent": {
+        "x": null,
+        "y": null,
+        "z": null
+      },
+      "verification_status": "unverified",
+      "notes": "Must be read from authoritative ZHI world configuration before any conversion or 3D placement."
+    },
+    "scene_local_coordinates": {
+      "name": "scene-local",
+      "units": "scene-defined units",
+      "origin": "scene origin",
+      "axes": null,
+      "verification_status": "schema_only",
+      "notes": "Local coordinates must never be treated as world coordinates without an explicit verified mapping."
+    },
+    "vertical_axis": null,
+    "scale_to_meters": null
+  },
+  "scenes": [
+    {
+      "scene_id": "central-plaza",
+      "path": "scenes/central-plaza.json",
+      "verification_status": "metadata_pending"
+    },
+    {
+      "scene_id": "palace",
+      "path": "scenes/palace.json",
+      "verification_status": "metadata_pending"
+    },
+    {
+      "scene_id": "forest",
+      "path": "scenes/forest.json",
+      "verification_status": "metadata_pending"
+    },
+    {
+      "scene_id": "education-center",
+      "path": "scenes/education-center.json",
+      "verification_status": "metadata_pending"
+    }
+  ],
+  "asset_formats": {
+    "preferred_model": "glTF/GLB",
+    "metadata": "JSON",
+    "textures": [
+      "PNG",
+      "JPEG",
+      "WebP"
+    ]
+  },
+  "safety": {
+    "database_writes": false,
+    "production_deployment": false,
+    "agent_state_mutation": false,
+    "invent_coordinates": false,
+    "require_authoritative_arrival_confirmation": true
+  }
+}

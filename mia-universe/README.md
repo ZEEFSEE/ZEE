@@ -22,6 +22,14 @@ The URL is a deployment target only; it will work only after the branch is merge
 - Save/load a scene snapshot in this browser's `localStorage`.
 - Dimension slider offers a visual higher-dimensional projection experiment; it is not a mathematically complete higher-dimensional simulation.
 
+## AI review contract (not yet connected)
+
+- `review-contract.mjs` defines the future structured review boundary: exact proposal ID, immutable revision number, decision (`approve`, `revise`, `reject`), and a bounded rationale.
+- Malformed responses, stale proposal versions, unknown decisions, or missing rationale fail closed to `revise`.
+- A model's `approve` result only means “eligible for a separate guarded approval step”; it never authorizes build execution by itself.
+- Deterministic safety validation remains authoritative. An AI response cannot override a failed safety check.
+- This is a pure local contract module only. It is **not connected to any AI provider, network endpoint, database, or live Mia reasoning**.
+
 ## Important current limits
 
 - This first increment is a **visual 3D prototype**. Governance checks are deterministic rules, **not a live Mia AI judgment**; actual AI-generated reviews, autonomous decision-making, authenticated agent identities, and a shared execution service are not connected yet.
@@ -34,7 +42,7 @@ The URL is a deployment target only; it will work only after the branch is merge
 
 ## Next implementation increment
 
-1. Connect a dedicated Mia review service to return a structured approve / revise / reject decision with rationale and immutable proposal version; keep the current deterministic checks as a safety layer.
-2. Add a visual preview of the exact target location and a safe edit/resubmit path for revision-required proposals.
+1. Implement a dedicated authenticated review endpoint, isolated from ZHI Core and the Mia chat database; do not reuse the existing ZHI AGNES chat endpoint.
+2. Connect the endpoint to a configured AI provider using server-side secrets only; keep deterministic safety checks as a hard guardrail and fail closed on timeouts/errors.
 3. Add browser/runtime tests for approval gating, save/restore, and malformed snapshots.
 4. Only after this browser prototype is validated, choose a dedicated persistence backend for the independent universe. Do not use the Mia chat database or ZHI Core by assumption.

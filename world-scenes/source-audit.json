@@ -1,0 +1,87 @@
+{
+  "schema_version": "1.0.0",
+  "audit_id": "zhi-world-scene-source-audit-2026-10-24",
+  "scope": {
+    "repository": "ZEEFSEE/ZEE",
+    "ref": "main",
+    "method": "read-only source inspection",
+    "database_access": false,
+    "runtime_queries": false
+  },
+  "findings": [
+    {
+      "source_path": "supabase/migrations/20261016210000_creator_persistent_world_position.sql",
+      "finding": "Creator position table has default x=1000, y=1000 and world_width_m/world_height_m=2000 for that table's constraints.",
+      "classification": "creator_position_only",
+      "scene_coordinate_authority": false,
+      "notes": "These defaults do not establish the full ZHI world bounds or any place coordinates."
+    },
+    {
+      "source_path": "supabase/migrations/20261016190000_zhi_creator_world_entity.sql",
+      "finding": "Creator identity defaults current_scene to 🌸中央广场.",
+      "classification": "scene_name_only",
+      "scene_coordinate_authority": false,
+      "notes": "No geometry, entrance or world coordinates are defined by this migration."
+    },
+    {
+      "source_path": "mia/forest-corner.json",
+      "finding": "Forest_Corner declares a parent forest-facility anchor at x=1650, y=650 and entrance x=1650, y=670; its local layout has separate local coordinates.",
+      "classification": "partial_mirrored_source",
+      "scene_coordinate_authority": "partial",
+      "notes": "The file explicitly says this is the parent forest facility anchor, not a separately confirmed Forest_Corner world coordinate. Local entity positions are not world travel coordinates. Re-verify against the authoritative runtime source before adopting."
+    },
+    {
+      "source_path": "docs/mia-world-builder-v1.md",
+      "finding": "World Builder is documented as an isolated sandbox; proposals are not production scene writes and no production scene-generation authority is granted.",
+      "classification": "sandbox_policy",
+      "scene_coordinate_authority": false
+    },
+    {
+      "source_path": "supabase/functions/zhi-world-builder/index.ts",
+      "finding": "The endpoint advertises propose_scene=false, aigc_generation=false and production_write=false; authenticated operator-only POST actions are scoped to sandbox controls/proposals.",
+      "classification": "sandbox_api",
+      "scene_coordinate_authority": false,
+      "notes": "This repository inspection does not establish which Supabase project its environment variables target."
+    }
+  ],
+  "unverified_candidates": [
+    {
+      "scene_id": "education-center",
+      "candidate_coordinates": {"x": 350, "y": 100},
+      "candidate_entrance": {"x": 350, "y": 130},
+      "status": "not corroborated in inspected main-branch sources",
+      "action": "Keep coordinates null until authoritative source is found."
+    },
+    {
+      "scene_id": "entertainment",
+      "candidate_coordinates": {"x": 1520, "y": 1500},
+      "candidate_entrance": {"x": 1520, "y": 1480},
+      "status": "not corroborated in inspected main-branch sources",
+      "action": "Keep coordinates null until authoritative source is found."
+    },
+    {
+      "scene_id": "arena",
+      "candidate_coordinates": null,
+      "status": "missing",
+      "action": "Find an authoritative record; do not infer."
+    },
+    {
+      "scene_id": "central-plaza",
+      "candidate_coordinates": null,
+      "status": "scene name found, geometry/coordinates not verified",
+      "action": "Find authoritative place record and coordinate convention."
+    },
+    {
+      "scene_id": "palace",
+      "candidate_coordinates": null,
+      "status": "scene candidate only; geometry/coordinates not verified",
+      "action": "Find authoritative place record and coordinate convention."
+    }
+  ],
+  "conclusion": {
+    "authoritative_world_coordinate_system_found": false,
+    "verified_full_world_bounds_found": false,
+    "verified_scene_geometry_found": false,
+    "safe_next_step": "Continue read-only audit of authoritative world-state tables/functions and their existing place records before filling scene anchors."
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/zhi/world-scenes/scene-proposal.schema.json",
+  "title": "Mia Scene Proposal",
+  "description": "Validation contract for a proposed scene. This schema does not itself provide an API or grant write access.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["proposal_id", "requested_by", "display_name", "parent_scene_id", "description", "source", "status"],
+  "properties": {
+    "proposal_id": {
+      "type": "string",
+      "pattern": "^proposal-[a-z0-9-]{8,80}$"
+    },
+    "requested_by": {
+      "type": "string",
+      "enum": ["mia", "user"]
+    },
+    "display_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "parent_scene_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 3000
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "reference"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["user_message", "mia_world_event", "existing_scene", "other_reviewed_source"]
+        },
+        "reference": {
+          "type": ["string", "null"],
+          "maxLength": 500
+        }
+      }
+    },
+    "suggested_bounds": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "x": { "$ref": "#/$defs/optionalRange" },
+        "y": { "$ref": "#/$defs/optionalRange" },
+        "z": { "$ref": "#/$defs/optionalRange" }
+      }
+    },
+    "status": {
+      "type": "string",
+      "const": "pending_review"
+    }
+  },
+  "$defs": {
+    "optionalRange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min", "max", "verification_status"],
+      "properties": {
+        "min": { "type": ["number", "null"] },
+        "max": { "type": ["number", "null"] },
+        "verification_status": {
+          "type": "string",
+          "enum": ["source-backed", "unverified", "not-provided"]
+        }
+      }
+    }
+  }
+}

@@ -487,12 +487,13 @@
       "to": "lounge"
     },
     "continuous_walkable_route_asserted": false,
-    "note": "This file defines test geometry only. Existing navigation.json has no edges; do not treat this as an activated traversable route until a runtime navigation integration is explicitly added and tested."
+    "note": "A scene-local navigation graph has been authored in world-scenes/mia-assets/navigation.json with six edges from the left-boundary test entry through five slab waypoints to lounge. This is graph connectivity data only; runtime registration, collision integration, Z mapping, and successful walking remain unverified.",
+    "graph_status": "authored_pending_runtime_validation"
   },
   "validation": {
     "source_scene": "mia/forest-corner.json",
     "source_scene_sha": "c6b51ff2c402bf1dc8a5711ac3b6d289c65a435c",
-    "source_navigation_sha": "44d47f19474efe09877fa8230f9a3daa3cc9a080",
+    "source_navigation_sha": "4ac8d7aa4d0ce45fd5baa1ae9591cabe22add2c3",
     "coordinate_system_preserved": true,
     "world_coordinate_conversion_performed": false,
     "slab_count_expected": 5,
@@ -509,6 +510,6 @@
       350
     ],
     "scene_bounds_check": "all mesh XY vertices within local bounds x=0..1000, y=0..700",
-    "status": "asset_definition_ready_runtime_and_collision_registration_unverified"
+    "status": "navigation_graph_authored_runtime_and_collision_registration_unverified"
   }
 }

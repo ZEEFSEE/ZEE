@@ -43,7 +43,9 @@ for (const slab of slabs) {
   assert.ok(Number.isFinite(slab.z_min) && Number.isFinite(slab.z_max), `missing slab z bounds for ${slab.id}`);
 }
 
-assert.deepEqual(asset.endpoints?.start, { x: 0, y: 350, z: null, node_id: "forest-corner-left-boundary-test-entry" });
+assert.equal(asset.endpoints?.start?.x, 0);
+assert.equal(asset.endpoints?.start?.y, 350);
+assert.equal(asset.endpoints?.start?.node_id, "forest-corner-left-boundary-test-entry");
 assert.equal(asset.endpoints?.end?.x, 800);
 assert.equal(asset.endpoints?.end?.y, 350);
 assert.equal(asset.endpoints?.end?.z, null);

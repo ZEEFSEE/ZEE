@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0.0",
+  "policy_id": "zhi-extensible-scene-creation",
+  "status": "proposal",
+  "principle": "The ZHI world scene catalog is open-ended. New scenes may be created as needed; the catalog is not limited to the initial scene list.",
+  "scene_dimensions": "unbounded_by_catalog",
+  "creation_authority": {
+    "mia_may_propose_and_create_scene_files": true,
+    "mia_may_invent_or_overwrite_authoritative_world_coordinates": false,
+    "mia_may_modify_production_world_state": false,
+    "mia_may_deploy_or_write_database": false
+  },
+  "creation_rules": [
+    "Mia may add a new scene JSON file and register it in world-manifest.json when she has a concrete reason or receives a scene request.",
+    "Every new scene must receive a stable, unique scene_id and a unique file path.",
+    "New scenes must include provenance, verification_status, coordinate references, and links to geometry, entities, navigation, and interactions data.",
+    "Unknown coordinates, dimensions, entrances, and connections must remain null or explicitly unverified; do not fill gaps with guessed values.",
+    "A scene may be a sub-scene, room, building, outdoor area, hidden space, or future concept. Its parent relationship must be explicit when known.",
+    "Creating a scene file does not mean the scene is live, rendered, connected to the ZHI runtime, or physically reachable by an agent.",
+    "Before runtime integration, validate schema, stable IDs, coordinate mapping, navigation links, interaction permissions, and duplicate scene IDs.",
+    "Scene files describe spatial content only. Agent identity, relationships, memories, emotions, movement execution, and arrival status remain controlled by their existing authoritative ZHI systems.",
+    "Mia can create files on an authorized development branch or propose a patch; changes to the main branch require the repository's normal review/approval workflow."
+  ],
+  "scene_record_required_fields": [
+    "schema_version",
+    "scene_id",
+    "display_name",
+    "status",
+    "source_reference",
+    "verification_status",
+    "coordinate_reference",
+    "bounds",
+    "files",
+    "notes"
+  ],
+  "suggested_scene_statuses": [
+    "idea",
+    "draft",
+    "review_required",
+    "validated",
+    "integrated",
+    "deprecated"
+  ],
+  "scene_id_policy": "lowercase-kebab-case; stable after publication; never reuse a retired ID",
+  "catalog_update_policy": "Register each new scene in world-manifest.json; do not replace existing entries or assume the list is exhaustive."
+}

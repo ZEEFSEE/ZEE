@@ -1,0 +1,107 @@
+{
+  "schema_version": "1.0.0",
+  "policy_id": "zhi-scene-validation-gates",
+  "enforcement_status": "specification_only",
+  "gates": [
+    {
+      "id": "scene-identity",
+      "checks": [
+        "scene_id is unique across the manifest",
+        "scene_id and file path remain stable after publication",
+        "parent_scene_id exists in the manifest or is null"
+      ],
+      "block_on_failure": true
+    },
+    {
+      "id": "schema-and-files",
+      "checks": [
+        "scene metadata and each referenced JSON file parse successfully",
+        "all referenced files exist",
+        "all files declare compatible schema versions"
+      ],
+      "block_on_failure": true
+    },
+    {
+      "id": "coordinate-integrity",
+      "checks": [
+        "world coordinate convention and units have an authoritative source",
+        "local and world coordinates are not conflated",
+        "all active transforms specify axes, scale, rotation and translation",
+        "unknown values remain null or unverified"
+      ],
+      "block_on_failure": true
+    },
+    {
+      "id": "geometry-integrity",
+      "checks": [
+        "geometry features have stable IDs",
+        "dimensions are non-negative when supplied",
+        "doors and openings align with walkable/navigation data where applicable"
+      ],
+      "block_on_failure": true
+    },
+    {
+      "id": "entity-integrity",
+      "checks": [
+        "scene entity IDs are unique within their namespace",
+        "references to existing ZHI agents/facilities use authoritative IDs",
+        "scene copies do not become alternate sources of truth for agent state"
+      ],
+      "block_on_failure": true
+    },
+    {
+      "id": "navigation-integrity",
+      "checks": [
+        "every edge references existing nodes",
+        "entrance and exit nodes reference valid place IDs where known",
+        "blocked areas are excluded from paths",
+        "routes do not connect across unverified coordinate systems"
+      ],
+      "block_on_failure": true
+    },
+    {
+      "id": "interaction-integrity",
+      "checks": [
+        "interaction targets exist or are explicitly pending",
+        "interaction ranges are non-negative",
+        "world actions match existing authorization and action contracts",
+        "a scene definition alone does not grant movement or interaction permission"
+      ],
+      "block_on_failure": true
+    },
+    {
+      "id": "runtime-readiness",
+      "checks": [
+        "all required integration checks pass",
+        "authoritative ZHI system remains the source of agent position and arrival status",
+        "review/approval is recorded before runtime integration"
+      ],
+      "block_on_failure": true
+    }
+  ],
+  "status_transitions": {
+    "idea": [
+      "draft"
+    ],
+    "draft": [
+      "review_required"
+    ],
+    "review_required": [
+      "validated",
+      "draft"
+    ],
+    "validated": [
+      "integrated",
+      "review_required"
+    ],
+    "integrated": [
+      "deprecated"
+    ],
+    "deprecated": []
+  },
+  "important_limits": [
+    "This file specifies intended validation; it is not itself an executed validator.",
+    "Passing file validation does not prove that a scene has been deployed, rendered, or connected to the live ZHI world.",
+    "No database access or writes are authorized by this policy."
+  ]
+}

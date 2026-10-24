@@ -29,6 +29,8 @@ jobs:
         run: |
           node --check world-scenes/validate-scenes.mjs
           node --check world-scenes/create-scene.mjs
+      - name: Parse scene proposal contract
+        run: node -e "JSON.parse(require('node:fs').readFileSync('world-scenes/scene-proposal.schema.json', 'utf8'))"
       - name: Validate base scene catalog
         run: node world-scenes/validate-scenes.mjs
       - name: Test connected scene authoring in ephemeral checkout

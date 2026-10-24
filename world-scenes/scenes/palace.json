@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0.0",
+  "scene_id": "palace",
+  "display_name": "皇宫",
+  "status": "draft",
+  "source_reference": {
+    "kind": "existing_zhi_world_place",
+    "source_path": null,
+    "source_record_id": null
+  },
+  "verification_status": "unverified",
+  "coordinate_reference": {
+    "world_anchor": {
+      "x": null,
+      "y": null,
+      "z": null
+    },
+    "local_origin_world": {
+      "x": null,
+      "y": null,
+      "z": null
+    },
+    "mapping_id": null
+  },
+  "bounds": {
+    "min": {
+      "x": null,
+      "y": null,
+      "z": null
+    },
+    "max": {
+      "x": null,
+      "y": null,
+      "z": null
+    }
+  },
+  "files": {
+    "geometry": "../schemas/geometry.schema.json",
+    "entities": "../schemas/entities.schema.json",
+    "navigation": "../schemas/navigation.schema.json",
+    "interactions": "../schemas/interactions.schema.json"
+  },
+  "notes": [
+    "Confirm authoritative place ID, entrance and floor layout before filling geometry.",
+    "No world coordinates or dimensions have been asserted."
+  ]
+}

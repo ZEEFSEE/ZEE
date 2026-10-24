@@ -20,10 +20,10 @@ def page(s):
 def make_index(m):
  e=html.escape; rows=[]
  for x in m.get("scenes",[]):
-  p=BASE/x.get("path",""); sid=x.get("scene_id",""); name=sid; desc=x.get("verification_status","未验证"); href="../"+sid+".html"
+  p=BASE/x.get("path",""); sid=x.get("scene_id",""); name=sid; desc=x.get("verification_status","未验证"); href=("../mia-world.html" if sid=="mia-forest-corner" else "../"+sid+".html")
   if p.exists():
    try:
-    s=read(p); name=s.get("display_name",sid); desc=s.get("description",desc); href="../"+(s.get("files") or {}).get("interactions",sid+".html")
+    s=read(p); name=s.get("display_name",sid); desc=s.get("description",desc); href="../"+((s.get("files") or {}).get("interactions") if str((s.get("files") or {}).get("interactions") or "").endswith(".html") else (sid+".html"))
    except Exception: pass
   rows.append('<article><h2><a href="'+e(href,quote=True)+'">'+e(str(name))+'</a></h2><p>'+e(str(desc))+'</p><p class="muted">ID: '+e(str(sid))+' · '+e(str(x.get("verification_status","未验证")))+'</p></article>')
  return '<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mia 世界 · 场景目录</title><style>body{margin:0;background:#101427;color:#f4f2ff;font:16px/1.7 system-ui,sans-serif}main{width:min(900px,100%);margin:auto;padding:24px 16px}a{color:#d8ccff}article{padding:16px;border:1px solid #ffffff28;border-radius:16px;margin:12px 0;background:#171a35cc}.muted{color:#c0bddb;font-size:13px}</style></head><body><main><p><a href="../mia-world.html">← 返回 Mia 世界</a></p><h1>Mia 自主场景目录</h1><p>由 world-manifest.json 自动生成。新场景登记后显示于此；目录登记不代表生产世界已部署。</p>'+"\n".join(rows)+"</main></body></html>"

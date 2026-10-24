@@ -1,0 +1,29 @@
+name: Mia Stone Path Contract
+
+on:
+  push:
+    paths:
+      - "world-scenes/mia-assets/stone-path-forest-to-lounge.json"
+      - "world-scenes/mia-assets/navigation.json"
+      - "world-scenes/mia-assets/validate-stone-path.mjs"
+      - ".github/workflows/mia-stone-path-contract.yml"
+  pull_request:
+    paths:
+      - "world-scenes/mia-assets/stone-path-forest-to-lounge.json"
+      - "world-scenes/mia-assets/navigation.json"
+      - "world-scenes/mia-assets/validate-stone-path.mjs"
+      - ".github/workflows/mia-stone-path-contract.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  authored-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate authored stone path and navigation contract
+        run: node world-scenes/mia-assets/validate-stone-path.mjs

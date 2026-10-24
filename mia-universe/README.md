@@ -24,11 +24,11 @@ The URL is a deployment target only; it will work only after the branch is merge
 
 ## AI review contract (not yet connected)
 
-- `review-contract.mjs` defines the future structured review boundary: exact proposal ID, immutable revision number, decision (`approve`, `revise`, `reject`), and a bounded rationale.
-- Malformed responses, stale proposal versions, unknown decisions, or missing rationale fail closed to `revise`.
+- `review-contract.mjs` defines the structured review boundary and provider-neutral orchestration function: exact proposal ID, revision number, decision (`approve`, `revise`, `reject`), and a bounded rationale.
+- Malformed responses, stale proposal versions, unknown decisions, missing rationale, provider errors, missing provider configuration, and timeouts fail closed to `revise`.
 - A model's `approve` result only means “eligible for a separate guarded approval step”; it never authorizes build execution by itself.
 - Deterministic safety validation remains authoritative. An AI response cannot override a failed safety check.
-- This is a pure local contract module only. It is **not connected to any AI provider, network endpoint, database, or live Mia reasoning**.
+- `runAIReview` accepts an injected provider callback for isolated testing, checks the deterministic safety result first, and never writes to a database or executes a build. This is a pure local contract module only. It is **not connected to any AI provider, network endpoint, database, or live Mia reasoning**.
 
 ## Important current limits
 

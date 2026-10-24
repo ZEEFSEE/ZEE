@@ -120,6 +120,7 @@ test('AI orchestration checks deterministic safety first and fails closed on pro
   });
   assert.equal(unsafe.eligibleForApproval, false);
   assert.equal(providerCalled, false, 'provider must not be called for unsafe proposal');
+  assert.match(unsafe.rationale, /安全规则未通过/);
 
   const noProvider = await runAIReview({ proposal, safetyReview: { ok: true, reasons: [] } });
   assert.equal(noProvider.eligibleForApproval, false);

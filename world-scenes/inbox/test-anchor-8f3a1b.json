@@ -1,0 +1,96 @@
+{
+  "schema_version": "1.0.0",
+  "scene_id": "test-anchor-8f3a1b",
+  "version": "1.0.0-stable",
+  "status": "integrated",
+  "uuid_v4": "d71e3c5a-8b24-4f96-a3c7-6e1d2b9a5074",
+  "display_name": "Test Anchor 8f3a1b - Regression Check",
+  "parent_scene_id": "mia-forest-corner",
+  "description": "Minimalist static coordinate anchor for automated scene creation regression testing. The supplied geometry describes a wireframe cylinder marker intended to test scene-file parsing and registration. This repository materializer generates static catalog pages only; it does not run the ZHI engine, bake meshes, or validate rendering, collision, physics, or navigation.",
+  "scene_tags": [
+    "regression-test",
+    "anchor",
+    "static-materializer"
+  ],
+  "entities": [
+    {
+      "id": "anchor_marker",
+      "name": "Wireframe cylinder anchor",
+      "type": "cylinder",
+      "description": "User-supplied geometry: radius 0.5, height 2.0, center [0, 1.0, 0], material wireframe_blue.",
+      "interaction": "Static catalog regression marker only; no collision or physics."
+    }
+  ],
+  "coordinate_system": {
+    "status": "user_supplied_unverified",
+    "space": "world",
+    "units": "zhi_world_unit",
+    "meters_per_unit": 1,
+    "origin": "center",
+    "up_axis": "Y"
+  },
+  "geometry": {
+    "status": "user_supplied_unverified",
+    "validated": false,
+    "mesh_generation": "bake_immediate",
+    "components": [
+      {
+        "id": "anchor_marker",
+        "type": "cylinder",
+        "radius": 0.5,
+        "height": 2,
+        "center": [
+          0,
+          1,
+          0
+        ],
+        "material": "wireframe_blue",
+        "collision": {
+          "enabled": false
+        }
+      }
+    ]
+  },
+  "coordinate_reference": {
+    "coordinate_space": "scene-local",
+    "units": "zhi_world_unit",
+    "origin": "center",
+    "cross_scene_transform": null
+  },
+  "bounds": {
+    "min": {
+      "x": null,
+      "y": 0,
+      "z": null
+    },
+    "max": {
+      "x": null,
+      "y": 2,
+      "z": null
+    },
+    "verification_status": "unverified"
+  },
+  "metadata": {
+    "purpose": "regression_test",
+    "created_at": "2026-10-24T15:00:00Z",
+    "submitted_uuid_v4": "e4c1a9b2-3d45-6f78-90ab-cd12345678ef",
+    "requested_parent_scene_id": "root-world-scene",
+    "parent_mapping_reason": "root-world-scene is not registered in the Mia scene manifest; mia-forest-corner is the registered catalog root."
+  },
+  "source_reference": {
+    "kind": "user_supplied_regression_fixture",
+    "created_by": "user",
+    "created_at": "2026-10-24"
+  },
+  "verification_status": "static-materializer-regression-only; geometry-and-runtime-unverified",
+  "files": {
+    "interactions": "test-anchor-8f3a1b.html"
+  },
+  "notes": [
+    "Created solely to test the repository-side static materializer.",
+    "Original submitted UUID is preserved in metadata; uuid_v4 contains a syntactically valid version-4 UUID for this fixture.",
+    "The requested parent root-world-scene was not registered, so the test fixture is attached to the existing catalog root mia-forest-corner.",
+    "Geometry and coordinate claims have not been independently validated. This workflow does not render the cylinder in a 3D engine.",
+    "Repository static files only; no database writes, production deployment, or production world-state mutation."
+  ]
+}

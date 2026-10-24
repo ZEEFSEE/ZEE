@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "world-scenes/**"
+      - "nebula-preview.html"
       - ".github/workflows/zhi-scene-data-check.yml"
   push:
     branches:

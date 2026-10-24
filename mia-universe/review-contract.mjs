@@ -97,7 +97,15 @@ export const AI_REVIEW_CONTRACT = Object.freeze({
  */
 export async function runAIReview({ proposal, safetyReview, invokeAI, timeoutMs = 8000 }) {
   if (!safetyReview || safetyReview.ok !== true) {
-    return validateAIReview(null, proposal, safetyReview);
+    return {
+      decision: 'revise',
+      eligibleForApproval: false,
+      proposalId: typeof proposal?.id === 'string' ? proposal.id : null,
+      revision: Number.isSafeInteger(proposal?.revision) ? proposal.revision : null,
+      rationale: '安全规则未通过，未调用 AI，也未批准建造。' +
+        (Array.isArray(safetyReview?.reasons) ? ' ' + safetyReview.reasons.join('；') : ''),
+      source: 'deterministic-safety-override',
+    };
   }
   if (typeof invokeAI !== 'function') {
     return failClosed('尚未配置可信的服务端 AI 审核提供方。', proposal);

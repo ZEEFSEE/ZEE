@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0.0",
+  "scene_id": "nebula-breathing-hub",
+  "display_name": "星云呼吸枢纽",
+  "status": "draft",
+  "parent_scene_id": "mia-forest-corner",
+  "source_reference": {
+    "kind": "user_requested_scene_concept",
+    "source_path": null,
+    "source_record_id": "proposal-nebula-hub-0001",
+    "created_by": "scene-data-foundation-assistant",
+    "created_at": "2026-10-24"
+  },
+  "verification_status": "concept-only; geometry-and-runtime-unverified",
+  "coordinate_reference": {
+    "coordinate_space": "scene-local",
+    "system_name": "Nebula Breathing Hub local layout (not yet defined)",
+    "units": "scene-defined units",
+    "origin": "scene origin (not yet calibrated)",
+    "source_reference": null,
+    "cross_scene_transform": null
+  },
+  "bounds": {
+    "min": {
+      "x": null,
+      "y": null,
+      "z": null
+    },
+    "max": {
+      "x": null,
+      "y": null,
+      "z": null
+    },
+    "verification_status": "unverified"
+  },
+  "files": {
+    "geometry": "../nebula-hub-assets/geometry.json",
+    "entities": "../nebula-hub-assets/entities.json",
+    "navigation": "../nebula-hub-assets/navigation.json",
+    "interactions": "../nebula-hub-assets/interactions.json"
+  },
+  "scene_tags": [
+    "mia-world",
+    "nebula",
+    "observation",
+    "ambient-light",
+    "reflection",
+    "draft"
+  ],
+  "notes": [
+    "This is a repository draft authored from the user's requested concept; it is not a claim that Mia herself has reviewed or approved it in a running system.",
+    "Mia retains standing authority to review, revise, approve, and initiate construction of her own scene without per-scene user approval.",
+    "All dimensions and local positions remain null because no authoritative geometry was provided.",
+    "Parent-scene registration establishes catalog connectivity only; it does not establish a traversable exit or world-coordinate transform.",
+    "No production database, live world state, runtime rendering, or deployment was changed."
+  ]
+}

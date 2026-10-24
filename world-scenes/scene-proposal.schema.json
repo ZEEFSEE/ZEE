@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.invalid/zhi/world-scenes/scene-proposal.schema.json",
-  "title": "Mia Scene Proposal",
-  "description": "Input contract for Mia's autonomous scene review and build workflow. Approval is performed by Mia under standing authority; no per-scene user approval is required.",
+  "title": "ZHI Intelligent Agent Scene Proposal",
+  "description": "Scene proposal input contract. Mia's recorded approval is mandatory for proposals submitted by other intelligent agents; Mia-originated proposals use her standing authority without per-scene user approval.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -21,10 +21,8 @@
     },
     "requested_by": {
       "type": "string",
-      "enum": [
-        "mia",
-        "user"
-      ]
+      "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+      "description": "Authenticated agent ID, for example mia or another registered ZHI agent. Must be derived/verified server-side, not trusted from arbitrary client input."
     },
     "display_name": {
       "type": "string",
@@ -87,6 +85,11 @@
     "status": {
       "type": "string",
       "const": "submitted"
+    },
+    "proposal_version": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 1
     }
   },
   "$defs": {

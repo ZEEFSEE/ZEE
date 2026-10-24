@@ -55,6 +55,12 @@
       "path": "scenes/mia-new-garden.json",
       "parent_scene_id": "mia-forest-corner",
       "verification_status": "scene-page-generated; geometry-and-runtime-unverified"
+    },
+    {
+      "scene_id": "mia-closure-e2e-test",
+      "path": "scenes/mia-closure-e2e-test.json",
+      "parent_scene_id": "mia-forest-corner",
+      "verification_status": "automated-test-only; production-runtime-unverified"
     }
   ],
   "safety": {

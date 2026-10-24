@@ -39,6 +39,16 @@
   },
   "verification_status": "automated-test-only; production-runtime-unverified",
   "notes": [
-    "Disposable test branch only; do not merge into main."
-  ]
+    "Disposable test branch only; do not merge into main.",
+    "Automatically materialized from world-scenes/inbox; static catalog only, no database or production runtime writes."
+  ],
+  "status": "integrated",
+  "source_reference": {
+    "kind": "mia_authored_scene",
+    "created_by": "Mia",
+    "created_at": "2026-10-24"
+  },
+  "files": {
+    "interactions": "mia-closure-e2e-test.html"
+  }
 }

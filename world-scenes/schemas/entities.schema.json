@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zeefsee.github.io/ZEE/world-scenes/schemas/entities.schema.json",
+  "title": "ZHI Scene Entity Reference",
+  "type": "object",
+  "required": ["schema_version", "entity_id", "entity_type"],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "entity_id": {"type": "string", "minLength": 1},
+    "entity_type": {"type": "string", "minLength": 1},
+    "authoritative_ref": {"type": ["string", "null"]},
+    "position": {"type": ["object", "null"]},
+    "coordinate_space": {"enum": ["scene-local", "zhi-world", "unverified"]},
+    "verification_status": {"enum": ["verified", "unverified", "pending"]}
+  },
+  "additionalProperties": true
+}

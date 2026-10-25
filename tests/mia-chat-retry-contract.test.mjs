@@ -119,7 +119,7 @@ test("runtime simulation parses streamed text deltas without persisting partial 
     .replace(/^const handleLine=/, "")
     .replace(/;$/, "")
     .replace("(line:string)", "(line)")
-    .replace(/:\\s*any/g, "");
+    .replace(/:any/g, "");
   const events = [];
   const context = { reply: "", emit: (event) => events.push(event), JSON };
   const handleLine = runInNewContext("(" + arrow + ")", context);

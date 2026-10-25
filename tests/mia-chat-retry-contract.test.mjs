@@ -129,10 +129,10 @@ test("runtime simulation parses streamed text deltas without persisting partial 
   handleLine("data: [DONE]");
   handleLine("data: not-json");
   assert.equal(context.reply, "Hello Mia");
-  assert.deepEqual(events, [
+  assert.equal(JSON.stringify(events), JSON.stringify([
     { type: "delta", content: "Hello " },
     { type: "delta", content: "Mia" },
-  ]);
+  ]));
 });
 
 test("stream persistence occurs only after upstream reader completes; catch path reports uncertainty", () => {

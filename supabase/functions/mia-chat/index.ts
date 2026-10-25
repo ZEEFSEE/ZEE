@@ -464,7 +464,7 @@ if(explorationRequest){const {error:userExploreWriteError}=await db.from("mia_me
   userContent.push({type:"image_url",image_url:{url:"data:"+prepared[i].mime+";base64,"+encoded,detail:"auto"}});
  }
  let upstream:Response;
-  try{upstream=await fetchAgnesWithRetry({model:MODEL,messages:[{role:"system",content:systemForReply},...recent,{role:"user",content:prepared.length?userContent:(message)}],temperature:lowPressureMode?0.55:0.8,max_tokens:lowPressureMode?420:900,stream:body?.stream_response===true},30000,2,35000);}
+  try{upstream=await fetchAgnesWithRetry({model:MODEL,messages:[{role:"system",content:systemForReply},...recent,{role:"user",content:prepared.length?userContent:(message)}],temperature:lowPressureMode?0.55:0.8,max_tokens:lowPressureMode?420:900,stream:body?.stream_response===true},16000,2,35000);}
  catch(e){return json({error:"Agnes API 请求失败或超时；用户消息已保存。",saved_user_message:true},502);}
  if(body?.stream_response===true){
   const streamBody=new ReadableStream<Uint8Array>({

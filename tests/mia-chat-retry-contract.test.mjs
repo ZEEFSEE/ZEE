@@ -108,3 +108,41 @@ test("runtime simulation retries a rejected timeout/network attempt within budge
   assert.equal(response.status, 200);
   assert.equal(calls, 2);
 });
+
+
+test("runtime simulation parses streamed text deltas without persisting partial replies", () => {
+  const parserMatch = source.match(
+    /const handleLine=\(line:string\)=>\{[\s\S]*?\n     \};/,
+  );
+  assert.ok(parserMatch, "production SSE line parser must be present");
+  const arrow = parserMatch[0]
+    .replace(/^const handleLine=/, "")
+    .replace(/;$/, "")
+    .replace("(line:string)", "(line)");
+  const events = [];
+  const context = { reply: "", emit: (event) => events.push(event), JSON };
+  const handleLine = runInNewContext("(" + arrow + ")", context);
+
+  handleLine('data: {"choices":[{"delta":{"content":"Hello "}}]}');
+  handleLine('data: {"choices":[{"delta":{"content":"Mia"}}]}');
+  handleLine("data: [DONE]");
+  handleLine("data: not-json");
+  assert.equal(context.reply, "Hello Mia");
+  assert.deepEqual(events, [
+    { type: "delta", content: "Hello " },
+    { type: "delta", content: "Mia" },
+  ]);
+});
+
+test("stream persistence occurs only after upstream reader completes; catch path reports uncertainty", () => {
+  const streamStart = source.indexOf("const streamBody=new ReadableStream");
+  const readerLoop = source.indexOf("while(true){", streamStart);
+  const persist = source.indexOf('db.from("mia_messages").insert({session_id:sessionId,role:"assistant"', readerLoop);
+  const catchStart = source.indexOf("}catch(e){", persist);
+  assert.ok(streamStart >= 0 && readerLoop > streamStart && persist > readerLoop);
+  assert.ok(catchStart > persist);
+  const catchEnd = source.indexOf("\\n    }", catchStart);
+  const catchBlock = source.slice(catchStart, catchEnd > catchStart ? catchEnd : catchStart + 600);
+  assert.match(catchBlock, /尚未确认完整回复已保存/);
+  assert.doesNotMatch(catchBlock, /db\.from\("mia_messages"\)\.insert/);
+});

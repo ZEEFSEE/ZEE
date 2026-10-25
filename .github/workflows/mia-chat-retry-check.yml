@@ -25,10 +25,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Check retry and stream safety contracts
+        run: node --test tests/mia-chat-retry-contract.test.mjs
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
       - name: Check Mia chat TypeScript
         run: deno check supabase/functions/mia-chat/index.ts
-      - name: Check retry and stream safety contracts
-        run: node --test tests/mia-chat-retry-contract.test.mjs

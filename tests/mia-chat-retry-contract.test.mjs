@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { runInNewContext } from "node:vm";
 
 const source = await readFile(
   new URL("../supabase/functions/mia-chat/index.ts", import.meta.url),
@@ -32,4 +33,78 @@ test("interrupted stream does not claim a confirmed complete saved reply", () =>
 
 test("non-transient HTTP responses are not retried", () => {
   assert.match(source, /if\(response\.ok\|\|!\[429,502,503,504\]\.includes\(response\.status\)\|\|attempt===maxAttempts-1\)return response/);
+});
+
+// Execute the exact retry helper extracted from the Edge Function with a
+// deterministic fake upstream. This exercises retry decisions without using
+// production credentials, network access, or the database.
+const helperMatch = source.match(
+  /async function fetchAgnesWithRetry\([\s\S]*?\n\}\n(?=function queueEmotionReflection)/,
+);
+assert.ok(helperMatch, "retry helper must be present in the deployed-source file");
+const helperSource = helperMatch[0]
+  .replace("payload:any", "payload")
+  .replace("):Promise<Response>{", "){")
+  .replace("let response:Response;", "let response;");
+
+function makeRetryHelper(fakeFetch) {
+  return runInNewContext(`(${helperSource})`, {
+    AGNES_KEY: "unit-test-key",
+    fetch: fakeFetch,
+    AbortSignal,
+    Response,
+    Date,
+    Promise,
+    setTimeout,
+    console: { warn() {} },
+  });
+}
+
+test("runtime simulation retries HTTP 503 and then accepts success", async () => {
+  let calls = 0;
+  const helper = makeRetryHelper(async () => {
+    calls++;
+    return calls === 1
+      ? new Response("queue full", { status: 503 })
+      : new Response(JSON.stringify({ ok: true }), { status: 200 });
+  });
+
+  const response = await helper({ model: "test" }, 1000, 2, 5000);
+  assert.equal(response.status, 200);
+  assert.equal(calls, 2);
+});
+
+test("runtime simulation retries HTTP 429 but does not retry HTTP 400", async () => {
+  let retryCalls = 0;
+  const retryHelper = makeRetryHelper(async () => {
+    retryCalls++;
+    return retryCalls === 1
+      ? new Response("rate limited", { status: 429 })
+      : new Response("ok", { status: 200 });
+  });
+  const retried = await retryHelper({ model: "test" }, 1000, 2, 5000);
+  assert.equal(retried.status, 200);
+  assert.equal(retryCalls, 2);
+
+  let badRequestCalls = 0;
+  const badRequestHelper = makeRetryHelper(async () => {
+    badRequestCalls++;
+    return new Response("bad request", { status: 400 });
+  });
+  const badRequest = await badRequestHelper({ model: "test" }, 1000, 2, 5000);
+  assert.equal(badRequest.status, 400);
+  assert.equal(badRequestCalls, 1);
+});
+
+test("runtime simulation retries a rejected timeout/network attempt within budget", async () => {
+  let calls = 0;
+  const helper = makeRetryHelper(async () => {
+    calls++;
+    if (calls === 1) throw new DOMException("timed out", "TimeoutError");
+    return new Response("ok", { status: 200 });
+  });
+
+  const response = await helper({ model: "test" }, 1000, 2, 5000);
+  assert.equal(response.status, 200);
+  assert.equal(calls, 2);
 });

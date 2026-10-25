@@ -482,11 +482,13 @@ if(explorationRequest){const {error:userExploreWriteError}=await db.from("mia_me
       closeStream();return;
      }
      if(!upstream.body){emit({type:"error",error:"AGNES 没有返回可读取的流。"});closeStream();return;}
-     const reader=upstream.body.getReader();const decoder=new TextDecoder();let buffer="";let reply="";
+     const reader=upstream.body.getReader();const decoder=new TextDecoder();let buffer="";let reply="";let streamFinished=false;
      const handleLine=(line:string)=>{
       const trimmed=line.trim();if(!trimmed.startsWith("data:"))return;
-      const value=trimmed.slice(5).trim();if(!value||value==="[DONE]")return;
+      const value=trimmed.slice(5).trim();if(!value)return;
+      if(value==="[DONE]"){streamFinished=true;return;}
       let packet:any;try{packet=JSON.parse(value);}catch{return;}
+      if(packet?.choices?.[0]?.finish_reason!=null)streamFinished=true;
       const content=packet?.choices?.[0]?.delta?.content;
       if(typeof content==="string"&&content.length){reply+=content;emit({type:"delta",content});}
       else if(Array.isArray(content)){for(const part of content){if(typeof part?.text==="string"){reply+=part.text;emit({type:"delta",content:part.text});}}}
@@ -497,6 +499,7 @@ if(explorationRequest){const {error:userExploreWriteError}=await db.from("mia_me
       for(const line of lines)handleLine(line);
      }
      buffer+=decoder.decode();if(buffer)handleLine(buffer);
+     if(!streamFinished){emit({type:"error",error:"Mia 回复流提前结束，未确认上游完整输出；用户消息已保存，请重试。"});closeStream();return;}
      reply=reply.trim();
      if(!reply){emit({type:"error",error:"Mia 收到空回复；用户消息已保存。"});closeStream();return;}
      const now=new Date().toISOString();

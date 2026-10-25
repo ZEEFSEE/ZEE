@@ -49,7 +49,18 @@ async function fetchAgnesWithRetry(payload:any,timeoutMs=30000,maxAttempts=2,tot
   const remainingMs=totalBudgetMs-(Date.now()-startedAt);
   if(remainingMs<=0)throw new Error("Agnes total request budget exhausted");
   const attemptTimeoutMs=Math.max(1,Math.min(timeoutMs,remainingMs));
-  const response=await fetch(endpoint,{method:"POST",headers:{"Authorization":"Bearer "+AGNES_KEY,"Content-Type":"application/json"},signal:AbortSignal.timeout(attemptTimeoutMs),body:JSON.stringify(payload)});
+  let response:Response;
+  try{
+   response=await fetch(endpoint,{method:"POST",headers:{"Authorization":"Bearer "+AGNES_KEY,"Content-Type":"application/json"},signal:AbortSignal.timeout(attemptTimeoutMs),body:JSON.stringify(payload)});
+  }catch(error){
+   if(attempt===maxAttempts-1)throw error;
+   const retryDelayMs=Math.min(800,400*(2**attempt));
+   const remainingAfterFailure=totalBudgetMs-(Date.now()-startedAt);
+   if(remainingAfterFailure<=retryDelayMs+250)throw error;
+   console.warn("Mia Agnes network/timeout failure; retrying", "attempt",attempt+1,"delay_ms",retryDelayMs);
+   await new Promise(resolve=>setTimeout(resolve,retryDelayMs));
+   continue;
+  }
   if(response.ok||![429,502,503,504].includes(response.status)||attempt===maxAttempts-1)return response;
   const retryHeader=Number(response.headers.get("Retry-After")||0);
   const requestedDelay=Number.isFinite(retryHeader)&&retryHeader>0?Math.min(2500,retryHeader*1000):Math.min(800,400*(2**attempt));

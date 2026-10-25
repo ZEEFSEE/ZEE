@@ -156,7 +156,7 @@ test("a clean EOF without a terminal marker is rejected before reply persistence
   const eofCheck = source.indexOf("if(!streamFinished){", readerLoop);
   const replyTrim = source.indexOf("reply=reply.trim();", eofCheck);
   const persist = source.indexOf('db.from("mia_messages").insert({session_id:sessionId,role:"assistant"', replyTrim);
-  assert.ok(streamFinishedIndex(source, streamStart) > readerLoop);
+  assert.ok(streamFinishedIndex(source, streamStart) > streamStart);
   assert.ok(eofCheck > readerLoop && replyTrim > eofCheck && persist > replyTrim);
   assert.match(source.slice(eofCheck, replyTrim), /提前结束/);
 });

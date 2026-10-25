@@ -1,0 +1,331 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ZHI Mark General Analysis Contract",
+  "description": "Draft interface contract for general-purpose analysis. Auditable summaries only; not hidden chain-of-thought.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "identity",
+    "est_context",
+    "evidence_framework",
+    "meta_reasoning",
+    "safety",
+    "response_plan"
+  ],
+  "properties": {
+    "contract_version": {
+      "const": "1.0.0-draft"
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "role",
+        "scope"
+      ],
+      "properties": {
+        "role": {
+          "const": "general_analysis_research"
+        },
+        "scope": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "est_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "current_state",
+        "trajectory"
+      ],
+      "properties": {
+        "current_state": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "valence",
+            "arousal",
+            "primary_emotion",
+            "cognitive_state",
+            "est_confidence"
+          ],
+          "properties": {
+            "valence": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": -1,
+              "maximum": 1
+            },
+            "arousal": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 1
+            },
+            "primary_emotion": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "cognitive_state": {
+              "enum": [
+                "focused",
+                "exploratory",
+                "uncertain",
+                "overloaded",
+                "reflective",
+                "unknown"
+              ]
+            },
+            "est_confidence": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        },
+        "trajectory": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "trend",
+            "volatility",
+            "data_status"
+          ],
+          "properties": {
+            "trend": {
+              "enum": [
+                "improving",
+                "declining",
+                "stable",
+                "mixed",
+                "insufficient_data"
+              ]
+            },
+            "volatility": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 1
+            },
+            "data_status": {
+              "enum": [
+                "sufficient_history",
+                "limited_history",
+                "insufficient_data"
+              ]
+            }
+          }
+        },
+        "engagement": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "effort_signal": {
+              "enum": [
+                "explicit_high",
+                "explicit_low",
+                "not_provided"
+              ]
+            },
+            "trust_signal": {
+              "enum": [
+                "explicit_positive",
+                "explicit_concern",
+                "not_provided"
+              ]
+            },
+            "basis": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "evidence_framework": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claims"
+      ],
+      "properties": {
+        "claims": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "statement",
+              "confidence_level",
+              "evidence_type",
+              "limitations",
+              "alternative_hypotheses"
+            ],
+            "properties": {
+              "statement": {
+                "type": "string",
+                "minLength": 1
+              },
+              "confidence_level": {
+                "enum": [
+                  "L0",
+                  "L1",
+                  "L2",
+                  "L3"
+                ]
+              },
+              "evidence_type": {
+                "enum": [
+                  "verifiable_fact",
+                  "logical_inference",
+                  "analogical_reasoning",
+                  "expert_consensus",
+                  "anecdotal",
+                  "unknown"
+                ]
+              },
+              "supporting_basis_summary": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "limitations": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "alternative_hypotheses": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "speculative": {
+                "type": "boolean",
+                "default": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "meta_reasoning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "consistency_check",
+        "gap_analysis",
+        "conflicts"
+      ],
+      "properties": {
+        "consistency_check": {
+          "type": "string"
+        },
+        "gap_analysis": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "conflicts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "audit_summary": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "constraints_applied",
+        "safety_overrides_est_and_creativity"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "normal",
+            "caution",
+            "refusal_or_redirect"
+          ]
+        },
+        "constraints_applied": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "safety_overrides_est_and_creativity": {
+          "const": true
+        }
+      }
+    },
+    "response_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "creativity_mode",
+        "format",
+        "tone"
+      ],
+      "properties": {
+        "creativity_mode": {
+          "enum": [
+            "convergent",
+            "balanced",
+            "divergent"
+          ]
+        },
+        "format": {
+          "enum": [
+            "prose",
+            "bullets",
+            "table",
+            "steps",
+            "code",
+            "mixed"
+          ]
+        },
+        "tone": {
+          "enum": [
+            "neutral",
+            "warm",
+            "direct",
+            "formal",
+            "supportive"
+          ]
+        },
+        "speculation_label_required": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    }
+  }
+}

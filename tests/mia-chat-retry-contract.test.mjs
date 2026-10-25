@@ -110,7 +110,7 @@ test("runtime simulation retries a rejected timeout/network attempt within budge
 });
 
 
-test("runtime simulation parses streamed text deltas without persisting partial replies", () => {
+test("runtime simulation parses streamed text deltas and recognizes the terminal marker", () => {
   const parserMatch = source.match(
     /const handleLine=\(line:string\)=>\{[\s\S]*?\n     \};/,
   );
@@ -121,7 +121,7 @@ test("runtime simulation parses streamed text deltas without persisting partial 
     .replace("(line:string)", "(line)")
     .replace(/:any/g, "");
   const events = [];
-  const context = { reply: "", emit: (event) => events.push(event), JSON };
+  const context = { reply: "", streamFinished: false, emit: (event) => events.push(event), JSON };
   const handleLine = runInNewContext("(" + arrow + ")", context);
 
   handleLine('data: {"choices":[{"delta":{"content":"Hello "}}]}');
@@ -129,6 +129,7 @@ test("runtime simulation parses streamed text deltas without persisting partial 
   handleLine("data: [DONE]");
   handleLine("data: not-json");
   assert.equal(context.reply, "Hello Mia");
+  assert.equal(context.streamFinished, true);
   assert.equal(JSON.stringify(events), JSON.stringify([
     { type: "delta", content: "Hello " },
     { type: "delta", content: "Mia" },
@@ -147,3 +148,19 @@ test("stream persistence occurs only after upstream reader completes; catch path
   assert.match(catchBlock, /尚未确认完整回复已保存/);
   assert.doesNotMatch(catchBlock, /db\.from\("mia_messages"\)\.insert/);
 });
+
+
+test("a clean EOF without a terminal marker is rejected before reply persistence", () => {
+  const streamStart = source.indexOf("const streamBody=new ReadableStream");
+  const readerLoop = source.indexOf("while(true){", streamStart);
+  const eofCheck = source.indexOf("if(!streamFinished){", readerLoop);
+  const replyTrim = source.indexOf("reply=reply.trim();", eofCheck);
+  const persist = source.indexOf('db.from("mia_messages").insert({session_id:sessionId,role:"assistant"', replyTrim);
+  assert.ok(streamFinishedIndex(source, streamStart) > readerLoop);
+  assert.ok(eofCheck > readerLoop && replyTrim > eofCheck && persist > replyTrim);
+  assert.match(source.slice(eofCheck, replyTrim), /提前结束/);
+});
+
+function streamFinishedIndex(text, start) {
+  return text.indexOf("let streamFinished=false", start);
+}

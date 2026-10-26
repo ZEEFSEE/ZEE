@@ -21,7 +21,6 @@ jobs:
     permissions:
       contents: read
       id-token: write
-      pages: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -72,14 +71,6 @@ jobs:
 
       - name: Run local public-content safety gate
         run: node mia/philosophy-safety-check.mjs
-
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload site for Pages deployment
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
 
       - name: Upload reviewed philosophy JSON
         uses: actions/upload-artifact@v4
@@ -133,17 +124,3 @@ jobs:
           done
           echo "Could not publish philosophy after three attempts; previous remote file remains intact."
           exit 1
-
-  deploy-pages:
-    needs: generate-and-stage
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy generated Pages artifact
-        id: deployment
-        uses: actions/deploy-pages@v4

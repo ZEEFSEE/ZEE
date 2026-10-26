@@ -1,0 +1,30 @@
+name: Mia unified evolution shadow tests
+
+on:
+  pull_request:
+    paths:
+      - "docs/mia-unified-evolution-v1/**"
+      - ".github/workflows/mia-unified-evolution-shadow-tests.yml"
+  push:
+    branches:
+      - "mia-unified-evolution-v1-shadow"
+    paths:
+      - "docs/mia-unified-evolution-v1/**"
+      - ".github/workflows/mia-unified-evolution-shadow-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-only-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run synthetic-only unit tests
+        run: python -m unittest discover -s docs/mia-unified-evolution-v1 -p 'test_*.py' -v

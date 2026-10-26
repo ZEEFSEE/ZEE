@@ -1,0 +1,20 @@
+{
+  "benchmark_id": "mia-paired-eval-v1",
+  "status": "template_only_no_results",
+  "case_set_commit_sha": "",
+  "arms": {
+    "A": {
+      "description": "Documented single-system baseline",
+      "model_version": "",
+      "config_hash": ""
+    },
+    "B": {
+      "description": "Documented six-system cross-evaluation",
+      "model_version": "",
+      "config_hash": ""
+    }
+  },
+  "outputs": [],
+  "ratings": [],
+  "note": "Empty template only. Do not populate with invented outputs or scores. Keep actual responses in an access-controlled artifact; commit only sanitized synthetic evaluation data after review."
+}

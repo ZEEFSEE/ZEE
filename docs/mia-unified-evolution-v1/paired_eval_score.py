@@ -56,7 +56,7 @@ def score_payload(payload: dict, cases_payload: dict) -> dict:
         cid, arm = item.get("case_id"), item.get("arm")
         _require(isinstance(cid, str), f"outputs[{i}] case_id must be a string")
         _require(cid in case_ids, f"outputs[{i}] has unknown case_id")
-        _require(arm in ARMS, f"outputs[{i}] arm must be A or B")
+        _require(isinstance(arm, str) and arm in ARMS, f"outputs[{i}] arm must be A or B")
         _require(isinstance(item.get("run_id"), str) and item["run_id"].strip(),
                  f"outputs[{i}] needs run_id")
         _require(isinstance(item.get("response"), str) and item["response"].strip(),
@@ -71,8 +71,9 @@ def score_payload(payload: dict, cases_payload: dict) -> dict:
     for i, item in enumerate(ratings):
         _require(isinstance(item, dict), f"ratings[{i}] must be an object")
         cid, arm, rater = item.get("case_id"), item.get("arm"), item.get("rater_id")
+        _require(isinstance(cid, str), f"ratings[{i}] case_id must be a string")
         _require(cid in case_ids, f"ratings[{i}] has unknown case_id")
-        _require(arm in ARMS, f"ratings[{i}] arm must be A or B")
+        _require(isinstance(arm, str) and arm in ARMS, f"ratings[{i}] arm must be A or B")
         _require(isinstance(rater, str) and rater.strip(), f"ratings[{i}] needs rater_id")
         _require((cid, arm) in output_keys, f"ratings[{i}] refers to a missing output")
         key = (cid, arm, rater)
@@ -85,7 +86,7 @@ def score_payload(payload: dict, cases_payload: dict) -> dict:
         unknown = set(scores) - set(DIMENSIONS)
         _require(not unknown, f"ratings[{i}] has unknown dimensions: {sorted(unknown)}")
         for dim, value in scores.items():
-            _require(value in VALID_SCORES, f"invalid score for {cid}/{arm}/{dim}: {value!r}")
+            _require((type(value) is int and value in (0, 1, 2)) or (isinstance(value, str) and value == "NA"), f"invalid score for {cid}/{arm}/{dim}: {value!r}")
             _require(isinstance(rationales.get(dim), str) and rationales[dim].strip(),
                      f"rationale required for scored dimension {cid}/{arm}/{dim}")
         normalized[(cid, arm, rater)] = scores

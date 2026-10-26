@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101522"><meta name="description" content="Mark 独立聊天室。">
+<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mark Chat">
+<link rel="icon" href="./zhi-icon.svg" type="image/svg+xml">
+<title>ZHI · Mark 独立聊天室</title>
+<style>
+:root{color-scheme:dark;--bg:#0c1019;--panel:#131a27;--line:#2a3548;--ink:#edf3fc;--muted:#99a9bf;--accent:#8cb7ff;--bad:#ff9299}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 12% 0%,#17283a 0,transparent 42%),var(--bg);color:var(--ink);font:15px/1.55 system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;min-height:100dvh}
+button,input,textarea{font:inherit}button{border:1px solid var(--line);border-radius:12px;padding:10px 14px;background:#202b3d;color:var(--ink);cursor:pointer;font-weight:700}button:disabled{opacity:.5;cursor:not-allowed}.primary{background:var(--accent);color:#111923;border-color:var(--accent)}input,textarea{width:100%;padding:12px 13px;border-radius:12px;border:1px solid var(--line);background:#0e1521;color:var(--ink);outline:none}input:focus,textarea:focus{border-color:var(--accent)}
+.shell{width:min(920px,100%);margin:auto;padding:22px 14px 28px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}.brand{font-size:clamp(22px,3vw,29px);font-weight:900}.brand span{color:var(--accent)}.sub,.meta{font-size:12px;color:var(--muted);margin-top:3px}.actions{display:flex;gap:8px}.panel{background:#131a27ef;border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:0 18px 55px #0002}.chat{min-height:min(820px,calc(100dvh - 110px));display:flex;flex-direction:column}.chathead{padding:16px 19px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;align-items:center}.title{font-size:19px;font-weight:900}.identity{display:inline-block;border:1px solid var(--accent);color:var(--accent);border-radius:999px;padding:3px 9px;font-size:11px;white-space:nowrap}.messages{flex:1;min-height:320px;max-height:calc(100dvh - 290px);overflow:auto;padding:20px;display:flex;flex-direction:column;gap:13px}.welcome{margin:auto;text-align:center;max-width:440px;color:var(--muted);line-height:1.9;padding:24px}.msg{max-width:86%;border:1px solid var(--line);border-radius:16px;padding:12px 15px;background:#182131;white-space:pre-wrap;overflow-wrap:anywhere}.msg.user{align-self:flex-end;background:#183b37;border-color:#28675e;border-bottom-right-radius:5px}.msg.agent{align-self:flex-start;border-left:3px solid var(--accent);border-bottom-left-radius:5px}.who{font-size:11px;font-weight:850;margin-bottom:5px;color:var(--accent)}.time{font-size:10px;color:#7e8da4;margin-top:7px}.composer{padding:12px;border-top:1px solid var(--line);display:grid;grid-template-columns:minmax(0,1fr) 88px;gap:9px}.composer textarea{resize:vertical;min-height:54px;max-height:180px}.status{font-size:12px;color:var(--muted);padding:0 15px 13px;white-space:pre-wrap}.status.error{color:var(--bad)}.status.good{color:var(--accent)}.gate{max-width:420px;margin:10vh auto;padding:24px}.gate h1{margin:12px 0 4px}.gate p,.tiny{font-size:12px;color:var(--muted)}.field{margin:12px 0}.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}.hidden{display:none!important}
+@media(max-width:650px){.shell{padding:10px 7px 20px}.top{align-items:flex-start}.brand{font-size:21px}.actions button{padding:8px 10px;font-size:12px}.panel{border-radius:15px}.chat{min-height:calc(100dvh - 90px)}.chathead{padding:13px}.title{font-size:17px}.messages{min-height:240px;max-height:none;height:calc(100dvh - 265px);padding:13px 9px}.msg{max-width:94%;font-size:14px;padding:10px 12px}.composer{position:sticky;bottom:0;background:#131a27;padding:9px;grid-template-columns:minmax(0,1fr) 72px;gap:7px}.composer textarea{min-height:48px;max-height:130px;padding:10px}.composer button{min-height:44px}.gate{width:calc(100% - 20px);margin:8vh auto;padding:20px}}
+</style>
+</head>
+<body>
+<section id="login" class="panel gate">
+ <div class="brand">ZHI <span>·</span> Mark</div><h1>进入 Mark 聊天室</h1>
+ <p>单人独立聊天。使用现有项目登录，不需要创建新账号；本页面不会请求任何 API 密钥。</p>
+ <div class="field"><label for="email">邮箱</label><input id="email" type="email" autocomplete="username" placeholder="现有登录邮箱"></div>
+ <div class="field"><label for="password">现有账号密码</label><input id="password" type="password" autocomplete="current-password" placeholder="Supabase Auth 密码"></div>
+ <button id="signIn" class="primary" style="width:100%">登录并打开聊天室</button><div id="loginStatus" class="status" style="padding:12px 0 0"></div>
+ <div class="tiny">只使用现有 mark-jason-group-chat 后端的私聊接口；不创建数据库、不修改 Mia。</div>
+</section>
+<div id="app" class="shell hidden">
+ <header class="top"><div><div class="brand">ZHI <span>·</span> Mark 聊天室</div><div class="sub">研究分析 · 证据推理 · 独立判断</div></div><div class="actions"><button id="refresh">刷新</button><button id="logout">退出</button></div></header>
+ <main class="panel chat"><div class="chathead"><div><div class="title">你 ↔ Mark</div><div class="meta">独立私聊 · 对话历史单独保存</div></div><span class="identity">Mark</span></div>
+ <div id="messages" class="messages"><div class="welcome">正在打开独立聊天室…</div></div>
+ <div class="composer"><textarea id="message" placeholder="对 Mark 说点什么…（Enter 发送，Shift+Enter 换行）" maxlength="6000"></textarea><button id="send" class="primary" disabled>发送 ↗</button></div>
+ <div id="status" class="status">登录后即可开始。</div></main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(()=> {
+ const URL="https://boaiqnkhrytxwdpgkxti.supabase.co";
+ const KEY="sb_publishable_LJgcqXfOdHTEVb7ekz38RQ_c1sM8AUG";
+ const API=URL+"/functions/v1/mark-jason-group-chat";
+ const AGENT="mark", NAME="Mark";
+ const $=id=>document.getElementById(id);
+ const client=window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storageKey:"zhi-mark-jason-auth-v1"}});
+ let session=null,sessionId=null,busy=false;
+ const status=(s,k="")=>{$("status").textContent=s;$("status").className="status "+k};
+ const loginStatus=(s,k="")=>{$("loginStatus").textContent=s;$("loginStatus").className="status "+k};
+ async function invoke(payload){
+  const {data:{session:s}}=await client.auth.getSession();
+  if(!s?.access_token)throw new Error("登录已过期，请重新登录。");
+  const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+s.access_token,"apikey":KEY},body:JSON.stringify(payload),cache:"no-store"});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok||!d.ok)throw new Error(d.error||("HTTP "+r.status));
+  return d;
+ }
+ function time(v){return v?new Date(v).toLocaleString("zh-SG",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false}):""}
+ function bubble(m){
+  if(m.id&&$("messages").querySelector('[data-message-id="'+CSS.escape(String(m.id))+'"]'))return;
+  const empty=$("messages").querySelector(".welcome");if(empty)empty.remove();
+  const slug=m.sender_slug||m.sender_type;const user=slug==="user"||m.sender_type==="user";
+  const el=document.createElement("div");el.className="msg "+(user?"user":"agent");if(m.id)el.dataset.messageId=m.id;
+  const who=document.createElement("div");who.className="who";who.textContent=user?"你":(m.sender_name||NAME);
+  const content=document.createElement("div");content.textContent=m.content||"";
+  const tm=document.createElement("div");tm.className="time";tm.textContent=time(m.created_at);
+  el.append(who,content,tm);$("messages").append(el);$("messages").scrollTop=$("messages").scrollHeight;
+ }
+ async function openPrivate(){
+  const d=await invoke({op:"open_private",agent_slug:AGENT});sessionId=d.session_id;
+  const h=await invoke({op:"private_history",session_id:sessionId,agent_slug:AGENT});
+  $("messages").innerHTML="";if(!(h.messages||[]).length)$("messages").innerHTML='<div class="welcome">你好，我是 Mark。我们可以从这里开始聊。</div>';
+  (h.messages||[]).forEach(bubble);$("send").disabled=false;status("私聊已打开，历史记录已恢复。","good");
+ }
+ async function sendMessage(){
+  if(busy)return;const message=$("message").value.trim();if(!message)return;
+  if(!sessionId){status("会话尚未准备好，请稍后重试。","error");return}
+  busy=true;$("send").disabled=true;$("message").value="";
+  bubble({sender_slug:"user",sender_name:"你",sender_type:"user",content:message,created_at:new Date().toISOString()});status("正在等待 "+NAME+" 回复…");
+  try{const d=await invoke({op:"send_private",session_id:sessionId,agent_slug:AGENT,message});(d.responses||[]).forEach(bubble);status("回复已完成。","good");}
+  catch(e){status("发送未完整成功："+e.message+"。正在尝试恢复历史记录。","error");try{const h=await invoke({op:"private_history",session_id:sessionId,agent_slug:AGENT});$("messages").innerHTML="";(h.messages||[]).forEach(bubble)}catch(_){}}
+  finally{busy=false;$("send").disabled=!sessionId;$("message").focus()}
+ }
+ async function showSession(s){
+  session=s;$("login").classList.toggle("hidden",!!s);$("app").classList.toggle("hidden",!s);
+  if(s){try{await openPrivate()}catch(e){status("打开聊天室失败："+e.message,"error")}}
+ }
+ $("signIn").onclick=async()=>{loginStatus("正在登录…");const {data,error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error){loginStatus("登录失败："+error.message,"error");return}loginStatus("");await showSession(data.session)};
+ $("logout").onclick=async()=>{await client.auth.signOut();session=null;sessionId=null;await showSession(null)};
+ $("refresh").onclick=async()=>{try{await openPrivate()}catch(e){status("刷新失败："+e.message,"error")}};
+ $("send").onclick=sendMessage;
+ $("message").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage()}});
+ client.auth.onAuthStateChange((_event,s)=>{if(s&&!session)showSession(s);else if(!s&&session)showSession(null)});
+ client.auth.getSession().then(({data})=>showSession(data.session));
+})();
+</script>
+</body></html>

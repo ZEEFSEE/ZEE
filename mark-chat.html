@@ -37,6 +37,44 @@ button{min-height:44px}
  .messages{scroll-padding-bottom:12px}
 }
 
+
+/* PWA mobile scroll fix: keep the transcript as the independently scrollable flex child. */
+@media (max-width: 760px) {
+  html, body { height: 100%; min-height: 100%; }
+  body { min-height: 100dvh; }
+  #app.shell { min-height: 0; }
+  #app .chat {
+    height: calc(100dvh - 88px);
+    min-height: 0;
+    max-height: none;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  #app .messages {
+    flex: 1 1 0%;
+    min-height: 0;
+    height: auto;
+    max-height: none;
+    overflow-x: hidden;
+    overflow-y: auto;
+    touch-action: pan-y;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 18px;
+  }
+  #app .composer {
+    position: relative;
+    flex: 0 0 auto;
+    bottom: auto;
+    z-index: 1;
+  }
+  #app .status { flex: 0 0 auto; }
+}
+@media (max-width: 380px) {
+  #app .chat { height: calc(100dvh - 82px); }
+}
+
 </style>
 </head>
 <body>

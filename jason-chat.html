@@ -5,6 +5,7 @@
 <meta name="theme-color" content="#101522"><meta name="description" content="Jason 独立聊天室。">
 <meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Jason Chat">
+<link rel="manifest" href="./jason-chat.webmanifest">
 <link rel="icon" href="./zhi-icon.svg" type="image/svg+xml">
 <title>ZHI · Jason 独立聊天室</title>
 <style>
@@ -48,7 +49,7 @@ button{min-height:44px}
  <div class="tiny">只使用现有 mark-jason-group-chat 后端的私聊接口；不创建数据库、不修改 Mia。</div>
 </section>
 <div id="app" class="shell hidden">
- <header class="top"><div><div class="brand">ZHI <span>·</span> Jason 聊天室</div><div class="sub">创意设计 · 任务拆解 · 执行方案</div></div><div class="actions"><button id="refresh">刷新</button><button id="logout">退出</button></div></header>
+ <header class="top"><div><div class="brand">ZHI <span>·</span> Jason 聊天室</div><div class="sub">创意设计 · 任务拆解 · 执行方案</div></div><div class="actions"><button id="pwaInstall" type="button">安装</button><button id="refresh">刷新</button><button id="logout">退出</button></div></header>
  <main class="panel chat"><div class="chathead"><div><div class="title">你 ↔ Jason</div><div class="meta">独立私聊 · 对话历史单独保存</div></div><span class="identity">Jason</span></div>
  <div id="messages" class="messages"><div class="welcome">正在打开独立聊天室…</div></div>
  <div class="composer"><textarea id="message" placeholder="对 Jason 说点什么…（Enter 发送，Shift+Enter 换行）" maxlength="6000"></textarea><button id="send" class="primary" disabled>发送 ↗</button></div>

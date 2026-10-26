@@ -1,0 +1,29 @@
+{
+  "id": "./mark-chat.html",
+  "name": "Mark 独立聊天室",
+  "short_name": "Mark Chat",
+  "description": "Mark 的独立私人聊天室。",
+  "lang": "zh-CN",
+  "start_url": "./mark-chat.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "any",
+  "background_color": "#0c1019",
+  "theme_color": "#101522",
+  "categories": [
+    "social",
+    "communication"
+  ],
+  "icons": [
+    {
+      "src": "./mark-chat-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

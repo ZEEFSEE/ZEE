@@ -21,6 +21,29 @@ html{height:100%;-webkit-text-size-adjust:100%;text-size-adjust:100%}body{min-he
 @media(min-width:1100px){.shell{padding-top:26px}.layout{grid-template-columns:270px minmax(0,1fr);gap:18px}.chat{min-height:min(820px,calc(100dvh - 150px))}.messages{max-height:calc(100dvh - 360px)}}
 @media(max-width:760px){.shell{padding:10px 8px calc(34px + env(safe-area-inset-bottom))}.top{gap:8px;margin-bottom:12px}.topright{flex-shrink:0}.layout{gap:10px}.panel{border-radius:15px}.chat{min-height:calc(100dvh - 105px);min-height:calc(100dvh - 105px - env(safe-area-inset-top))}.messages{height:calc(100dvh - 330px);height:calc(100dvh - 330px - env(safe-area-inset-top));min-height:220px;padding-bottom:18px}.composer{position:sticky;bottom:0;padding-bottom:max(10px,env(safe-area-inset-bottom));z-index:2}.composer textarea{min-height:48px;max-height:130px;padding:10px 11px}.composer button{min-height:44px}.chathead{align-items:flex-start}.title{font-size:17px}.people{gap:4px}.chip{font-size:10px}.pwa-install{left:max(8px,env(safe-area-inset-left));bottom:max(8px,env(safe-area-inset-bottom));padding:5px 8px;font-size:10px}.gate{width:calc(100% - 20px);margin:8vh auto;padding:20px}.sidebar .sidebody{padding:10px}}
 @media(max-width:380px){.brand{font-size:18px}.sub{max-width:245px}.topright{gap:5px}.topright button{padding:7px 8px}.composer{grid-template-columns:minmax(0,1fr) 68px}.messages{padding-left:8px;padding-right:8px}}
+
+/* Mobile usability and safe-area refinements */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;scrollbar-gutter:stable}
+body{overflow-x:hidden;min-height:100dvh}
+button,input,textarea{touch-action:manipulation}
+input,textarea{font-size:16px}
+button{min-height:44px}
+.messages{min-width:0;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
+.msg{min-width:0;overflow-wrap:anywhere;word-break:break-word}
+.composer{padding-bottom:max(10px,env(safe-area-inset-bottom))}
+@media(max-width:760px){
+ .shell{padding-left:max(8px,env(safe-area-inset-left));padding-right:max(8px,env(safe-area-inset-right))}
+ .composer{padding-left:10px;padding-right:10px}
+}
+@media(max-width:650px){
+ .shell{padding-left:max(8px,env(safe-area-inset-left));padding-right:max(8px,env(safe-area-inset-right))}
+ .composer{padding-left:10px;padding-right:10px}
+ .chat{min-width:0}
+ .chathead{min-width:0}
+ .identity{flex-shrink:0}
+ .messages{scroll-padding-bottom:12px}
+}
+
 </style>
 </head>
 <body>

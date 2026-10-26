@@ -20,7 +20,7 @@
   ],
   "icons": [
     {
-      "src": "./mark-chat-icon.svg",
+      "src": "./zhi-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"

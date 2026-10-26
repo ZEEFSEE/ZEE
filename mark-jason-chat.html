@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="你、Mark、Jason 与 Mia 的三人讨论室。">
+<meta name="description" content="你、Mark、Jason 的三人聊天室。">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -10,7 +10,7 @@
 <link rel="manifest" href="./mark-jason-chat.webmanifest">
 <link rel="icon" href="./zhi-icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./zhi-icon.svg">
-<meta name="theme-color" content="#101522"><title>ZHI · Mark & Jason 群聊</title>
+<meta name="theme-color" content="#101522"><title>ZHI · 三人聊天室</title>
 <style>
 :root{color-scheme:dark;--bg:#0c1019;--panel:#151c29;--panel2:#1b2535;--line:#2a3548;--ink:#edf3fc;--muted:#99a9bf;--mint:#78e0ca;--blue:#8cb7ff;--gold:#f3c87a;--bad:#ff9299}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 12% 0%,#17283a 0,transparent 42%),var(--bg);color:var(--ink);font:15px/1.55 system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;min-height:100vh}button,input,textarea{font:inherit}button{border:1px solid var(--line);border-radius:12px;padding:10px 14px;background:#202b3d;color:var(--ink);cursor:pointer;font-weight:700}button:hover{border-color:#617b9b}button:disabled{opacity:.5;cursor:not-allowed}.primary{background:var(--mint);color:#10221f;border-color:var(--mint)}input,textarea{width:100%;padding:12px 13px;border-radius:12px;border:1px solid var(--line);background:#0e1521;color:var(--ink);outline:none}input:focus,textarea:focus{border-color:var(--mint)}.shell{max-width:1180px;margin:auto;padding:24px 18px 34px}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:20px}.brand{font-size:24px;font-weight:900;letter-spacing:-.5px}.brand span{color:var(--mint)}.sub{font-size:12px;color:var(--muted);margin-top:3px}.topright{display:flex;gap:8px;align-items:center}.layout{display:grid;grid-template-columns:290px minmax(0,1fr);gap:16px}.panel{background:#131a27eF;border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:0 18px 55px #0002}.head{padding:16px 18px;border-bottom:1px solid var(--line);font-weight:850}.sidebody{padding:14px}.row{display:flex;gap:8px}.row>*{min-width:0;flex:1}.field{margin-bottom:12px}.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}.groupitem{display:block;width:100%;text-align:left;margin:7px 0;background:transparent;padding:12px}.groupitem.active{border-color:#478f87;background:#19332f}.groupitem strong{display:block}.groupitem small{color:var(--muted)}.chat{min-height:76vh;display:flex;flex-direction:column}.chathead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:17px 20px;border-bottom:1px solid var(--line)}.title{font-size:19px;font-weight:900}.meta{font-size:12px;color:var(--muted)}.people{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}.chip{font-size:11px;border:1px solid var(--line);border-radius:999px;padding:3px 8px;color:var(--muted)}.chip.mark{color:var(--blue);border-color:#354d73}.chip.jason{color:var(--gold);border-color:#6a5431}.messages{flex:1;min-height:380px;max-height:61vh;overflow:auto;padding:22px;display:flex;flex-direction:column;gap:14px}.welcome{margin:auto;text-align:center;max-width:450px;color:var(--muted);line-height:1.9;padding:24px}.msg{max-width:86%;border:1px solid var(--line);border-radius:16px;padding:12px 15px;background:#182131;white-space:pre-wrap;overflow-wrap:anywhere}.msg.user{align-self:flex-end;background:#183b37;border-color:#28675e;border-bottom-right-radius:5px}.msg.mark{align-self:flex-start;border-left:3px solid var(--blue);border-bottom-left-radius:5px}.msg.jason{align-self:flex-start;border-left:3px solid var(--gold);border-bottom-left-radius:5px}.who{font-size:11px;font-weight:850;margin-bottom:5px;color:var(--muted)}.msg.mark .who{color:var(--blue)}.msg.jason .who{color:var(--gold)}.msg.mia{align-self:flex-start;border-left:3px solid #c3a2ff;border-bottom-left-radius:5px}.msg.mia .who{color:#d8b7ff}.chip.mia{color:#d8b7ff;border-color:#665080}.time{font-size:10px;color:#7e8da4;margin-top:7px}.composer{padding:14px 16px;border-top:1px solid var(--line);display:grid;grid-template-columns:minmax(0,1fr) 104px;gap:10px}.composer textarea{resize:vertical;min-height:54px;max-height:180px}.status{font-size:12px;color:var(--muted);padding:0 17px 14px;white-space:pre-wrap}.status.error{color:var(--bad)}.status.good{color:var(--mint)}.gate{max-width:430px;margin:10vh auto;padding:26px}.gate h1{margin:0 0 6px}.gate p{color:var(--muted);font-size:13px}.hidden{display:none!important}.tiny{font-size:11px;color:var(--muted);line-height:1.6}.section{font-size:12px;color:var(--muted);margin:18px 0 8px}.notice{border:1px solid #4b4330;background:#282318;border-radius:12px;padding:11px;font-size:12px;color:#e9d8ad;margin-top:12px}
@@ -25,23 +25,23 @@ html{height:100%;-webkit-text-size-adjust:100%;text-size-adjust:100%}body{min-he
 </head>
 <body>
 <div id="login" class="panel gate">
- <div class="brand">ZHI <span>·</span> 讨论室</div><h1 style="margin-top:18px">登录新群聊</h1>
- <p>独立于 Mia 的新界面。请使用 zee-prediction 项目的 Supabase Auth 账号。</p>
+ <div class="brand">ZHI <span>·</span> 讨论室</div><h1 style="margin-top:18px">登录三人聊天室</h1>
+ <p>请使用现有聊天室账号登录。</p>
  <div class="field"><label for="email">邮箱</label><input id="email" type="email" autocomplete="username" placeholder="name@example.com"></div>
  <div class="field"><label for="password">密码</label><input id="password" type="password" autocomplete="current-password" placeholder="Supabase Auth 密码"></div>
  <div class="row"><button id="signIn" class="primary" style="width:100%">登录</button></div>
  <div id="loginStatus" class="status" style="padding:14px 0 0"></div>
- <div class="tiny">此页面不会要求你提供 AGNES API Key 或数据库密钥。若项目未开放注册，请由项目管理员创建账号。</div>
+ <div class="tiny">无需填写 API Key 或数据库密钥。</div>
 </div>
 <div id="app" class="shell hidden">
- <header class="top"><div><div class="brand">ZHI <span>·</span> 三人讨论室</div><div class="sub">你 · Mark（研究分析）· Jason（创意执行）· Mia（必要时主动协调）</div></div><div class="topright"><button id="refresh">刷新</button><button id="logout">退出</button></div></header>
+ <header class="top"><div><div class="brand">ZHI <span>·</span> 三人讨论室</div><div class="sub">你、Mark、Jason · 只保留三人群聊</div></div><div class="topright"><button id="refresh">刷新</button><button id="logout">退出</button></div></header>
  <div class="layout">
   <aside class="panel sidebar"><div class="head">讨论会话</div><div class="sidebody">
    <button id="newGroup" class="primary" style="width:100%">＋ 新建三人群聊</button>
-   <div class="section">私聊窗口</div><button id="privateMark" class="groupitem" type="button"><strong>你 ↔ Mark</strong><small>独立私聊</small></button><button id="privateJason" class="groupitem" type="button"><strong>你 ↔ Jason</strong><small>独立私聊</small></button><div class="section">三人群聊</div><div id="groups"><div class="tiny" style="padding:12px 2px">登录后加载会话</div></div>
-   <div class="notice">群聊消息会保存到 zee-prediction。Mark 与 Jason 的普通群聊内容不会自动写入长期记忆；Mia 的独立数据库不会被访问。</div>
+   <div class="section">群聊列表</div><div id="groups"><div class="tiny" style="padding:12px 2px">登录后加载会话</div></div>
+
   </div></aside>
-  <main class="panel chat"><div class="chathead"><div><div id="chatTitle" class="title">选择或创建群聊</div><div id="chatMeta" class="meta">Mia 会在识别到明显沟通障碍时尝试主动介入</div><div id="people" class="people"><span class="chip">你</span><span class="chip mark">Mark · 证据与逻辑</span><span class="chip jason">Jason · 创意与执行</span><span class="chip mia">Mia · 沟通协调</span></div></div><span class="chip">私人会话</span></div>
+  <main class="panel chat"><div class="chathead"><div><div id="chatTitle" class="title">选择或创建群聊</div><div id="chatMeta" class="meta">Mia 会在识别到明显沟通障碍时尝试主动介入</div><div id="people" class="people"><span class="chip">你</span><span class="chip mark">Mark · 证据与逻辑</span><span class="chip jason">Jason · 创意与执行</span><span class="chip mia">Mia · 沟通协调</span></div></div><span class="chip">三人群聊</span></div>
    <div id="messages" class="messages"><div class="welcome">欢迎来到新的三人讨论室。<br>创建群聊后，你的每条消息都会依次交给 Mark 和 Jason。</div></div>
    <div class="composer"><textarea id="message" placeholder="输入讨论内容…（Enter 发送，Shift+Enter 换行）" maxlength="6000"></textarea><button id="send" class="primary" disabled>发送 ↗</button></div>
    <div id="status" class="status">登录后即可开始。</div>
@@ -57,7 +57,7 @@ html{height:100%;-webkit-text-size-adjust:100%;text-size-adjust:100%}body{min-he
  const API=URL+"/functions/v1/mark-jason-group-chat";
  const $=id=>document.getElementById(id);
  const client=window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storageKey:"zhi-mark-jason-auth-v1"}});
- let session=null,groups=[],groupId=null,busy=false,chatMode="group",privateAgent=null,watcher=null,observeTimer=null,observeBusy=false;
+ let session=null,groups=[],groupId=null,busy=false,watcher=null,observeTimer=null,observeBusy=false;
  const status=(s,k="")=>{$("status").textContent=s;$("status").className="status "+k};
  const loginStatus=(s,k="")=>{$("loginStatus").textContent=s;$("loginStatus").className="status "+k};
  async function invoke(payload){
@@ -110,13 +110,13 @@ html{height:100%;-webkit-text-size-adjust:100%;text-size-adjust:100%}body{min-he
   if(groups.length)await openGroup(groups[0].id);
  }
  async function openGroup(id){
-  chatMode="group";privateAgent=null;const d=await invoke({op:"history",group_id:id});groupId=id;watchGroup(id);
+  const d=await invoke({op:"history",group_id:id});groupId=id;watchGroup(id);
   $("chatTitle").textContent=d.group?.title||"三人讨论";$("chatMeta").textContent="已恢复 "+(d.messages||[]).length+" 条消息";
   $("messages").innerHTML="";
   if(!(d.messages||[]).length)$("messages").innerHTML='<div class="welcome">群聊已创建。发一条消息开始讨论。</div>';
   (d.messages||[]).forEach(bubble);$("send").disabled=false;renderGroups();status("历史记录已恢复。","good");
  }
- async function openPrivate(slug){stopWatching();chatMode="private";privateAgent=slug;try{const d=await invoke({op:"open_private",agent_slug:slug});groupId=d.session_id;$("chatTitle").textContent=slug==="mark"?"你 ↔ Mark":"你 ↔ Jason";$("chatMeta").textContent="独立私聊 · 历史记录单独保存";$("people").innerHTML=slug==="mark"?'<span class="chip">你</span><span class="chip mark">Mark</span>':'<span class="chip">你</span><span class="chip jason">Jason</span>';$("messages").innerHTML="";const h=await invoke({op:"private_history",session_id:groupId,agent_slug:slug});if(!(h.messages||[]).length)$("messages").innerHTML="<div class=\"welcome\">开始单独交流。</div>";(h.messages||[]).forEach(bubble);$("send").disabled=false;status("私聊已打开。","good")}catch(e){status("打开私聊失败："+e.message,"error")}}
+
  async function createGroup(){
   const title=prompt("给三人群聊取个名字：","Mark · Jason 三人讨论");
   if(title===null)return;
@@ -129,8 +129,8 @@ html{height:100%;-webkit-text-size-adjust:100%;text-size-adjust:100%}body{min-he
   const message=$("message").value.trim();if(!message)return;
   busy=true;$("send").disabled=true;$("newGroup").disabled=true;$("message").value="";
   bubble({sender_slug:"user",sender_name:"你",sender_type:"user",content:message,created_at:new Date().toISOString()});status("正在保存消息，并依次等待 Mark、Jason 回应…");
-  try{const d=chatMode==="private"?await invoke({op:"send_private",session_id:groupId,agent_slug:privateAgent,message}):await invoke({op:"send",group_id:groupId,message});(d.responses||[]).forEach(bubble);status("消息和回应已保存。","good");if(chatMode==="group")await loadGroups();}
-  catch(e){status("发送未完整成功："+e.message+"。如果显示部分保存，请刷新群聊确认已保存内容。","error");if(chatMode==="private"){try{const h=await invoke({op:"private_history",session_id:groupId,agent_slug:privateAgent});$("messages").innerHTML="";if(!(h.messages||[]).length)$("messages").innerHTML='<div class="welcome">开始单独交流。</div>';(h.messages||[]).forEach(bubble)}catch(_){}}else{try{await openGroup(groupId)}catch(_){}}}
+  try{const d=await invoke({op:"send",group_id:groupId,message});(d.responses||[]).forEach(bubble);status("消息和回应已保存。","good");await loadGroups();}
+  catch(e){status("发送未完整成功："+e.message+"。如果显示部分保存，请刷新群聊确认已保存内容。","error");try{await openGroup(groupId)}catch(_){}}
   finally{busy=false;$("send").disabled=!groupId;$("newGroup").disabled=false;$("message").focus()}
  }
  async function showSession(s){
@@ -141,7 +141,7 @@ html{height:100%;-webkit-text-size-adjust:100%;text-size-adjust:100%}body{min-he
 
  $("logout").onclick=async()=>{stopWatching();await client.auth.signOut();session=null;groupId=null;groups=[];await showSession(null)};
  $("refresh").onclick=async()=>{try{await loadGroups();if(groupId)await openGroup(groupId);status("已刷新。","good")}catch(e){status("刷新失败："+e.message,"error")}};
- $("newGroup").onclick=createGroup;$("privateMark").onclick=()=>openPrivate("mark");$("privateJason").onclick=()=>openPrivate("jason");$("send").onclick=sendMessage;
+ $("newGroup").onclick=createGroup;$("send").onclick=sendMessage;
  $("message").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage()}});
  client.auth.onAuthStateChange((_event,s)=>{if(s&&!session)showSession(s);else if(!s&&session)showSession(null)});
  client.auth.getSession().then(({data})=>showSession(data.session));

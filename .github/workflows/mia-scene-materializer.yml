@@ -31,11 +31,61 @@ jobs:
         run: python3 scripts/materialize_mia_scenes.py
       - name: Validate generated scene catalog before publishing
         run: node world-scenes/validate-scenes.mjs
-      - name: Commit generated catalog and pages
+      - name: Commit generated catalog and pages with race-safe retries
+        shell: bash
         run: |
-          if git diff --quiet; then echo "No scenes to materialize."; exit 0; fi
+          set -euo pipefail
+          target_ref="${GITHUB_REF_NAME}"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add world-scenes *.html
-          git commit -m "Build Mia-authored scenes from inbox"
-          git push
+          for attempt in 1 2 3 4 5; do
+            git fetch origin "$target_ref"
+            git reset --hard "origin/$target_ref"
+            python3 scripts/test_materialize_mia_scenes.py
+            node world-scenes/validate-scenes.mjs
+            python3 scripts/materialize_mia_scenes.py
+            node world-scenes/validate-scenes.mjs
+            git add world-scenes *.html
+            if git diff --cached --quiet; then
+              echo "No scenes to materialize."
+              exit 0
+            fi
+            git commit -m "Build Mia-authored scenes from inbox"
+            if git push origin "HEAD:$target_ref"; then
+              echo "Scene catalog published."
+              exit 0
+            fi
+            echo "Concurrent branch update detected on attempt $attempt; refreshing and rebuilding."
+            sleep "$attempt"
+          done
+          echo "Could not publish generated scenes after five attempts; no force push was used."
+          exit 1
+  deploy-pages:
+    if: github.ref == 'refs/heads/main'
+    needs: materialize
+    runs-on: ubuntu-latest
+    concurrency:
+      group: pages
+      cancel-in-progress: true
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout latest committed main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Upload latest committed site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - name: Deploy latest committed site
+        id: deployment
+        uses: actions/deploy-pages@v4
+

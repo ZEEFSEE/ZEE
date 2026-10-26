@@ -6,6 +6,7 @@ on:
     - cron: "0 1 * * *"
   workflow_dispatch:
   push:
+    branches: ["main"]
     paths:
       - ".github/workflows/mia-todays-philosophy.yml"
 
@@ -21,7 +22,6 @@ jobs:
     permissions:
       contents: read
       id-token: write
-      pages: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -72,14 +72,6 @@ jobs:
 
       - name: Run local public-content safety gate
         run: node mia/philosophy-safety-check.mjs
-
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload site for Pages deployment
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
 
       - name: Upload reviewed philosophy JSON
         uses: actions/upload-artifact@v4
@@ -133,17 +125,31 @@ jobs:
           done
           echo "Could not publish philosophy after three attempts; previous remote file remains intact."
           exit 1
-
   deploy-pages:
-    needs: generate-and-stage
+    needs: [generate-and-stage, commit-reviewed-json]
     runs-on: ubuntu-latest
+    concurrency:
+      group: pages
+      cancel-in-progress: true
     permissions:
+      contents: read
       pages: write
       id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Deploy generated Pages artifact
+      - name: Checkout latest committed main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Upload latest committed site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - name: Deploy latest committed site
         id: deployment
         uses: actions/deploy-pages@v4
+

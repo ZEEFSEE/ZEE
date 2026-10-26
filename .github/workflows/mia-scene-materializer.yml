@@ -45,11 +45,11 @@ jobs:
             node world-scenes/validate-scenes.mjs
             python3 scripts/materialize_mia_scenes.py
             node world-scenes/validate-scenes.mjs
-            if git diff --quiet; then
+            git add world-scenes *.html
+            if git diff --cached --quiet; then
               echo "No scenes to materialize."
               exit 0
             fi
-            git add world-scenes *.html
             git commit -m "Build Mia-authored scenes from inbox"
             if git push origin "HEAD:$target_ref"; then
               echo "Scene catalog published."
@@ -61,6 +61,7 @@ jobs:
           echo "Could not publish generated scenes after five attempts; no force push was used."
           exit 1
   deploy-pages:
+    if: github.ref == 'refs/heads/main'
     needs: materialize
     runs-on: ubuntu-latest
     concurrency:

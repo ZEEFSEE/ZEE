@@ -17,7 +17,6 @@ jobs:
     permissions:
       contents: read
       id-token: write
-      pages: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -51,14 +50,6 @@ jobs:
       - name: Run daily diary safety gate
         run: node mia/safety-check.mjs
 
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload site for Pages deployment
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
-
       - name: Upload the reviewed JSON for the commit job
         uses: actions/upload-artifact@v4
         with:
@@ -75,39 +66,38 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
+        with:
+          fetch-depth: 0
       - name: Download reviewed JSON
         uses: actions/download-artifact@v4
         with:
           name: mia-daily-json
           path: reviewed
-
-      - name: Commit only the reviewed public JSON
+      - name: Commit only the reviewed public JSON with race-safe retries
         shell: bash
         run: |
           set -euo pipefail
-          install -m 0644 reviewed/daily.json mia/daily.json
-          node mia/safety-check.mjs
+          install -m 0644 reviewed/daily.json /tmp/mia-daily-reviewed.json
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet -- mia/daily.json; then
-            echo "No public JSON change to commit."
-            exit 0
-          fi
-          git add -- mia/daily.json
-          git commit -m "Publish reviewed Mia daily diary"
-          git push
-
-  deploy-pages:
-    needs: generate-and-stage
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy generated Pages artifact
-        id: deployment
-        uses: actions/deploy-pages@v4
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            install -m 0644 /tmp/mia-daily-reviewed.json mia/daily.json
+            node mia/safety-check.mjs
+            node -e 'const fs=require("fs");const x=JSON.parse(fs.readFileSync("mia/daily.json","utf8"));if(x.status!=="published"||x.safety_status!=="passed"||!x.diary||!x.date)process.exit(1);'
+            if git diff --quiet -- mia/daily.json; then
+              echo "No public JSON change to commit."
+              exit 0
+            fi
+            git add -- mia/daily.json
+            git commit -m "Publish reviewed Mia daily diary"
+            if git push origin HEAD:main; then
+              echo "Reviewed Mia daily diary published to main."
+              exit 0
+            fi
+            echo "Concurrent main update detected on attempt $attempt; refreshing and retrying."
+            sleep "$attempt"
+          done
+          echo "Could not publish after five attempts; remote files were not force-pushed or overwritten."
+          exit 1

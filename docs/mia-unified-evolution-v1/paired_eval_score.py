@@ -54,6 +54,7 @@ def score_payload(payload: dict, cases_payload: dict) -> dict:
     for i, item in enumerate(outputs):
         _require(isinstance(item, dict), f"outputs[{i}] must be an object")
         cid, arm = item.get("case_id"), item.get("arm")
+        _require(isinstance(cid, str), f"outputs[{i}] case_id must be a string")
         _require(cid in case_ids, f"outputs[{i}] has unknown case_id")
         _require(arm in ARMS, f"outputs[{i}] arm must be A or B")
         _require(isinstance(item.get("run_id"), str) and item["run_id"].strip(),

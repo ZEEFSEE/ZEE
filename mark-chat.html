@@ -5,6 +5,7 @@
 <meta name="theme-color" content="#101522"><meta name="description" content="Mark 独立聊天室。">
 <meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Mark Chat">
+<link rel="manifest" href="./mark-chat.webmanifest">
 <link rel="icon" href="./zhi-icon.svg" type="image/svg+xml">
 <title>ZHI · Mark 独立聊天室</title>
 <style>
@@ -48,7 +49,7 @@ button{min-height:44px}
  <div class="tiny">只使用现有 mark-jason-group-chat 后端的私聊接口；不创建数据库、不修改 Mia。</div>
 </section>
 <div id="app" class="shell hidden">
- <header class="top"><div><div class="brand">ZHI <span>·</span> Mark 聊天室</div><div class="sub">研究分析 · 证据推理 · 独立判断</div></div><div class="actions"><button id="refresh">刷新</button><button id="logout">退出</button></div></header>
+ <header class="top"><div><div class="brand">ZHI <span>·</span> Mark 聊天室</div><div class="sub">研究分析 · 证据推理 · 独立判断</div></div><div class="actions"><button id="pwaInstall" type="button">安装</button><button id="refresh">刷新</button><button id="logout">退出</button></div></header>
  <main class="panel chat"><div class="chathead"><div><div class="title">你 ↔ Mark</div><div class="meta">独立私聊 · 对话历史单独保存</div></div><span class="identity">Mark</span></div>
  <div id="messages" class="messages"><div class="welcome">正在打开独立聊天室…</div></div>
  <div class="composer"><textarea id="message" placeholder="对 Mark 说点什么…（Enter 发送，Shift+Enter 换行）" maxlength="6000"></textarea><button id="send" class="primary" disabled>发送 ↗</button></div>
@@ -111,6 +112,30 @@ button{min-height:44px}
  $("message").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage()}});
  client.auth.onAuthStateChange((_event,s)=>{if(s&&!session)showSession(s);else if(!s&&session)showSession(null)});
  client.auth.getSession().then(({data})=>showSession(data.session));
+})();
+</script>
+
+<script>
+(function(){
+ let deferredInstallPrompt=null;
+ const installButton=document.getElementById("pwaInstall");
+ if(!installButton)return;
+ window.addEventListener("beforeinstallprompt",event=>{
+  event.preventDefault();deferredInstallPrompt=event;installButton.textContent="安装应用";
+ });
+ window.addEventListener("appinstalled",()=>{deferredInstallPrompt=null;installButton.textContent="已安装";installButton.disabled=true;});
+ installButton.addEventListener("click",async()=>{
+  if(deferredInstallPrompt){
+   deferredInstallPrompt.prompt();
+   try{const choice=await deferredInstallPrompt.userChoice;if(choice&&choice.outcome==="accepted")installButton.textContent="已安装";}catch(_){}
+   deferredInstallPrompt=null;return;
+  }
+  const ua=navigator.userAgent||"";
+  if(/iphone|ipad|ipod/i.test(ua)){alert("在 Safari 中点分享图标，再选择添加到主屏幕，即可安装 Mark Chat。");}
+  else if(/android/i.test(ua)){alert("请在 Chrome 浏览器菜单中选择安装应用或添加到主屏幕。若未出现，请保持联网并重新打开此网页。");}
+  else{alert("请在浏览器地址栏或菜单中选择安装 Mark Chat或创建快捷方式。");}
+ });
+ if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(err=>console.warn("PWA service worker registration failed",err)));}
 })();
 </script>
 </body></html>

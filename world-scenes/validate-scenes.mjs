@@ -15,7 +15,7 @@ const info = [];
 const safeRelative = (base, relative) => {
   if (typeof relative !== "string" || !relative.trim()) return null;
   const resolved = path.resolve(base, relative);
-  const root = path.resolve(here);
+  const root = path.resolve(path.dirname(here));
   return resolved === root || resolved.startsWith(root + path.sep) ? resolved : null;
 };
 async function readJson(file, label) {

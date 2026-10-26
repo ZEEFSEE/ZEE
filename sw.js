@@ -1,5 +1,5 @@
-const CACHE_NAME = "zhi-pwa-shell-v20";
-const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./mia-chat.html", "./mia-chat.webmanifest", "./mark-jason-chat.html", "./mark-jason-chat.webmanifest", "./agent-talk.html", "./agent-talk.webmanifest", "./zhi-icon.svg"];
+const CACHE_NAME = "zhi-pwa-shell-v21";
+const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./mia-chat.html", "./mia-chat.webmanifest", "./mark-jason-chat.html", "./mark-jason-chat.webmanifest", "./mark-chat.html", "./mark-chat.webmanifest", "./jason-chat.html", "./jason-chat.webmanifest", "./agent-talk.html", "./agent-talk.webmanifest", "./zhi-icon.svg"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting()));
 });
@@ -27,7 +27,7 @@ self.addEventListener("fetch", event => {
       if (url.pathname.endsWith("/mia-chat.html")) {
         return (await caches.match("./mia-chat.html")) || Response.error();
       }
-      if (url.pathname.endsWith("/agent-talk.html")) {
+      if (url.pathname.endsWith("/mark-chat.html")) {\n        return (await caches.match("./mark-chat.html")) || Response.error();\n      }\n      if (url.pathname.endsWith("/jason-chat.html")) {\n        return (await caches.match("./jason-chat.html")) || Response.error();\n      }\n      if (url.pathname.endsWith("/agent-talk.html")) {
         return (await caches.match("./agent-talk.html")) || Response.error();
       }
       return (await caches.match("./index.html")) || Response.error();

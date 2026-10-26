@@ -1,0 +1,31 @@
+name: Agent Template Validation
+
+on:
+  pull_request:
+    paths:
+      - "agents/templates/**"
+      - "tests/agent-template/**"
+      - "docs/agent-standard/**"
+      - ".github/workflows/agent-template-validation.yml"
+  push:
+    branches:
+      - "docs/agent-sop-v1-templates"
+    paths:
+      - "agents/templates/**"
+      - "tests/agent-template/**"
+      - "docs/agent-standard/**"
+      - ".github/workflows/agent-template-validation.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-agent-templates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate template JSON and safe defaults
+        run: node --test tests/agent-template/validate-templates.test.mjs

@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0.0",
+  "record_status": "template",
+  "agent_id": "unknown",
+  "agent_name": "unknown",
+  "environment": "unknown",
+  "config_commit": "unknown",
+  "prompt_version": "unknown",
+  "memory_policy_version": "unknown",
+  "permission_policy_version": "unknown",
+  "checks": {
+    "ci_validation": "not_run",
+    "identity_tests": "not_run",
+    "memory_tests": "not_run",
+    "auth_security_tests": "not_run",
+    "reliability_cost_tests": "not_run",
+    "health_check": "not_run",
+    "rollback_drill": "not_run"
+  },
+  "deployed_version": "unknown",
+  "migration_reference": "not_applicable",
+  "rollback_target": "unknown",
+  "blockers": [
+    "evidence_not_collected"
+  ],
+  "release_decision": "draft",
+  "verified_at_utc": "unknown",
+  "verified_by": "unknown",
+  "evidence_links": [],
+  "safety_boundary": {
+    "production_database_changes_authorized": false,
+    "edge_function_deploy_authorized": false,
+    "secret_rotation_authorized": false,
+    "mia_independent_chat_changes_authorized": false,
+    "zhi_core_in_scope": false
+  },
+  "notes": "Template only. Do not mark checks pass or release ready without linked, independently reviewable evidence."
+}

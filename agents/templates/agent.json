@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "agent_id": "REPLACE_WITH_GENERATED_UUID",
+  "display_name": "REPLACE_WITH_AGENT_NAME",
+  "agent_type": "analytical",
+  "version": "1.0.0",
+  "status": "draft",
+  "personality_file": "personality.md",
+  "system_prompt_file": "system-prompt.md",
+  "memory_policy_file": "memory-policy.md",
+  "permissions_file": "permissions.json",
+  "runtime": {
+    "supabase_project_ref": "REPLACE_WITH_EXPLICITLY_APPROVED_PROJECT_REF",
+    "edge_function": "REPLACE_WITH_APPROVED_FUNCTION",
+    "database_scope": "existing-approved-schema-only"
+  },
+  "release_gates": {
+    "identity_tests": true,
+    "conversation_tests": true,
+    "authorization_tests": true,
+    "memory_quality_tests": true,
+    "data_integrity_tests": true,
+    "cost_capacity_baseline": true,
+    "rollback_plan": true
+  }
+}

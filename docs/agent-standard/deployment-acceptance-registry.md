@@ -89,3 +89,22 @@ evidence_links: []
 ## 5. 完成定义
 
 只有在登记项有证据、适用门禁全部通过、阻塞项清零、回滚目标确认且发布决定获得授权后，才可将状态改为 `ready_for_release`。真正上线后再标记 `released`，并补上运行验证证据。
+
+## 6. 2026-10-26 仓库证据核对补充（只读）
+
+> 本节只登记仓库可直接验证的静态证据；静态源码不等于线上部署状态，页面存在也不等于服务可用。数据库和线上函数部署版本尚未在本节核实。
+
+| 登记目标 | 仓库证据 | 可确认内容 | 未确认 / 阻塞 | 当前验收状态 |
+|---|---|---|---|---|
+| Mark / Jason 群聊入口（组合界面，不等于两个独立部署单元） | [mark-jason-chat.html](https://github.com/ZEEFSEE/ZEE/blob/main/mark-jason-chat.html)；[mark-jason-group-chat 函数源码](https://github.com/ZEEFSEE/ZEE/blob/main/supabase/functions/mark-jason-group-chat/index.ts) | 页面声明为 Mark & Jason 群聊；前端调用 `mark-jason-group-chat`；源码包含 Supabase Auth 会话验证与会话所有权检查 | Mark、Jason 的正式 agent_id 与身份定义未由本次源码证据确认；函数线上部署版本、真实环境、鉴权负向测试、端到端测试及回滚演练未确认 | `blocked`（证据不足；不代表已发现运行故障） |
+| ZHI 智能人讲话室 / 名单页 | [agent-talk.html](https://github.com/ZEEFSEE/ZEE/blob/main/agent-talk.html) | 页面代码尝试读取 `zhi_agents` 表，并依赖名为 `zhiCoreSupabase` 的客户端 | 该依赖与已删除的 ZHI Core 范围冲突；本次不连接、不恢复、不重建，不将其作为当前可部署目标；现存智能人名单和运行状态无法据此确认 | `out_of_scope` |
+| Mia 独立聊天室（仅作为保护边界登记，不是本轮验收对象） | [mia-chat.html](https://github.com/ZEEFSEE/ZEE/blob/main/mia-chat.html)；[mia-chat 函数源码](https://github.com/ZEEFSEE/ZEE/blob/main/supabase/functions/mia-chat/index.ts) | 仓库页面指向 zee-extension 项目的 Mia chat/auth 路径；既有工作记录包含只读源码审计 | 本轮不运行聊天请求、不写入数据、不改函数/密钥/运行时；部署版本与本轮验收测试均不重新声明 | `protected_not_modified` |
+| ZHI Agent 自动聊天/消息流相关函数 | [zhi-agent-autonomous-chat](https://github.com/ZEEFSEE/ZEE/blob/main/supabase/functions/zhi-agent-autonomous-chat/index.ts)；[zhi-agent-chat-feed](https://github.com/ZEEFSEE/ZEE/blob/main/supabase/functions/zhi-agent-chat-feed/index.ts) | 仓库中存在引用 `zhi_agents`、`zhi_agent_minds` 等旧世界数据表的源码 | 源码存在不证明相关数据库或服务仍存在；由于 ZHI Core 已删除，本次不将这些函数视为可部署/可验收对象，不尝试调用 | `out_of_scope` |
+
+### 本次仓库核对记录
+
+- 仓库：`ZEEFSEE/ZEE`；核对分支：`main` 与 `docs/agent-sop-v1-templates`。
+- 已核实 GitHub 上存在 PR #49，仍为 Draft、未合并。
+- 当前 main 根目录可见 `agent-talk.html`、`mark-jason-chat.html`、`mia-chat.html`；main 的 Supabase Functions 目录含 `mark-jason-group-chat`、`mia-chat` 及若干旧 ZHI agent 函数。
+- 这些是仓库静态证据，不等同于线上运行证明。线上部署版本、最新 CI、真实身份映射与回滚演练仍需独立证据。
+- 未执行任何数据库写入、迁移、函数部署、密钥操作或生产请求；未访问或重建 ZHI Core。

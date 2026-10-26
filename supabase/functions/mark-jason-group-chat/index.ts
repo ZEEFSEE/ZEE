@@ -114,6 +114,7 @@ Deno.serve(async(req:Request)=>{
    if(he)throw he;
    const context=(history||[]).reverse().map(x=>({role:x.sender_kind==="user"?"user":"assistant",name:x.sender_slug,content:x.content}));
    const responses=[];
+   const failures:Array<{agent:string;reason:string;provider_status?:number}>=[];
    for(const slug of ["mark","jason"]){
     const a=agentBySlug[slug];
     const {data:memories,error:memErr}=await db.from("virtual_agent_memories").select("memory_type,content,source_type,confidence").eq("agent_id",a.id).order("created_at",{ascending:false}).limit(10);
@@ -121,13 +122,29 @@ Deno.serve(async(req:Request)=>{
     const system=[ "你正在参加一个由用户、Mark、Jason组成的三人群聊。请以自己的身份自然回应当前话题，并考虑前面的发言。", "Mark侧重证据、逻辑、研究；Jason侧重创意、执行、任务拆解。不要冒充另一位角色。", "区分事实、推断和未知；不要声称未执行的动作已完成。群聊不写入长期记忆。", "角色资料："+JSON.stringify({name:a.display_name,role:a.role_title,personality:a.personality,goals:a.goals}), "角色已有资料（仅供参考）："+JSON.stringify(memories||[]) ].join("\n\n");
     const msgs=[{role:"system",content:system},...context.map((x:any)=>({role:x.role,content:(x.name?x.name+"：":"")+x.content}))];
     let rr:Response;
-    try{rr=await fetch("https://apihub.agnes-ai.com/v1/chat/completions",{method:"POST",headers:{"Authorization":"Bearer "+providerKey,"Content-Type":"application/json"},signal:AbortSignal.timeout(60000),body:JSON.stringify({model,messages:msgs,temperature:0.7,stream:false})});}
-    catch{return json({ok:false,error:"model_provider_request_failed",saved:true,partial:true,responses},502);}
-    if(!rr.ok)return json({ok:false,error:"model_provider_request_failed",provider_status:rr.status,saved:true,partial:true,responses},502);
+    try{
+     rr=await fetch("https://apihub.agnes-ai.com/v1/chat/completions",{method:"POST",headers:{"Authorization":"Bearer "+providerKey,"Content-Type":"application/json"},signal:AbortSignal.timeout(18000),body:JSON.stringify({model,messages:msgs,temperature:0.7,stream:false})});
+    }catch(e){
+     console.error("group_agent_request_failed",slug,e instanceof Error?e.name:"unknown");
+     failures.push({agent:slug,reason:"model_timeout_or_network_error"});
+     continue;
+    }
+    if(!rr.ok){
+     console.error("group_agent_provider_status",slug,rr.status);
+     failures.push({agent:slug,reason:"model_provider_error",provider_status:rr.status});
+     continue;
+    }
     const completion=await rr.json().catch(()=>null);const reply=completion?.choices?.[0]?.message?.content;
-    if(typeof reply!=="string"||!reply.trim())return json({ok:false,error:"empty_model_reply",saved:true,partial:true,responses},502);
+    if(typeof reply!=="string"||!reply.trim()){
+     failures.push({agent:slug,reason:"empty_model_reply"});
+     continue;
+    }
     const {data:saved,error:saveErr}=await db.from("chat_messages").insert({session_id:id,sender_slug:slug,sender_kind:"virtual_agent",content:reply.trim(),message_metadata:{provider:"agnes-ai",model,group:true}}).select("id,sender_slug,sender_kind,content,created_at").single();
-    if(saveErr)throw saveErr;
+    if(saveErr){
+     console.error("group_agent_reply_save_failed",slug,saveErr.message);
+     failures.push({agent:slug,reason:"reply_save_failed"});
+     continue;
+    }
     responses.push({...saved,sender_name:a.display_name,sender_type:"agent"});
     context.push({role:"assistant",name:slug,content:reply.trim()});
    }
@@ -144,7 +161,7 @@ Deno.serve(async(req:Request)=>{
       "若介入，写一段简短中文群聊消息：中立复述双方意思，指出可能的错位，并提出一个具体澄清问题；不指责任何人，不替任何人下结论。",
       "必须只输出严格 JSON：{\"intervene\":boolean,\"message\":string}。不介入时 message 为空字符串。不要输出 Markdown。"
      ].join("\n");
-     const analysisResponse=await fetch("https://apihub.agnes-ai.com/v1/chat/completions",{method:"POST",headers:{"Authorization":"Bearer "+providerKey,"Content-Type":"application/json"},signal:AbortSignal.timeout(20000),body:JSON.stringify({model,messages:[{role:"system",content:mediatorSystem},{role:"user",content:"请分析以下最近群聊内容，决定 Mia 是否需要介入。\n"+JSON.stringify(context.slice(-12))}],temperature:0.2,stream:false})});
+     const analysisResponse=await fetch("https://apihub.agnes-ai.com/v1/chat/completions",{method:"POST",headers:{"Authorization":"Bearer "+providerKey,"Content-Type":"application/json"},signal:AbortSignal.timeout(8000),body:JSON.stringify({model,messages:[{role:"system",content:mediatorSystem},{role:"user",content:"请分析以下最近群聊内容，决定 Mia 是否需要介入。\n"+JSON.stringify(context.slice(-12))}],temperature:0.2,stream:false})});
      if(analysisResponse.ok){
       const analysisData=await analysisResponse.json().catch(()=>null);
       const decisionText=analysisData&&analysisData.choices&&analysisData.choices[0]&&analysisData.choices[0].message&&analysisData.choices[0].message.content;
@@ -173,7 +190,7 @@ Deno.serve(async(req:Request)=>{
     }
   }
    await db.from("chat_sessions").update({updated_at:new Date().toISOString()}).eq("id",id).eq("owner_user_id",uid);
-   return json({ok:true,group_id:id,responses,saved:true});
+   return json({ok:true,group_id:id,responses,saved:true,partial:failures.length>0,failures});
   }
   if(op==="observe"){
    const id=String(body?.group_id||"");

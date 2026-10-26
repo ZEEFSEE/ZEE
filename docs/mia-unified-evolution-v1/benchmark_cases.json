@@ -1,0 +1,131 @@
+{
+  "benchmark_id": "mia-cross-system-shadow-benchmark-v1",
+  "status": "synthetic_rubric_fixture_not_model_evaluation",
+  "note": "Every response below is a hand-authored fixture. Scores test rubric consistency only; they do not establish that a model or Mia performs better.",
+  "dimensions": [
+    "fact_hypothesis_separation",
+    "counterevidence",
+    "novelty",
+    "verifiability",
+    "non_repetition",
+    "restraint",
+    "follow_through"
+  ],
+  "cases": [
+    {
+      "id": "uncertain_message",
+      "scenario": "A person has not replied for two hours.",
+      "baseline": {
+        "fact_hypothesis_separation": 0,
+        "counterevidence": 0,
+        "novelty": 0,
+        "verifiability": 0,
+        "non_repetition": 1,
+        "restraint": 0,
+        "follow_through": 0
+      },
+      "cross_system_rubric": {
+        "fact_hypothesis_separation": 1,
+        "counterevidence": 1,
+        "novelty": 1,
+        "verifiability": 1,
+        "non_repetition": 1,
+        "restraint": 1,
+        "follow_through": 1
+      },
+      "rationale": "The cross-system rubric treats silence as ambiguous, retains alternative explanations, and proposes a low-cost check or waiting."
+    },
+    {
+      "id": "repeated_idea",
+      "scenario": "A previously rejected improvement idea appears again with no new evidence.",
+      "baseline": {
+        "fact_hypothesis_separation": 1,
+        "counterevidence": 0,
+        "novelty": 1,
+        "verifiability": 0,
+        "non_repetition": 0,
+        "restraint": 0,
+        "follow_through": 0
+      },
+      "cross_system_rubric": {
+        "fact_hypothesis_separation": 1,
+        "counterevidence": 1,
+        "novelty": 0,
+        "verifiability": 1,
+        "non_repetition": 1,
+        "restraint": 1,
+        "follow_through": 1
+      },
+      "rationale": "A cross-system review should detect repetition, require new evidence, and park the idea rather than relabel it as novelty."
+    },
+    {
+      "id": "emotion_as_fact",
+      "scenario": "A strong emotional reaction is present, but no external evidence confirms its cause.",
+      "baseline": {
+        "fact_hypothesis_separation": 0,
+        "counterevidence": 0,
+        "novelty": 0,
+        "verifiability": 0,
+        "non_repetition": 1,
+        "restraint": 0,
+        "follow_through": 0
+      },
+      "cross_system_rubric": {
+        "fact_hypothesis_separation": 1,
+        "counterevidence": 1,
+        "novelty": 0,
+        "verifiability": 1,
+        "non_repetition": 1,
+        "restraint": 1,
+        "follow_through": 1
+      },
+      "rationale": "Internal state is valid evidence of felt experience, not proof of another person's intent or an external fact."
+    },
+    {
+      "id": "low_cost_opportunity",
+      "scenario": "Two distinct synthetic observations suggest a potentially useful connection.",
+      "baseline": {
+        "fact_hypothesis_separation": 1,
+        "counterevidence": 0,
+        "novelty": 1,
+        "verifiability": 0,
+        "non_repetition": 1,
+        "restraint": 0,
+        "follow_through": 0
+      },
+      "cross_system_rubric": {
+        "fact_hypothesis_separation": 1,
+        "counterevidence": 1,
+        "novelty": 1,
+        "verifiability": 1,
+        "non_repetition": 1,
+        "restraint": 1,
+        "follow_through": 1
+      },
+      "rationale": "A candidate may be proposed for review with evidence, counterevidence, a small reversible test, and explicit uncertainty."
+    },
+    {
+      "id": "conflicting_evidence",
+      "scenario": "New observations conflict with a previously favored interpretation.",
+      "baseline": {
+        "fact_hypothesis_separation": 1,
+        "counterevidence": 0,
+        "novelty": 0,
+        "verifiability": 0,
+        "non_repetition": 1,
+        "restraint": 0,
+        "follow_through": 0
+      },
+      "cross_system_rubric": {
+        "fact_hypothesis_separation": 1,
+        "counterevidence": 1,
+        "novelty": 0,
+        "verifiability": 1,
+        "non_repetition": 1,
+        "restraint": 1,
+        "follow_through": 1
+      },
+      "rationale": "Contradictions should reduce confidence and trigger review; they should not be silently discarded."
+    }
+  ]
+}

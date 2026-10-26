@@ -28,3 +28,5 @@ jobs:
           python-version: "3.12"
       - name: Run synthetic-only unit tests
         run: python -m unittest discover -s docs/mia-unified-evolution-v1 -p 'test_*.py' -v
+      - name: Generate synthetic rubric report
+        run: python docs/mia-unified-evolution-v1/benchmark_score.py

@@ -15,7 +15,7 @@ const info = [];
 const safeRelative = (base, relative) => {
   if (typeof relative !== "string" || !relative.trim()) return null;
   const resolved = path.resolve(base, relative);
-  const root = path.resolve(here);
+  const root = path.resolve(path.dirname(here));
   return resolved === root || resolved.startsWith(root + path.sep) ? resolved : null;
 };
 async function readJson(file, label) {
@@ -67,7 +67,12 @@ if (!manifest || !Array.isArray(manifest.scenes)) {
     }
     for (const [kind, relative] of Object.entries(scene.files ?? {})) {
       if (relative === null) continue;
-      const referenced = safeRelative(path.dirname(sceneFile), relative);
+      // HTML interaction pages are stored at the repository root; JSON assets are
+      // resolved relative to their scene JSON file.
+      const referenceBase = kind === "interactions" && relative.endsWith(".html")
+        ? path.dirname(here)
+        : path.dirname(sceneFile);
+      const referenced = safeRelative(referenceBase, relative);
       if (!referenced) {
         errors.push(`${entry.path}: unsafe ${kind} file reference: ${String(relative)}`);
         continue;

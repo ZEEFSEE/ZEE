@@ -1,4 +1,6 @@
+import json
 import unittest
+from pathlib import Path
 
 from paired_eval_score import DIMENSIONS, score_payload
 
@@ -39,6 +41,22 @@ class PairedEvalScoreTests(unittest.TestCase):
         self.assertEqual(report["paired_comparison"][DIMENSIONS[0]]["mean_difference_B_minus_A"], 1.0)
         self.assertEqual(report["rater_quality"]["exact_agreement_rate"], 1.0)
         self.assertEqual(report["decision"], "manual_review_required")
+
+    def test_accepts_frozen_case_set_id_schema(self):
+        cases_path = Path(__file__).with_name("paired_eval_cases_v1.json")
+        cases = json.loads(cases_path.read_text(encoding="utf-8"))
+        payload = {
+            "arms": {
+                "A": {"model_version": "test-model", "config_hash": "sha256:a"},
+                "B": {"model_version": "test-model", "config_hash": "sha256:b"},
+            },
+            "outputs": [],
+            "ratings": [],
+            "guardrails": [],
+        }
+        report = score_payload(payload, cases)
+        self.assertEqual(report["case_count"], 12)
+        self.assertEqual(report["per_arm"]["A"]["valid_output_count"], 0)
 
     def test_rejects_duplicate_output(self):
         payload, cases = fixture()

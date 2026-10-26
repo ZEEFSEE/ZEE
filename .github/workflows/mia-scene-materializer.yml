@@ -6,6 +6,7 @@ on:
       - "world-scenes/inbox/*.json"
       - "scripts/materialize_mia_scenes.py"
       - ".github/workflows/mia-scene-materializer.yml"
+      - "world-scenes/validate-scenes.mjs"
   workflow_dispatch:
 
 permissions:

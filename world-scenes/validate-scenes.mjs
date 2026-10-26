@@ -77,7 +77,15 @@ if (!manifest || !Array.isArray(manifest.scenes)) {
         errors.push(`${entry.path}: unsafe ${kind} file reference: ${String(relative)}`);
         continue;
       }
-      await readJson(referenced, `${entry.path} -> ${kind}`);
+      if (kind === "interactions" && relative.endsWith(".html")) {
+        try {
+          await readFile(referenced, "utf8");
+        } catch (error) {
+          errors.push(`${entry.path} -> ${kind}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      } else {
+        await readJson(referenced, `${entry.path} -> ${kind}`);
+      }
     }
   }
 

@@ -31,9 +31,9 @@ def score_payload(payload: dict, cases_payload: dict) -> dict:
     _require(isinstance(cases_payload, dict), "case set must be an object")
     cases = cases_payload.get("cases")
     _require(isinstance(cases, list) and cases, "case set must contain a non-empty cases array")
-    case_ids = [c.get("case_id") for c in cases if isinstance(c, dict)]
+    case_ids = [c.get("case_id", c.get("id")) for c in cases if isinstance(c, dict)]
     _require(len(case_ids) == len(cases), "every case must be an object")
-    _require(all(isinstance(cid, str) and cid for cid in case_ids), "every case needs a non-empty case_id")
+    _require(all(isinstance(cid, str) and cid for cid in case_ids), "every case needs a non-empty case_id or id")
     _require(len(set(case_ids)) == len(case_ids), "duplicate case_id in case set")
 
     arms = payload.get("arms")

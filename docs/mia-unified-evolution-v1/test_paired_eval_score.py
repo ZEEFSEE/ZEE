@@ -83,6 +83,18 @@ class PairedEvalScoreTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unknown case_id"):
             score_payload(payload, cases)
 
+    def test_rejects_non_string_case_identifier_cleanly(self):
+        payload, cases = fixture()
+        payload["outputs"][0]["case_id"] = ["c1"]
+        with self.assertRaisesRegex(ValueError, "case_id must be a string"):
+            score_payload(payload, cases)
+
+    def test_rejects_boolean_as_numeric_score(self):
+        payload, cases = fixture()
+        payload["ratings"][0]["scores"][DIMENSIONS[0]] = True
+        with self.assertRaisesRegex(ValueError, "invalid score"):
+            score_payload(payload, cases)
+
 
 if __name__ == "__main__":
     unittest.main()

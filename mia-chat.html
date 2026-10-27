@@ -101,7 +101,7 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
  let token=sessionStorage.getItem('mia_chat_token')||'';
  let busy=false;
  let exclusiveMode=sessionStorage.getItem('mia_exclusive_mode')==='1';
- let knownMessageIds=new Set();let lastAssistantReplyAt=0;
+ let knownMessageIds=new Set();let lastKnownSequenceNo=0;let exclusiveSyncBusy=false;let lastAssistantReplyAt=0;
  let exclusivePoll=null;
  let exclusiveWakeTimer=null;
  let exclusiveWakeAt=0;
@@ -137,7 +137,7 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
  function showApp(on){$('gate').classList.toggle('hidden',on);$('message').disabled=!on;$('send').disabled=!on;$('explore').disabled=!on||localStorage.getItem('mia_forest_lounge_active')==='1';}
  async function request(action,payload={}){const res=await fetch(CHAT_URL,{method:'POST',headers:{'Content-Type':'application/json','apikey':PUBLISHABLE_KEY,'Authorization':'Bearer '+token},body:JSON.stringify({action,...payload}),cache:'no-store'});const data=await res.json().catch(()=>({}));if(res.status===401){token='';sessionStorage.removeItem('mia_chat_token');showApp(false);}if(!res.ok||!data.ok)throw new Error(data.error||('HTTP '+res.status));return data;}
  async function requestStream(action,payload={},onDelta=()=>{}){const res=await fetch(CHAT_URL,{method:'POST',headers:{'Content-Type':'application/json','apikey':PUBLISHABLE_KEY,'Authorization':'Bearer '+token},body:JSON.stringify({action,...payload,stream_response:true}),cache:'no-store'});if(res.status===401){token='';sessionStorage.removeItem('mia_chat_token');showApp(false);}const ct=res.headers.get('content-type')||'';if(!ct.includes('text/event-stream')){const data=await res.json().catch(()=>({}));if(!res.ok||!data.ok)throw new Error(data.error||('HTTP '+res.status));return data;}if(!res.ok||!res.body)throw new Error('HTTP '+res.status);const reader=res.body.getReader(),decoder=new TextDecoder();let buffer='',reply='',result=null,streamError='';const handle=(raw)=>{const line=raw.trim();if(!line.startsWith('data:'))return;const value=line.slice(5).trim();if(!value||value==='[DONE]')return;let event;try{event=JSON.parse(value)}catch{return;}if(event.type==='delta'&&typeof event.content==='string'){reply+=event.content;onDelta(reply);}else if(event.type==='done'&&event.data)result=event.data;else if(event.type==='error')streamError=event.error||'Mia 回复中断。';};try{while(true){const {value,done}=await reader.read();if(done)break;buffer+=decoder.decode(value,{stream:true});const rows=buffer.split(/\r?\n/);buffer=rows.pop()||'';for(const row of rows)handle(row);}buffer+=decoder.decode();if(buffer)handle(buffer);}catch(e){throw new Error(reply?'Mia 回复连接中断，尚未确认完整回复已保存。':(e.message||'Mia 回复连接中断。'));}if(streamError)throw new Error(streamError);if(!result?.ok)throw new Error(reply?'Mia 回复未完成保存，请刷新历史确认。':'Mia 流式回复未完成。');return {...result,reply:result.reply||reply};}
- async function loadHistory(){if(!token)return;status('正在读取 Mia 的独立聊天记录…');try{const data=await request('history');$('miaName').textContent=data.identity?.name||'Mia';$('log').innerHTML='';knownMessageIds=new Set();const rows=data.messages||[];const latestAssistant=[...rows].reverse().find(m=>m.role==='assistant'&&m.created_at);lastAssistantReplyAt=latestAssistant?Date.parse(latestAssistant.created_at)||0:0;if(!rows.length){$('log').innerHTML='<div class="welcome">还没有聊天记录，向 Mia 发送第一条消息吧。</div>';}else rows.forEach(m=>{addBubble(m.role,m.content,m.created_at,m.metadata?.images||[]);if(m.id)knownMessageIds.add(m.id);});$('log').scrollTop=$('log').scrollHeight;status('已读取 '+rows.length+' 条 Mia 独立聊天记录。'+(exclusiveMode?' 专属通道自动监听中。':''),'good');showApp(true);syncExclusiveMode();}catch(e){status('读取失败：'+e.message,'error');}}
+ async function loadHistory(){if(!token)return;status('正在读取 Mia 的独立聊天记录…');try{const data=await request('history');$('miaName').textContent=data.identity?.name||'Mia';$('log').innerHTML='';knownMessageIds=new Set();lastKnownSequenceNo=0;const rows=data.messages||[];const latestAssistant=[...rows].reverse().find(m=>m.role==='assistant'&&m.created_at);lastAssistantReplyAt=latestAssistant?Date.parse(latestAssistant.created_at)||0:0;if(!rows.length){$('log').innerHTML='<div class="welcome">还没有聊天记录，向 Mia 发送第一条消息吧。</div>';}else rows.forEach(m=>{addBubble(m.role,m.content,m.created_at,m.metadata?.images||[]);if(m.id)knownMessageIds.add(m.id);lastKnownSequenceNo=Math.max(lastKnownSequenceNo,Number(m.sequence_no)||0);});$('log').scrollTop=$('log').scrollHeight;status('已读取 '+rows.length+' 条 Mia 独立聊天记录。'+(exclusiveMode?' 专属通道自动监听中。':''),'good');showApp(true);syncExclusiveMode();}catch(e){status('读取失败：'+e.message,'error');}}
  $('loginForm').addEventListener('submit',async e=>{e.preventDefault();$('loginButton').disabled=true;$('loginError').textContent='正在验证…';try{const res=await fetch(AUTH_URL,{method:'POST',headers:{'Content-Type':'application/json','apikey':PUBLISHABLE_KEY},body:JSON.stringify({password:$('password').value}),cache:'no-store'});const data=await res.json().catch(()=>({}));if(!res.ok||!data.ok)throw new Error(data.error||('HTTP '+res.status));token=data.access_token;sessionStorage.setItem('mia_chat_token',token);$('password').value='';$('loginError').textContent='';showApp(true);await loadHistory();}catch(err){$('loginError').textContent=err.message||String(err);}finally{$('loginButton').disabled=false;}});
  $('message').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();if(!$('send').disabled&&!busy){$('composer').requestSubmit();}}});
  $('composer').addEventListener('submit',async e=>{
@@ -191,6 +191,28 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
    }catch(err){status('10 秒触发已执行，但主动消息生成失败：'+(err.message||String(err)),'error');}
   },Math.max(0,exclusiveWakeAt-Date.now()));
  }
+ async function pollExclusiveMessages(){
+  if(!exclusiveMode||!token||busy||document.hidden||exclusiveSyncBusy)return;
+  exclusiveSyncBusy=true;
+  try{
+   const data=await request('history',{after_sequence_no:lastKnownSequenceNo});
+   const rows=data.messages||[];
+   if(!rows.length)return;
+   const fresh=rows.filter(m=>m.id&&!knownMessageIds.has(m.id));
+   rows.forEach(m=>{lastKnownSequenceNo=Math.max(lastKnownSequenceNo,Number(m.sequence_no)||0);if(m.id)knownMessageIds.add(m.id);});
+   if(!fresh.length)return;
+   const log=$('log');const welcome=log.querySelector('.welcome');if(welcome)welcome.remove();
+   fresh.forEach(m=>{
+    addBubble(m.role,m.content,m.created_at,m.metadata?.images||[]);
+    if(m.role==='assistant'){
+     status('Mia 专属通道收到新消息。','good');
+     if('Notification' in window&&Notification.permission==='granted')new Notification('Mia · 专属通道',{body:String(m.content||'收到一条新消息').slice(0,120)});
+    }
+   });
+   log.scrollTop=log.scrollHeight;
+  }catch(e){status('专属通道增量同步暂时中断：'+(e.message||String(e)),'error');}
+  finally{exclusiveSyncBusy=false;}
+ }
  function syncExclusiveMode(){
   const button=$('exclusiveMode');
   button.classList.toggle('exclusive-on',exclusiveMode);
@@ -199,29 +221,12 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
   if(exclusivePoll){clearInterval(exclusivePoll);exclusivePoll=null;}
   if(!exclusiveMode)cancelExclusiveWake();
   if(exclusiveMode&&token){
-   exclusivePoll=setInterval(async()=>{
-    if(busy||!token)return;
-    try{
-     const data=await request('history');
-     const rows=data.messages||[];
-     const fresh=rows.filter(m=>m.id&&!knownMessageIds.has(m.id));
-     if(!fresh.length)return;
-     // Mark all new rows, including user rows, to prevent repeated processing.
-     fresh.forEach(m=>{if(m.id)knownMessageIds.add(m.id);});
-     const log=$('log');const welcome=log.querySelector('.welcome');if(welcome)welcome.remove();
-     fresh.forEach(m=>{
-      knownMessageIds.add(m.id);
-      if(m.role==='assistant'){
-       addBubble(m.role,m.content,m.created_at,m.metadata?.images||[]);
-       status('Mia 专属通道收到新消息。','good');
-       if('Notification' in window&&Notification.permission==='granted')new Notification('Mia · 专属通道',{body:String(m.content||'收到一条新消息').slice(0,120)});
-      }
-     });
-     log.scrollTop=log.scrollHeight;
-    }catch(e){status('专属通道监听暂时中断：'+(e.message||String(e)),'error');}
-   },5000);
+   // Only sync newly created rows; never reload the full transcript during polling.
+   exclusivePoll=setInterval(pollExclusiveMessages,15000);
+   if(!document.hidden)pollExclusiveMessages();
   }
  }
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&exclusiveMode&&token)pollExclusiveMessages();});
  $('exclusiveMode').onclick=async()=>{
   exclusiveMode=!exclusiveMode;sessionStorage.setItem('mia_exclusive_mode',exclusiveMode?'1':'0');syncExclusiveMode();
   if(exclusiveMode&&'Notification' in window&&Notification.permission==='default'){

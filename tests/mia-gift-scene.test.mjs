@@ -29,9 +29,9 @@ test('three-color bouquet contains exactly nine roses and is virtual-only', () =
   assert.match(scene.gift.scent.note, /Textual\/visual simulation only/);
 });
 
-test('chat page renders gift fields from the scene manifest rather than hardcoded rose text', () => {
-  for (const id of ['roseGiftArt', 'roseGiftTitle', 'roseGiftCounts', 'roseGiftMessage', 'roseGiftScent', 'roseGiftLocation']) {
-    assert.ok(html.includes('id="' + id + '"'), 'missing UI anchor ' + id);
+test('rose gift panel stays off the chat page while scene contract data remains available', () => {
+  for (const id of ['miaRoseGift', 'roseGiftArt', 'roseGiftTitle', 'roseGiftCounts', 'roseGiftMessage', 'roseGiftScent', 'roseGiftLocation']) {
+    assert.ok(!html.includes('id="' + id + '"'), 'rose gift UI should remain absent: ' + id);
   }
   assert.ok(html.includes('fetch("./mia/forest-corner.json?v=2"'));
   assert.ok(html.includes('gift.location.entity_id'));

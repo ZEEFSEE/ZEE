@@ -85,6 +85,7 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
  let exclusiveMode=sessionStorage.getItem('mia_exclusive_mode')==='1';
  let knownMessageIds=new Set();let lastKnownSequenceNo=0;let exclusiveSyncBusy=false;let lastAssistantReplyAt=0;
  let exclusivePoll=null;
+ let exclusivePollDelay=30000;
  let exclusiveWakeTimer=null;
  let exclusiveWakeAt=0;
  const EMOTIONAL_RESIDUAL_KEY='mia_emotional_residual_v1';
@@ -179,10 +180,11 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
   try{
    const data=await request('history',{after_sequence_no:lastKnownSequenceNo});
    const rows=data.messages||[];
-   if(!rows.length)return;
+   if(!rows.length){exclusivePollDelay=Math.min(300000,Math.max(30000,exclusivePollDelay*2));return;}
    const fresh=rows.filter(m=>m.id&&!knownMessageIds.has(m.id));
    rows.forEach(m=>{lastKnownSequenceNo=Math.max(lastKnownSequenceNo,Number(m.sequence_no)||0);if(m.id)knownMessageIds.add(m.id);});
-   if(!fresh.length)return;
+   if(!fresh.length){exclusivePollDelay=Math.min(300000,Math.max(30000,exclusivePollDelay*2));return;}
+   exclusivePollDelay=30000;
    const log=$('log');const welcome=log.querySelector('.welcome');if(welcome)welcome.remove();
    fresh.forEach(m=>{
     addBubble(m.role,m.content,m.created_at,m.metadata?.images||[]);
@@ -192,19 +194,29 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
     }
    });
    log.scrollTop=log.scrollHeight;
-  }catch(e){status('专属通道增量同步暂时中断：'+(e.message||String(e)),'error');}
+  }catch(e){exclusivePollDelay=Math.min(300000,Math.max(30000,exclusivePollDelay*2));status('专属通道增量同步暂时中断：'+(e.message||String(e)),'error');}
   finally{exclusiveSyncBusy=false;}
+ }
+ function scheduleExclusivePoll(delay=exclusivePollDelay){
+  if(exclusivePoll)clearTimeout(exclusivePoll);
+  if(!exclusiveMode||!token){exclusivePoll=null;return;}
+  exclusivePoll=setTimeout(async()=>{
+   exclusivePoll=null;
+   await pollExclusiveMessages();
+   if(exclusiveMode&&token)scheduleExclusivePoll(exclusivePollDelay);
+  },delay);
  }
  function syncExclusiveMode(){
   const button=$('exclusiveMode');
   button.classList.toggle('exclusive-on',exclusiveMode);
   button.setAttribute('aria-pressed',String(exclusiveMode));
   button.textContent=exclusiveMode?'Mia 专属通道：已开启':'开启 Mia 专属通道';
-  if(exclusivePoll){clearInterval(exclusivePoll);exclusivePoll=null;}
+  if(exclusivePoll){clearTimeout(exclusivePoll);exclusivePoll=null;}
   if(!exclusiveMode)cancelExclusiveWake();
   if(exclusiveMode&&token){
    // Only sync newly created rows; never reload the full transcript during polling.
-   exclusivePoll=setInterval(pollExclusiveMessages,30000);
+   exclusivePollDelay=30000;
+   scheduleExclusivePoll(30000);
    if(!document.hidden)pollExclusiveMessages();
   }
  }

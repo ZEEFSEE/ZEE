@@ -220,7 +220,14 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
    if(!document.hidden)pollExclusiveMessages();
   }
  }
- document.addEventListener('visibilitychange',()=>{if(!document.hidden&&exclusiveMode&&token)pollExclusiveMessages();});
+ document.addEventListener('visibilitychange',()=>{
+  if(!exclusiveMode||!token)return;
+  if(exclusivePoll){clearTimeout(exclusivePoll);exclusivePoll=null;}
+  if(document.hidden){exclusivePollDelay=300000;scheduleExclusivePoll(300000);return;}
+  exclusivePollDelay=30000;
+  scheduleExclusivePoll(30000);
+  pollExclusiveMessages();
+ });
  $('exclusiveMode').onclick=async()=>{
   exclusiveMode=!exclusiveMode;sessionStorage.setItem('mia_exclusive_mode',exclusiveMode?'1':'0');syncExclusiveMode();
   if(exclusiveMode&&'Notification' in window&&Notification.permission==='default'){

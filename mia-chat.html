@@ -222,7 +222,7 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
   if(!exclusiveMode)cancelExclusiveWake();
   if(exclusiveMode&&token){
    // Only sync newly created rows; never reload the full transcript during polling.
-   exclusivePoll=setInterval(pollExclusiveMessages,15000);
+   exclusivePoll=setInterval(pollExclusiveMessages,30000);
    if(!document.hidden)pollExclusiveMessages();
   }
  }

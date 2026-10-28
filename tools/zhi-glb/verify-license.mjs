@@ -48,11 +48,23 @@ try {
   const notBefore = parseDate(license.not_before, "not_before");
   const expiresAt = parseDate(license.expires_at, "expires_at");
   const issuedAt = parseDate(license.issued_at, "issued_at");
-  if (expiresAt <= notBefore || issuedAt > expiresAt) throw new Error("Invalid license time interval.");
+  if (expiresAt <= notBefore || issuedAt > expiresAt || issuedAt > now + 5 * 60 * 1000) {
+    throw new Error("Invalid license time interval or issued_at is in the future.");
+  }
+
+  const revocationIssuedAt = parseDate(revocations.issued_at, "revocations.issued_at");
+  const maxRevocationAgeHours = Number(process.env.ZHI_MAX_REVOCATION_AGE_HOURS ?? "24");
+  if (!Number.isFinite(maxRevocationAgeHours) || maxRevocationAgeHours <= 0) {
+    throw new Error("ZHI_MAX_REVOCATION_AGE_HOURS must be a positive number.");
+  }
+  const revocationAgeMs = now - revocationIssuedAt;
+  const revocationListFresh = revocationAgeMs >= -5 * 60 * 1000 &&
+    revocationAgeMs <= maxRevocationAgeHours * 60 * 60 * 1000;
 
   const checks = {
     license_signature_valid: licenseSignatureValid,
     revocation_signature_valid: revocationSignatureValid,
+    revocation_list_fresh: revocationListFresh,
     asset_match: license.asset_id === assetId,
     version_match: license.version === version,
     scope_allowed: license.scope.includes(scope),
@@ -70,6 +82,8 @@ try {
     requested_scope: scope,
     expires_at: license.expires_at,
     revocation_list_issued_at: revocations.issued_at ?? null,
+    revocation_list_age_ms: revocationAgeMs,
+    max_revocation_age_hours: maxRevocationAgeHours,
     checks
   }, null, 2));
   if (!allowed) process.exitCode = 1;

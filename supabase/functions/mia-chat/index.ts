@@ -469,8 +469,8 @@ if(explorationRequest){const {error:userExploreWriteError}=await db.from("mia_me
   userContent.push({type:"image_url",image_url:{url:"data:"+prepared[i].mime+";base64,"+encoded,detail:"auto"}});
  }
  let upstream:Response;
-  try{upstream=await fetchAgnesWithRetry({model:MODEL,messages:[{role:"system",content:systemForReply},...recent,{role:"user",content:prepared.length?userContent:(message)}],temperature:lowPressureMode?0.55:0.8,max_tokens:lowPressureMode?420:900,stream:body?.stream_response===true},20000,2,42000);}
- catch(e){return json({error:"Agnes API 请求失败或超时；用户消息已保存。",saved_user_message:true},502);}
+  try{upstream=await fetchAgnesWithRetry({model:MODEL,messages:[{role:"system",content:systemForReply},...recent,{role:"user",content:prepared.length?userContent:(message)}],temperature:lowPressureMode?0.55:0.8,max_tokens:lowPressureMode?420:900,stream:body?.stream_response===true},14000,2,30000);}
+ catch(e){const err=e as Error;console.error("Mia Agnes request failed before response headers",JSON.stringify({name:err?.name||"Error",message:String(err?.message||e).slice(0,180),timeout_ms:14000,total_budget_ms:30000,model:MODEL}));return json({error:"Mia 回复服务暂时繁忙或上游连接超时。你的消息已保存，请稍后重试；本次没有生成可保存的回复。",code:"AGNES_UPSTREAM_TIMEOUT",saved_user_message:true,retryable:true},503);}
  if(body?.stream_response===true){
   const streamBody=new ReadableStream<Uint8Array>({
    async start(controller){

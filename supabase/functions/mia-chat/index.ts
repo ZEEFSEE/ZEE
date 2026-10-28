@@ -51,9 +51,13 @@ async function fetchAgnesWithRetry(payload:any,timeoutMs=30000,maxAttempts=2,tot
   if(remainingMs<=0)throw new Error("Agnes total request budget exhausted");
   const attemptTimeoutMs=Math.max(1,Math.min(timeoutMs,remainingMs));
   let response:Response;
+  const requestController=new AbortController();
+  const requestTimer=setTimeout(()=>requestController.abort(),attemptTimeoutMs);
   try{
-   response=await fetch(endpoint,{method:"POST",headers:{"Authorization":"Bearer "+AGNES_KEY,"Content-Type":"application/json"},signal:AbortSignal.timeout(attemptTimeoutMs),body:JSON.stringify(payload)});
+   response=await fetch(endpoint,{method:"POST",headers:{"Authorization":"Bearer "+AGNES_KEY,"Content-Type":"application/json"},signal:requestController.signal,body:JSON.stringify(payload)});
+   clearTimeout(requestTimer);
   }catch(error){
+   clearTimeout(requestTimer);
    if(attempt===maxAttempts-1)throw error;
    const retryDelayMs=Math.min(800,400*(2**attempt));
    const remainingAfterFailure=totalBudgetMs-(Date.now()-startedAt);

@@ -425,10 +425,11 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
    const size=bounds.getSize(new THREE.Vector3());
    const center=bounds.getCenter(new THREE.Vector3());
    if(!Number.isFinite(size.y)||size.y<=0)throw new Error('模型尺寸无效');
-   modelRoot.position.sub(center);
-   modelRoot.position.y+=size.y/2;
    const targetHeight=2.15;
-   modelRoot.scale.setScalar(targetHeight/size.y);
+   const scale=targetHeight/size.y;
+   modelRoot.scale.setScalar(scale);
+   // Apply centering after scale so models authored in different unit systems fit consistently.
+   modelRoot.position.set(-center.x*scale,-bounds.min.y*scale,-center.z*scale);
    scene.add(modelRoot);
    camera.position.set(0,targetHeight*0.52,targetHeight*1.75);
    camera.lookAt(0,targetHeight*0.48,0);

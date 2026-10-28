@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ZHI Signed Revocation List v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "protocol",
+    "issued_at",
+    "revoked_license_ids"
+  ],
+  "properties": {
+    "protocol": {
+      "const": "ZHI-REVOCATIONS-1.0"
+    },
+    "issued_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "revoked_license_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 8
+      }
+    }
+  }
+}

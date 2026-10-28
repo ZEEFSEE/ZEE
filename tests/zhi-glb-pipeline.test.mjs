@@ -148,9 +148,9 @@ test("signed licence verifier allows valid licence and denies revoked licence", 
     // A correctly signed but stale snapshot must fail closed.
     revocations.revoked_license_ids = [];
     revocations.issued_at = iso(now - 48 * 60 * 60 * 1000);
-    const staleRevocations = Buffer.from(JSON.stringify(revocations, null, 2) + "\\n");
+    const staleRevocations = Buffer.from(JSON.stringify(revocations, null, 2) + "\n");
     await writeFile(revocationsPath, staleRevocations);
-    await writeFile(revocationsSigPath, sign(null, staleRevocations, privateKey).toString("base64") + "\\n");
+    await writeFile(revocationsSigPath, sign(null, staleRevocations, privateKey).toString("base64") + "\n");
     result = run(join(repoRoot, "tools/zhi-glb/verify-license.mjs"), args);
     assert.notEqual(result.status, 0);
     assert.equal(JSON.parse(result.stdout).status, "denied");

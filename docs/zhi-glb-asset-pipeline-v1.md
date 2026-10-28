@@ -48,3 +48,15 @@ The private signing key must remain outside the repository and frontend. Only th
 
 ## Rollback
 This branch contains tooling only. Do not merge or deploy the platform adapter until review and test evidence exists. Removing/turning off the new tools must not affect existing ZHI pages or services.
+
+
+## Phase 2: signed licence and revocation prototype
+
+`tools/zhi-glb/verify-license.mjs` checks a signed licence and signed revocation-list snapshot using the issuer Ed25519 public key. It checks asset/version/scope, activation time, expiry, active status, and whether the licence ID appears in the signed revocation list. All JSON signatures cover the exact file bytes.
+
+Example:
+```sh
+node tools/zhi-glb/verify-license.mjs license.json license.sig revocations.json revocations.sig issuer-public.pem LUNA-CHAR-0001 1.0.0 web-display
+```
+
+Security limitation: this is a local/offline verification prototype, not an online identity or entitlement service. A stale revocation snapshot can miss a newly revoked licence. Production access must refresh revocation state from a trusted service, authenticate the requesting user, and fail closed when policy requires freshness. The current phase does not create database tables, change existing APIs, or deploy an Edge Function.

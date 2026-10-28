@@ -2,7 +2,7 @@ name: Mia Four-Dimension Sections
 
 on:
   schedule:
-    - cron: "0 1 * * *"
+    - cron: "31 1 * * *"
   workflow_dispatch:
   push:
     branches: ["main"]

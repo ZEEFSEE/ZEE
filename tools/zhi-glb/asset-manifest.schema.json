@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ZHI GLB Asset Manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "protocol",
+    "asset_id",
+    "version",
+    "format",
+    "hash_algorithm",
+    "signature_algorithm",
+    "file_hash",
+    "license_policy",
+    "fingerprint_policy",
+    "status"
+  ],
+  "properties": {
+    "protocol": {
+      "const": "ZHI-GLB-ASSET-1.0"
+    },
+    "asset_id": {
+      "type": "string",
+      "pattern": "^[A-Z0-9][A-Z0-9-]{2,63}$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\\\.[0-9]+\\\\.[0-9]+$"
+    },
+    "format": {
+      "const": "glb"
+    },
+    "hash_algorithm": {
+      "const": "SHA-256"
+    },
+    "signature_algorithm": {
+      "const": "Ed25519"
+    },
+    "file_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "license_policy": {
+      "type": "string",
+      "minLength": 1
+    },
+    "fingerprint_policy": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "enum": [
+        "draft",
+        "pending_verification",
+        "verified",
+        "revoked"
+      ]
+    }
+  }
+}

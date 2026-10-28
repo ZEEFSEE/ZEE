@@ -125,31 +125,3 @@ jobs:
           done
           echo "Could not publish philosophy after three attempts; previous remote file remains intact."
           exit 1
-  deploy-pages:
-    needs: [generate-and-stage, commit-reviewed-json]
-    runs-on: ubuntu-latest
-    concurrency:
-      group: pages
-      cancel-in-progress: false
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Checkout latest committed main
-        uses: actions/checkout@v4
-        with:
-          ref: main
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-      - name: Upload latest committed site
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
-      - name: Deploy latest committed site
-        id: deployment
-        uses: actions/deploy-pages@v4
-

@@ -148,3 +148,34 @@ test("signed licence verifier allows valid licence and denies revoked licence", 
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+
+function minimalValidGlb() {
+  const json = Buffer.from(JSON.stringify({ asset: { version: "2.0" } }), "utf8");
+  const paddedLength = Math.ceil(json.length / 4) * 4;
+  const jsonChunk = Buffer.alloc(paddedLength, 0x20);
+  json.copy(jsonChunk);
+  const totalLength = 12 + 8 + jsonChunk.length;
+  const out = Buffer.alloc(totalLength);
+  out.writeUInt32LE(0x46546c67, 0);
+  out.writeUInt32LE(2, 4);
+  out.writeUInt32LE(totalLength, 8);
+  out.writeUInt32LE(jsonChunk.length, 12);
+  out.writeUInt32LE(0x4e4f534a, 16);
+  jsonChunk.copy(out, 20);
+  return out;
+}
+
+test("Khronos validator accepts a minimal structurally valid GLB container", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "zhi-glb-validator-"));
+  try {
+    const glbPath = join(dir, "minimal.glb");
+    await writeFile(glbPath, minimalValidGlb());
+    const result = run(join(repoRoot, "tools/zhi-glb/validate-glb.mjs"), [glbPath]);
+    assert.equal(result.status, 0, result.stderr + result.stdout);
+    assert.equal(JSON.parse(result.stdout).status, "valid_with_possible_warnings");
+    assert.equal(JSON.parse(result.stdout).errors, 0);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});

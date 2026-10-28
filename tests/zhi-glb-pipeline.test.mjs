@@ -93,3 +93,58 @@ test("manifest verifier accepts valid signature/hash and rejects tampered GLB", 
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+
+test("signed licence verifier allows valid licence and denies revoked licence", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "zhi-license-"));
+  try {
+    const licensePath = join(dir, "license.json");
+    const licenseSigPath = join(dir, "license.sig");
+    const revocationsPath = join(dir, "revocations.json");
+    const revocationsSigPath = join(dir, "revocations.sig");
+    const pubPath = join(dir, "issuer-public.pem");
+    const { publicKey, privateKey } = generateKeyPairSync("ed25519");
+    const now = Date.now();
+    const iso = (ms) => new Date(ms).toISOString();
+    const license = {
+      protocol: "ZHI-LICENSE-1.0",
+      license_id: "LIC-TEST-00000001",
+      asset_id: "LUNA-CHAR-0001",
+      version: "1.0.0",
+      licensee_id: "TEST-USER",
+      issued_at: iso(now - 60000),
+      not_before: iso(now - 30000),
+      expires_at: iso(now + 3600000),
+      scope: ["web-display"],
+      status: "active"
+    };
+    const revocations = {
+      protocol: "ZHI-REVOCATIONS-1.0",
+      issued_at: iso(now),
+      revoked_license_ids: []
+    };
+    const licenseBytes = Buffer.from(JSON.stringify(license, null, 2) + "\n");
+    const revocationsBytes = Buffer.from(JSON.stringify(revocations, null, 2) + "\n");
+    await writeFile(licensePath, licenseBytes);
+    await writeFile(licenseSigPath, sign(null, licenseBytes, privateKey).toString("base64") + "\n");
+    await writeFile(revocationsPath, revocationsBytes);
+    await writeFile(revocationsSigPath, sign(null, revocationsBytes, privateKey).toString("base64") + "\n");
+    await writeFile(pubPath, publicKey.export({ type: "spki", format: "pem" }));
+
+    const args = [licensePath, licenseSigPath, revocationsPath, revocationsSigPath, pubPath, "LUNA-CHAR-0001", "1.0.0", "web-display"];
+    let result = run(join(repoRoot, "tools/zhi-glb/verify-license.mjs"), args);
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(JSON.parse(result.stdout).status, "allowed");
+
+    revocations.revoked_license_ids = [license.license_id];
+    const changedRevocations = Buffer.from(JSON.stringify(revocations, null, 2) + "\n");
+    await writeFile(revocationsPath, changedRevocations);
+    await writeFile(revocationsSigPath, sign(null, changedRevocations, privateKey).toString("base64") + "\n");
+    result = run(join(repoRoot, "tools/zhi-glb/verify-license.mjs"), args);
+    assert.notEqual(result.status, 0);
+    assert.equal(JSON.parse(result.stdout).status, "denied");
+    assert.equal(JSON.parse(result.stdout).checks.not_revoked, false);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});

@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
-const repoRoot = resolve(new URL("../..", import.meta.url).pathname);
+const repoRoot = resolve(new URL("..", import.meta.url).pathname);
 const inspectScript = join(repoRoot, "tools/zhi-glb/inspect-glb.mjs");
 const verifyScript = join(repoRoot, "tools/zhi-glb/verify-manifest.mjs");
 

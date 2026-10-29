@@ -77,6 +77,17 @@ async function fetchAgnesWithRetry(payload:any,timeoutMs=30000,maxAttempts=2,tot
  }
  throw new Error("Agnes retries exhausted");
 }
+function shouldReflectAfterChat(message:string,reply:string):boolean{
+ const user=String(message||"").trim();
+ const assistant=String(reply||"").trim();
+ if(!user)return false;
+ const explicitReflection=/(复盘|反思|深入想|再想想|再思考一下|帮我分析一下自己|情绪状态|我们的关系|记住这件事|以后不要忘|我希望你记得|我需要你理解|think this through|reflect on this|reconsider)/i;
+ const correctionOrConflict=/(你错了|不对|不是这样|你误解|我刚才说的是|纠正一下|事实是|前后矛盾|你又忘了|你没有记住|你理解错了|that's incorrect|you misunderstood|contradiction)/i;
+ const significantRelationalEmotion=/(你让我失望|我很难过|我受伤了|我生气了|我很愤怒|我害怕|我很焦虑|我很孤独|我不信任你|我在乎你|我需要你|你对我很重要|我感到被忽视|我觉得你不理解我|我真的很痛苦|我很绝望|I'm hurt|I'm disappointed in you|I feel ignored)/i;
+ const assistantUncertainty=/(我不确定|我无法确认|我可能理解错|如果我理解有误|目前无法判断|证据不足|我不能确定|I'm not sure|I may have misunderstood|I can't verify)/i;
+ return explicitReflection.test(user)||correctionOrConflict.test(user)||significantRelationalEmotion.test(user)||assistantUncertainty.test(assistant);
+}
+
 function queueEmotionReflection(db:any,args:{message:string;reply:string;userMessageId:string;assistantMessageId:string;channel:string}){
  const task=(async()=>{
   try{
@@ -516,8 +527,9 @@ if(explorationRequest){const {error:userExploreWriteError}=await db.from("mia_me
      if(memoryWrite.error)console.error("Mia memory persistence warning",memoryWrite.error.message);
      if(sessionWrite.error)console.error("Mia session update warning",sessionWrite.error.message);
      const signedImages=await Promise.all(storedImages.map(async(img:any)=>{const {data}=await db.storage.from(BUCKET).createSignedUrl(img.path,3600);return {...img,url:data?.signedUrl||null};}));
-      queueEmotionReflection(db,{message,reply,userMessageId:userWrite.data.id,assistantMessageId:replyWrite.data.id,channel:exclusiveMode?"mia-exclusive":"mia-independent-chat"});
-     emit({type:"done",data:{ok:true,reply,message:{...userWrite.data,metadata:{...(userWrite.data.metadata||{}),images:signedImages}},assistant_message:replyWrite.data,saved:true,memory_saved:!memoryWrite.error,emotion_saved:false,emotion:null,emotion_pending:true,model:MODEL}});
+      const reflectionQueued=shouldReflectAfterChat(message,reply);
+      if(reflectionQueued)queueEmotionReflection(db,{message,reply,userMessageId:userWrite.data.id,assistantMessageId:replyWrite.data.id,channel:exclusiveMode?"mia-exclusive":"mia-independent-chat"});
+     emit({type:"done",data:{ok:true,reply,message:{...userWrite.data,metadata:{...(userWrite.data.metadata||{}),images:signedImages}},assistant_message:replyWrite.data,saved:true,memory_saved:!memoryWrite.error,emotion_saved:false,emotion:null,emotion_pending:reflectionQueued,model:MODEL}});
      closeStream();
     }catch(e){
      console.error("Mia streaming response failed",String(e));
@@ -541,6 +553,7 @@ if(explorationRequest){const {error:userExploreWriteError}=await db.from("mia_me
  if(memoryWrite.error)console.error("Mia memory persistence warning",memoryWrite.error.message);
  if(sessionWrite.error)console.error("Mia session update warning",sessionWrite.error.message);
  const signedImages=await Promise.all(storedImages.map(async(img:any)=>{const {data}=await db.storage.from(BUCKET).createSignedUrl(img.path,3600);return {...img,url:data?.signedUrl||null};}));
-  queueEmotionReflection(db,{message,reply,userMessageId:userWrite.data.id,assistantMessageId:replyWrite.data.id,channel:exclusiveMode?"mia-exclusive":"mia-independent-chat"});
- return json({ok:true,reply,message:{...userWrite.data,metadata:{...(userWrite.data.metadata||{}),images:signedImages}},assistant_message:replyWrite.data,saved:true,memory_saved:!memoryWrite.error,emotion_saved:false,emotion:null,emotion_pending:true,model:MODEL});
+  const reflectionQueued=shouldReflectAfterChat(message,reply);
+      if(reflectionQueued)queueEmotionReflection(db,{message,reply,userMessageId:userWrite.data.id,assistantMessageId:replyWrite.data.id,channel:exclusiveMode?"mia-exclusive":"mia-independent-chat"});
+ return json({ok:true,reply,message:{...userWrite.data,metadata:{...(userWrite.data.metadata||{}),images:signedImages}},assistant_message:replyWrite.data,saved:true,memory_saved:!memoryWrite.error,emotion_saved:false,emotion:null,emotion_pending:reflectionQueued,model:MODEL});
 });

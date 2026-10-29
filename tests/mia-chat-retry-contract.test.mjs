@@ -39,7 +39,7 @@ test("non-transient HTTP responses are not retried", () => {
 // deterministic fake upstream. This exercises retry decisions without using
 // production credentials, network access, or the database.
 const helperMatch = source.match(
-  /async function fetchAgnesWithRetry\([\s\S]*?\n\}\n(?=function queueEmotionReflection)/,
+  /async function fetchAgnesWithRetry\([\s\S]*?\n\}\n(?=async function queueEmotionReflection)/,
 );
 assert.ok(helperMatch, "retry helper must be present in the deployed-source file");
 const helperSource = helperMatch[0]

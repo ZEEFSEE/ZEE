@@ -98,7 +98,7 @@ async function queueEmotionReflection(db:any,args:{message:string;reply:string;u
  if(typeof runtime?.waitUntil==="function"){
   const wake=(async()=>{
    try{
-    const response=await fetch(URL.replace(/\\/$/,"")+"/functions/v1/mia-reflection-worker",{method:"POST",headers:{"Authorization":"Bearer "+SERVICE_KEY,"apikey":SERVICE_KEY,"Content-Type":"application/json"},body:JSON.stringify({limit:3})});
+    const response=await fetch((URL.endsWith("/")?URL.slice(0,-1):URL)+"/functions/v1/mia-reflection-worker",{method:"POST",headers:{"Authorization":"Bearer "+SERVICE_KEY,"apikey":SERVICE_KEY,"Content-Type":"application/json"},body:JSON.stringify({limit:3})});
     if(!response.ok)console.warn("Mia reflection worker wake returned",response.status);
    }catch(error){console.warn("Mia reflection worker wake failed",String(error).slice(0,160));}
   })();

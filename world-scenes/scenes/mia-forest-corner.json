@@ -2,7 +2,7 @@
   "schema_version": "1.0.0",
   "scene_id": "mia-forest-corner",
   "display_name": "Mia 森林角落",
-  "status": "draft",
+  "status": "asset-updated-draft",
   "parent_scene_id": null,
   "source_reference": {
     "kind": "existing_mia_virtual_scene",
@@ -43,11 +43,14 @@
     "mia-world",
     "forest",
     "root",
-    "existing-source"
+    "existing-source",
+    "glb-scene-asset"
   ],
   "notes": [
     "Local layout dimensions and entity positions are sourced from mia/forest-corner.json.",
     "This is not a verified ZHI world coordinate map.",
-    "Cross-scene exits and travel transforms are not yet defined; future scenes must connect to this root through a validated scene graph."
+    "Cross-scene exits and travel transforms are not yet defined; future scenes must connect to this root through a validated scene graph.",
+    "Registered tiny-planet-friends-glb at scene-local anchor (650,240); 3D depth, physical scale, collision, and runtime loader remain unverified.",
+    "This asset is part of scene data, not embedded in Mia chat UI. Registration alone does not enable Mia visual perception."
   ]
 }

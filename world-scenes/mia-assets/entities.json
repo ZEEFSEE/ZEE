@@ -117,6 +117,49 @@
           "physical_scent_emitted": false
         }
       }
+    },
+    {
+      "schema_version": "1.0.0",
+      "entity_id": "tiny-planet-friends-glb",
+      "entity_type": "scene_model",
+      "authoritative_ref": "mia/forest-corner.json#/entities/4",
+      "asset_id": "tiny-planet-friends-3d",
+      "asset_source": {
+        "provider": "supabase-storage",
+        "bucket": "lovelydragon",
+        "object": "tiny_planet_friends_3d-defective-product-4083.glb",
+        "access": "private-signed-url",
+        "resolver": "https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/mia-scene-asset-url"
+      },
+      "position": {
+        "x": 650,
+        "y": 240,
+        "z": null
+      },
+      "coordinate_space": "scene-local",
+      "transform": {
+        "rotation": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "unit": "degrees"
+        },
+        "scale": {
+          "x": 1,
+          "y": 1,
+          "z": 1
+        }
+      },
+      "render_contract": {
+        "format": "model/gltf-binary",
+        "load_on_scene_entry": true,
+        "chat_ui_embedding": false
+      },
+      "verification_status": "registered-in-scene-source; 3d-runtime-render-unverified",
+      "perception": {
+        "enabled": false,
+        "status": "not-connected"
+      }
     }
   ],
   "notes": [

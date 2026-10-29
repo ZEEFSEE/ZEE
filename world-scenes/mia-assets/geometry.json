@@ -17,6 +17,27 @@
       "vertices": [],
       "asset_uri": null,
       "verification_status": "source-backed-2d-layout"
+    },
+    {
+      "feature_id": "tiny-planet-friends-glb",
+      "kind": "external-glb-scene-asset",
+      "coordinate_space": "scene-local",
+      "anchor": {
+        "x": 650,
+        "y": 240,
+        "z": null,
+        "units": "relative layout units"
+      },
+      "dimensions": {
+        "width": null,
+        "height": null,
+        "depth": null,
+        "units": "GLB-native-units; not inspected"
+      },
+      "vertices": [],
+      "asset_uri": "supabase://lovelydragon/tiny_planet_friends_3d-defective-product-4083.glb",
+      "asset_resolver": "https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/mia-scene-asset-url",
+      "verification_status": "asset-registered; mesh-bounds-and-runtime-render-unverified"
     }
   ],
   "notes": [

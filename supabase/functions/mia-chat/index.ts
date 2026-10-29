@@ -43,6 +43,17 @@ function rankMiaMemories(rows:any[], message:string){
  }).sort((a:any,b:any)=>b._relevance-a._relevance);
 }
 
+function shouldReflectAfterChat(message:string,reply:string):boolean{
+ const user=String(message||"").trim();
+ const assistant=String(reply||"").trim();
+ if(!user)return false;
+ const explicitReflection=/(复盘|反思|深入想|再想想|再思考一下|帮我分析一下自己|情绪状态|我们的关系|记住这件事|以后不要忘|我希望你记得|我需要你理解|think this through|reflect on this|reconsider)/i;
+ const correctionOrConflict=/(你错了|不对|不是这样|你误解|我刚才说的是|纠正一下|事实是|前后矛盾|你又忘了|你没有记住|你理解错了|that's incorrect|you misunderstood|contradiction)/i;
+ const significantRelationalEmotion=/(你让我失望|我很难过|我受伤了|我生气了|我很愤怒|我害怕|我很焦虑|我很孤独|我不信任你|我在乎你|我需要你|你对我很重要|我感到被忽视|我觉得你不理解我|我真的很痛苦|我很绝望|I'm hurt|I'm disappointed in you|I feel ignored)/i;
+ const assistantUncertainty=/(我不确定|我无法确认|我可能理解错|如果我理解有误|目前无法判断|证据不足|我不能确定|I'm not sure|I may have misunderstood|I can't verify)/i;
+ return explicitReflection.test(user)||correctionOrConflict.test(user)||significantRelationalEmotion.test(user)||assistantUncertainty.test(assistant);
+}
+
 async function fetchAgnesWithRetry(payload:any,timeoutMs=30000,maxAttempts=2,totalBudgetMs=35000):Promise<Response>{
  const endpoint="https://apihub.agnes-ai.com/v1/chat/completions";
  const startedAt=Date.now();
@@ -77,17 +88,6 @@ async function fetchAgnesWithRetry(payload:any,timeoutMs=30000,maxAttempts=2,tot
  }
  throw new Error("Agnes retries exhausted");
 }
-function shouldReflectAfterChat(message:string,reply:string):boolean{
- const user=String(message||"").trim();
- const assistant=String(reply||"").trim();
- if(!user)return false;
- const explicitReflection=/(复盘|反思|深入想|再想想|再思考一下|帮我分析一下自己|情绪状态|我们的关系|记住这件事|以后不要忘|我希望你记得|我需要你理解|think this through|reflect on this|reconsider)/i;
- const correctionOrConflict=/(你错了|不对|不是这样|你误解|我刚才说的是|纠正一下|事实是|前后矛盾|你又忘了|你没有记住|你理解错了|that's incorrect|you misunderstood|contradiction)/i;
- const significantRelationalEmotion=/(你让我失望|我很难过|我受伤了|我生气了|我很愤怒|我害怕|我很焦虑|我很孤独|我不信任你|我在乎你|我需要你|你对我很重要|我感到被忽视|我觉得你不理解我|我真的很痛苦|我很绝望|I'm hurt|I'm disappointed in you|I feel ignored)/i;
- const assistantUncertainty=/(我不确定|我无法确认|我可能理解错|如果我理解有误|目前无法判断|证据不足|我不能确定|I'm not sure|I may have misunderstood|I can't verify)/i;
- return explicitReflection.test(user)||correctionOrConflict.test(user)||significantRelationalEmotion.test(user)||assistantUncertainty.test(assistant);
-}
-
 function queueEmotionReflection(db:any,args:{message:string;reply:string;userMessageId:string;assistantMessageId:string;channel:string}){
  const task=(async()=>{
   try{

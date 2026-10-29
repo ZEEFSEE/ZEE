@@ -52,6 +52,7 @@ function makeRetryHelper(fakeFetch) {
     AGNES_KEY: "unit-test-key",
     fetch: fakeFetch,
     AbortSignal,
+    AbortController,
     Response,
     Date,
     Promise,

@@ -1,0 +1,36 @@
+name: Mia Reflection Queue Recovery Drain
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: mia-reflection-queue-drain
+  cancel-in-progress: false
+
+jobs:
+  drain:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Drain durable reflection queue
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          WORKER_URL: https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/mia-reflection-worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_SERVICE_ROLE_KEY}" ]; then
+            echo "::warning::SUPABASE_SERVICE_ROLE_KEY repository secret is not configured; scheduled recovery drain skipped. Immediate worker wake-ups from Mia chat still operate."
+            exit 0
+          fi
+          curl --fail --silent --show-error --max-time 45 \
+            -X POST "${WORKER_URL}" \
+            -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
+            -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
+            -H "Content-Type: application/json" \
+            -d '{"limit":5}' \
+            -o /tmp/mia-reflection-queue-result.json
+          node -e 'const fs=require("fs");const r=JSON.parse(fs.readFileSync("/tmp/mia-reflection-queue-result.json","utf8"));if(!r.ok||typeof r.claimed!=="number")process.exit(1);console.log(JSON.stringify(r));'

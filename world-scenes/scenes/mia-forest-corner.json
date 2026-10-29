@@ -2,7 +2,7 @@
   "schema_version": "1.0.0",
   "scene_id": "mia-forest-corner",
   "display_name": "Mia 森林角落",
-  "status": "asset-updated-draft",
+  "status": "draft",
   "parent_scene_id": null,
   "source_reference": {
     "kind": "existing_mia_virtual_scene",

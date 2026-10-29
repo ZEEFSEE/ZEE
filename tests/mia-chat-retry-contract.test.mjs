@@ -169,7 +169,7 @@ function streamFinishedIndex(text, start) {
 
 test("emotion reflection is gated in streaming and non-streaming paths", () => {
   assert.match(source, /function shouldReflectAfterChat\(message:string,reply:string\):boolean/);
-  assert.equal((source.match(/if\(reflectionQueued\)queueEmotionReflection/g) || []).length, 2);
+  assert.equal((source.match(/if\(shouldReflectAfterChat\(message,reply\)\)reflectionQueued=await queueEmotionReflection/g) || []).length, 2);
   assert.equal((source.match(/emotion_pending:reflectionQueued/g) || []).length, 2);
 });
 

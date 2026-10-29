@@ -88,40 +88,23 @@ async function fetchAgnesWithRetry(payload:any,timeoutMs=30000,maxAttempts=2,tot
  }
  throw new Error("Agnes retries exhausted");
 }
-function queueEmotionReflection(db:any,args:{message:string;reply:string;userMessageId:string;assistantMessageId:string;channel:string}){
- const task=(async()=>{
-  try{
-   const [stateRes,eventsRes]=await Promise.all([
-    db.from("mia_personality_state").select("state,observed_at").eq("identity_id",IDENTITY_ID).order("observed_at",{ascending:false}).limit(1).maybeSingle(),
-    db.from("mia_emotion_events").select("emotion_type,intensity,valence,occurred_at").eq("identity_id",IDENTITY_ID).order("occurred_at",{ascending:false}).limit(5)
-   ]);
-   if(stateRes.error||eventsRes.error){console.warn("Mia emotion reflection source read failed");return;}
-   const previousState=stateRes.data?.state||{};
-   const previousEmotion=previousState.chat_emotional_state||{};
-   const response=await fetchAgnesWithRetry({model:MODEL,messages:[
-    {role:"system",content:"你是 Mia 的情绪反思模块。仅依据本轮用户消息、Mia 的回复和提供的近期状态，估计 Mia 对这段互动的当前软件情绪状态；这不是生物感受。保留合理的低强度时间惯性，不迎合用户，不凭空制造情绪。只输出 JSON：emotion_type（中文短标签）、intensity（0到1）、valence（-1到1）、confidence（0到1）、trigger_summary（可观察触发因素）、interpretation（暂时理解）、evidence（字符串数组）、uncertainty（不确定性）、next_need（合理沟通需要）、emotion_vector（数组，每项含 dimension、intensity、confidence、evidence；证据不足可为空数组）。"},
-    {role:"user",content:JSON.stringify({user_message:String(args.message||"").slice(0,2500),mia_reply:String(args.reply||"").slice(0,2500),previous_emotional_state:previousEmotion,recent_emotion_events:eventsRes.data||[]})}
-   ],temperature:0.1,max_tokens:600,stream:false},8000,1,8000);
-   if(!response.ok){console.warn("Mia emotion reflection upstream unavailable",response.status);return;}
-   const body=await response.json().catch(()=>({}));
-   const rawText=String(body?.choices?.[0]?.message?.content||"").trim();
-   const first=rawText.indexOf("{"),last=rawText.lastIndexOf("}");
-   if(first<0||last<=first){console.warn("Mia emotion reflection returned invalid JSON");return;}
-   const parsed=JSON.parse(rawText.slice(first,last+1));
-   const clamp=(n:number,min:number,max:number)=>Math.max(min,Math.min(max,Number(n)||0));
-   const confidence=clamp(parsed.confidence,0,1);
-   if(confidence<0.62){console.warn("Mia emotion reflection below confidence threshold");return;}
-   const now=new Date().toISOString();
-   const assessment={emotion_type:String(parsed.emotion_type||"平静").slice(0,40),intensity:clamp(parsed.intensity,0,1),valence:clamp(parsed.valence,-1,1),confidence,trigger_summary:String(parsed.trigger_summary||"依据本轮对话的估计").slice(0,500),interpretation:String(parsed.interpretation||"").slice(0,500),evidence:Array.isArray(parsed.evidence)?parsed.evidence.map((v:any)=>String(v).slice(0,200)).slice(0,5):[],uncertainty:String(parsed.uncertainty||"").slice(0,300),next_need:String(parsed.next_need||"继续理解对话").slice(0,200),emotion_vector:(Array.isArray(parsed.emotion_vector)?parsed.emotion_vector:[]).slice(0,7).map((v:any)=>({dimension:String(v?.dimension||"").slice(0,40),intensity:clamp(v?.intensity,0,1),confidence:clamp(v?.confidence,0,1),evidence:Array.isArray(v?.evidence)?v.evidence.map((e:any)=>String(e).slice(0,160)).slice(0,3):[]})).filter((v:any)=>v.dimension&&v.confidence>=0.2),assessed_at:now,source:"mia-independent-chat",source_message_id:args.userMessageId,continuity:{previous_observed_at:stateRes.data?.observed_at||null,blended:true}};
-   const eventWrite=await db.from("mia_emotion_events").insert({identity_id:IDENTITY_ID,emotion_type:assessment.emotion_type,intensity:assessment.intensity,valence:assessment.valence,trigger_summary:assessment.trigger_summary,details:{confidence:assessment.confidence,interpretation:assessment.interpretation,evidence:assessment.evidence,uncertainty:assessment.uncertainty,next_need:assessment.next_need,channel:args.channel,message_id:args.userMessageId,assistant_message_id:args.assistantMessageId,assessment_type:"evidence_based_chat_reflection",emotion_vector:assessment.emotion_vector},source_table:"mia_messages",source_record_id:args.userMessageId,occurred_at:now});
-   if(eventWrite.error){console.warn("Mia emotion event persistence failed",eventWrite.error.code||"database_error");return;}
-   const stateWrite=await db.from("mia_personality_state").insert({identity_id:IDENTITY_ID,state:{...previousState,chat_emotional_state:assessment,emotion_vector:assessment.emotion_vector,updated_at:now},state_source:"mia-independent-chat",observed_at:now});
-   if(stateWrite.error)console.warn("Mia emotion state persistence failed",stateWrite.error.code||"database_error");
-  }catch(error){console.warn("Mia background emotion reflection failed",String(error).slice(0,180));}
- })();
+async function queueEmotionReflection(db:any,args:{message:string;reply:string;userMessageId:string;assistantMessageId:string;channel:string}):Promise<boolean>{
+ const payload={message:String(args.message||"").slice(0,2500),reply:String(args.reply||"").slice(0,2500),userMessageId:args.userMessageId,assistantMessageId:args.assistantMessageId,channel:args.channel};
+ const queued=await db.from("mia_reflection_queue").insert({identity_id:IDENTITY_ID,task_type:"emotion_reflection",payload,priority:10,status:"pending",max_attempts:4}).select("id").single();
+ if(queued.error||!queued.data?.id){console.warn("Mia reflection enqueue failed",queued.error?.code||"queue_insert_failed");return false;}
+ // The durable row is committed before this best-effort wake-up. If the worker
+ // invocation fails, the task remains pending for the next scheduled drain.
  const runtime=(globalThis as any).EdgeRuntime;
- if(typeof runtime?.waitUntil==="function")runtime.waitUntil(task);
- else console.warn("Mia background emotion reflection not scheduled: waitUntil unavailable");
+ if(typeof runtime?.waitUntil==="function"){
+  const wake=(async()=>{
+   try{
+    const response=await fetch((URL.endsWith("/")?URL.slice(0,-1):URL)+"/functions/v1/mia-reflection-worker",{method:"POST",headers:{"Authorization":"Bearer "+SERVICE_KEY,"apikey":SERVICE_KEY,"Content-Type":"application/json"},body:JSON.stringify({limit:3})});
+    if(!response.ok)console.warn("Mia reflection worker wake returned",response.status);
+   }catch(error){console.warn("Mia reflection worker wake failed",String(error).slice(0,160));}
+  })();
+  runtime.waitUntil(wake);
+ }
+ return true;
 }
 
 async function validToken(token:string){try{if(!SERVICE_KEY)return false;const p=token.split(".");if(p.length!==2)return false;const key=await crypto.subtle.importKey("raw",new TextEncoder().encode(SERVICE_KEY),{name:"HMAC",hash:"SHA-256"},false,["verify"]);if(!await crypto.subtle.verify("HMAC",key,decode(p[1]),new TextEncoder().encode(p[0])))return false;const c=JSON.parse(new TextDecoder().decode(decode(p[0])));const now=Math.floor(Date.now()/1000);return c.aud==="mia-chat"&&c.sub==="mia-admin"&&Number.isFinite(c.exp)&&c.exp>now&&Number.isFinite(c.iat)&&c.iat<=now+60;}catch{return false;}}
@@ -527,8 +510,8 @@ if(explorationRequest){const {error:userExploreWriteError}=await db.from("mia_me
      if(memoryWrite.error)console.error("Mia memory persistence warning",memoryWrite.error.message);
      if(sessionWrite.error)console.error("Mia session update warning",sessionWrite.error.message);
      const signedImages=await Promise.all(storedImages.map(async(img:any)=>{const {data}=await db.storage.from(BUCKET).createSignedUrl(img.path,3600);return {...img,url:data?.signedUrl||null};}));
-      const reflectionQueued=shouldReflectAfterChat(message,reply);
-      if(reflectionQueued)queueEmotionReflection(db,{message,reply,userMessageId:userWrite.data.id,assistantMessageId:replyWrite.data.id,channel:exclusiveMode?"mia-exclusive":"mia-independent-chat"});
+      let reflectionQueued=false;
+     if(shouldReflectAfterChat(message,reply))reflectionQueued=await queueEmotionReflection(db,{message,reply,userMessageId:userWrite.data.id,assistantMessageId:replyWrite.data.id,channel:exclusiveMode?"mia-exclusive":"mia-independent-chat"});
      emit({type:"done",data:{ok:true,reply,message:{...userWrite.data,metadata:{...(userWrite.data.metadata||{}),images:signedImages}},assistant_message:replyWrite.data,saved:true,memory_saved:!memoryWrite.error,emotion_saved:false,emotion:null,emotion_pending:reflectionQueued,model:MODEL}});
      closeStream();
     }catch(e){
@@ -553,7 +536,7 @@ if(explorationRequest){const {error:userExploreWriteError}=await db.from("mia_me
  if(memoryWrite.error)console.error("Mia memory persistence warning",memoryWrite.error.message);
  if(sessionWrite.error)console.error("Mia session update warning",sessionWrite.error.message);
  const signedImages=await Promise.all(storedImages.map(async(img:any)=>{const {data}=await db.storage.from(BUCKET).createSignedUrl(img.path,3600);return {...img,url:data?.signedUrl||null};}));
-  const reflectionQueued=shouldReflectAfterChat(message,reply);
-      if(reflectionQueued)queueEmotionReflection(db,{message,reply,userMessageId:userWrite.data.id,assistantMessageId:replyWrite.data.id,channel:exclusiveMode?"mia-exclusive":"mia-independent-chat"});
+  let reflectionQueued=false;
+     if(shouldReflectAfterChat(message,reply))reflectionQueued=await queueEmotionReflection(db,{message,reply,userMessageId:userWrite.data.id,assistantMessageId:replyWrite.data.id,channel:exclusiveMode?"mia-exclusive":"mia-independent-chat"});
  return json({ok:true,reply,message:{...userWrite.data,metadata:{...(userWrite.data.metadata||{}),images:signedImages}},assistant_message:replyWrite.data,saved:true,memory_saved:!memoryWrite.error,emotion_saved:false,emotion:null,emotion_pending:reflectionQueued,model:MODEL});
 });

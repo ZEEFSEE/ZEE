@@ -164,3 +164,9 @@ test("a clean EOF without a terminal marker is rejected before reply persistence
 function streamFinishedIndex(text, start) {
   return text.indexOf("let streamFinished=false", start);
 }
+
+test("emotion reflection is gated in streaming and non-streaming paths", () => {
+  assert.match(source, /function shouldReflectAfterChat\(message:string,reply:string\):boolean/);
+  assert.equal((source.match(/if\(reflectionQueued\)queueEmotionReflection/g) || []).length, 2);
+  assert.equal((source.match(/emotion_pending:reflectionQueued/g) || []).length, 2);
+});

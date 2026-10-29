@@ -1,0 +1,42 @@
+name: Mia Durable Reflection Queue Checks
+
+on:
+  pull_request:
+    paths:
+      - "supabase/functions/mia-chat/index.ts"
+      - "supabase/functions/mia-reflection-worker/index.ts"
+      - "supabase/migrations/*mia_durable_reflection_queue.sql"
+      - "tests/mia-reflection-queue-contract.test.mjs"
+      - ".github/workflows/mia-reflection-queue-check.yml"
+  push:
+    branches:
+      - "feat/mia-durable-reflection-queue"
+    paths:
+      - "supabase/functions/mia-chat/index.ts"
+      - "supabase/functions/mia-reflection-worker/index.ts"
+      - "supabase/migrations/*mia_durable_reflection_queue.sql"
+      - "tests/mia-reflection-queue-contract.test.mjs"
+      - ".github/workflows/mia-reflection-queue-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  queue-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check durable queue contract
+        run: node --test tests/mia-reflection-queue-contract.test.mjs
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - uses: actions/checkout@v4
+      - name: Check Mia chat and isolated worker TypeScript
+        run: deno check supabase/functions/mia-chat/index.ts supabase/functions/mia-reflection-worker/index.ts

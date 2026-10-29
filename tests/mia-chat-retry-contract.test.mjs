@@ -7,12 +7,16 @@ const source = await readFile(
   new URL("../supabase/functions/mia-chat/index.ts", import.meta.url),
   "utf8",
 );
+const workerSource = await readFile(
+  new URL("../supabase/functions/mia-reflection-worker/index.ts", import.meta.url),
+  "utf8",
+);
 
 test("transient retry status allowlist is explicit and bounded", () => {
   assert.match(source, /!\[429,502,503,504\]\.includes\(response\.status\)/);
   assert.match(source, /maxAttempts=2,totalBudgetMs=35000/);
   assert.match(source, /14000,2,30000/);
-  assert.match(source, /8000,1,8000/);
+  assert.match(workerSource, /AbortSignal\.timeout\(8000\)/);
 });
 
 test("network retry respects the remaining total budget", () => {

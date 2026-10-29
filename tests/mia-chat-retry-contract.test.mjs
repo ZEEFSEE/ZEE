@@ -172,3 +172,21 @@ test("emotion reflection is gated in streaming and non-streaming paths", () => {
   assert.equal((source.match(/if\(reflectionQueued\)queueEmotionReflection/g) || []).length, 2);
   assert.equal((source.match(/emotion_pending:reflectionQueued/g) || []).length, 2);
 });
+
+test("reflection trigger distinguishes routine chat from meaningful events", () => {
+  const match = source.match(
+    /function shouldReflectAfterChat\\(message:string,reply:string\\):boolean\\{[\\s\\S]*?\\n\\}/,
+  );
+  assert.ok(match, "reflection trigger must be present");
+  const helper = match[0].replace(
+    "function shouldReflectAfterChat(message:string,reply:string):boolean",
+    "function shouldReflectAfterChat(message,reply)",
+  );
+  const shouldReflect = runInNewContext("(" + helper + ")");
+  assert.equal(shouldReflect("你好", "你好！今天怎么样？"), false);
+  assert.equal(shouldReflect("请把这句话翻译成英文：早上好", "Good morning."), false);
+  assert.equal(shouldReflect("你理解错了，我刚才说的是另一个项目", "明白，我可能理解错了。"), true);
+  assert.equal(shouldReflect("我很难过，觉得你不理解我", "我听到了。"), true);
+  assert.equal(shouldReflect("请帮我复盘刚才的决定", "我们可以逐项复盘。"), true);
+  assert.equal(shouldReflect("帮我总结这段话", "我不确定目前的证据是否足够。"), true);
+});

@@ -13,7 +13,6 @@
 <link rel="icon" href="./zhi-icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./zhi-icon.svg">
 <title>Mia · 独立聊天</title>
-<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
 <style>
 :root{color-scheme:light;--bg:#f4f7fb;--panel:#fff;--line:#e2e8f0;--ink:#172033;--muted:#68758a;--accent:#147d79;--soft:#e5f5f2;--red:#b42332}
 *{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#eef7f8,#f4f7fb 360px);color:var(--ink);font:15px/1.55 system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;min-height:100vh}
@@ -39,7 +38,7 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
 @keyframes forestGlow{from{transform:translate(-8px,5px);opacity:.35}to{transform:translate(-28px,30px);opacity:.85}}
 .forest-actions{display:flex;gap:8px;flex-wrap:wrap;padding:0 10px 10px}.forest-actions button{font-size:12px;padding:7px 10px}
 .vault-list{padding:0 10px 10px;max-height:150px;overflow:auto}.vault-entry{padding:7px 9px;border-top:1px solid #e5ece4;font-size:11px;white-space:pre-wrap;overflow-wrap:anywhere}
-.scene-model{margin:10px;padding:12px;border:1px solid #d7e5dc;border-radius:14px;background:#ffffffd9}.scene-model-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.scene-model-head strong{font-size:13px}.scene-model-head small{font-size:11px;color:#64796b}.scene-model-viewer{display:block;width:100%;height:clamp(240px,42vw,390px);margin-top:10px;border-radius:12px;background:radial-gradient(ellipse at 50% 40%,#edf7f0,#dce9e8 75%);--poster-color:transparent}.scene-model-status{font-size:11px;color:#64796b;white-space:pre-wrap;margin-top:7px}.scene-model-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.scene-model-actions button{font-size:12px;padding:7px 10px}
+
 
 </style>
 </head>
@@ -62,12 +61,6 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
   <section id="forestScene" class="forest-scene" aria-label="Mia 森林角落场景">
    <div class="forest-banner"><div><strong>🌿 Forest_Corner · 森林角落</strong><small>场景优先级：User Interaction &gt; Aesthetic Vibe</small></div><button id="forestLoungeToggle" type="button" aria-pressed="false">进入休息区</button><a href="./mia-world.html" style="display:inline-block;margin-left:8px;padding:9px 12px;border:1px solid #b9d9c4;border-radius:12px;background:#fff9;color:#24523d;text-decoration:none;font-size:12px;font-weight:800;white-space:nowrap">✦ 进入 Mia 世界</a></div>
    <div id="forestSceneMeta" class="forest-scene-meta" aria-live="polite">正在读取场景实体数据…</div>
-   <section class="scene-model" aria-label="Mia 场景 3D 模型">
-    <div class="scene-model-head"><div><strong>🪐 Tiny Planet Friends · 3D 场景模型</strong><small>私有 Storage 资源 · 登录后加载 · 仅网页预览</small></div><button id="miaSceneModelReload" type="button">重新加载模型</button></div>
-    <model-viewer id="miaSceneModel" class="scene-model-viewer" alt="Tiny Planet Friends 3D 场景模型" camera-controls auto-rotate rotation-per-second="12deg" shadow-intensity="0.8" exposure="1" environment-image="neutral" loading="lazy" interaction-prompt="auto"></model-viewer>
-    <div id="miaSceneModelStatus" class="scene-model-status" aria-live="polite">登录 Mia 独立聊天室后，将安全加载此私有 GLB 模型。</div>
-    <div class="scene-model-actions"><button id="miaSceneModelReset" type="button">重置视角</button><a href="https://supabase.com/dashboard/project/dbooikzqprnqbgpfwsze/storage/files/buckets/lovelydragon?preview=tiny_planet_friends_3d-defective-product-4083.glb" target="_blank" rel="noopener noreferrer" style="font-size:12px;align-self:center;color:#24523d">查看 Storage 原文件</a></div>
-   </section>
    <div class="forest-grid">
     <article class="forest-card"><div class="greenhouse-glow"></div><strong>🌿 智能温室</strong><p>status: active<br>柔和光影缓慢变化，作为安静的背景氛围。</p></article>
     <article class="forest-card"><strong>📚 数据书架</strong><p>storage: local_vault<br>关键对话与优化日志仅追加保存；不提供删除或覆盖按钮。</p></article>
@@ -87,7 +80,6 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
  const PUBLISHABLE_KEY='sb_publishable_spH47ZngJJTk13cpYPBjSw_X5qAsBmK';
  const AUTH_URL=PROJECT_URL+'/functions/v1/mia-chat-auth';
  const CHAT_URL=PROJECT_URL+'/functions/v1/mia-chat';
- const SCENE_ASSET_URL=PROJECT_URL+'/functions/v1/mia-scene-asset-url';
  const $=id=>document.getElementById(id);
  let token=sessionStorage.getItem('mia_chat_token')||'';
  let busy=false;
@@ -128,25 +120,8 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
  function addBubble(role,content,time,images=[]){const wrap=document.createElement('div');wrap.className='bubble '+(role==='user'?'user':'assistant');if(content){const body=document.createElement('div');body.textContent=escapeText(content);wrap.append(body);}if(Array.isArray(images)&&images.length){const gallery=document.createElement('div');gallery.className='bubble-images';images.forEach(item=>{if(!item?.url)return;const img=document.createElement('img');img.src=item.url;img.alt=item.name||'聊天图片';img.loading='lazy';gallery.append(img);});if(gallery.childNodes.length)wrap.append(gallery);}if(time){const t=document.createElement('div');t.className='time';t.textContent=new Date(time).toLocaleString('zh-SG',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});wrap.append(t);} $('log').append(wrap);}
  function showApp(on){$('gate').classList.toggle('hidden',on);$('message').disabled=!on;$('send').disabled=!on;$('explore').disabled=!on||localStorage.getItem('mia_forest_lounge_active')==='1';}
  async function request(action,payload={}){const res=await fetch(CHAT_URL,{method:'POST',headers:{'Content-Type':'application/json','apikey':PUBLISHABLE_KEY,'Authorization':'Bearer '+token},body:JSON.stringify({action,...payload}),cache:'no-store'});const data=await res.json().catch(()=>({}));if(res.status===401){token='';sessionStorage.removeItem('mia_chat_token');showApp(false);}if(!res.ok||!data.ok)throw new Error(data.error||('HTTP '+res.status));return data;}
- async function loadSceneModel(){
-  const statusNode=$('miaSceneModelStatus'),viewer=$('miaSceneModel');
-  if(!statusNode||!viewer)return;
-  if(!token){statusNode.textContent='请先登录 Mia 独立聊天室；模型资源保持私有。';return;}
-  statusNode.textContent='正在安全获取 1 小时有效的模型访问链接…';
-  try{
-   const res=await fetch(SCENE_ASSET_URL,{method:'POST',headers:{'Content-Type':'application/json','apikey':PUBLISHABLE_KEY,'Authorization':'Bearer '+token},body:'{}',cache:'no-store'});
-   const data=await res.json().catch(()=>({}));
-   if(!res.ok||!data.ok||!data.signedUrl)throw new Error(data.error||('HTTP '+res.status));
-   viewer.src=data.signedUrl;
-   statusNode.textContent='模型链接已取得，正在加载 GLB（约 24.3 MB）。如模型本身存在缺陷，查看器可能无法完整显示。';
-   viewer.addEventListener('load',()=>{statusNode.textContent='GLB 已加载到网页查看器。可拖动旋转、滚轮缩放；此状态仅证明网页预览加载，不代表已接入 ZHI 生产世界。';},{once:true});
-   viewer.addEventListener('error',()=>{statusNode.textContent='模型查看器加载失败。请检查 GLB 文件完整性或浏览器控制台；现有场景和聊天数据未受影响。';},{once:true});
-  }catch(e){statusNode.textContent='模型加载失败：'+(e.message||String(e))+'。聊天功能仍可正常使用。';}
- }
- $('miaSceneModelReload')?.addEventListener('click',loadSceneModel);
- $('miaSceneModelReset')?.addEventListener('click',()=>{const viewer=$('miaSceneModel');if(viewer){viewer.cameraOrbit='0deg 75deg 105%';viewer.fieldOfView='30deg';viewer.jumpCameraToGoal();}});
  async function requestStream(action,payload={},onDelta=()=>{}){const res=await fetch(CHAT_URL,{method:'POST',headers:{'Content-Type':'application/json','apikey':PUBLISHABLE_KEY,'Authorization':'Bearer '+token},body:JSON.stringify({action,...payload,stream_response:true}),cache:'no-store'});if(res.status===401){token='';sessionStorage.removeItem('mia_chat_token');showApp(false);}const ct=res.headers.get('content-type')||'';if(!ct.includes('text/event-stream')){const data=await res.json().catch(()=>({}));if(!res.ok||!data.ok)throw new Error(data.error||('HTTP '+res.status));return data;}if(!res.ok||!res.body)throw new Error('HTTP '+res.status);const reader=res.body.getReader(),decoder=new TextDecoder();let buffer='',reply='',result=null,streamError='';const handle=(raw)=>{const line=raw.trim();if(!line.startsWith('data:'))return;const value=line.slice(5).trim();if(!value||value==='[DONE]')return;let event;try{event=JSON.parse(value)}catch{return;}if(event.type==='delta'&&typeof event.content==='string'){reply+=event.content;onDelta(reply);}else if(event.type==='done'&&event.data)result=event.data;else if(event.type==='error')streamError=event.error||'Mia 回复中断。';};try{while(true){const {value,done}=await reader.read();if(done)break;buffer+=decoder.decode(value,{stream:true});const rows=buffer.split(/\r?\n/);buffer=rows.pop()||'';for(const row of rows)handle(row);}buffer+=decoder.decode();if(buffer)handle(buffer);}catch(e){throw new Error(reply?'Mia 回复连接中断，尚未确认完整回复已保存。':(e.message||'Mia 回复连接中断。'));}if(streamError)throw new Error(streamError);if(!result?.ok)throw new Error(reply?'Mia 回复未完成保存，请刷新历史确认。':'Mia 流式回复未完成。');return {...result,reply:result.reply||reply};}
- async function loadHistory(){if(!token)return;status('正在读取 Mia 的独立聊天记录…');try{const data=await request('history');$('miaName').textContent=data.identity?.name||'Mia';$('log').innerHTML='';knownMessageIds=new Set();lastKnownSequenceNo=0;const rows=data.messages||[];const latestAssistant=[...rows].reverse().find(m=>m.role==='assistant'&&m.created_at);lastAssistantReplyAt=latestAssistant?Date.parse(latestAssistant.created_at)||0:0;if(!rows.length){$('log').innerHTML='<div class="welcome">还没有聊天记录，向 Mia 发送第一条消息吧。</div>';}else rows.forEach(m=>{addBubble(m.role,m.content,m.created_at,m.metadata?.images||[]);if(m.id)knownMessageIds.add(m.id);lastKnownSequenceNo=Math.max(lastKnownSequenceNo,Number(m.sequence_no)||0);});$('log').scrollTop=$('log').scrollHeight;status('已读取 '+rows.length+' 条 Mia 独立聊天记录。'+(exclusiveMode?' 专属通道自动监听中。':''),'good');showApp(true);syncExclusiveMode();loadSceneModel();}catch(e){status('读取失败：'+e.message,'error');}}
+ async function loadHistory(){if(!token)return;status('正在读取 Mia 的独立聊天记录…');try{const data=await request('history');$('miaName').textContent=data.identity?.name||'Mia';$('log').innerHTML='';knownMessageIds=new Set();lastKnownSequenceNo=0;const rows=data.messages||[];const latestAssistant=[...rows].reverse().find(m=>m.role==='assistant'&&m.created_at);lastAssistantReplyAt=latestAssistant?Date.parse(latestAssistant.created_at)||0:0;if(!rows.length){$('log').innerHTML='<div class="welcome">还没有聊天记录，向 Mia 发送第一条消息吧。</div>';}else rows.forEach(m=>{addBubble(m.role,m.content,m.created_at,m.metadata?.images||[]);if(m.id)knownMessageIds.add(m.id);lastKnownSequenceNo=Math.max(lastKnownSequenceNo,Number(m.sequence_no)||0);});$('log').scrollTop=$('log').scrollHeight;status('已读取 '+rows.length+' 条 Mia 独立聊天记录。'+(exclusiveMode?' 专属通道自动监听中。':''),'good');showApp(true);syncExclusiveMode();}catch(e){status('读取失败：'+e.message,'error');}}
  $('loginForm').addEventListener('submit',async e=>{e.preventDefault();$('loginButton').disabled=true;$('loginError').textContent='正在验证…';try{const res=await fetch(AUTH_URL,{method:'POST',headers:{'Content-Type':'application/json','apikey':PUBLISHABLE_KEY},body:JSON.stringify({password:$('password').value}),cache:'no-store'});const data=await res.json().catch(()=>({}));if(!res.ok||!data.ok)throw new Error(data.error||('HTTP '+res.status));token=data.access_token;sessionStorage.setItem('mia_chat_token',token);$('password').value='';$('loginError').textContent='';showApp(true);await loadHistory();}catch(err){$('loginError').textContent=err.message||String(err);}finally{$('loginButton').disabled=false;}});
  $('message').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();if(!$('send').disabled&&!busy){$('composer').requestSubmit();}}});
  $('composer').addEventListener('submit',async e=>{

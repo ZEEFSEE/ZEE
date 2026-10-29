@@ -37,7 +37,7 @@
       "vertices": [],
       "asset_uri": "supabase://lovelydragon/tiny_planet_friends_3d-defective-product-4083.glb",
       "asset_resolver": "https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/mia-scene-asset-url",
-      "verification_status": "asset-registered; mesh-bounds-and-runtime-render-unverified"
+      "verification_status": "unverified"
     }
   ],
   "notes": [

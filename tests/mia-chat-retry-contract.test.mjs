@@ -175,7 +175,7 @@ test("emotion reflection is gated in streaming and non-streaming paths", () => {
 
 test("reflection trigger distinguishes routine chat from meaningful events", () => {
   const match = source.match(
-    /function shouldReflectAfterChat\\(message:string,reply:string\\):boolean\\{[\\s\\S]*?\\n\\}/,
+    /function shouldReflectAfterChat\(message:string,reply:string\):boolean\{[\s\S]*?\n\}/,
   );
   assert.ok(match, "reflection trigger must be present");
   const helper = match[0].replace(

@@ -21,7 +21,7 @@ function clamp(value: unknown, min: number, max: number): number {
   return Math.max(min, Math.min(max, Number(value) || 0));
 }
 
-async function reflect(db: ReturnType<typeof createClient>, task: any): Promise<void> {
+async function reflect(db: any, task: any): Promise<void> {
   const payload = task.payload || {};
   if (String(payload.userMessageId || "").length === 0 ||
       String(payload.assistantMessageId || "").length === 0) {

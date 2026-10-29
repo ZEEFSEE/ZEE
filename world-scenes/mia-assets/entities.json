@@ -155,7 +155,7 @@
         "load_on_scene_entry": true,
         "chat_ui_embedding": false
       },
-      "verification_status": "registered-in-scene-source; 3d-runtime-render-unverified",
+      "verification_status": "unverified",
       "perception": {
         "enabled": false,
         "status": "not-connected"

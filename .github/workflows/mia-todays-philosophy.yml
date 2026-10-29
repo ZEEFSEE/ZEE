@@ -3,12 +3,8 @@ name: Mia Today's Philosophy
 
 on:
   schedule:
-    - cron: "21 1 * * *"
+    - cron: "35 0 * * *"
   workflow_dispatch:
-  push:
-    branches: ["main"]
-    paths:
-      - ".github/workflows/mia-todays-philosophy.yml"
 
 permissions: {}
 

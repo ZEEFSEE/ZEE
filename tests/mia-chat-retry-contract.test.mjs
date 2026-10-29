@@ -57,6 +57,7 @@ function makeRetryHelper(fakeFetch) {
     Date,
     Promise,
     setTimeout,
+    clearTimeout,
     console: { warn() {} },
   });
 }

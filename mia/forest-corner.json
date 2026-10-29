@@ -63,7 +63,12 @@
       "coordinate_system": "Forest_Corner local coordinates",
       "appearance": {
         "model": "white_rabbit",
-        "animation_set": ["idle", "hop", "look_at_user", "rest"]
+        "animation_set": [
+          "idle",
+          "hop",
+          "look_at_user",
+          "rest"
+        ]
       },
       "behavior": {
         "autonomous_movement": true,
@@ -78,6 +83,50 @@
       "ai_interaction": {
         "enabled": false
       }
+    },
+    {
+      "id": "tiny-planet-friends-glb",
+      "name": "Tiny Planet Friends · 3D 场景资产",
+      "type": "scene_model",
+      "status": "active",
+      "asset_id": "tiny-planet-friends-3d",
+      "asset_source": {
+        "provider": "supabase-storage",
+        "bucket": "lovelydragon",
+        "object": "tiny_planet_friends_3d-defective-product-4083.glb",
+        "access": "private-signed-url",
+        "resolver": "https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/mia-scene-asset-url"
+      },
+      "x": 650,
+      "y": 240,
+      "coordinate_system": "Forest_Corner local layout",
+      "transform": {
+        "rotation": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "unit": "degrees",
+          "status": "default-unverified"
+        },
+        "scale": {
+          "x": 1,
+          "y": 1,
+          "z": 1,
+          "status": "default-unverified"
+        }
+      },
+      "render_contract": {
+        "format": "model/gltf-binary",
+        "runtime": "scene-asset-loader",
+        "load_on_scene_entry": true,
+        "chat_ui_embedding": false
+      },
+      "perception": {
+        "enabled": false,
+        "status": "not-connected",
+        "note": "Asset registration does not imply Mia visual perception."
+      },
+      "verification_status": "registered-in-scene-source; 3d-runtime-render-unverified"
     }
   ],
   "priority": [
@@ -87,7 +136,8 @@
   "limitations": [
     "Local entity coordinates are layout positions inside Forest_Corner, not ZHI world travel coordinates.",
     "The lounge does not cancel already-running backend tasks.",
-    "The browser local_vault is not synced across devices."
+    "The browser local_vault is not synced across devices.",
+    "Tiny Planet Friends GLB is registered as a scene asset; runtime rendering, real 3D transform, collision, navigation, and Mia visual perception require separate validation."
   ],
   "gift": {
     "id": "gift-mia-three-color-rose",

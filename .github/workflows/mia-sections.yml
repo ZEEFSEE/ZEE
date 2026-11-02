@@ -1,11 +1,13 @@
 name: Mia Four-Dimension Sections
 
+# Schedule is defined in Singapore time (SGT, UTC+8); GitHub Actions cron uses UTC.
+# 08:55 SGT daily = 00:55 UTC daily.
 on:
   push:
     paths:
       - '.github/workflows/mia-sections.yml'
   schedule:
-    - cron: "55 0 * * *"
+    - cron: "55 0 * * *" # 08:55 SGT daily = 00:55 UTC daily.
   workflow_dispatch:
 
 permissions: {}

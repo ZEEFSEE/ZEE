@@ -2,6 +2,9 @@ name: Mia Today's Philosophy
 # Deployment validation: keep this workflow change scoped to its own publication path.
 
 on:
+  push:
+    paths:
+      - '.github/workflows/mia-todays-philosophy.yml'
   schedule:
     - cron: "35 0 * * *"
   workflow_dispatch:

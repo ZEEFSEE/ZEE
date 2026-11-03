@@ -1,13 +1,13 @@
 name: Mia Daily Public Diary
 
-# Schedule is defined in Singapore time (SGT, UTC+8); GitHub Actions cron uses UTC.
-# 08:05 SGT daily = 00:05 UTC daily.
+# Schedule uses GitHub Actions IANA timezone support; local Singapore time is authoritative.
 on:
   push:
     paths:
       - '.github/workflows/mia-daily.yml'
   schedule:
-    - cron: "5 0 * * *" # 08:05 SGT daily = 00:05 UTC daily.
+    - cron: "5 8 * * *"
+      timezone: "Asia/Singapore" # 08:05 SGT daily
   workflow_dispatch:
 
 permissions: {}

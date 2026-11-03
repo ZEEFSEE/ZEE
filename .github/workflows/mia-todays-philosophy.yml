@@ -1,14 +1,14 @@
 name: Mia Today's Philosophy
 # Deployment validation: keep this workflow change scoped to its own publication path.
 
-# Schedule is defined in Singapore time (SGT, UTC+8); GitHub Actions cron uses UTC.
-# 08:35 SGT daily = 00:35 UTC daily.
+# Schedule uses GitHub Actions IANA timezone support; local Singapore time is authoritative.
 on:
   push:
     paths:
       - '.github/workflows/mia-todays-philosophy.yml'
   schedule:
-    - cron: "35 0 * * *" # 08:35 SGT daily = 00:35 UTC daily.
+    - cron: "35 8 * * *"
+      timezone: "Asia/Singapore" # 08:35 SGT daily
   workflow_dispatch:
 
 permissions: {}

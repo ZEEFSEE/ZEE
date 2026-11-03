@@ -79,7 +79,15 @@ Deno.serve(async (req) => {
     environment_state: current.environment_state,
   } : initialState();
 
-  if (action === "status") return respond({ ok: true, snapshot: sceneSnapshot(currentState) });
+  if (action === "status") {
+    const { data: recentEvents, error: eventReadError } = await db.from("zhi_forest_runtime_events")
+      .select("sequence,event_type,current_position:position,payload,occurred_at")
+      .eq("world_id", WORLD_ID).eq("peer_id", peer.id)
+      .eq("external_agent_id", EXTERNAL_AGENT_ID).eq("scene_id", SCENE_ID)
+      .order("sequence", { ascending: false }).limit(12);
+    if (eventReadError) return respond({ ok: false, error: "runtime_event_read_failed" }, 503);
+    return respond({ ok: true, snapshot: sceneSnapshot(currentState), recent_events: recentEvents ?? [] });
+  }
 
   let result;
   try { result = transition(currentState, action, body); }

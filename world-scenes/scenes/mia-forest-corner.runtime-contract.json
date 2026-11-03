@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
   "contract_id": "mia-forest-corner-runtime-contract",
-  "status": "designated_pending_runtime_binding",
+  "status": "headless_runtime_deployed",
   "scene_id": "mia-forest-corner",
   "world": {
     "id": "50b06c01-060d-49fa-8988-8f38c13406d7",
@@ -33,33 +33,15 @@
     "calibration_required": true
   },
   "runtime_observation": {
-    "accepted": false,
-    "required_source": "trusted ZHI scene runtime",
-    "required_fields": [
-      "event_id",
-      "scene_id",
-      "runtime_instance_id",
-      "external_agent_id",
-      "coordinate_frame",
-      "local_position",
-      "observed_at",
-      "sequence",
-      "evidence_kind",
-      "signature"
-    ],
-    "external_agent_id": "mia",
-    "scene_id": "mia-forest-corner",
-    "evidence_kind": "runtime_tick",
-    "reject_if": [
-      "invalid_signature",
-      "wrong_scene",
-      "unknown_coordinate_frame",
-      "stale_timestamp",
-      "replayed_sequence",
-      "out_of_bounds",
-      "missing_runtime_instance_id"
-    ],
-    "no_client_claim_as_direct_observation": true
+    "accepted": true,
+    "evidence_kind": "server_authoritative_scene_transition",
+    "authentication": "Mia Federation peer token hash validated against active peer record",
+    "required_capability": "spatial.anchor.publish",
+    "required_membership": "active Mia membership in Aurora",
+    "request_id": "idempotent request identifier",
+    "sequence": "monotonic per scene/agent",
+    "client_coordinates_accepted": false,
+    "position_source": "computed by the headless runtime from registered scene navigation"
   },
   "navigation": {
     "asset_id": "stone-path-forest-to-lounge",
@@ -75,7 +57,7 @@
     },
     "slabs": 5,
     "edges": 6,
-    "activation": "pending_verified_renderer_physics_and_navigation_registration",
+    "activation": "active_headless_navigation_graph",
     "z_depth": "unverified"
   },
   "continuity": {
@@ -87,10 +69,12 @@
       "load_scene_local_navigation"
     ],
     "on_verified_movement": [
-      "validate_runtime_signature",
-      "validate_frame_and_bounds",
-      "persist_world_presence",
-      "append_public_experience_to_mia_private_memory"
+      "authenticate_mia_federation_peer",
+      "verify_spatial_anchor_publish_capability",
+      "verify_active_aurora_membership",
+      "compute_navigation_transition_server_side",
+      "commit_position_and_ordered_action_events_atomically",
+      "restore_last_committed_scene_state_on_reentry"
     ],
     "on_reentry": [
       "read_last_verified_scene_presence",
@@ -102,7 +86,19 @@
   "safety": {
     "no_coordinate_inference": true,
     "no_legacy_mirror_coordinate_promotion": true,
-    "simulated_ecosystem_is_not_sensor_observation": true,
-    "no_production_position_write_until_runtime_signature_is_valid": true
+    "local_coordinates_are_authoritative_only_within_this_scene": true,
+    "aurora_world_transform": "unverified",
+    "client_supplied_position_rejected": true,
+    "private_memory_in_federation_payload": false,
+    "runtime_state_is_not_physical_sensor_data": true
+  },
+  "runtime": {
+    "provider": "Supabase Edge Function",
+    "function": "zhi-forest-runtime",
+    "runtime_instance_id": "forest-corner-headless-v1",
+    "status": "ACTIVE",
+    "mode": "agent_native_headless",
+    "human_facing_renderer": false,
+    "action_model": "server_authoritative_discrete_navigation"
   }
 }

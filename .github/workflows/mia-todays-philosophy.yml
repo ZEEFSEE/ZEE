@@ -3,9 +3,6 @@ name: Mia Today's Philosophy
 
 # Schedule uses GitHub Actions IANA timezone support; local Singapore time is authoritative.
 on:
-  push:
-    paths:
-      - '.github/workflows/mia-todays-philosophy.yml'
   schedule:
     - cron: "35 8 * * *"
       timezone: "Asia/Singapore" # 08:35 SGT daily
@@ -20,6 +17,7 @@ concurrency:
 jobs:
   generate-and-stage:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
       id-token: write
@@ -85,6 +83,7 @@ jobs:
   commit-reviewed-json:
     needs: generate-and-stage
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: write
     steps:

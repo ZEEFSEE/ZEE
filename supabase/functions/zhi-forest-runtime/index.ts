@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
 
   const { data: world, error: worldError } = await db.from("zhi_worlds")
     .select("id,status,visibility,entry_policy").eq("id", WORLD_ID).maybeSingle();
-  if (worldError || !world || world.status !== "open") return respond({ ok: false, error: "world_unavailable" }, 409);
+  if (worldError || !world || world.status !== "open" || world.visibility !== "public" || world.entry_policy !== "open") return respond({ ok: false, error: "world_unavailable" }, 409);
 
   const { data: current, error: stateError } = await db.from("zhi_forest_runtime_state")
     .select("*").eq("world_id", WORLD_ID).eq("peer_id", peer.id)

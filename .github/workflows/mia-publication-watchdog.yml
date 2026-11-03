@@ -137,4 +137,4 @@ jobs:
 
           recover_task "mia-daily.yml" "mia/daily.json" "daily" "$((8 * 60 + 20))"
           recover_task "mia-todays-philosophy.yml" "mia/todays-philosophy.json" "philosophy" "$((8 * 60 + 50))"
-          recover_task "mia-sections.yml" "mia/sections.json" "sections" "$((9 * 60 + 10))"
+          recover_task "mia-sections.yml" "mia/sections.json" "sections" "$((9 * 60 + 5))"

@@ -2,9 +2,6 @@ name: Mia Daily Public Diary
 
 # Schedule uses GitHub Actions IANA timezone support; local Singapore time is authoritative.
 on:
-  push:
-    paths:
-      - '.github/workflows/mia-daily.yml'
   schedule:
     - cron: "5 8 * * *"
       timezone: "Asia/Singapore" # 08:05 SGT daily
@@ -19,6 +16,7 @@ concurrency:
 jobs:
   generate-and-stage:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
       id-token: write
@@ -66,6 +64,7 @@ jobs:
   commit-reviewed-json:
     needs: generate-and-stage
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: write
     steps:

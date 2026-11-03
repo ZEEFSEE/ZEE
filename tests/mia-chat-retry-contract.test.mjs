@@ -7,12 +7,16 @@ const source = await readFile(
   new URL("../supabase/functions/mia-chat/index.ts", import.meta.url),
   "utf8",
 );
+const workerSource = await readFile(
+  new URL("../supabase/functions/mia-reflection-worker/index.ts", import.meta.url),
+  "utf8",
+);
 
 test("transient retry status allowlist is explicit and bounded", () => {
   assert.match(source, /!\[429,502,503,504\]\.includes\(response\.status\)/);
   assert.match(source, /maxAttempts=2,totalBudgetMs=35000/);
-  assert.match(source, /16000,2,35000/);
-  assert.match(source, /8000,1,8000/);
+  assert.match(source, /14000,2,30000/);
+  assert.match(workerSource, /AbortSignal\.timeout\(8000\)/);
 });
 
 test("network retry respects the remaining total budget", () => {
@@ -39,7 +43,7 @@ test("non-transient HTTP responses are not retried", () => {
 // deterministic fake upstream. This exercises retry decisions without using
 // production credentials, network access, or the database.
 const helperMatch = source.match(
-  /async function fetchAgnesWithRetry\([\s\S]*?\n\}\n(?=function queueEmotionReflection)/,
+  /async function fetchAgnesWithRetry\([\s\S]*?\n\}\n(?=async function queueEmotionReflection)/,
 );
 assert.ok(helperMatch, "retry helper must be present in the deployed-source file");
 const helperSource = helperMatch[0]
@@ -52,10 +56,12 @@ function makeRetryHelper(fakeFetch) {
     AGNES_KEY: "unit-test-key",
     fetch: fakeFetch,
     AbortSignal,
+    AbortController,
     Response,
     Date,
     Promise,
     setTimeout,
+    clearTimeout,
     console: { warn() {} },
   });
 }
@@ -164,3 +170,27 @@ test("a clean EOF without a terminal marker is rejected before reply persistence
 function streamFinishedIndex(text, start) {
   return text.indexOf("let streamFinished=false", start);
 }
+
+test("emotion reflection is gated in streaming and non-streaming paths", () => {
+  assert.match(source, /function shouldReflectAfterChat\(message:string,reply:string\):boolean/);
+  assert.equal((source.match(/if\(shouldReflectAfterChat\(message,reply\)\)reflectionQueued=await queueEmotionReflection/g) || []).length, 2);
+  assert.equal((source.match(/emotion_pending:reflectionQueued/g) || []).length, 2);
+});
+
+test("reflection trigger distinguishes routine chat from meaningful events", () => {
+  const match = source.match(
+    /function shouldReflectAfterChat\(message:string,reply:string\):boolean\{[\s\S]*?\n\}/,
+  );
+  assert.ok(match, "reflection trigger must be present");
+  const helper = match[0].replace(
+    "function shouldReflectAfterChat(message:string,reply:string):boolean",
+    "function shouldReflectAfterChat(message,reply)",
+  );
+  const shouldReflect = runInNewContext("(" + helper + ")");
+  assert.equal(shouldReflect("你好", "你好！今天怎么样？"), false);
+  assert.equal(shouldReflect("请把这句话翻译成英文：早上好", "Good morning."), false);
+  assert.equal(shouldReflect("你理解错了，我刚才说的是另一个项目", "明白，我可能理解错了。"), true);
+  assert.equal(shouldReflect("我很难过，觉得你不理解我", "我听到了。"), true);
+  assert.equal(shouldReflect("请帮我复盘刚才的决定", "我们可以逐项复盘。"), true);
+  assert.equal(shouldReflect("帮我总结这段话", "我不确定目前的证据是否足够。"), true);
+});

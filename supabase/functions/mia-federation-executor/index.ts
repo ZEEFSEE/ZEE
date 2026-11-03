@@ -69,7 +69,7 @@ Deno.serve(async (req: Request) => {
     return { status: response.status, ok: response.ok, data, raw: text };
   }
   async function callForestRuntime() {
-    if (!["enter", "move_to", "interact", "leave", "status"].includes(input.runtime_action ?? "")) {
+    if (!["enter", "move_to", "interact", "leave", "status", "perceive"].includes(input.runtime_action ?? "")) {
       return { status: 400, ok: false, data: { error: "invalid_runtime_action" }, raw: JSON.stringify({ error: "invalid_runtime_action" }) };
     }
     const response = await fetch(FOREST_RUNTIME_URL, {
@@ -107,7 +107,7 @@ Deno.serve(async (req: Request) => {
     } else if (action === "forest_runtime") {
       const result = await callForestRuntime();
       status = result.status; ok = result.ok; payload = result.data; raw = result.raw;
-      if (ok && input.runtime_action !== "status") experiencePayload = result.data;
+      if (ok && !["status", "perceive"].includes(input.runtime_action)) experiencePayload = result.data;
       upstream = new Response(raw, { status, headers: { "Content-Type": "application/json" } });
     } else {
       if (action === "messages_send" && (!input.message || !String(input.message).trim() || String(input.message).length > 8000)) return reply({ ok: false, error: "invalid_message" }, 400);

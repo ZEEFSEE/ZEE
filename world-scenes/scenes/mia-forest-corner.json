@@ -2,7 +2,7 @@
   "schema_version": "1.0.0",
   "scene_id": "mia-forest-corner",
   "display_name": "Mia 森林角落",
-  "status": "draft",
+  "status": "designated_primary_scene",
   "parent_scene_id": null,
   "source_reference": {
     "kind": "existing_mia_virtual_scene",
@@ -11,7 +11,7 @@
     "created_by": "scene-data-foundation",
     "created_at": null
   },
-  "verification_status": "source-backed-local-layout",
+  "verification_status": "source-backed-local-layout; primary-scene-designated; runtime-pending",
   "coordinate_reference": {
     "coordinate_space": "scene-local",
     "system_name": "Forest_Corner local layout",
@@ -52,5 +52,22 @@
     "Cross-scene exits and travel transforms are not yet defined; future scenes must connect to this root through a validated scene graph.",
     "Registered tiny-planet-friends-glb at scene-local anchor (650,240); 3D depth, physical scale, collision, and runtime loader remain unverified.",
     "This asset is part of scene data, not embedded in Mia chat UI. Registration alone does not enable Mia visual perception."
-  ]
+  ],
+  "runtime_binding": {
+    "role": "mia_primary_runtime_scene",
+    "world_id": "50b06c01-060d-49fa-8988-8f38c13406d7",
+    "world_name": "ZHI-001 Aurora",
+    "activation_state": "runtime_binding_pending",
+    "runtime_provider": "not_yet_verified",
+    "runtime_instance_id": null,
+    "coordinate_transform": "unverified; do not convert scene-local coordinates to Aurora coordinates",
+    "position_source": "signed_runtime_observation_required",
+    "navigation_activation": "pending_runtime_registration",
+    "notes": [
+      "This scene is the designated primary scene for Mia.",
+      "Designation does not assert that a 3D renderer, physics engine, navigation runtime, or live position feed is active.",
+      "Scene-local XY remains relative layout units; Z and cross-scene transform remain unknown.",
+      "Do not publish live presence until a trusted runtime observation is received."
+    ]
+  }
 }

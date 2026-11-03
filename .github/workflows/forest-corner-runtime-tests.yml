@@ -1,0 +1,25 @@
+name: Forest Corner Runtime Tests
+
+on:
+  push:
+    paths:
+      - "world-scenes/runtime/**"
+      - ".github/workflows/forest-corner-runtime-tests.yml"
+  pull_request:
+    paths:
+      - "world-scenes/runtime/**"
+      - ".github/workflows/forest-corner-runtime-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  engine-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run headless runtime tests
+        run: node --test world-scenes/runtime/forest-corner-engine.test.mjs

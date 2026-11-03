@@ -2,9 +2,6 @@ name: Mia Publication Watchdog
 
 # The watchdog uses Singapore local time and repairs missed/failed daily publications.
 on:
-  push:
-    paths:
-      - '.github/workflows/mia-publication-watchdog.yml'
   schedule:
     - cron: "*/15 8-16 * * *"
       timezone: "Asia/Singapore"

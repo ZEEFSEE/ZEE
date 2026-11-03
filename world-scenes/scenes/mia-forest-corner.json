@@ -11,7 +11,7 @@
     "created_by": "scene-data-foundation",
     "created_at": null
   },
-  "verification_status": "source-backed-local-layout; primary-scene-designated; runtime-pending",
+  "verification_status": "source-backed-local-layout; headless-runtime-deployed; aurora-transform-unverified",
   "coordinate_reference": {
     "coordinate_space": "scene-local",
     "system_name": "Forest_Corner local layout",
@@ -57,17 +57,19 @@
     "role": "mia_primary_runtime_scene",
     "world_id": "50b06c01-060d-49fa-8988-8f38c13406d7",
     "world_name": "ZHI-001 Aurora",
-    "activation_state": "runtime_binding_pending",
-    "runtime_provider": "not_yet_verified",
-    "runtime_instance_id": null,
+    "activation_state": "active_headless_runtime",
+    "runtime_provider": "Supabase Edge Function zhi-forest-runtime",
+    "runtime_instance_id": "forest-corner-headless-v1",
     "coordinate_transform": "unverified; do not convert scene-local coordinates to Aurora coordinates",
-    "position_source": "signed_runtime_observation_required",
-    "navigation_activation": "pending_runtime_registration",
+    "position_source": "server_authoritative_scene_transitions",
+    "navigation_activation": "active_headless_navigation_graph",
     "notes": [
-      "This scene is the designated primary scene for Mia.",
-      "Designation does not assert that a 3D renderer, physics engine, navigation runtime, or live position feed is active.",
-      "Scene-local XY remains relative layout units; Z and cross-scene transform remain unknown.",
-      "Do not publish live presence until a trusted runtime observation is received."
+      "Forest_Corner runs as an agent-native headless environment; no human-facing renderer is required.",
+      "Mia's Federation peer identity and active Aurora membership authorize runtime actions.",
+      "Positions are server-computed within forest-corner-local-v1 and persisted with ordered events.",
+      "No client-supplied coordinates are accepted.",
+      "The transform from Forest_Corner local coordinates to Aurora world coordinates remains uncalibrated.",
+      "Private Mia memory remains in zee-extension and is never included in Federation payloads."
     ]
   }
 }

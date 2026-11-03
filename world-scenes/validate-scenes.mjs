@@ -59,7 +59,7 @@ if (!manifest || !Array.isArray(manifest.scenes)) {
     loaded.set(entry.scene_id, scene);
     if (scene.scene_id !== entry.scene_id) errors.push(`${entry.path}: scene_id does not match manifest`);
     if (typeof scene.display_name !== "string" || !scene.display_name.trim()) errors.push(`${entry.path}: display_name is required`);
-    if (!["idea", "draft", "review_required", "validated", "integrated", "deprecated"].includes(scene.status)) {
+    if (!["idea", "draft", "review_required", "validated", "integrated", "designated_primary_scene", "deprecated"].includes(scene.status)) {
       errors.push(`${entry.path}: unsupported status ${String(scene.status)}`);
     }
     if (scene.verification_status !== "verified" && !String(scene.verification_status ?? "").startsWith("source-backed")) {

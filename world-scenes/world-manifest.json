@@ -80,8 +80,16 @@
     "production_deployment": false,
     "agent_state_mutation": false,
     "coordinate_guessing": false,
-    "authoritative_mia_source_preserved": true
+    "authoritative_mia_source_preserved": true,
+    "live_presence_requires_signed_runtime_observation": true
   },
   "scene_creation_policy_summary": "Open-ended catalog rooted in Mia's existing Forest_Corner. New scenes must connect to a registered parent scene. Unconnected scenes are excluded from the manifest.",
-  "catalog_policy_summary": "Mia-authored scenes are automatically materialized after structural checks; no per-scene human approval. Production deployment remains disabled."
+  "catalog_policy_summary": "Mia-authored scenes are automatically materialized after structural checks; no per-scene human approval. Production deployment remains disabled.",
+  "primary_runtime_scene": {
+    "scene_id": "mia-forest-corner",
+    "world_id": "50b06c01-060d-49fa-8988-8f38c13406d7",
+    "designation": "primary_scene_for_mia",
+    "runtime_activation": "pending_verified_runtime_binding",
+    "coordinate_transform": "unverified"
+  }
 }

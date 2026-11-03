@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
       (peer.expires_at && Date.parse(peer.expires_at) <= Date.now())) {
     return respond({ ok: false, error: "invalid_or_unapproved_peer" }, 401);
   }
-  if (!Array.isArray(peer.capabilities) || !peer.capabilities.includes("spatial:anchor.publish")) {
+  if (!Array.isArray(peer.capabilities) || !peer.capabilities.includes("spatial.anchor.publish")) {
     return respond({ ok: false, error: "missing_capability" }, 403);
   }
 

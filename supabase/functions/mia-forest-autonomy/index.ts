@@ -137,18 +137,25 @@ Deno.serve(async (req: Request) => {
       }
       plan.reason += " Planner detail: " + reason.slice(0, 160);
     }
-    if (snapshot.session_status !== "active" && plan.action === "wait") {
-      plan.action = "enter"; plan.reason = "State guard: Mia is outside Forest_Corner; restore her last verified scene position by re-entering.";
-    } else if (snapshot.session_status === "active" && snapshot.current_node_id !== "lounge" && plan.action === "wait") {
-      plan.action = "move_to"; plan.destination = "lounge";
-      plan.reason = "State guard: Mia is inside the scene but not at the registered lounge destination; continue along the validated stone path.";
-    } else if (snapshot.session_status === "active" && snapshot.current_node_id === "lounge" &&
-        !hasInteractedSinceEntry && plan.action === "wait") {
-      plan.action = "interact"; plan.target = "lounge"; plan.behavior = "listen";
-      plan.reason = "Safe progress rule: Mia is at the registered lounge and has not yet interacted during this scene entry.";
-    } else if (snapshot.session_status === "active" && snapshot.current_node_id === "lounge" &&
-        hasInteractedSinceEntry && plan.action === "wait") {
-      plan.action = "leave"; plan.reason = "The current visit has a committed interaction; close the visit while preserving the last verified lounge position.";
+    if (snapshot.session_status !== "active") {
+      if (plan.action !== "enter") {
+        plan.action = "enter"; plan.destination = undefined; plan.target = undefined; plan.behavior = undefined;
+        plan.reason = "State guard: Mia is outside Forest_Corner; re-enter at the last verified scene position before taking another action.";
+      }
+    } else if (snapshot.current_node_id !== "lounge") {
+      if (plan.action !== "move_to") {
+        plan.action = "move_to"; plan.destination = "lounge"; plan.target = undefined; plan.behavior = undefined;
+        plan.reason = "State guard: Mia is inside Forest_Corner but not at the registered interaction node; continue along the validated stone path.";
+      }
+    } else if (!hasInteractedSinceEntry) {
+      if (plan.action !== "interact") {
+        plan.action = "interact"; plan.target = "lounge";
+        plan.behavior = ["listen", "rest"].includes(plan.behavior) ? plan.behavior : "listen";
+        plan.reason = "State guard: Mia is at the lounge and has not yet interacted during this scene entry.";
+      }
+    } else if (plan.action !== "leave") {
+      plan.action = "leave"; plan.target = undefined; plan.behavior = undefined;
+      plan.reason = "State guard: this visit already contains a committed interaction; close it while preserving the verified lounge position.";
     }
     let actionResult: any = null;
     if (plan.action !== "wait") {

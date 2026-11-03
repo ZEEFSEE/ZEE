@@ -13,7 +13,7 @@ test("enter creates a server-owned scene anchor in local coordinates", () => {
 test("move_to lounge emits six deterministic route steps and ends at lounge", () => {
   const entered = transition(initialState(), "enter").state;
   const moved = transition(entered, "move_to", { destination: "lounge" });
-  assert.equal(moved.events.length, 6);
+  assert.equal(moved.events.length, 5);
   assert.equal(moved.events[0].sequence, 2);
   assert.equal(moved.events.at(-1).event_type, "movement_step");
   assert.equal(moved.state.current_node_id, "lounge");

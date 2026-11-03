@@ -1,0 +1,108 @@
+{
+  "schema_version": "1.0.0",
+  "contract_id": "mia-forest-corner-runtime-contract",
+  "status": "designated_pending_runtime_binding",
+  "scene_id": "mia-forest-corner",
+  "world": {
+    "id": "50b06c01-060d-49fa-8988-8f38c13406d7",
+    "name": "ZHI-001 Aurora"
+  },
+  "agent": {
+    "external_agent_id": "mia",
+    "identity_source": "ZHI Federation peer identity",
+    "private_memory_scope": "zee-extension only",
+    "private_memory_may_enter_federation": false
+  },
+  "coordinate_frame": {
+    "id": "forest-corner-local-v1",
+    "space": "scene-local",
+    "units": "relative layout units",
+    "bounds": {
+      "x": [
+        0,
+        1000
+      ],
+      "y": [
+        0,
+        700
+      ],
+      "z": null
+    },
+    "origin": "scene origin",
+    "mapping_to_world": null,
+    "calibration_required": true
+  },
+  "runtime_observation": {
+    "accepted": false,
+    "required_source": "trusted ZHI scene runtime",
+    "required_fields": [
+      "event_id",
+      "scene_id",
+      "runtime_instance_id",
+      "external_agent_id",
+      "coordinate_frame",
+      "local_position",
+      "observed_at",
+      "sequence",
+      "evidence_kind",
+      "signature"
+    ],
+    "external_agent_id": "mia",
+    "scene_id": "mia-forest-corner",
+    "evidence_kind": "runtime_tick",
+    "reject_if": [
+      "invalid_signature",
+      "wrong_scene",
+      "unknown_coordinate_frame",
+      "stale_timestamp",
+      "replayed_sequence",
+      "out_of_bounds",
+      "missing_runtime_instance_id"
+    ],
+    "no_client_claim_as_direct_observation": true
+  },
+  "navigation": {
+    "asset_id": "stone-path-forest-to-lounge",
+    "route_start": {
+      "x": 0,
+      "y": 350,
+      "node_id": "forest-corner-left-boundary-test-entry"
+    },
+    "route_end": {
+      "x": 800,
+      "y": 350,
+      "node_id": "lounge"
+    },
+    "slabs": 5,
+    "edges": 6,
+    "activation": "pending_verified_renderer_physics_and_navigation_registration",
+    "z_depth": "unverified"
+  },
+  "continuity": {
+    "on_scene_entry": [
+      "authenticate_mia_federation_peer",
+      "discover_world",
+      "join_or_resume_membership",
+      "load_scene_manifest",
+      "load_scene_local_navigation"
+    ],
+    "on_verified_movement": [
+      "validate_runtime_signature",
+      "validate_frame_and_bounds",
+      "persist_world_presence",
+      "append_public_experience_to_mia_private_memory"
+    ],
+    "on_reentry": [
+      "read_last_verified_scene_presence",
+      "restore_scene_context",
+      "preserve_private_memory_locally"
+    ],
+    "private_memory_in_federation_payload": false
+  },
+  "safety": {
+    "no_coordinate_inference": true,
+    "no_legacy_mirror_coordinate_promotion": true,
+    "simulated_ecosystem_is_not_sensor_observation": true,
+    "no_production_position_write_until_runtime_signature_is_valid": true
+  }
+}

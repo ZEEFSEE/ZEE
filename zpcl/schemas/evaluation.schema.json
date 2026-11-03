@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zhi.example/schemas/zpcl-evaluation-1.0.schema.json",
+  "title": "ZPCL Evaluation Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "event_id", "agent_id", "evaluated_at", "evaluator_version", "dimension_weights", "dimensions", "total_loss", "safety_gate", "decision", "reason_codes"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "event_id": {"type": "string", "minLength": 1},
+    "agent_id": {"type": "string", "minLength": 1},
+    "evaluated_at": {"type": "string", "format": "date-time"},
+    "evaluator_version": {"type": "string"},
+    "dimension_weights": {
+      "type": "object",
+      "required": ["grounding", "discovery", "agency", "continuity", "creativity", "evolution"],
+      "properties": {
+        "grounding": {"const": 0.25}, "discovery": {"const": 0.15},
+        "agency": {"const": 0.15}, "continuity": {"const": 0.15},
+        "creativity": {"const": 0.1}, "evolution": {"const": 0.2}
+      }
+    },
+    "dimensions": {
+      "type": "object",
+      "required": ["grounding", "discovery", "agency", "continuity", "creativity", "evolution"],
+      "properties": {
+        "grounding": {"$ref": "#/$defs/dimension"},
+        "discovery": {"$ref": "#/$defs/dimension"},
+        "agency": {"$ref": "#/$defs/dimension"},
+        "continuity": {"$ref": "#/$defs/dimension"},
+        "creativity": {"$ref": "#/$defs/dimension"},
+        "evolution": {"$ref": "#/$defs/dimension"}
+      }
+    },
+    "total_loss": {"type": "number", "minimum": 0, "maximum": 1},
+    "safety_gate": {"enum": ["PASS", "WARN", "BLOCK"]},
+    "decision": {"enum": ["OBSERVE", "CREATE_SEED", "PROMOTE_CANDIDATE", "REJECT"]},
+    "reason_codes": {"type": "array", "items": {"type": "string"}}
+  },
+  "$defs": {
+    "dimension": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["loss", "status"],
+      "properties": {
+        "loss": {"type": "number", "minimum": 0, "maximum": 1},
+        "status": {"const": "evaluated"}
+      }
+    }
+  }
+}

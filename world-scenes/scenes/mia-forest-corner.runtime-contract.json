@@ -81,7 +81,8 @@
       "restore_scene_context",
       "preserve_private_memory_locally"
     ],
-    "private_memory_in_federation_payload": false
+    "private_memory_in_federation_payload": false,
+    "reentry": "Verified by production event sequence: leave at lounge then re-enter restored lounge position with resumed=true"
   },
   "safety": {
     "no_coordinate_inference": true,
@@ -100,5 +101,22 @@
     "mode": "agent_native_headless",
     "human_facing_renderer": false,
     "action_model": "server_authoritative_discrete_navigation"
+  },
+  "autonomy": {
+    "status": "active",
+    "edge_function": "mia-forest-autonomy",
+    "planner": "AGNES private planner with bounded action schema",
+    "schedule": "every 30 minutes",
+    "cooldown": "20 minutes",
+    "fallback": "safe deterministic state transition when AGNES planner times out or returns unusable output",
+    "actions": [
+      "enter",
+      "move_to:lounge",
+      "interact:lounge:listen|rest",
+      "leave",
+      "wait"
+    ],
+    "local_memory": "Mia local zee-extension only",
+    "private_memory_exported_to_federation": false
   }
 }

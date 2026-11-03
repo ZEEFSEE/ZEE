@@ -81,7 +81,8 @@ Deno.serve(async (req) => {
 
   if (action === "perceive") {
     const [{ data: nodes, error: nodesError }, { data: edges, error: edgesError },
-      { data: ecosystem, error: ecosystemError }, { data: publicEvents, error: publicEventsError }] = await Promise.all([
+      { data: ecosystem, error: ecosystemError }, { data: publicEvents, error: publicEventsError },
+      { data: ecosystemEvents, error: ecosystemEventsError }] = await Promise.all([
       db.from("zhi_spatial_nodes")
         .select("id,parent_node_id,node_type,stable_key,name,description,coordinate,coordinate_frame,visibility,entry_policy,observability,source_kind,source_ref,source_updated_at,observed_at,valid_until,metadata")
         .eq("world_id", WORLD_ID).eq("status", "active").eq("visibility", "public")
@@ -95,8 +96,12 @@ Deno.serve(async (req) => {
         .select("id,event_type,from_node_id,to_node_id,evidence_id,environment_revision,perception_delta,occurred_at,metadata")
         .eq("world_id", WORLD_ID).is("agent_id", null)
         .order("occurred_at", { ascending: false }).limit(20),
+      db.from("zhi_ecosystem_events")
+        .select("id,state_revision,event_kind,source_kind,occurred_at,payload,causal_chain")
+        .eq("world_id", WORLD_ID)
+        .order("occurred_at", { ascending: false }).limit(20),
     ]);
-    if (nodesError || edgesError || ecosystemError || publicEventsError) {
+    if (nodesError || edgesError || ecosystemError || publicEventsError || ecosystemEventsError) {
       return respond({ ok: false, error: "world_perception_read_failed" }, 503);
     }
     const visibleNodes = nodes ?? [];
@@ -133,8 +138,17 @@ Deno.serve(async (req) => {
           updated_at: ecosystem.updated_at, environment_state: modelState,
         } : null,
         environment_feedback: {
-          recent_public_events: publicEvents ?? [], event_count: (publicEvents ?? []).length,
-          source: "zhi_spatial_environment_events",
+          recent_public_events: [
+            ...(ecosystemEvents ?? []).map((event: any) => ({ ...event, event_stream: "ecosystem" })),
+            ...(publicEvents ?? []).map((event: any) => ({ ...event, event_stream: "spatial" })),
+          ],
+          recent_ecosystem_events: ecosystemEvents ?? [],
+          recent_spatial_events: publicEvents ?? [],
+          ecosystem_event_count: (ecosystemEvents ?? []).length,
+          spatial_event_count: (publicEvents ?? []).length,
+          event_count: (ecosystemEvents ?? []).length + (publicEvents ?? []).length,
+          sources: ["zhi_ecosystem_events", "zhi_spatial_environment_events"],
+          event_semantics: "Ecosystem events are world-generated model events, not physical sensor observations.",
         },
         spatial_continuity: {
           scene_id: SCENE_ID, current_node_id: currentState.current_node_id,
@@ -147,7 +161,9 @@ Deno.serve(async (req) => {
         source_freshness: {
           captured_at: capturedAt, world_updated_at: world.updated_at,
           ecosystem_updated_at: ecosystem?.updated_at ?? null,
-          ecosystem_revision: ecosystem?.revision ?? null, freshness_basis: "database_updated_at",
+          ecosystem_revision: ecosystem?.revision ?? null,
+          latest_ecosystem_event_at: ecosystemEvents?.[0]?.occurred_at ?? null,
+          freshness_basis: "database_updated_at_and_event_occurred_at",
         },
       },
       private_memory_included: false,

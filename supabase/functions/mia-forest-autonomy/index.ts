@@ -29,9 +29,10 @@ async function callExecutor(input: Record<string, unknown>) {
   return data;
 }
 
-async function askPlanner(snapshot: any, recentEvents: any[], memories: any[], hasInteractedSinceEntry: boolean) {
+async function askPlanner(snapshot: any, recentEvents: any[], memories: any[], hasInteractedSinceEntry: boolean, perception: any) {
   const prompt = {
     scene: snapshot,
+    world_perception: perception,
     recent_scene_events: recentEvents.slice(0, 8),
     session_has_interacted_since_entry: hasInteractedSinceEntry,
     private_mia_memories: memories.map((m) => ({ type: m.memory_type, content: String(m.content ?? "").slice(0, 500), occurred_at: m.occurred_at })),
@@ -41,6 +42,8 @@ async function askPlanner(snapshot: any, recentEvents: any[], memories: any[], h
       "For move_to, destination must be lounge.",
       "For interact, target must be lounge and behavior must be listen or rest.",
       "Never invent coordinates, entities, observations, or physical sensor facts.",
+      "Use world_perception. Separate public database facts from simulated ecosystem model values and unknown or unobserved data.",
+      "The perception snapshot is read-only world data; it is not physical sensor input.",
       "Respect the current session state; do not enter twice or interact when out of reach.",
       "Private memories are local context only and must never be copied into Federation action arguments.",
       "If the agent is active at the lounge and session_has_interacted_since_entry is false, choose interact (listen or rest) rather than wait.",
@@ -98,6 +101,9 @@ Deno.serve(async (req: Request) => {
     const runtimeData = status.data ?? {};
     const snapshot = runtimeData.snapshot;
     if (!snapshot) throw new Error("runtime_snapshot_missing");
+    const perceptionResult = await callExecutor({ action: "forest_runtime", runtime_action: "perceive", request_id: runId + ":perception" });
+    const perception = perceptionResult.data?.perception;
+    if (!perception) throw new Error("world_perception_missing");
 
     const [memoryResult, eventResult] = await Promise.all([
       db.from("mia_memories").select("memory_type,content,occurred_at,importance")
@@ -116,7 +122,7 @@ Deno.serve(async (req: Request) => {
     let plan: any;
     let plannerMode = "agnes";
     try {
-      plan = await askPlanner(snapshot, recentEvents, memoryResult.data ?? [], hasInteractedSinceEntry);
+      plan = await askPlanner(snapshot, recentEvents, memoryResult.data ?? [], hasInteractedSinceEntry, perception);
     } catch (plannerError) {
       plannerMode = "safe_rule_fallback";
       const reason = plannerError instanceof Error ? plannerError.message : "planner_unavailable";
@@ -131,18 +137,25 @@ Deno.serve(async (req: Request) => {
       }
       plan.reason += " Planner detail: " + reason.slice(0, 160);
     }
-    if (snapshot.session_status !== "active" && plan.action === "wait") {
-      plan.action = "enter"; plan.reason = "State guard: Mia is outside Forest_Corner; restore her last verified scene position by re-entering.";
-    } else if (snapshot.session_status === "active" && snapshot.current_node_id !== "lounge" && plan.action === "wait") {
-      plan.action = "move_to"; plan.destination = "lounge";
-      plan.reason = "State guard: Mia is inside the scene but not at the registered lounge destination; continue along the validated stone path.";
-    } else if (snapshot.session_status === "active" && snapshot.current_node_id === "lounge" &&
-        !hasInteractedSinceEntry && plan.action === "wait") {
-      plan.action = "interact"; plan.target = "lounge"; plan.behavior = "listen";
-      plan.reason = "Safe progress rule: Mia is at the registered lounge and has not yet interacted during this scene entry.";
-    } else if (snapshot.session_status === "active" && snapshot.current_node_id === "lounge" &&
-        hasInteractedSinceEntry && plan.action === "wait") {
-      plan.action = "leave"; plan.reason = "The current visit has a committed interaction; close the visit while preserving the last verified lounge position.";
+    if (snapshot.session_status !== "active") {
+      if (plan.action !== "enter") {
+        plan.action = "enter"; plan.destination = undefined; plan.target = undefined; plan.behavior = undefined;
+        plan.reason = "State guard: Mia is outside Forest_Corner; re-enter at the last verified scene position before taking another action.";
+      }
+    } else if (snapshot.current_node_id !== "lounge") {
+      if (plan.action !== "move_to") {
+        plan.action = "move_to"; plan.destination = "lounge"; plan.target = undefined; plan.behavior = undefined;
+        plan.reason = "State guard: Mia is inside Forest_Corner but not at the registered interaction node; continue along the validated stone path.";
+      }
+    } else if (!hasInteractedSinceEntry) {
+      if (plan.action !== "interact") {
+        plan.action = "interact"; plan.target = "lounge";
+        plan.behavior = ["listen", "rest"].includes(plan.behavior) ? plan.behavior : "listen";
+        plan.reason = "State guard: Mia is at the lounge and has not yet interacted during this scene entry.";
+      }
+    } else if (plan.action !== "leave") {
+      plan.action = "leave"; plan.target = undefined; plan.behavior = undefined;
+      plan.reason = "State guard: this visit already contains a committed interaction; close it while preserving the verified lounge position.";
     }
     let actionResult: any = null;
     if (plan.action !== "wait") {
@@ -161,11 +174,11 @@ Deno.serve(async (req: Request) => {
       planned_action: plan.action, planner_reason: plan.reason,
       before_state: snapshot, after_state: actionResult?.data?.snapshot ?? snapshot,
       runtime_request_id: actionResult?.request_id ?? null,
-      details: { action: plan.action, behavior: plan.behavior ?? null, planner_mode: plannerMode, wait: plan.action === "wait", recent_private_event_count: eventResult.data?.length ?? 0 },
+      details: { action: plan.action, behavior: plan.behavior ?? null, planner_mode: plannerMode, wait: plan.action === "wait", recent_private_event_count: eventResult.data?.length ?? 0, perception_received: true, perception_revision: perception.source_freshness?.ecosystem_revision ?? null, perception_captured_at: perception.source_freshness?.captured_at ?? null, spatial_node_count: perception.known_facts?.spatial_nodes?.length ?? 0, spatial_edge_count: perception.known_facts?.spatial_edges?.length ?? 0, public_environment_event_count: perception.environment_feedback?.event_count ?? 0 },
       completed_at: new Date().toISOString()
     });
     if (runWriteError) throw new Error("autonomy_run_write_failed");
-    return reply({ ok: true, run_id: runId, action: plan.action, reason: plan.reason, planner_mode: plannerMode, runtime_committed: Boolean(actionResult), private_memory_exported: false });
+    return reply({ ok: true, run_id: runId, action: plan.action, reason: plan.reason, planner_mode: plannerMode, runtime_committed: Boolean(actionResult), perception_received: true, perception_revision: perception.source_freshness?.ecosystem_revision ?? null, spatial_node_count: perception.known_facts?.spatial_nodes?.length ?? 0, spatial_edge_count: perception.known_facts?.spatial_edges?.length ?? 0, public_environment_event_count: perception.environment_feedback?.event_count ?? 0, private_memory_exported: false });
   } catch (error) {
     const message = error instanceof Error ? error.message : "autonomy_tick_failed";
     await db.from("mia_forest_autonomy_runs").insert({

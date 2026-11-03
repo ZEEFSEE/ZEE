@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
   const action = String(body.action ?? "");
   const requestId = String(body.request_id ?? "");
   if (!/^[a-zA-Z0-9._:-]{8,120}$/.test(requestId)) return respond({ ok: false, error: "invalid_request_id" }, 400);
-  if (!["enter", "move_to", "interact", "leave", "status"].includes(action)) return respond({ ok: false, error: "unsupported_action" }, 400);
+  if (!["enter", "move_to", "interact", "leave", "status", "perceive"].includes(action)) return respond({ ok: false, error: "unsupported_action" }, 400);
 
   const db = createClient(URL, SERVICE_KEY, { auth: { autoRefreshToken: false, persistSession: false } });
   const { data: peer, error: peerError } = await db.from("zhi_federation_peers")
@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
   if (membershipError || !membership) return respond({ ok: false, error: "active_scene_membership_required" }, 403);
 
   const { data: world, error: worldError } = await db.from("zhi_worlds")
-    .select("id,status,visibility,entry_policy").eq("id", WORLD_ID).maybeSingle();
+    .select("id,name,status,visibility,entry_policy,environment_state,updated_at").eq("id", WORLD_ID).maybeSingle();
   if (worldError || !world || world.status !== "open" || world.visibility !== "public" || world.entry_policy !== "open") return respond({ ok: false, error: "world_unavailable" }, 409);
 
   const { data: current, error: stateError } = await db.from("zhi_forest_runtime_state")
@@ -78,6 +78,81 @@ Deno.serve(async (req) => {
     position_status: current.position_status,
     environment_state: current.environment_state,
   } : initialState();
+
+  if (action === "perceive") {
+    const [{ data: nodes, error: nodesError }, { data: edges, error: edgesError },
+      { data: ecosystem, error: ecosystemError }, { data: publicEvents, error: publicEventsError }] = await Promise.all([
+      db.from("zhi_spatial_nodes")
+        .select("id,parent_node_id,node_type,stable_key,name,description,coordinate,coordinate_frame,visibility,entry_policy,observability,source_kind,source_ref,source_updated_at,observed_at,valid_until,metadata")
+        .eq("world_id", WORLD_ID).eq("status", "active").eq("visibility", "public")
+        .order("node_type").limit(300),
+      db.from("zhi_spatial_edges")
+        .select("id,from_node_id,to_node_id,relation,directed,access_policy,travel_cost,source_kind,source_ref")
+        .eq("world_id", WORLD_ID).eq("status", "active").in("access_policy", ["inherit", "open"]).limit(600),
+      db.from("zhi_ecosystem_states")
+        .select("revision,world_time,updated_at,state").eq("world_id", WORLD_ID).maybeSingle(),
+      db.from("zhi_spatial_environment_events")
+        .select("id,event_type,from_node_id,to_node_id,evidence_id,environment_revision,perception_delta,occurred_at,metadata")
+        .eq("world_id", WORLD_ID).is("agent_id", null)
+        .order("occurred_at", { ascending: false }).limit(20),
+    ]);
+    if (nodesError || edgesError || ecosystemError || publicEventsError) {
+      return respond({ ok: false, error: "world_perception_read_failed" }, 503);
+    }
+    const visibleNodes = nodes ?? [];
+    const visibleIds = new Set(visibleNodes.map((node: any) => node.id));
+    const visibleEdges = (edges ?? []).filter((edge: any) =>
+      visibleIds.has(edge.from_node_id) && visibleIds.has(edge.to_node_id)
+    );
+    const unknowns = visibleNodes
+      .filter((node: any) => ["unknown", "unobserved"].includes(node.observability) || node.coordinate === null)
+      .map((node: any) => ({
+        node_id: node.id, stable_key: node.stable_key, name: node.name,
+        reason: node.coordinate === null ? "coordinate_unavailable" : node.observability,
+      }));
+    const modelState = ecosystem?.state && typeof ecosystem.state === "object" ? ecosystem.state : null;
+    const capturedAt = new Date().toISOString();
+    return respond({
+      ok: true,
+      action: "perceive",
+      captured_at: capturedAt,
+      perception: {
+        epistemic_contract: {
+          known_facts: "Public spatial database records with source and freshness metadata.",
+          modeled_inference: "zhi_ecosystem_states is a simulated world model, not physical sensor observation.",
+          physical_sensors: "No physical sensor stream is connected; do not describe modeled values as sensed facts.",
+          private_memory: "Not read or exported by the world runtime.",
+          unknown_unobserved: "Missing coordinates and unobserved nodes remain explicitly unknown.",
+        },
+        world: { id: world.id, name: world.name, status: world.status, updated_at: world.updated_at },
+        known_facts: { spatial_nodes: visibleNodes, spatial_edges: visibleEdges },
+        modeled_inference: ecosystem ? {
+          source: "zhi_ecosystem_states", source_kind: "world_generated_model",
+          model_status: modelState?.simulation_status ?? "unknown",
+          revision: ecosystem.revision, world_time: ecosystem.world_time,
+          updated_at: ecosystem.updated_at, environment_state: modelState,
+        } : null,
+        environment_feedback: {
+          recent_public_events: publicEvents ?? [], event_count: (publicEvents ?? []).length,
+          source: "zhi_spatial_environment_events",
+        },
+        spatial_continuity: {
+          scene_id: SCENE_ID, current_node_id: currentState.current_node_id,
+          current_position: currentState.current_position, coordinate_frame: currentState.coordinate_frame,
+          coordinate_space: "scene-local", world_transform: null,
+          world_transform_status: "uncalibrated", position_status: currentState.position_status,
+          session_status: currentState.session_status,
+        },
+        unknown_unobserved: unknowns,
+        source_freshness: {
+          captured_at: capturedAt, world_updated_at: world.updated_at,
+          ecosystem_updated_at: ecosystem?.updated_at ?? null,
+          ecosystem_revision: ecosystem?.revision ?? null, freshness_basis: "database_updated_at",
+        },
+      },
+      private_memory_included: false,
+    });
+  }
 
   if (action === "status") {
     const { data: recentEvents, error: eventReadError } = await db.from("zhi_forest_runtime_events")

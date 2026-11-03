@@ -40,8 +40,6 @@ jobs:
           today="$(TZ=Asia/Singapore date +%F)"
           now_hm="$(TZ=Asia/Singapore date +%H%M)"
           now_minutes=$((10#${now_hm:0:2} * 60 + 10#${now_hm:2:2}))
-          cutoff="$(date -u -d '90 minutes ago' +%Y-%m-%dT%H:%M:%SZ)"
-
           verify_output() {
             local file="$1"
             local kind="$2"
@@ -86,22 +84,24 @@ jobs:
             fi
 
             echo "Publication missing, stale, or failed validation: $file"
-            local runs
-            runs="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/$workflow/runs?branch=main&per_page=100")"
+            local runs_file
+            runs_file="$(mktemp)"
+            gh api "repos/$GITHUB_REPOSITORY/actions/workflows/$workflow/runs?branch=main&per_page=100" > "$runs_file"
 
             local active
-            active="$(jq --arg cutoff "$cutoff" '[.workflow_runs[] | select(.status != "completed") | select(.created_at >= $cutoff)] | length' <<< "$runs")"
+            active="$(jq '[.workflow_runs[] | select(.status != "completed")] | length' "$runs_file")"
             if (( active > 0 )); then
+              rm -f "$runs_file"
               echo "An active run exists for $workflow; waiting for it to finish."
               echo "- ⏳ $file: an active run exists; watchdog will recheck." >> "$GITHUB_STEP_SUMMARY"
               return 0
             fi
 
             local dispatches
-            dispatches="$(RUNS_JSON="$runs" node - "$today" <<'NODE'
+            dispatches="$(node - "$today" "$runs_file" <<'NODE'
           const fs = require("fs");
           const today = process.argv[2];
-          const data = JSON.parse(process.env.RUNS_JSON || "{}");
+          const data = JSON.parse(fs.readFileSync(process.argv[3], "utf8"));
           const sgtDate = value => {
             const parts = new Intl.DateTimeFormat("en-CA", {
               timeZone: "Asia/Singapore",
@@ -116,6 +116,7 @@ jobs:
           process.stdout.write(String(count));
           NODE
           )"
+            rm -f "$runs_file"
 
             if (( dispatches >= 8 )); then
               echo "Daily recovery limit reached for $workflow ($dispatches workflow_dispatch runs)."

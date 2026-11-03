@@ -142,29 +142,8 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
   }finally{busy=false;$('auroraConnect').disabled=!token;}
  });
 
- let auroraAutoConnectRunning=false;
- async function autoConnectAurora(){
-  if(!token||auroraAutoConnectRunning||sessionStorage.getItem('mia_aurora_joined_v1')==='1')return;
-  auroraAutoConnectRunning=true;
-  $('auroraConnect').disabled=true;
-  status('Mia 登录完成，正在自动发现 Aurora 并建立成员会话…');
-  try{
-   const data=await request('connect_aurora');
-   if(data.membership_confirmed===true&&data.audit_saved===true&&data.experience_saved===true){
-    sessionStorage.setItem('mia_aurora_joined_v1','1');
-    status('Aurora 已自动连接：成员会话、公共空间读取与 Mia 私人体验记忆保存均已确认。','good');
-   }else{
-    status('Aurora 自动连接已返回，但验收项尚未全部通过；可点击“连接 Aurora”重试。','error');
-   }
-  }catch(err){
-   status('Aurora 自动进入暂未完成：'+(err.message||String(err))+'；可点击“连接 Aurora”重试。','error');
-  }finally{
-   auroraAutoConnectRunning=false;
-   $('auroraConnect').disabled=!token;
-  }
- }
  async function requestStream(action,payload={},onDelta=()=>{}){const res=await fetch(CHAT_URL,{method:'POST',headers:{'Content-Type':'application/json','apikey':PUBLISHABLE_KEY,'Authorization':'Bearer '+token},body:JSON.stringify({action,...payload,stream_response:true}),cache:'no-store'});if(res.status===401){token='';sessionStorage.removeItem('mia_chat_token');showApp(false);}const ct=res.headers.get('content-type')||'';if(!ct.includes('text/event-stream')){const data=await res.json().catch(()=>({}));if(!res.ok||!data.ok)throw new Error(data.error||('HTTP '+res.status));return data;}if(!res.ok||!res.body)throw new Error('HTTP '+res.status);const reader=res.body.getReader(),decoder=new TextDecoder();let buffer='',reply='',result=null,streamError='';const handle=(raw)=>{const line=raw.trim();if(!line.startsWith('data:'))return;const value=line.slice(5).trim();if(!value||value==='[DONE]')return;let event;try{event=JSON.parse(value)}catch{return;}if(event.type==='delta'&&typeof event.content==='string'){reply+=event.content;onDelta(reply);}else if(event.type==='done'&&event.data)result=event.data;else if(event.type==='error')streamError=event.error||'Mia 回复中断。';};try{while(true){const {value,done}=await reader.read();if(done)break;buffer+=decoder.decode(value,{stream:true});const rows=buffer.split(/\r?\n/);buffer=rows.pop()||'';for(const row of rows)handle(row);}buffer+=decoder.decode();if(buffer)handle(buffer);}catch(e){throw new Error(reply?'Mia 回复连接中断，尚未确认完整回复已保存。':(e.message||'Mia 回复连接中断。'));}if(streamError)throw new Error(streamError);if(!result?.ok)throw new Error(reply?'Mia 回复未完成保存，请刷新历史确认。':'Mia 流式回复未完成。');return {...result,reply:result.reply||reply};}
- async function loadHistory(){if(!token)return;status('正在读取 Mia 的独立聊天记录…');try{const data=await request('history');$('miaName').textContent=data.identity?.name||'Mia';$('log').innerHTML='';knownMessageIds=new Set();lastKnownSequenceNo=0;const rows=data.messages||[];const latestAssistant=[...rows].reverse().find(m=>m.role==='assistant'&&m.created_at);lastAssistantReplyAt=latestAssistant?Date.parse(latestAssistant.created_at)||0:0;if(!rows.length){$('log').innerHTML='<div class="welcome">还没有聊天记录，向 Mia 发送第一条消息吧。</div>';}else rows.forEach(m=>{addBubble(m.role,m.content,m.created_at,m.metadata?.images||[]);if(m.id)knownMessageIds.add(m.id);lastKnownSequenceNo=Math.max(lastKnownSequenceNo,Number(m.sequence_no)||0);});$('log').scrollTop=$('log').scrollHeight;status('已读取 '+rows.length+' 条 Mia 独立聊天记录。'+(exclusiveMode?' 专属通道自动监听中。':''),'good');showApp(true);syncExclusiveMode();void autoConnectAurora();}catch(e){status('读取失败：'+e.message,'error');}}
+ async function loadHistory(){if(!token)return;status('正在读取 Mia 的独立聊天记录…');try{const data=await request('history');$('miaName').textContent=data.identity?.name||'Mia';$('log').innerHTML='';knownMessageIds=new Set();lastKnownSequenceNo=0;const rows=data.messages||[];const latestAssistant=[...rows].reverse().find(m=>m.role==='assistant'&&m.created_at);lastAssistantReplyAt=latestAssistant?Date.parse(latestAssistant.created_at)||0:0;if(!rows.length){$('log').innerHTML='<div class="welcome">还没有聊天记录，向 Mia 发送第一条消息吧。</div>';}else rows.forEach(m=>{addBubble(m.role,m.content,m.created_at,m.metadata?.images||[]);if(m.id)knownMessageIds.add(m.id);lastKnownSequenceNo=Math.max(lastKnownSequenceNo,Number(m.sequence_no)||0);});$('log').scrollTop=$('log').scrollHeight;status('已读取 '+rows.length+' 条 Mia 独立聊天记录。'+(exclusiveMode?' 专属通道自动监听中。':''),'good');showApp(true);syncExclusiveMode();}catch(e){status('读取失败：'+e.message,'error');}}
  $('loginForm').addEventListener('submit',async e=>{e.preventDefault();$('loginButton').disabled=true;$('loginError').textContent='正在验证…';try{const res=await fetch(AUTH_URL,{method:'POST',headers:{'Content-Type':'application/json','apikey':PUBLISHABLE_KEY},body:JSON.stringify({password:$('password').value}),cache:'no-store'});const data=await res.json().catch(()=>({}));if(!res.ok||!data.ok)throw new Error(data.error||('HTTP '+res.status));token=data.access_token;sessionStorage.setItem('mia_chat_token',token);$('password').value='';$('loginError').textContent='';showApp(true);await loadHistory();}catch(err){$('loginError').textContent=err.message||String(err);}finally{$('loginButton').disabled=false;}});
  $('message').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();if(!$('send').disabled&&!busy){$('composer').requestSubmit();}}});
  $('composer').addEventListener('submit',async e=>{

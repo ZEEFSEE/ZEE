@@ -98,10 +98,10 @@ jobs:
             fi
 
             local dispatches
-            dispatches="$(node - "$today" <<'NODE' <<< "$runs"
+            dispatches="$(RUNS_JSON="$runs" node - "$today" <<'NODE'
           const fs = require("fs");
           const today = process.argv[2];
-          const data = JSON.parse(fs.readFileSync(0, "utf8"));
+          const data = JSON.parse(process.env.RUNS_JSON || "{}");
           const sgtDate = value => {
             const parts = new Intl.DateTimeFormat("en-CA", {
               timeZone: "Asia/Singapore",

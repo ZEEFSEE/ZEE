@@ -6,6 +6,7 @@ on:
       - "mia-prototype-runtime.html"
       - "world-scenes/runtime/mia-forest-corner-3d.*"
       - "world-scenes/runtime/mia-forest-observation-frame.*"
+      - "world-scenes/runtime/mia-forest-observation-client.*"
       - "world-scenes/runtime/mia-scene-asset-loader.*"
       - "world-scenes/mia-assets/**"
       - "mia/forest-corner.json"
@@ -36,8 +37,9 @@ jobs:
         run: |
           grep -q 'mia-forest-corner-3d.mjs' mia-prototype-runtime.html
           grep -q 'mia-forest-observation-frame.mjs' mia-prototype-runtime.html
+          grep -q 'mia-forest-observation-client.mjs' mia-prototype-runtime.html
           grep -q 'mia-scene-asset-loader.mjs' mia-prototype-runtime.html
           grep -q 'three@0.170.0' mia-prototype-runtime.html
           ! grep -Eq 'service_role|AGNES_API_KEY|mia-chat' mia-prototype-runtime.html
       - name: Run scene contract tests
-        run: node --test world-scenes/runtime/mia-forest-corner-3d.test.mjs world-scenes/runtime/mia-forest-observation-frame.test.mjs world-scenes/runtime/mia-scene-asset-loader.test.mjs
+        run: node --test world-scenes/runtime/mia-forest-corner-3d.test.mjs world-scenes/runtime/mia-forest-observation-frame.test.mjs world-scenes/runtime/mia-forest-observation-client.test.mjs world-scenes/runtime/mia-scene-asset-loader.test.mjs

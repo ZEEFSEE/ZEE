@@ -98,7 +98,7 @@ assert.match(lower, /for update/);
 assert.match(lower, /one_proposal_v13/);
 assert.match(lower, /one_review_v13/);
 assert.match(lower, /security definer/);
-assert.match(lower, /create function public\\.mia_forest_corner_guard_event_v13\\(\\)[\\s\\S]*?security definer\\s+set search_path = pg_catalog, public/);
+assert.match(lower, /create function public\.mia_forest_corner_guard_event_v13\(\)\s+returns trigger\s+language plpgsql\s+security definer\s+set search_path = pg_catalog, public/);
 assert.match(lower, /revoke all on function public\.mia_forest_corner_insert_card_v13\(jsonb,text\) from public, anon, authenticated/);
 assert.match(lower, /grant execute on function public\.mia_forest_corner_insert_card_v13\(jsonb,text\) to service_role/);
 assert.match(lower, /revoke insert on table public\.mia_forest_corner_cards from service_role/);

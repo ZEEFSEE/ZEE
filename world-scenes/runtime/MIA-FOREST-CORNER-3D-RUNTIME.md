@@ -18,10 +18,12 @@ This is an isolated, read-only Three.js scene presentation for prototype Mia
 - No physics engine, registered colliders, navmesh, walking controller or
   autonomous character movement.
 - No cross-scene travel; destination portal edges remain non-integrated.
-- No Mia camera/perception loop or connection to the headless autonomy planner.
-- No private GLB signed-URL request. The Tiny Planet Friends asset is marked
-  as pending secure loading and not fetched by this page.
-- No Supabase writes, chat API, memories, personality, emotion, MIA-02,
+- A manual, session-authenticated, read-only panel displays the latest headless autonomy snapshot.
+- No camera/visual perception, no physical movement, and no movement command path.
+- Tiny Planet Friends GLB loading is user-initiated and uses the existing
+  session-authenticated short-lived signed-URL service; the URL stays in memory.
+- The observation Edge Function only reads the latest prototype Mia autonomy run; it does not write Supabase.
+- No chat API, memories, personality, emotion, MIA-02,
   Jason, Mark, AURORA or federation access.
 
 ## Coordinate and safety rule
@@ -35,3 +37,7 @@ are independently verified.
 This is additive. Remove the new entry page, this module, its test, workflow,
 and this document in one revert of the introducing commit/PR. Existing Mia
 pages, Edge Functions, database rows and autonomy schedule are not modified.
+
+## Read-only observation bridge
+
+The isolated preview can manually call `/functions/v1/mia-forest-observation` using the existing Mia chat session token from the same browser session. The response is allow-listed and displayed as a semantic backend snapshot only. It is not fed into the Three.js scene, camera model, navigation controller, or movement planner. Source is tracked at `supabase/functions/mia-forest-observation/index.ts`; Node contract tests reject write methods and require the prototype Mia/Forest Corner scope.

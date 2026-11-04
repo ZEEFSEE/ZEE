@@ -2,7 +2,7 @@
   "schema_version": "1.0.0",
   "scene_id": "mia-forest-corner",
   "display_name": "Mia 森林角落",
-  "status": "designated_primary_scene",
+  "status": "draft",
   "parent_scene_id": null,
   "source_reference": {
     "kind": "existing_mia_virtual_scene",
@@ -11,7 +11,7 @@
     "created_by": "scene-data-foundation",
     "created_at": null
   },
-  "verification_status": "source-backed-local-layout; headless-runtime-deployed; aurora-transform-unverified",
+  "verification_status": "source-backed-local-layout",
   "coordinate_reference": {
     "coordinate_space": "scene-local",
     "system_name": "Forest_Corner local layout",
@@ -52,24 +52,5 @@
     "Cross-scene exits and travel transforms are not yet defined; future scenes must connect to this root through a validated scene graph.",
     "Registered tiny-planet-friends-glb at scene-local anchor (650,240); 3D depth, physical scale, collision, and runtime loader remain unverified.",
     "This asset is part of scene data, not embedded in Mia chat UI. Registration alone does not enable Mia visual perception."
-  ],
-  "runtime_binding": {
-    "role": "mia_primary_runtime_scene",
-    "world_id": "50b06c01-060d-49fa-8988-8f38c13406d7",
-    "world_name": "ZHI-001 Aurora",
-    "activation_state": "active_headless_runtime",
-    "runtime_provider": "Supabase Edge Function zhi-forest-runtime",
-    "runtime_instance_id": "forest-corner-headless-v1",
-    "coordinate_transform": "unverified; do not convert scene-local coordinates to Aurora coordinates",
-    "position_source": "server_authoritative_scene_transitions",
-    "navigation_activation": "active_headless_navigation_graph",
-    "notes": [
-      "Forest_Corner runs as an agent-native headless environment; no human-facing renderer is required.",
-      "Mia's Federation peer identity and active Aurora membership authorize runtime actions.",
-      "Positions are server-computed within forest-corner-local-v1 and persisted with ordered events.",
-      "No client-supplied coordinates are accepted.",
-      "The transform from Forest_Corner local coordinates to Aurora world coordinates remains uncalibrated.",
-      "Private Mia memory remains in zee-extension and is never included in Federation payloads."
-    ]
-  }
+  ]
 }

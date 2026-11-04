@@ -44,7 +44,9 @@
   },
   "integrity": {
     "algorithm": "SHA-256",
-    "git_blob_reference": "Git blob SHA-1 values recorded as provenance; SHA-256 is the integrity check."
+    "git_blob_reference": "Git blob SHA-1 values recorded as provenance; SHA-256 is the integrity check.",
+    "implementation_check": "SHA-256 implementation checked against the standard abc test vector.",
+    "test_vector_abc": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
   },
   "files": [
     {

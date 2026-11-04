@@ -11,6 +11,7 @@ on:
   push:
     branches:
       - "fix/mia-chat-retry-budget-2026-10-25"
+      - "work/mia-scene-frame-chat-bridge-v2"
     paths:
       - "supabase/functions/mia-chat/index.ts"
       - "tests/mia-chat-retry-contract.test.mjs"

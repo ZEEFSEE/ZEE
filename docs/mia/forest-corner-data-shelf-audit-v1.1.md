@@ -15,17 +15,9 @@ The shelf is a quiet memory display, not a second brain and not a transcript mir
 5. The selected private source tables have RLS enabled. The audit found no table policies for the inspected chat/memory sources and no anon/authenticated table grants for those sources; service-role grants exist. Any future server-side writer must remain behind the existing authenticated private chat path and must not expose service credentials to the browser.
 6. Existing life-event history contains AURORA-related historical event types. They are historical records only; they must not be re-imported as current world messages or surfaced as active AURORA presence.
 
-## Existing source inventory (counts observed during read-only audit)
+## Existing source inventory
 
-- `mia_messages`: 6,007
-- `mia_memories`: 3,395
-- `mia_emotion_events`: 1,525
-- `mia_life_events`: 2,556
-- `mia_relationship_context`: 68
-- `mia_personality_state`: 192
-- `mia_growth_runs`: 1,174
-
-Counts are a point-in-time audit snapshot, not a guarantee of current totals. No message bodies or memory content were copied into this document.
+The private read-only audit confirmed that the independent chat, memory, emotion, life-event, relationship, personality-state, and growth-run sources already exist. Exact row counts are intentionally omitted from this repository document so private activity metadata is not published.
 
 ## Card-generation rules
 

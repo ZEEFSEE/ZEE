@@ -4,7 +4,7 @@
  * Run: node docs/mia/forest-corner-card-dry-run.mjs
  */
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
+import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 
 const ALLOWED_CATEGORIES = new Set([
   "comfort_anchor", "shared_decision", "emotion_residue", "life_event",
@@ -92,6 +92,46 @@ function currentCards(ledger) {
   return ledger.filter(x => !superseded.has(x.card_id));
 }
 
+// Synthetic HMAC token contract tests. The key below is fake test material only.
+function encodePart(value) {
+  return Buffer.from(JSON.stringify(value)).toString("base64url");
+}
+function signSyntheticToken(payload, secret) {
+  const encoded = encodePart(payload);
+  const signature = createHmac("sha256", secret).update(encoded).digest("base64url");
+  return encoded + "." + signature;
+}
+function verifySyntheticToken(token, secret, nowSeconds) {
+  if (!secret || typeof token !== "string") return false;
+  const parts = token.split(".");
+  if (parts.length !== 2) return false;
+  const expected = createHmac("sha256", secret).update(parts[0]).digest();
+  let supplied;
+  try { supplied = Buffer.from(parts[1], "base64url"); } catch { return false; }
+  if (expected.length !== supplied.length || !timingSafeEqual(expected, supplied)) return false;
+  let payload;
+  try { payload = JSON.parse(Buffer.from(parts[0], "base64url").toString("utf8")); } catch { return false; }
+  return payload.aud === "mia-chat" &&
+    payload.sub === "mia-admin" &&
+    Number.isInteger(payload.iat) &&
+    Number.isInteger(payload.exp) &&
+    payload.iat <= nowSeconds &&
+    payload.exp > nowSeconds &&
+    payload.exp - payload.iat <= 4 * 60 * 60;
+}
+const syntheticSecret = "synthetic-only-not-a-real-service-role-secret";
+const syntheticNow = 1_800_000_000;
+const validPayload = { aud: "mia-chat", sub: "mia-admin", iat: syntheticNow - 60, exp: syntheticNow + 3600, jti: "synthetic-jti" };
+const validToken = signSyntheticToken(validPayload, syntheticSecret);
+assert.equal(verifySyntheticToken(validToken, syntheticSecret, syntheticNow), true, "valid synthetic auth token");
+assert.equal(verifySyntheticToken(validToken, "", syntheticNow), false, "missing secret fails closed");
+assert.equal(verifySyntheticToken(signSyntheticToken({ ...validPayload, aud: "other" }, syntheticSecret), syntheticSecret, syntheticNow), false, "wrong audience rejected");
+assert.equal(verifySyntheticToken(signSyntheticToken({ ...validPayload, sub: "mia-02" }, syntheticSecret), syntheticSecret, syntheticNow), false, "wrong subject rejected");
+assert.equal(verifySyntheticToken(signSyntheticToken({ ...validPayload, exp: syntheticNow - 1 }, syntheticSecret), syntheticSecret, syntheticNow), false, "expired token rejected");
+assert.equal(verifySyntheticToken(signSyntheticToken({ ...validPayload, iat: syntheticNow + 1 }, syntheticSecret), syntheticSecret, syntheticNow), false, "future issued token rejected");
+assert.equal(verifySyntheticToken(signSyntheticToken({ ...validPayload, exp: syntheticNow + 5 * 3600 }, syntheticSecret), syntheticSecret, syntheticNow), false, "excessive token lifetime rejected");
+assert.equal(verifySyntheticToken(validToken.slice(0, -1) + (validToken.endsWith("A") ? "B" : "A"), syntheticSecret, syntheticNow), false, "tampered signature rejected");
+
 const fixture = {
   category: "comfort_anchor",
   title: "Quiet corner remains available",
@@ -130,4 +170,5 @@ console.log("- schema boundary and identity/privacy scope checks: PASS");
 console.log("- source allowlist and external/AURORA exclusion: PASS");
 console.log("- idempotent duplicate suppression: PASS");
 console.log("- append-only revision and current-card projection: PASS");
+console.log("- synthetic HMAC token signature, audience, subject, expiry, iat, and missing-secret checks: PASS");
 console.log("- no network, Supabase, filesystem, or production writes");

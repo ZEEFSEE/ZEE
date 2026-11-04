@@ -187,6 +187,7 @@ Deno.serve(async (request: Request) => {
       const confidence = Number(body.confidence);
       if (!ALLOWED_CATEGORIES.has(category) || !title || !summary
         || !["explicit", "derived"].includes(evidenceKind)
+        || typeof body.confidence !== "number"
         || !Number.isFinite(confidence) || confidence < 0 || confidence > 1
         || !Array.isArray(body.source_refs) || body.source_refs.length < 1 || body.source_refs.length > MAX_SOURCE_REFS) {
         return json({ error: "invalid_card_proposal" }, 400);

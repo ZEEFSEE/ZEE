@@ -56,6 +56,12 @@ jobs:
         run: node docs/mia/forest-corner-sql-static-audit-v1.3.mjs
       - name: Run Forest Corner Edge Function static security audit (not a runtime test)
         run: node docs/mia/forest-corner-edge-function-static-audit-v1.3.mjs
+      - name: Set up Deno for Edge Function type checking
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check isolated Edge Function candidate
+        run: deno check --no-lock supabase/functions/mia-forest-card-vault/index.ts
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
       - name: Bootstrap Supabase-like roles in disposable PostgreSQL

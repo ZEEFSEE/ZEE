@@ -133,7 +133,7 @@ async function explore(){
  }catch(e){setStatus("探索暂停",e.message);auto=false;}
  finally{$("#auto-explore").disabled=false;updateState();}
 }
-function stopExplore(){auto=false;setStatus("已请求停止自主探索","当前路径停止后保留在安全可行走位置。");}
+function stopExplore(){auto=false;cancelWalk();setStatus("已停止自主探索","代理保留在当前已验证的可行走位置。");}
 function tick(dt){
  if(path.length&&pathIndex<path.length){
   const target=path[pathIndex],dx=target.x-position.x,dz=target.z-position.z,dist=Math.hypot(dx,dz),step=2.2*dt;

@@ -12,6 +12,8 @@ on:
       - "world-scenes/runtime/mia-forest-observation-client.*"
       - "world-scenes/runtime/mia-forest-observation-source.test.mjs"
       - "supabase/functions/mia-forest-observation/**"
+      - "supabase/functions/mia-chat/index.ts"
+      - "supabase/functions/mia-chat/scene-plan-contract.*"
       - "world-scenes/runtime/mia-scene-asset-loader.*"
       - "world-scenes/mia-assets/**"
       - "mia/forest-corner.json"
@@ -53,3 +55,5 @@ jobs:
           ! grep -Eq 'service_role|AGNES_API_KEY|mia-chat' mia-prototype-runtime.html
       - name: Run scene contract tests
         run: node --test world-scenes/runtime/mia-forest-corner-3d.test.mjs world-scenes/runtime/mia-forest-observation-frame.test.mjs world-scenes/runtime/mia-forest-observation-client.test.mjs world-scenes/runtime/mia-forest-observation-source.test.mjs world-scenes/runtime/mia-scene-asset-loader.test.mjs world-scenes/runtime/mia-public-world-runtime.test.mjs
+      - name: Run Mia scene-plan target tests
+        run: node --test supabase/functions/mia-chat/scene-plan-contract.test.mjs

@@ -18,6 +18,7 @@ for(let i=0;i<18;i++){const x=(i*173)%1000,y=(i*97)%700;svg.append(el("circle",{
 for(const f of g.features){const {x,y,width:w,height:h}=f.layout;let shape;
 if(f.shape==="ellipse"||f.shape==="island")shape=el("ellipse",{cx:x,cy:y,rx:w/2,ry:h/2,fill:p.highlight,opacity:.26,stroke:p.accent,"stroke-width":4});
 else if(f.shape==="path"||f.shape==="wave")shape=el("path",{d:f.shape==="wave"?`M ${x-w/2} ${y} Q ${x-w/4} ${y-h/2} ${x} ${y} T ${x+w/2} ${y}`:`M ${x-w/2} ${y} Q ${x} ${y-h} ${x+w/2} ${y}`,fill:"none",stroke:p.accent,"stroke-width":Math.max(12,h), "stroke-linecap":"round",opacity:.65});
+else if(f.shape==="crystal")shape=el("path",{d:`M ${x} ${y-h/2} L ${x+w/2} ${y-h/6} L ${x+w/3} ${y+h/2} L ${x-w/3} ${y+h/2} L ${x-w/2} ${y-h/6} Z`,fill:p.highlight,opacity:.48,stroke:p.accent,"stroke-width":5});
 else if(f.shape==="mountain")shape=el("path",{d:`M ${x-w/2} ${y+h/2} L ${x-w/4} ${y-h/2} L ${x} ${y+h/5} L ${x+w/4} ${y-h/3} L ${x+w/2} ${y+h/2} Z`,fill:p.mid,stroke:p.highlight,"stroke-width":5});
 else if(f.shape==="house")shape=el("path",{d:`M ${x-w/2} ${y-h/3} L ${x} ${y-h/2} L ${x+w/2} ${y-h/3} V ${y+h/2} H ${x-w/2} Z`,fill:p.mid,stroke:p.highlight,"stroke-width":6});
 else if(f.shape==="city"){shape=el("g");for(let i=0;i<4;i++)shape.append(el("rect",{x:x-w/2+i*52,y:y-h/2+(i%2)*24,width:42,height:h-(i%2)*24,rx:5,fill:p.mid,stroke:p.highlight,"stroke-width":3}));}

@@ -15,6 +15,7 @@ on:
       - docs/mia/forest-corner-private-card-vault-migration-proposal-v1.3.sql
       - docs/mia/forest-corner-private-card-sql-review-v1.3.md
       - docs/mia/forest-corner-sql-static-audit-v1.3.mjs
+      - docs/mia/forest-corner-postgres-smoke-test-v1.3.sql
       - docs/mia/forest-corner-private-card-service-design-v1.3.md
       - .github/workflows/forest-corner-card-dry-run.yml
   workflow_dispatch:

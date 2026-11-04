@@ -2,7 +2,7 @@
   "schema_version": "1.0.0",
   "scene_id": "living-city",
   "display_name": "生命之城（Living City）",
-  "status": "registered",
+  "status": "draft",
   "parent_scene_id": "mia-forest-corner",
   "access": {
     "scope": "mia_world_public",

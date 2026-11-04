@@ -39,3 +39,8 @@ Deno.test("cross-scene travel fails closed", () => {
   assert(result.action === "wait" && result.blocked, "unverified travel must be blocked");
   assert(result.state.scene_id === "mia-forest-corner", "scene must not change");
 });
+
+Deno.test("safe fallback does not force repeated interactions during a recent rest interval", () => {
+  const active = { ...state, session_status: "active", environment_state: { ...state.environment_state, last_interaction: { occurred_at: new Date().toISOString() } } };
+  assert(safeFallback(active).action === "wait", "recent interaction should allow waiting");
+});

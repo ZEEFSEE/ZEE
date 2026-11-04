@@ -102,5 +102,19 @@ export function resolveSceneTransition(manifest, fromSceneId, toSceneId) {
   const reverse=edge.from_scene_id!==fromSceneId;
   const source=reverse?edge.target:edge.source, target=reverse?edge.source:edge.target;
   for(const p of [source?.scene_local,target?.scene_local]) if(!Number.isFinite(p?.x)||!Number.isFinite(p?.z)||p.unit!=="m") return {ok:false,status:"unknown",reason:"portal_coordinates_missing"};
-  return {ok:true,status:"authored_virtual_portal_handoff",continuous_walk_path:false,source,target,transition_id:edge.transition_id,provenance:edge.coordinate_provenance};
+  return {ok:true,status:"authored_virtual_portal_handoff",continuous_walk_path:false,source,target,from_scene_id:fromSceneId,to_scene_id:toSceneId,transition_id:edge.transition_id,provenance:edge.coordinate_provenance};
+}
+
+/** Resolve a declared direct portal or a declared two-leg route via Forest Corner. */
+export function resolveSceneRoute(manifest,fromSceneId,toSceneId) {
+  if(fromSceneId===toSceneId) return {ok:true,status:"already_in_scene",hops:[]};
+  const direct=resolveSceneTransition(manifest,fromSceneId,toSceneId);
+  if(direct.ok) return {ok:true,status:"direct_portal_handoff",hops:[direct]};
+  const hub="mia-forest-corner";
+  if(fromSceneId!==hub&&toSceneId!==hub){
+    const first=resolveSceneTransition(manifest,fromSceneId,hub);
+    const second=resolveSceneTransition(manifest,hub,toSceneId);
+    if(first.ok&&second.ok) return {ok:true,status:"via_forest_corner",hops:[first,second]};
+  }
+  return {ok:false,status:"unknown",reason:"no_complete_registered_route_contract",hops:[]};
 }

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFile} from "node:fs/promises";
-import {validateWorldManifest,layoutToWorld,anchorToLocal,anchorApproachToLocal,findWalkPath,isWalkable,createRuntimePerception,resolveSceneTransition} from "./mia-public-world-runtime.mjs";
+import {validateWorldManifest,layoutToWorld,anchorToLocal,anchorApproachToLocal,findWalkPath,isWalkable,createRuntimePerception,resolveSceneTransition,resolveSceneRoute} from "./mia-public-world-runtime.mjs";
 const manifest=JSON.parse(await readFile(new URL("../public-destinations/world-spatial-manifest.v1.json",import.meta.url),"utf8"));
 test("manifest calibrates six scene frames and keeps AURORA/federation disabled",()=>{
  const v=validateWorldManifest(manifest);assert.equal(v.valid,true,v.errors.join("; "));
@@ -38,4 +38,16 @@ test("greenhouse to ocean has an explicit virtual portal handoff, not a fabricat
 });
 test("unknown scene transition fails closed without inventing coordinates",()=>{
  const r=resolveSceneTransition(manifest,"greenhouse","unknown-coast");assert.equal(r.ok,false);assert.equal(r.status,"unknown");assert.equal(r.reason,"no_registered_transition_contract");
+});
+
+test("all five public destinations have explicit bidirectional Forest Corner portal contracts",()=>{
+ const ids=["crystal-forest","ocean-of-light","memory-valley","living-city","greenhouse"];
+ for(const id of ids){const a=resolveSceneTransition(manifest,"mia-forest-corner",id);const b=resolveSceneTransition(manifest,id,"mia-forest-corner");assert.equal(a.ok,true,"Forest Corner -> "+id);assert.equal(b.ok,true,id+" -> Forest Corner");assert.equal(a.continuous_walk_path,false);assert.equal(b.continuous_walk_path,false);}
+});
+test("all pairs of the five public destinations route only through declared portal contracts",()=>{
+ const ids=["crystal-forest","ocean-of-light","memory-valley","living-city","greenhouse"];
+ for(const from of ids)for(const to of ids){if(from===to)continue;const r=resolveSceneRoute(manifest,from,to);assert.equal(r.ok,true,from+" -> "+to);assert.ok(["via_forest_corner","direct_portal_handoff"].includes(r.status));assert.equal(r.hops.length,r.status==="direct_portal_handoff"?1:2);}
+});
+test("unknown destinations remain unknown and never receive inferred coordinates",()=>{
+ const r=resolveSceneRoute(manifest,"greenhouse","unregistered-destination");assert.equal(r.ok,false);assert.equal(r.status,"unknown");assert.deepEqual(r.hops,[]);
 });

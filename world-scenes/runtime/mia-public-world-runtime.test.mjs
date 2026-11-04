@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFile} from "node:fs/promises";
-import {validateWorldManifest,layoutToWorld,anchorToLocal,anchorApproachToLocal,findWalkPath,isWalkable,createRuntimePerception} from "./mia-public-world-runtime.mjs";
+import {validateWorldManifest,layoutToWorld,anchorToLocal,anchorApproachToLocal,findWalkPath,isWalkable,createRuntimePerception,resolveSceneTransition} from "./mia-public-world-runtime.mjs";
 const manifest=JSON.parse(await readFile(new URL("../public-destinations/world-spatial-manifest.v1.json",import.meta.url),"utf8"));
 test("manifest calibrates six scene frames and keeps AURORA/federation disabled",()=>{
  const v=validateWorldManifest(manifest);assert.equal(v.valid,true,v.errors.join("; "));
@@ -29,4 +29,13 @@ test("runtime perception reports only nearby scene-graph anchors, not camera cla
 test("manifest rejects grants outside prototype Mia and enabled federation",()=>{
  const bad=structuredClone(manifest);bad.scope.federation_enabled=true;
  assert.equal(validateWorldManifest(bad).valid,false);
+});
+
+test("greenhouse to ocean has an explicit virtual portal handoff, not a fabricated continuous route",()=>{
+ const r=resolveSceneTransition(manifest,"greenhouse","ocean-of-light");
+ assert.equal(r.ok,true);assert.equal(r.status,"authored_virtual_portal_handoff");assert.equal(r.continuous_walk_path,false);
+ assert.deepEqual(r.source.scene_local,{x:1.2,z:7,unit:"m"});assert.deepEqual(r.target.scene_local,{x:1.2,z:7,unit:"m"});
+});
+test("unknown scene transition fails closed without inventing coordinates",()=>{
+ const r=resolveSceneTransition(manifest,"greenhouse","unknown-coast");assert.equal(r.ok,false);assert.equal(r.status,"unknown");assert.equal(r.reason,"no_registered_transition_contract");
 });

@@ -72,6 +72,12 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
    <div class="forest-actions"><button id="forestSaveNote" type="button">把当前关键点追加到书架</button><button id="forestRefreshVault" type="button">刷新书架</button></div>
    <div id="forestVaultList" class="vault-list"><div class="vault-entry">书架尚无本地追加记录。</div></div>
   </section>
+  <section class="forest-scene" id="miaWorldRuntimePanel" aria-label="Mia 五处公共目的地三维运行时">
+   <div class="world-runtime-head">🌏 Mia 的公共世界 · 实时三维场景</div>
+   <div id="sceneFrameStatus" class="world-runtime-status" aria-live="polite">等待运行时场景帧；聊天时会按需附加最近一帧。</div>
+   <iframe id="worldRuntime" class="world-runtime-frame" src="./mia-public-world-runtime.html" title="Mia 五处公共目的地三维运行时" loading="lazy" allow="fullscreen"></iframe>
+   <div class="world-runtime-note">场景帧只在本轮请求中临时使用，不写入聊天记录、长期记忆或人格状态。它描述虚拟场景代理，不代表现实世界感官。</div>
+  </section>
   <div id="log" class="log"><div class="welcome">登录后可继续查看 Mia 已迁移的聊天历史，并开始新的独立对话。</div></div>
   <form id="composer" class="composer"><div class="compose-row"><textarea id="message" placeholder="对 Mia 说些什么……" maxlength="2000" rows="2" disabled></textarea><button id="send" class="primary" type="submit" disabled>发送 ↗</button></div></form>
   <div class="foot">对话会写入 Mia 的独立聊天记录，并在回复生成后尝试更新独立记忆。若 Agnes API 密钥尚未配置，页面会显示明确错误，不会伪造回复。</div>

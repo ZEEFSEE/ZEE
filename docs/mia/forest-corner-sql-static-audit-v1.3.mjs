@@ -95,6 +95,8 @@ assert.match(lower, /jsonb_array_elements/);
 assert.match(lower, /source_table is null or source_table not in/);
 assert.match(lower, /source_digest is null/);
 assert.match(lower, /for update/);
+assert.match(lower, /pg_advisory_xact_lock\(20261104, 1\)/, "new proposals must be serialized for the daily cap");
+assert.match(lower, /if cards_today > 2 then/, "the atomic RPC must enforce the two-card UTC-day limit");
 assert.match(lower, /one_proposal_v13/);
 assert.match(lower, /one_review_v13/);
 assert.match(lower, /security definer/);
@@ -113,6 +115,6 @@ console.log("- lexical closure, balanced parentheses, one transaction boundary: 
 console.log("- function definitions and dollar-quote delimiters: PASS");
 console.log("- complete SHA-256 predicate and malformed-predicate regression: PASS");
 console.log("- fail-closed preflight, source allowlist, bounded references: PASS");
-console.log("- narrow RPC grants, RLS, append-only triggers: PASS");
+console.log("- narrow RPC grants, RLS, append-only triggers, serialized daily cap: PASS");
 console.log("- NON-EXECUTING CHECK ONLY: PostgreSQL syntax/behavior remains unverified");
 console.log("- status: NOT APPROVED FOR STAGING OR PRODUCTION EXECUTION");

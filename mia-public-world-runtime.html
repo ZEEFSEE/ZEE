@@ -39,7 +39,7 @@ small{color:var(--muted)}pre{white-space:pre-wrap;overflow:auto;max-height:240px
 <script type="module">
 import * as THREE from "three";
 import {OrbitControls} from "three/addons/controls/OrbitControls.js";
-import {validateWorldManifest,layoutToWorld,anchorToLocal,anchorApproachToLocal,findWalkPath,createRuntimePerception,isWalkable,resolveSceneTransition} from "./world-scenes/runtime/mia-public-world-runtime.mjs";
+import {validateWorldManifest,layoutToWorld,anchorToLocal,anchorApproachToLocal,findWalkPath,createRuntimePerception,isWalkable,resolveSceneTransition,resolveSceneRoute} from "./world-scenes/runtime/mia-public-world-runtime.mjs";
 const $=s=>document.querySelector(s), mount=$("#viewport");
 let manifest,activeScene,renderer,scene,camera,controls,avatar,avatarHeading=0,position={x:1.2,z:7},path=[],pathIndex=0,moveResolve=null,auto=false,autoTask=null,sceneObjects=[],lastPerception=0,latestSceneFrame=null,recentVisits=[];
 const MIA_CHAT_URL="https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/mia-chat";
@@ -92,7 +92,7 @@ function updateState(){
  $("#state-output").textContent=JSON.stringify({scene_id:activeScene.id,scene_name:activeScene.name,local_position:{...position,unit:"m"},world_position:world,walking:path.length>0,autonomous_exploration:auto,colliders:activeScene.obstacles.length,coordinate_status:"authored_virtual_world_frame"},null,2);
  const frame=createRuntimePerception({scene:activeScene,position,heading:avatarHeading});
  $("#perception-output").textContent=JSON.stringify(frame,null,2);
- latestSceneFrame={schema:"zhi.mia.browser-scene-frame.v1",subject:"prototype-mia",identity_id:"cb6d01b4-0e3f-46ee-8946-360aa91db1ea",captured_at:frame.generated_at,scene:{id:activeScene.id,name:activeScene.name,coordinate_frame:"zhi-mia-virtual-world-v1",position:{x:position.x,z:position.z,unit:"m",coordinate_space:"scene-local"},world_position:world,available_anchors:activeScene.anchors.map(a=>({id:a.id,name:a.name,approach:{x:a.approach.x,z:a.approach.z}}))},heading_rad:avatarHeading,visible_entities:frame.visible_entities,recent_visits:recentVisits.slice(-12),navigation_contracts:(manifest.scene_transitions||[]).filter(e=>e.from_scene_id===activeScene.id||e.to_scene_id===activeScene.id),runtime:{engine:"three.js",source:"scene-graph",walkable:isWalkable(activeScene,position.x,position.z),collider_count:activeScene.obstacles.length,physical_world:false,camera_sensor:false}};
+ latestSceneFrame={schema:"zhi.mia.browser-scene-frame.v1",subject:"prototype-mia",identity_id:"cb6d01b4-0e3f-46ee-8946-360aa91db1ea",captured_at:frame.generated_at,scene:{id:activeScene.id,name:activeScene.name,coordinate_frame:"zhi-mia-virtual-world-v1",position:{x:position.x,z:position.z,unit:"m",coordinate_space:"scene-local"},world_position:world,available_anchors:activeScene.anchors.map(a=>({id:a.id,name:a.name,approach:{x:a.approach.x,z:a.approach.z}}))},heading_rad:avatarHeading,visible_entities:frame.visible_entities,recent_visits:recentVisits.slice(-12),navigation_contracts:(manifest.scene_transitions||[]),runtime:{engine:"three.js",source:"scene-graph",walkable:isWalkable(activeScene,position.x,position.z),collider_count:activeScene.obstacles.length,physical_world:false,camera_sensor:false}};
  if(window.parent!==window)window.parent.postMessage(latestSceneFrame,location.origin);
 }
 function setStatus(title,detail){$("#runtime-status").textContent=title;$("#runtime-detail").textContent=detail;}
@@ -118,17 +118,22 @@ function walkTo(target){
 }
 async function goToScene(id){
  if(id===activeScene.id)return;
- const explicit=resolveSceneTransition(manifest,activeScene.id,id);
- if(explicit.ok){
-  await walkTo(explicit.source.scene_local);
-  switchScene(id);
-  position={...explicit.target.scene_local};avatar.position.set(position.x,.45,position.z);updateState();
-  setStatus("已通过明确入口契约进入："+manifest.scenes.find(s=>s.id===id).name,"入口："+explicit.target.name+"；坐标来源：作者定义的虚拟场景坐标，不代表现实测量。");
-  return;
+ const route=resolveSceneRoute(manifest,activeScene.id,id);
+ if(!route.ok){
+  setStatus("导航信息未知，暂不移动","没有从“"+activeScene.name+"”到目标场景的完整入口契约。请补充经过确认的入口/出口锚点及场景局部坐标。");
+  throw new Error("导航信息未知：缺少完整入口契约，未生成或推算坐标。");
  }
- if(activeScene.id!=="mia-forest-corner"){await walkTo(activeScene.portal);switchScene("mia-forest-corner");}
- await walkTo(activeScene.portal);
- switchScene(id);
+ for(const hop of route.hops){
+  await walkTo(hop.source.scene_local);
+  switchScene(hop.target===undefined?id:hop.transition_id?(
+   hop.target.name=== "森林角落公共出口" ? "mia-forest-corner" :
+   hop.target.name==="森林角落公共出口" ? "mia-forest-corner" : 
+   (hop.target.anchor_id==="forest-corner-world-gate"?"mia-forest-corner":id)
+  ):id);
+  position={...hop.target.scene_local};avatar.position.set(position.x,.45,position.z);updateState();
+ }
+ const target=manifest.scenes.find(s=>s.id===id);
+ setStatus("已通过已登记入口契约进入："+target.name,"导航："+route.status+"；入口坐标来自作者定义的虚拟场景坐标，不代表现实测量。");
 }
 async function requestMiaPlan(){
  const token=sessionStorage.getItem("mia_chat_token")||"";

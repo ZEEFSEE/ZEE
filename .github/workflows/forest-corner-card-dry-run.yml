@@ -25,6 +25,19 @@ permissions:
 jobs:
   synthetic-contract:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: forest_corner_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d forest_corner_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
     steps:
       - name: Checkout isolated branch
         uses: actions/checkout@v4
@@ -38,3 +51,15 @@ jobs:
         run: node docs/mia/forest-corner-sql-static-audit.mjs
       - name: Run V1.3 SQL proposal static guard (not a database test)
         run: node docs/mia/forest-corner-sql-static-audit-v1.3.mjs
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Execute proposal in disposable PostgreSQL service
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h 127.0.0.1 -U postgres -d forest_corner_test -v ON_ERROR_STOP=1 -f docs/mia/forest-corner-private-card-vault-migration-proposal-v1.3.sql
+      - name: Run synthetic PostgreSQL privilege and transaction smoke tests
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h 127.0.0.1 -U postgres -d forest_corner_test -v ON_ERROR_STOP=1 -f docs/mia/forest-corner-postgres-smoke-test-v1.3.sql

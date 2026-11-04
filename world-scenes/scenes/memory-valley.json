@@ -2,7 +2,7 @@
   "schema_version": "1.0.0",
   "scene_id": "memory-valley",
   "display_name": "记忆山谷（Memory Valley）",
-  "status": "registered",
+  "status": "draft",
   "parent_scene_id": "mia-forest-corner",
   "access": {
     "scope": "mia_world_public",

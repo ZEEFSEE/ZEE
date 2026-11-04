@@ -92,9 +92,17 @@ function updateState(){
  $("#perception-output").textContent=JSON.stringify(frame,null,2);
 }
 function setStatus(title,detail){$("#runtime-status").textContent=title;$("#runtime-detail").textContent=detail;}
+function disposeActiveScene(){
+ if(controls){controls.dispose();controls=null;}
+ if(scene){scene.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){const materials=Array.isArray(o.material)?o.material:[o.material];materials.forEach(m=>{if(m.map)m.map.dispose();m.dispose();});}});}
+ if(renderer){renderer.dispose();renderer=null;}
+}
+function cancelWalk(){
+ path=[];pathIndex=0;const done=moveResolve;moveResolve=null;done?.();
+}
 function switchScene(id){
  const s=manifest.scenes.find(x=>x.id===id);if(!s)throw Error("未知场景 "+id);
- if(renderer){controls?.dispose();renderer.dispose();}
+ cancelWalk();disposeActiveScene();
  sceneObjects=[];position={...s.spawn};path=[];pathIndex=0;
  buildScene(s);updateState();setStatus("已进入："+s.name,"场景地面、碰撞体、边界与实体锚点已加载。");
 }

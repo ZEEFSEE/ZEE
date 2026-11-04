@@ -224,7 +224,6 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
   button.setAttribute('aria-pressed',String(exclusiveMode));
   button.textContent=exclusiveMode?'聊天实时同步：已开启':'开启聊天实时同步';
   if(exclusivePoll){clearTimeout(exclusivePoll);exclusivePoll=null;}
-  if(!exclusiveMode)cancelExclusiveWake();
   if(exclusiveMode&&token){
    // Only sync newly created rows; never reload the full transcript during polling.
    exclusivePollDelay=30000;

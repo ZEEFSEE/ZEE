@@ -44,7 +44,10 @@ export async function validMiaToken(
 }
 
 export function canonical(value: unknown): string {
-  if (value === null || typeof value !== "object") return JSON.stringify(value);
+  if (value === null || typeof value !== "object") {
+    const encoded = JSON.stringify(value);
+    return encoded === undefined ? "null" : encoded;
+  }
   if (Array.isArray(value)) return "[" + value.map(canonical).join(",") + "]";
   const object = value as Record<string, unknown>;
   return "{" + Object.keys(object).sort().map((key) =>

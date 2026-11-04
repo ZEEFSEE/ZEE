@@ -28,7 +28,10 @@ export async function validMiaToken(
     const key = await crypto.subtle.importKey(
       "raw", encoder.encode(serviceKey), { name: "HMAC", hash: "SHA-256" }, false, ["verify"],
     );
-    if (!await crypto.subtle.verify("HMAC", key, decodeBase64Url(parts[1]), encoder.encode(parts[0]))) return false;
+    const decodedSignature = decodeBase64Url(parts[1]);
+    const signature = new Uint8Array(decodedSignature.length);
+    signature.set(decodedSignature);
+    if (!await crypto.subtle.verify("HMAC", key, signature.buffer, encoder.encode(parts[0]))) return false;
     const claims = JSON.parse(new TextDecoder().decode(decodeBase64Url(parts[0])));
     return claims?.aud === "mia-chat"
       && claims?.sub === "mia-admin"

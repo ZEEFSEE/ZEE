@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#e7eee4">
+<title>Mia · Forest Corner 3D Runtime</title>
+<style>
+:root{color-scheme:light;--ink:#26382b;--muted:#657466;--paper:#f4f6ef;--line:#d5dfd2}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{padding:18px clamp(16px,4vw,42px) 12px;display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}
+h1{font-size:clamp(20px,3vw,30px);margin:0;font-weight:650}p{margin:4px 0;color:var(--muted)}
+main{padding:0 clamp(12px,3vw,32px) 28px;max-width:1500px;margin:auto}
+.stage{position:relative;height:min(72vh,760px);min-height:420px;border:1px solid var(--line);border-radius:22px;overflow:hidden;background:#d8e8dc;box-shadow:0 16px 40px #334b3514}
+#viewport{width:100%;height:100%}#viewport canvas{display:block;width:100%;height:100%}
+.overlay{position:absolute;left:14px;top:14px;max-width:min(460px,calc(100% - 28px));padding:11px 14px;border-radius:14px;background:#f9fbf0e8;backdrop-filter:blur(8px);font-size:13px}
+.status{display:flex;gap:8px;align-items:center;font-weight:650}.dot{width:9px;height:9px;border-radius:50%;background:#6c946c;display:inline-block}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+button,a{border:1px solid var(--line);border-radius:999px;padding:9px 15px;background:#fff;color:var(--ink);text-decoration:none;font:inherit;cursor:pointer}
+button:hover,a:hover{background:#edf3e9}
+.notice{border:1px solid #e0d9bd;background:#f7f2df;border-radius:14px;padding:12px 15px;color:#62583c;font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:14px}
+.tile{padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:#fff}
+.tile strong{display:block}.tile small{color:var(--muted)}
+@media(max-width:640px){.stage{height:64vh;min-height:390px;border-radius:16px}.overlay{font-size:12px}header{padding-top:14px}}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}
+</script>
+</head>
+<body>
+<header>
+ <div><h1>Mia · 森林角落 3D 场景</h1><p>原型 Mia 专用 · 独立只读展示运行时</p></div>
+ <a href="./mia-forest-corner.html">返回森林角落页面</a>
+</header>
+<main>
+ <section class="stage"><div id="viewport" aria-label="Forest Corner 3D preview"></div>
+  <div class="overlay"><div class="status"><span class="dot"></span><span id="runtime-status">正在读取场景资产…</span></div>
+  <div>坐标映射：场景局部 X/Y → 展示 X/Z；不是 ZHI 世界坐标。</div></div>
+ </section>
+ <div class="controls"><button id="reset-view" type="button">重新载入场景</button><button id="fit-view" type="button">视角说明</button></div>
+ <div class="notice"><strong>运行边界：</strong>本页使用 Three.js 绘制森林角落的程序化 3D 展示物；石板几何来自仓库资产定义。当前没有真实物理碰撞、角色行走、跨场景传送或 Mia 实时视觉感知。Tiny Planet Friends 私有 GLB 暂不请求签名地址，因此这里只显示待加载标记。页面不会连接聊天、记忆、人格、情绪 API，也不写入数据库。</div>
+ <section class="grid" aria-label="scene status">
+  <div class="tile"><strong>森林角落</strong><small>局部布局 1000 × 700</small></div>
+  <div class="tile"><strong>石板小路</strong><small>5 个源定义多边形，尚未注册碰撞</small></div>
+  <div class="tile"><strong>五个公共目的地</strong><small>目录已登记，跨场景运行仍锁定</small></div>
+  <div class="tile"><strong>自主运行</strong><small>由 headless 语义任务独立运行；此页不下发移动指令</small></div>
+ </section>
+</main>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { buildForestCorner, validateForestSource } from "./world-scenes/runtime/mia-forest-corner-3d.mjs";
+const mount=document.querySelector("#viewport"), status=document.querySelector("#runtime-status");
+let runtime=null, controls=null;
+async function loadScene(){
+  if(runtime){runtime.dispose();runtime=null;}
+  if(controls){controls.dispose();controls=null;}
+  status.textContent="正在读取 Forest Corner 源文件…";
+  try{
+    const [sceneRes,geometryRes,pathRes]=await Promise.all([
+      fetch("./mia/forest-corner.json",{cache:"no-store"}),
+      fetch("./world-scenes/mia-assets/geometry.json",{cache:"no-store"}),
+      fetch("./world-scenes/mia-assets/stone-path-forest-to-lounge.json",{cache:"no-store"})
+    ]);
+    if(!sceneRes.ok||!geometryRes.ok||!pathRes.ok) throw new Error("场景源文件读取失败");
+    const [sceneData,geometryData,pathData]=await Promise.all([sceneRes.json(),geometryRes.json(),pathRes.json()]);
+    const result=validateForestSource(sceneData,geometryData,pathData);
+    if(!result.valid) throw new Error(result.errors.join("；"));
+    runtime=buildForestCorner(THREE,sceneData,pathData,mount);
+    controls=new OrbitControls(runtime.camera,runtime.renderer.domElement);
+    controls.target.set(500,0,-350); controls.enableDamping=true; controls.dampingFactor=.06;
+    const render=()=>{if(!runtime)return;controls.update();requestAnimationFrame(render);}; render();
+    status.textContent="3D 展示运行中 · 源数据校验通过（非物理世界）";
+  }catch(error){status.textContent="场景载入失败："+error.message;console.error(error);}
+}
+document.querySelector("#reset-view").addEventListener("click",loadScene);
+document.querySelector("#fit-view").addEventListener("click",()=>{status.textContent="拖动旋转、滚轮缩放；本页仅浏览场景，不驱动 Mia 移动。";});
+loadScene();
+</script>
+</body>
+</html>

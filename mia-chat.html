@@ -40,6 +40,9 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
 .vault-list{padding:0 10px 10px;max-height:150px;overflow:auto}.vault-entry{padding:7px 9px;border-top:1px solid #e5ece4;font-size:11px;white-space:pre-wrap;overflow-wrap:anywhere}
 
 
+
+.world-runtime-frame{display:block;width:calc(100% - 28px);height:440px;margin:12px 14px;border:1px solid #d9e8df;border-radius:16px;background:#e5eee4}.world-runtime-note{padding:0 16px 12px;color:#647568;font-size:11px}.world-runtime-head{padding:13px 16px 0;font-weight:850;color:#244c3a}.world-runtime-status{padding:4px 16px 0;color:#607469;font-size:11px}
+@media(max-width:600px){.world-runtime-frame{height:390px;width:calc(100% - 16px);margin:8px}.world-runtime-head{padding:10px 10px 0}}
 </style>
 </head>
 <body>
@@ -138,7 +141,7 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
   const pending=document.createElement('div');pending.className='bubble assistant';pending.textContent='Mia 正在思考…';$('log').append(pending);$('log').scrollTop=$('log').scrollHeight;
   status('正在安全保存消息并生成回复…');
   try{
-   let streamedReply='';const data=wantsExplore?await request('explore',{message}):await requestStream('send',{message,exclusive_mode:exclusiveMode,emotional_residual:getEmotionalResidual(),user_local_hour:new Date().getHours(),response_delay_ms:lastAssistantReplyAt?Math.max(0,Date.now()-lastAssistantReplyAt):0},text=>{streamedReply=text;pending.textContent=text||'Mia 正在思考…';$('log').scrollTop=$('log').scrollHeight;});
+   let streamedReply='';const data=wantsExplore?await request('explore',{message}):await requestStream('send',{message,exclusive_mode:exclusiveMode,emotional_residual:getEmotionalResidual(),user_local_hour:new Date().getHours(),response_delay_ms:lastAssistantReplyAt?Math.max(0,Date.now()-lastAssistantReplyAt):0,scene_frame:getFreshSceneFrame()},text=>{streamedReply=text;pending.textContent=text||'Mia 正在思考…';$('log').scrollTop=$('log').scrollHeight;});
    pending.remove();
    if(data.message?.id)knownMessageIds.add(data.message.id);if(data.assistant_message?.id)knownMessageIds.add(data.assistant_message.id);
    addBubble('assistant',data.reply,data.assistant_message?.created_at||new Date().toISOString());

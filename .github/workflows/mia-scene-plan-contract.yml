@@ -1,0 +1,27 @@
+name: Mia scene plan contract tests
+on:
+  pull_request:
+    paths:
+      - "supabase/functions/mia-chat/scene-plan-contract.mjs"
+      - "supabase/functions/mia-chat/scene-plan-contract.test.mjs"
+      - "supabase/functions/mia-chat/index.ts"
+      - ".github/workflows/mia-scene-plan-contract.yml"
+  push:
+    branches: [main]
+    paths:
+      - "supabase/functions/mia-chat/scene-plan-contract.mjs"
+      - "supabase/functions/mia-chat/scene-plan-contract.test.mjs"
+      - "supabase/functions/mia-chat/index.ts"
+      - ".github/workflows/mia-scene-plan-contract.yml"
+permissions:
+  contents: read
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run scene plan contract tests
+        run: node --test supabase/functions/mia-chat/scene-plan-contract.test.mjs

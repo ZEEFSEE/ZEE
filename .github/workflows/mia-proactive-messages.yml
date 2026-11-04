@@ -2,7 +2,7 @@ name: Mia Proactive Private Messages
 
 on:
   schedule:
-    - cron: "0 * * * *"
+    - cron: "7 * * * *"
       timezone: "Asia/Singapore"
   workflow_dispatch:
     inputs:

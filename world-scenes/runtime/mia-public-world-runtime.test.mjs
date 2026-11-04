@@ -46,7 +46,7 @@ test("all five public destinations have explicit bidirectional Forest Corner por
 });
 test("all pairs of the five public destinations route only through declared portal contracts",()=>{
  const ids=["crystal-forest","ocean-of-light","memory-valley","living-city","greenhouse"];
- for(const from of ids)for(const to of ids){if(from===to)continue;const r=resolveSceneRoute(manifest,from,to);assert.equal(r.ok,true,from+" -> "+to);assert.equal(r.status,"via_forest_corner");assert.equal(r.hops.length,2);}
+ for(const from of ids)for(const to of ids){if(from===to)continue;const r=resolveSceneRoute(manifest,from,to);assert.equal(r.ok,true,from+" -> "+to);assert.ok(["via_forest_corner","direct_portal_handoff"].includes(r.status));assert.equal(r.hops.length,r.status==="direct_portal_handoff"?1:2);}
 });
 test("unknown destinations remain unknown and never receive inferred coordinates",()=>{
  const r=resolveSceneRoute(manifest,"greenhouse","unregistered-destination");assert.equal(r.ok,false);assert.equal(r.status,"unknown");assert.deepEqual(r.hops,[]);

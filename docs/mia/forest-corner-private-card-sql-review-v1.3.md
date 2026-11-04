@@ -1,8 +1,12 @@
 # Forest Corner private card vault — V1.3 SQL review
 
-**Status: candidate revised; NOT APPROVED FOR EXECUTION**  
+**Status: static candidate repaired; NOT APPROVED FOR EXECUTION**  
 **Branch:** `work/forest-corner-card-dry-run-v1`  
 **Scope:** static review only. No PostgreSQL instance was contacted and no SQL was executed.
+
+## V1.3.1 static repair note
+
+A source inspection found that the V1.3 SQL text had a truncated SHA-256 predicate and a duplicated SQL tail after the decommission notes. Both were repaired in the isolated branch. The V1.3 static guard was strengthened to check lexical closure, balanced parentheses, one transaction boundary, expected function definitions and dollar-quote delimiters, and the complete digest predicate. This is still a structural text guard, not a PostgreSQL parser or execution test. The repaired files require a fresh CI run before this static gate can be considered passed.
 
 ## What changed from V1.2
 

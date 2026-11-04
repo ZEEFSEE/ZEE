@@ -4,6 +4,9 @@ on:
   pull_request:
     paths:
       - "mia-prototype-runtime.html"
+      - "mia-public-world-runtime.html"
+      - "world-scenes/public-destinations/**"
+      - "world-scenes/runtime/mia-public-world-runtime.*"
       - "world-scenes/runtime/mia-forest-corner-3d.*"
       - "world-scenes/runtime/mia-forest-observation-frame.*"
       - "world-scenes/runtime/mia-forest-observation-client.*"
@@ -44,7 +47,9 @@ jobs:
           grep -q 'mia-forest-observation-frame.mjs' mia-prototype-runtime.html
           grep -q 'mia-forest-observation-client.mjs' mia-prototype-runtime.html
           grep -q 'mia-scene-asset-loader.mjs' mia-prototype-runtime.html
+          grep -q 'mia-public-world-runtime.mjs' mia-public-world-runtime.html
+          grep -q 'world-spatial-manifest.v1.json' mia-public-world-runtime.html
           grep -q 'three@0.170.0' mia-prototype-runtime.html
           ! grep -Eq 'service_role|AGNES_API_KEY|mia-chat' mia-prototype-runtime.html
       - name: Run scene contract tests
-        run: node --test world-scenes/runtime/mia-forest-corner-3d.test.mjs world-scenes/runtime/mia-forest-observation-frame.test.mjs world-scenes/runtime/mia-forest-observation-client.test.mjs world-scenes/runtime/mia-forest-observation-source.test.mjs world-scenes/runtime/mia-scene-asset-loader.test.mjs
+        run: node --test world-scenes/runtime/mia-forest-corner-3d.test.mjs world-scenes/runtime/mia-forest-observation-frame.test.mjs world-scenes/runtime/mia-forest-observation-client.test.mjs world-scenes/runtime/mia-forest-observation-source.test.mjs world-scenes/runtime/mia-scene-asset-loader.test.mjs world-scenes/runtime/mia-public-world-runtime.test.mjs

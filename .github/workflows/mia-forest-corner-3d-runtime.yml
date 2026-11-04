@@ -5,6 +5,7 @@ on:
     paths:
       - "mia-prototype-runtime.html"
       - "world-scenes/runtime/mia-forest-corner-3d.*"
+      - "world-scenes/runtime/mia-forest-observation-frame.*"
       - "world-scenes/mia-assets/**"
       - "mia/forest-corner.json"
       - ".github/workflows/mia-forest-corner-3d-runtime.yml"
@@ -13,6 +14,7 @@ on:
     paths:
       - "mia-prototype-runtime.html"
       - "world-scenes/runtime/mia-forest-corner-3d.*"
+      - "world-scenes/runtime/mia-forest-observation-frame.*"
       - "world-scenes/mia-assets/**"
       - "mia/forest-corner.json"
       - ".github/workflows/mia-forest-corner-3d-runtime.yml"
@@ -31,7 +33,8 @@ jobs:
       - name: Validate HTML module references
         run: |
           grep -q 'mia-forest-corner-3d.mjs' mia-prototype-runtime.html
+          grep -q 'mia-forest-observation-frame.mjs' mia-prototype-runtime.html
           grep -q 'three@0.170.0' mia-prototype-runtime.html
           ! grep -Eq 'service_role|AGNES_API_KEY|mia-chat' mia-prototype-runtime.html
       - name: Run scene contract tests
-        run: node --test world-scenes/runtime/mia-forest-corner-3d.test.mjs
+        run: node --test world-scenes/runtime/mia-forest-corner-3d.test.mjs world-scenes/runtime/mia-forest-observation-frame.test.mjs

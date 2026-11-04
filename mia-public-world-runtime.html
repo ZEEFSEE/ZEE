@@ -39,7 +39,7 @@ small{color:var(--muted)}pre{white-space:pre-wrap;overflow:auto;max-height:240px
 <script type="module">
 import * as THREE from "three";
 import {OrbitControls} from "three/addons/controls/OrbitControls.js";
-import {validateWorldManifest,layoutToWorld,anchorToLocal,findWalkPath,createRuntimePerception,isWalkable} from "./world-scenes/runtime/mia-public-world-runtime.mjs";
+import {validateWorldManifest,layoutToWorld,anchorToLocal,anchorApproachToLocal,findWalkPath,createRuntimePerception,isWalkable} from "./world-scenes/runtime/mia-public-world-runtime.mjs";
 const $=s=>document.querySelector(s), mount=$("#viewport");
 let manifest,activeScene,renderer,scene,camera,controls,avatar,avatarHeading=0,position={x:1.2,z:7},path=[],pathIndex=0,moveResolve=null,auto=false,autoTask=null,sceneObjects=[],lastPerception=0;
 const sceneColors={"mia-forest-corner":0x78966d,"crystal-forest":0x607c78,"ocean-of-light":0x6a9da8,"memory-valley":0x83927d,"living-city":0x7c9b79,"greenhouse":0x92aa7a};

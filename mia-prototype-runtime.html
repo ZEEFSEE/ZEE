@@ -93,17 +93,24 @@ async function loadPrivateGlb(){
   const token=sessionStorage.getItem("mia_chat_token")||"";
   const grant=await resolveTinyPlanetFriendsUrl({token});
   const loader=new GLTFLoader();
+  const activeRuntime=runtime;
   loader.load(grant.url,(gltf)=>{
+   if(runtime!==activeRuntime){
+    gltf.scene.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(mat=>{if(mat.map)mat.map.dispose();mat.dispose();});}});
+    panel.textContent="场景已重新载入，旧加载结果已丢弃。";
+    button.disabled=false;
+    return;
+   }
    const model=gltf.scene;
    // Source anchor is Forest Corner local (650,240); native GLB scale is preserved.
    model.position.set(650,0.38,-240);
    model.scale.set(1,1,1);
    model.name="tiny-planet-friends-glb";
-   runtime.scene.add(model);
-   const marker=runtime.scene.getObjectByName("tiny-planet-friends-placeholder");
-   if(marker){runtime.scene.remove(marker);marker.geometry?.dispose();marker.material?.dispose();}
-   const label=runtime.scene.getObjectByName("tiny-planet-friends-label");
-   if(label){runtime.scene.remove(label);label.material?.map?.dispose();label.material?.dispose();}
+   activeRuntime.scene.add(model);
+   const marker=activeRuntime.scene.getObjectByName("tiny-planet-friends-placeholder");
+   if(marker){activeRuntime.scene.remove(marker);marker.geometry?.dispose();marker.material?.dispose();}
+   const label=activeRuntime.scene.getObjectByName("tiny-planet-friends-label");
+   if(label){activeRuntime.scene.remove(label);label.material?.map?.dispose();label.material?.dispose();}
    panel.textContent="GLB 已从私有存储加载到本地 3D 预览；原始比例保留。此操作只读取资产，不代表 Mia 已获得视觉感知。短期签名地址仅保留在内存中。";
    button.disabled=false;
   },(progress)=>{

@@ -65,6 +65,8 @@ SELECT public.mia_forest_corner_insert_card_v13(
   'synthetic-proposal-event-0001'
 ) AS card_id \gset
 
+SELECT set_config('forest_test.card_id', :'card_id', false);
+
 -- Duplicate call must resolve to the same existing card, without a second proposal.
 SELECT public.mia_forest_corner_insert_card_v13(
   '{
@@ -86,13 +88,12 @@ SELECT public.mia_forest_corner_insert_card_v13(
   'synthetic-proposal-event-0001'
 ) AS duplicate_card_id \gset
 
+SELECT CASE WHEN :'card_id'::uuid = :'duplicate_card_id'::uuid THEN 1 ELSE 1/0 END;
+
 DO $idempotency$
 BEGIN
-  IF :'card_id'::uuid <> :'duplicate_card_id'::uuid THEN
-    RAISE EXCEPTION 'Idempotent insert returned a different card ID';
-  END IF;
   IF (SELECT count(*) FROM public.mia_forest_corner_card_events
-      WHERE card_id = :'card_id'::uuid AND event_type = 'proposed') <> 1 THEN
+      WHERE card_id = current_setting('forest_test.card_id')::uuid AND event_type = 'proposed') <> 1 THEN
     RAISE EXCEPTION 'Duplicate insert created more than one proposal event';
   END IF;
 END;
@@ -100,13 +101,13 @@ $idempotency$;
 
 -- One explicit review is allowed; a second terminal review must be rejected.
 INSERT INTO public.mia_forest_corner_card_events(card_id,event_type,actor_scope,idempotency_key)
-VALUES (:'card_id'::uuid,'accepted','private_pair_user','synthetic-review-event-0001');
+VALUES (current_setting('forest_test.card_id')::uuid,'accepted','private_pair_user','synthetic-review-event-0001');
 
 DO $duplicate_review$
 BEGIN
   BEGIN
     INSERT INTO public.mia_forest_corner_card_events(card_id,event_type,actor_scope,idempotency_key)
-    VALUES (:'card_id'::uuid,'rejected','private_pair_user','synthetic-review-event-0002');
+    VALUES (current_setting('forest_test.card_id')::uuid,'rejected','private_pair_user','synthetic-review-event-0002');
     RAISE EXCEPTION 'Duplicate terminal review was unexpectedly accepted';
   EXCEPTION WHEN raise_exception THEN
     IF SQLERRM = 'Duplicate terminal review was unexpectedly accepted' THEN RAISE; END IF;

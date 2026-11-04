@@ -1,9 +1,9 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { ALLOWED_CATEGORIES, IDENTITY_ID, SOURCE_TABLES, canonical, isHistoricalSource, sha256, sourceTimestamp, validMiaToken, validProposalFields } from "./vault-core.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const IDENTITY_ID = "cb6d01b4-0e3f-46ee-8946-360aa91db1ea";
 const MAX_BODY_BYTES = 16 * 1024;
 const MAX_SOURCE_REFS = 12;
 const MAX_CARD_BYTES = 12 * 1024;
@@ -27,61 +27,8 @@ const json = (data: unknown, status = 200) => new Response(JSON.stringify(data),
 });
 const encoder = new TextEncoder();
 
-function decodeBase64Url(value: string): Uint8Array {
-  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
-  const raw = atob(normalized + "=".repeat((4 - normalized.length % 4) % 4));
-  return Uint8Array.from(raw, (char) => char.charCodeAt(0));
-}
-async function validMiaToken(token: string): Promise<boolean> {
-  try {
-    if (!SERVICE_KEY || token.length > 4096) return false;
-    const parts = token.split(".");
-    if (parts.length !== 2) return false;
-    const key = await crypto.subtle.importKey(
-      "raw", encoder.encode(SERVICE_KEY), { name: "HMAC", hash: "SHA-256" }, false, ["verify"],
-    );
-    if (!await crypto.subtle.verify("HMAC", key, decodeBase64Url(parts[1]), encoder.encode(parts[0]))) return false;
-    const claims = JSON.parse(new TextDecoder().decode(decodeBase64Url(parts[0])));
-    const now = Math.floor(Date.now() / 1000);
-    return claims?.aud === "mia-chat"
-      && claims?.sub === "mia-admin"
-      && Number.isFinite(claims.exp)
-      && Number.isFinite(claims.iat)
-      && claims.exp > now
-      && claims.iat <= now + 60
-      && claims.iat >= now - 4 * 60 * 60 - 60
-      && claims.exp - claims.iat <= 4 * 60 * 60 + 60;
-  } catch {
-    return false;
-  }
-}
-function canonical(value: unknown): string {
-  if (value === null || typeof value !== "object") return JSON.stringify(value);
-  if (Array.isArray(value)) return "[" + value.map(canonical).join(",") + "]";
-  const object = value as Record<string, unknown>;
-  return "{" + Object.keys(object).sort().map((key) =>
-    JSON.stringify(key) + ":" + canonical(object[key])
-  ).join(",") + "}";
-}
-async function sha256(value: string): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", encoder.encode(value));
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
-}
 function safeText(value: unknown, max: number): string {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
-}
-function hasAuroraMarker(row: Record<string, unknown>): boolean {
-  const text = canonical(row).toLowerCase();
-  return /aurora|federat|public[-_ ]chat|world[-_ ]runtime/.test(text);
-}
-function sourceTimestamp(table: string, row: Record<string, unknown>): string {
-  const candidate = table === "mia_relationship_context"
-    ? row.observed_at
-    : row.occurred_at ?? row.created_at;
-  if (typeof candidate !== "string" || !Number.isFinite(Date.parse(candidate))) {
-    throw new Error("source_timestamp_unavailable");
-  }
-  return new Date(candidate).toISOString();
 }
 async function loadVerifiedSource(db: ReturnType<typeof createClient>, table: string, id: string, sessionId: string) {
   if (!SOURCE_TABLES.has(table) || !/^[0-9a-f-]{36}$/i.test(id)) throw new Error("source_ref_invalid");
@@ -109,7 +56,7 @@ async function loadVerifiedSource(db: ReturnType<typeof createClient>, table: st
   if (error || !data) throw new Error("source_not_found_or_out_of_scope");
   if (table === "mia_messages" && data.session_id !== sessionId) throw new Error("message_session_mismatch");
   if (data.identity_id && data.identity_id !== IDENTITY_ID) throw new Error("source_identity_mismatch");
-  if (hasAuroraMarker(data)) throw new Error("historical_or_federated_source_excluded");
+  if (isHistoricalSource(data)) throw new Error("historical_or_federated_source_excluded");
   const timestamp = sourceTimestamp(table, data);
   const digest = await sha256(canonical(data));
   return {
@@ -160,7 +107,7 @@ Deno.serve(async (request: Request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (request.method !== "POST") return json({ error: "POST required" }, 405);
   const authorization = request.headers.get("Authorization") ?? "";
-  if (!authorization.startsWith("Bearer ") || !await validMiaToken(authorization.slice(7))) {
+  if (!authorization.startsWith("Bearer ") || !await validMiaToken(authorization.slice(7), SERVICE_KEY)) {
     return json({ error: "unauthorized" }, 401);
   }
   if (!SUPABASE_URL || !SERVICE_KEY) return json({ error: "server_not_configured" }, 503);
@@ -179,19 +126,13 @@ Deno.serve(async (request: Request) => {
       return json({ ok: true, cards });
     }
     if (action === "propose") {
+      if (!validProposalFields(body)) return json({ error: "invalid_card_proposal" }, 400);
       const category = safeText(body.category, 40);
       const title = safeText(body.title, 120);
       const summary = safeText(body.summary, 1200);
       const emotionalTone = safeText(body.emotional_tone, 80) || null;
       const evidenceKind = body.evidence_kind;
-      const confidence = Number(body.confidence);
-      if (!ALLOWED_CATEGORIES.has(category) || !title || !summary
-        || !["explicit", "derived"].includes(evidenceKind)
-        || typeof body.confidence !== "number"
-        || !Number.isFinite(confidence) || confidence < 0 || confidence > 1
-        || !Array.isArray(body.source_refs) || body.source_refs.length < 1 || body.source_refs.length > MAX_SOURCE_REFS) {
-        return json({ error: "invalid_card_proposal" }, 400);
-      }
+      const confidence = body.confidence as number;
       const sessionId = await getPrivateSession(db);
       const uniqueRefs = new Set<string>();
       const verified = [];

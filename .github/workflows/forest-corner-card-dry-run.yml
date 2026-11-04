@@ -1,0 +1,28 @@
+name: Forest Corner card dry-run
+
+on:
+  push:
+    branches:
+      - work/forest-corner-card-dry-run-v1
+    paths:
+      - docs/mia/forest-corner-card-dry-run.mjs
+      - docs/mia/forest-corner-card-dry-run.md
+      - docs/mia/forest-corner-private-channel-auth-audit-v1.1.md
+      - .github/workflows/forest-corner-card-dry-run.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout isolated branch
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run synthetic-only contract tests
+        run: node docs/mia/forest-corner-card-dry-run.mjs

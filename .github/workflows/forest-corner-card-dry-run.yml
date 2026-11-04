@@ -16,6 +16,8 @@ on:
       - docs/mia/forest-corner-private-card-sql-review-v1.3.md
       - docs/mia/forest-corner-sql-static-audit-v1.3.mjs
       - docs/mia/forest-corner-postgres-smoke-test-v1.3.sql
+      - supabase/functions/mia-forest-card-vault/**
+      - docs/mia/forest-corner-edge-function-static-audit-v1.3.mjs
       - docs/mia/forest-corner-private-card-service-design-v1.3.md
       - .github/workflows/forest-corner-card-dry-run.yml
   workflow_dispatch:
@@ -52,6 +54,8 @@ jobs:
         run: node docs/mia/forest-corner-sql-static-audit.mjs
       - name: Run V1.3 SQL proposal static guard (not a database test)
         run: node docs/mia/forest-corner-sql-static-audit-v1.3.mjs
+      - name: Run Forest Corner Edge Function static security audit (not a runtime test)
+        run: node docs/mia/forest-corner-edge-function-static-audit-v1.3.mjs
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
       - name: Bootstrap Supabase-like roles in disposable PostgreSQL

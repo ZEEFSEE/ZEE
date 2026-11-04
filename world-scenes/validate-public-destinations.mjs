@@ -10,5 +10,8 @@ const ids=new Set(nav.nodes.map(n=>n.node_id));if(!ids.has(nav.root_node_id))err
 for(const e of nav.edges){if(!ids.has(e.from)||!ids.has(e.to)){errors.push("missing endpoint: "+e.edge_id);continue;}adj.get(e.from).push(e.to);if(e.direction==="bidirectional")adj.get(e.to).push(e.from);}
 const reached=new Set([nav.root_node_id]),q=[nav.root_node_id];while(q.length){for(const n of adj.get(q.shift())??[])if(!reached.has(n)){reached.add(n);q.push(n);}}
 for(const id of expected)if(!reached.has("portal-"+id))errors.push("unreachable: "+id);
-if(nav.edges.length!==expected.length)errors.push("route count mismatch");if(nav.route_policy?.runtime_movement!=="not_integrated")errors.push("runtime flag must fail closed");
-console.log("Destinations:",expected.length,"Routes:",nav.edges.length,"Reachable:",expected.filter(id=>reached.has("portal-"+id)).length+"/5");console.log("Runtime movement: NOT TESTED");for(const e of errors)console.error("ERROR:",e);console.log(errors.length?"FAIL":"PASS (static graph only)");if(errors.length)process.exitCode=1;
+if(nav.edges.length!==15)errors.push("complete free-travel graph must contain 15 bidirectional links");
+if(nav.access_policy?.approval_required!==false||nav.access_policy?.token_required!==false||nav.access_policy?.visit_limit!==null||nav.access_policy?.stay_duration_limit!==null||nav.access_policy?.manual_confirmation_required!==false)errors.push("free-access policy mismatch");
+if(nav.route_policy?.runtime_movement!=="not_integrated")errors.push("runtime flag must fail closed");
+for(const edge of nav.edges){if(edge.direction!=="bidirectional"||edge.mode!=="unrestricted_world_travel")errors.push("route is not unrestricted bidirectional: "+edge.edge_id);}
+console.log("Destinations:",expected.length,"Bidirectional links:",nav.edges.length,"Reachable:",expected.filter(id=>reached.has("portal-"+id)).length+"/5");console.log("Runtime movement: NOT TESTED");for(const e of errors)console.error("ERROR:",e);console.log(errors.length?"FAIL":"PASS (static graph only)");if(errors.length)process.exitCode=1;

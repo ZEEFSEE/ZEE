@@ -87,6 +87,12 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
    <div class="forest-actions"><button id="forestSaveNote" type="button">把当前关键点追加到书架</button><button id="forestRefreshVault" type="button">刷新书架</button></div>
    <div id="forestVaultList" class="vault-list"><div class="vault-entry">书架尚无本地追加记录。</div></div>
   </section>
+  <section class="forest-scene" id="miaWorldRuntimePanel" aria-label="Mia 五处公共目的地三维运行时">
+   <div class="world-runtime-head">🌏 Mia 的公共世界 · 实时三维场景</div>
+   <div id="sceneFrameStatus" class="world-runtime-status" aria-live="polite">等待运行时场景帧；聊天时会按需附加最近一帧。</div>
+   <iframe id="worldRuntime" class="world-runtime-frame" src="./mia-public-world-runtime.html" title="Mia 五处公共目的地三维运行时" loading="lazy" allow="fullscreen"></iframe>
+   <div class="world-runtime-note">场景帧只在本轮请求中临时使用，不写入聊天记录、长期记忆或人格状态。它描述虚拟场景代理，不代表现实世界感官。</div>
+  </section>
   <section id="miaInbox" class="inbox" aria-label="Mia 私人消息收件箱"><div class="inbox-head"><div class="inbox-title">✉ Mia 主动发来的消息</div><span id="inboxUnreadCount" class="unread-badge hidden">0</span></div><div id="inboxList" class="inbox-list"><div class="inbox-empty">登录后读取 Mia 的私人消息。</div></div></section>
   <div id="log" class="log"><div class="welcome">登录后可继续查看 Mia 已迁移的聊天历史，并开始新的独立对话。</div></div>
   <form id="composer" class="composer"><div class="compose-row"><textarea id="message" placeholder="对 Mia 说些什么……" maxlength="2000" rows="2" disabled></textarea><button id="send" class="primary" type="submit" disabled>发送 ↗</button></div></form>
@@ -107,6 +113,9 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
  let knownMessageIds=new Set();let lastKnownSequenceNo=0;let exclusiveSyncBusy=false;let lastAssistantReplyAt=0;
  let exclusivePoll=null;
  let inboxRefreshTimer=null;
+ let lastSceneFrame=null;
+ function getFreshSceneFrame(){if(!lastSceneFrame)return null;const age=Date.now()-Date.parse(lastSceneFrame.captured_at||"");return Number.isFinite(age)&&age>=-5000&&age<=10000?lastSceneFrame:null;}
+ window.addEventListener("message",event=>{const frame=event.data;if(event.origin!==location.origin||event.source!==$("worldRuntime")?.contentWindow||frame?.schema!=="zhi.mia.browser-scene-frame.v1"||frame?.subject!=="prototype-mia"||frame?.identity_id!=="cb6d01b4-0e3f-46ee-8946-360aa91db1ea")return;lastSceneFrame=frame;const scene=frame.scene||{};$("sceneFrameStatus").textContent="已接收运行时场景帧 · "+String(scene.name||scene.id||"未知场景")+" · 本地位置 "+Number(scene.position?.x||0).toFixed(1)+", "+Number(scene.position?.z||0).toFixed(1)+"m · 附近实体 "+(frame.visible_entities||[]).length+" 个";});
  let exclusivePollDelay=30000;
  const EMOTIONAL_RESIDUAL_KEY='mia_emotional_residual_v1';
  function getEmotionalResidual(){

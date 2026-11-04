@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#edf2e9"><title>Mia · 五处公共目的地空间运行时</title>
+<style>
+:root{color-scheme:light;--ink:#26382c;--muted:#667568;--line:#d5dfd3;--paper:#f4f7f1}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+header,main{max-width:1500px;margin:auto;padding:16px clamp(12px,3vw,32px)}header{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+h1{font-size:clamp(20px,3vw,29px);margin:0}p{color:var(--muted);margin:4px 0}
+.stage{height:min(68vh,700px);min-height:400px;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:#dce8dd}#viewport,#viewport canvas{width:100%;height:100%;display:block}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+button,a{border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);padding:9px 14px;font:inherit;text-decoration:none;cursor:pointer}
+button:disabled{opacity:.55;cursor:wait}.active{background:#e4efdf;border-color:#a9c4a7}
+.panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:12px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+small{color:var(--muted)}pre{white-space:pre-wrap;overflow:auto;max-height:240px;font-size:12px}
+.badge{display:inline-block;border-radius:20px;background:#edf2e9;padding:3px 9px;font-size:12px;margin:2px}
+.warning{background:#f7f1df;border-color:#e7dbb7}
+@media(max-width:640px){.stage{height:58vh;min-height:360px}}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+</head>
+<body>
+<header><div><h1>Mia · 五处公共目的地</h1><p>原型 Mia 专用的隔离虚拟空间运行时</p></div><a href="./mia-prototype-runtime.html">森林角落旧版预览</a></header>
+<main>
+ <section class="stage"><div id="viewport" aria-label="Mia public world 3D runtime"></div></section>
+ <div class="controls" id="destinations"></div>
+ <div class="controls">
+  <button id="return-forest">返回森林角落</button><button id="auto-explore">开始自主探索</button><button id="stop-explore">停止探索</button><button id="reset-position">重置当前位置</button>
+ </div>
+ <section class="panel"><strong id="runtime-status">正在加载六个场景的空间契约…</strong><p id="runtime-detail">校验坐标、地面、碰撞体和可行走路径。</p><div id="runtime-tags"></div></section>
+ <section class="grid">
+  <div class="panel"><strong>当前空间状态</strong><pre id="state-output">等待场景初始化…</pre></div>
+  <div class="panel"><strong>运行时感知帧</strong><small>来自当前 3D 场景实体锚点和代理位置；不是摄像头或现实世界传感器。</small><pre id="perception-output">等待运行时…</pre></div>
+ </section>
+ <section class="panel warning"><strong>能力边界与隔离说明</strong><p>本页面实现的是浏览器内、可实际行走和碰撞验证的原型场景代理。它不连接 Mia 聊天 API，不写入 Mia 记忆/人格/情绪或生产数据库；因此不能把这里的自主探索等同于后台 Mia 已经独立做出决定，也不会把本地感知帧自动注入聊天。AURORA、federation 始终禁用，其他 agent 不获得访问权。坐标是统一的虚拟世界米制坐标，不是现实地理测量。</p></section>
+</main>
+<script type="module">
+import * as THREE from "three";
+import {OrbitControls} from "three/addons/controls/OrbitControls.js";
+import {validateWorldManifest,layoutToWorld,anchorToLocal,findWalkPath,createRuntimePerception,isWalkable} from "./world-scenes/runtime/mia-public-world-runtime.mjs";
+const $=s=>document.querySelector(s), mount=$("#viewport");
+let manifest,activeScene,renderer,scene,camera,controls,avatar,avatarHeading=0,position={x:1.2,z:7},path=[],pathIndex=0,moveResolve=null,auto=false,autoTask=null,sceneObjects=[],lastPerception=0;
+const sceneColors={"mia-forest-corner":0x78966d,"crystal-forest":0x607c78,"ocean-of-light":0x6a9da8,"memory-valley":0x83927d,"living-city":0x7c9b79,"greenhouse":0x92aa7a};
+const destinationIds=["crystal-forest","ocean-of-light","memory-valley","living-city","greenhouse"];
+const mats={};
+function mat(color,roughness=.8,transparent=false,opacity=1){const k=[color,roughness,transparent,opacity].join(":");return mats[k]??(mats[k]=new THREE.MeshStandardMaterial({color,roughness,transparent,opacity}));}
+function addMesh(geo,material,x,y,z,name){const m=new THREE.Mesh(geo,material);m.position.set(x,y,z);m.name=name||"scene-object";m.castShadow=true;m.receiveShadow=true;m.userData.semantic_id=name||"scene-object";scene.add(m);sceneObjects.push(m);return m;}
+function localBounds(s){return {w:s.layout.width*.02,d:s.layout.height*.02};}
+function drawObstacle(o){
+ if(o.shape==="circle"||o.shape==="ellipse"){
+  const rx=o.radius??o.rx,rz=o.radius??o.rz;
+  const m=addMesh(new THREE.CylinderGeometry(Math.max(rx,rz),Math.max(rx,rz),1.2,24),mat(0x6e7666),o.x,.6,o.z,o.id);
+  m.scale.set(rx/Math.max(rx,rz),1,rz/Math.max(rx,rz));
+ }else{
+  addMesh(new THREE.BoxGeometry(o.width,1.2,o.depth),mat(0x77816e),o.x,.6,o.z,o.id);
+ }
+}
+function buildScene(s){
+ scene=new THREE.Scene();scene.background=new THREE.Color(sceneColors[s.id]||0x82977e);scene.fog=new THREE.Fog(scene.background,28,70);
+ const b=localBounds(s);camera=new THREE.PerspectiveCamera(48,1,.1,200);camera.position.set(14,17,18);
+ renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.shadowMap.enabled=true;renderer.outputColorSpace=THREE.SRGBColorSpace;mount.replaceChildren(renderer.domElement);
+ scene.add(new THREE.HemisphereLight(0xf4fff2,0x4c5948,2));
+ const sun=new THREE.DirectionalLight(0xfff0d2,2.2);sun.position.set(-10,22,12);sun.castShadow=true;scene.add(sun);
+ addMesh(new THREE.BoxGeometry(b.w,.25,b.d),mat(sceneColors[s.id]||0x78966d),b.w/2,-.13,b.d/2,"walkable-ground");
+ const grid=new THREE.GridHelper(Math.max(b.w,b.d),40,0xe0eadc,0x9db19a);grid.position.set(b.w/2,.015,b.d/2);scene.add(grid);
+ const wallMat=mat(0x586b57);
+ addMesh(new THREE.BoxGeometry(b.w,.8,.25),wallMat,b.w/2,.4,.12,"north-safety-boundary");
+ addMesh(new THREE.BoxGeometry(b.w,.8,.25),wallMat,b.w/2,.4,b.d-.12,"south-safety-boundary");
+ addMesh(new THREE.BoxGeometry(.25,.8,b.d),wallMat,.12,.4,b.d/2,"west-safety-boundary");
+ addMesh(new THREE.BoxGeometry(.25,.8,b.d),wallMat,b.w-.12,.4,b.d/2,"east-safety-boundary");
+ for(const o of s.obstacles)drawObstacle(o);
+ for(const a of s.anchors){
+  const p=anchorToLocal(s,a,manifest.coordinate_contract);
+  const g=new THREE.Group();g.position.set(p.x,0,p.z);g.name=a.id;g.userData.semantic_id=a.id;g.userData.semantic_name=a.name;
+  const stem=new THREE.Mesh(new THREE.CylinderGeometry(.08,.12,.65,8),mat(0xd4d4a1));stem.position.y=.33;g.add(stem);
+  const orb=new THREE.Mesh(new THREE.SphereGeometry(.22,14,10),mat(0xf5e5a3,.35));orb.position.y=.82;g.add(orb);
+  scene.add(g);sceneObjects.push(g);
+ }
+ const portal=s.portal;const ring=new THREE.Mesh(new THREE.TorusGeometry(.72,.09,10,32),mat(0xf2d79a));ring.position.set(portal.x,.08,portal.z);ring.rotation.x=Math.PI/2;scene.add(ring);
+ avatar=new THREE.Group();avatar.name="prototype-mia-runtime-proxy";avatar.add(new THREE.Mesh(new THREE.CylinderGeometry(.22,.25,.9,12),mat(0xefe5d2)));const head=new THREE.Mesh(new THREE.SphereGeometry(.24,16,12),mat(0xe8c6a8));head.position.y=.65;avatar.add(head);avatar.position.set(position.x,.45,position.z);scene.add(avatar);
+ controls=new OrbitControls(camera,renderer.domElement);controls.target.set(b.w/2,0,b.d/2);controls.enableDamping=true;
+ resize();activeScene=s;
+}
+function resize(){if(!renderer||!camera)return;const w=Math.max(1,mount.clientWidth),h=Math.max(1,mount.clientHeight);camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h);}
+window.addEventListener("resize",resize);
+function updateState(){
+ const world=layoutToWorld(activeScene,{x:position.x/manifest.coordinate_contract.meters_per_layout_unit,y:position.z/manifest.coordinate_contract.meters_per_layout_unit},manifest.coordinate_contract);
+ $("#state-output").textContent=JSON.stringify({scene_id:activeScene.id,scene_name:activeScene.name,local_position:{...position,unit:"m"},world_position:world,walking:path.length>0,autonomous_exploration:auto,colliders:activeScene.obstacles.length,coordinate_status:"authored_virtual_world_frame"},null,2);
+ const frame=createRuntimePerception({scene:activeScene,position,heading:avatarHeading});
+ $("#perception-output").textContent=JSON.stringify(frame,null,2);
+}
+function setStatus(title,detail){$("#runtime-status").textContent=title;$("#runtime-detail").textContent=detail;}
+function switchScene(id){
+ const s=manifest.scenes.find(x=>x.id===id);if(!s)throw Error("未知场景 "+id);
+ if(renderer){controls?.dispose();renderer.dispose();}
+ sceneObjects=[];position={...s.spawn};path=[];pathIndex=0;
+ buildScene(s);updateState();setStatus("已进入："+s.name,"场景地面、碰撞体、边界与实体锚点已加载。");
+}
+function walkTo(target){
+ const route=findWalkPath(activeScene,position,target);
+ if(!route.reachable)return Promise.reject(new Error("路径不可达："+route.reason));
+ path=route.path;pathIndex=0;
+ return new Promise(resolve=>{moveResolve=resolve;});
+}
+async function goToScene(id){
+ if(id===activeScene.id)return;
+ if(activeScene.id!=="mia-forest-corner"){await walkTo(activeScene.portal);switchScene("mia-forest-corner");}
+ await walkTo(activeScene.portal);
+ switchScene(id);
+}
+async function explore(){
+ if(auto)return;auto=true;$("#auto-explore").disabled=true;
+ setStatus("自主探索运行中","浏览器内原型代理依次探索目的地锚点；可随时停止。");
+ try{
+  while(auto){
+   for(const id of destinationIds){
+    if(!auto)break;
+    await goToScene(id);
+    const targetScene=activeScene;
+    for(const a of targetScene.anchors){
+     if(!auto)break;
+     const p=anchorToLocal(targetScene,a,manifest.coordinate_contract);
+     await walkTo({x:p.x,z:p.z});
+     setStatus("正在探索："+a.name,"已到达场景锚点，更新本地运行时感知帧。");
+     updateState();
+     await new Promise(r=>setTimeout(r,650));
+    }
+    if(auto){await walkTo(activeScene.portal);switchScene("mia-forest-corner");}
+   }
+  }
+ }catch(e){setStatus("探索暂停",e.message);auto=false;}
+ finally{$("#auto-explore").disabled=false;updateState();}
+}
+function stopExplore(){auto=false;setStatus("已请求停止自主探索","当前路径停止后保留在安全可行走位置。");}
+function tick(dt){
+ if(path.length&&pathIndex<path.length){
+  const target=path[pathIndex],dx=target.x-position.x,dz=target.z-position.z,dist=Math.hypot(dx,dz),step=2.2*dt;
+  if(dist<=step){position={x:target.x,z:target.z};pathIndex++;}
+  else{position.x+=dx/dist*step;position.z+=dz/dist*step;avatarHeading=Math.atan2(dx,-dz);}
+  avatar.position.set(position.x,.45,position.z);avatar.rotation.y=avatarHeading;
+  if(pathIndex>=path.length){path=[];const done=moveResolve;moveResolve=null;done?.();updateState();}
+ }
+ if(performance.now()-lastPerception>450){lastPerception=performance.now();updateState();}
+ controls?.update();renderer?.render(scene,camera);
+}
+let last=performance.now();function animate(now){requestAnimationFrame(animate);const dt=Math.min(.05,(now-last)/1000);last=now;tick(dt);}requestAnimationFrame(animate);
+function renderButtons(){
+ const root=$("#destinations");root.replaceChildren();
+ for(const s of manifest.scenes){const b=document.createElement("button");b.textContent=s.name;b.className=s.id===activeScene.id?"active":"";b.addEventListener("click",async()=>{try{await goToScene(s.id);renderButtons();}catch(e){setStatus("无法切换场景",e.message);}});root.append(b);}
+}
+$("#return-forest").addEventListener("click",async()=>{stopExplore();try{await goToScene("mia-forest-corner");renderButtons();}catch(e){setStatus("返回失败",e.message);}});
+$("#auto-explore").addEventListener("click",explore);
+$("#stop-explore").addEventListener("click",stopExplore);
+$("#reset-position").addEventListener("click",()=>{position={...activeScene.spawn};avatar.position.set(position.x,.45,position.z);path=[];pathIndex=0;moveResolve?.();moveResolve=null;updateState();});
+try{
+ const r=await fetch("./world-scenes/public-destinations/world-spatial-manifest.v1.json",{cache:"no-store"});if(!r.ok)throw Error("空间清单 HTTP "+r.status);
+ manifest=await r.json();const valid=validateWorldManifest(manifest);if(!valid.valid)throw Error(valid.errors.join("；"));
+ switchScene("mia-forest-corner");renderButtons();
+ $("#runtime-tags").innerHTML=["6 个校准场景坐标框架","6 个地面与安全边界","碰撞体与 A* 路径检查","5 条双向场景通道","原型 Mia 专属"].map(x=>'<span class="badge">'+x+'</span>').join("");
+ setStatus("空间运行时已就绪","虚拟米制坐标、场景几何和路径契约校验通过。");
+}catch(e){setStatus("运行时载入失败",e.message);console.error(e);}
+</script>
+</body></html>

@@ -38,7 +38,8 @@ button:hover,a:hover{background:#edf3e9}
   <div class="overlay"><div class="status"><span class="dot"></span><span id="runtime-status">正在读取场景资产…</span></div>
   <div>坐标映射：场景局部 X/Y → 展示 X/Z；不是 ZHI 世界坐标。</div></div>
  </section>
- <div class="controls"><button id="reset-view" type="button">重新载入场景</button><button id="fit-view" type="button">视角说明</button></div>
+ <div class="controls"><button id="reset-view" type="button">重新载入场景</button><button id="fit-view" type="button">视角说明</button><button id="capture-frame" type="button">生成场景观察帧</button></div>
+ <section class="tile" style="margin-bottom:14px"><strong>场景观察帧（本地语义数据）</strong><small>根据场景源文件生成结构化描述；不是摄像头视觉识别，不会发送给 Mia 或写入数据库。</small><pre id="observation-frame" style="white-space:pre-wrap;overflow:auto;max-height:340px;font-size:12px"></pre></section>
  <div class="notice"><strong>运行边界：</strong>本页使用 Three.js 绘制森林角落的程序化 3D 展示物；石板几何来自仓库资产定义。当前没有真实物理碰撞、角色行走、跨场景传送或 Mia 实时视觉感知。Tiny Planet Friends 私有 GLB 暂不请求签名地址，因此这里只显示待加载标记。页面不会连接聊天、记忆、人格、情绪 API，也不写入数据库。</div>
  <section class="grid" aria-label="scene status">
   <div class="tile"><strong>森林角落</strong><small>局部布局 1000 × 700</small></div>
@@ -51,20 +52,23 @@ button:hover,a:hover{background:#edf3e9}
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { buildForestCorner, validateForestSource } from "./world-scenes/runtime/mia-forest-corner-3d.mjs";
+import { createForestObservationFrame } from "./world-scenes/runtime/mia-forest-observation-frame.mjs";
 const mount=document.querySelector("#viewport"), status=document.querySelector("#runtime-status");
-let runtime=null, controls=null;
+let runtime=null, controls=null, loadedScene=null, loadedNavigation=null;
 async function loadScene(){
   if(runtime){runtime.dispose();runtime=null;}
   if(controls){controls.dispose();controls=null;}
   status.textContent="正在读取 Forest Corner 源文件…";
   try{
-    const [sceneRes,geometryRes,pathRes]=await Promise.all([
+    const [sceneRes,geometryRes,pathRes,navRes]=await Promise.all([
       fetch("./mia/forest-corner.json",{cache:"no-store"}),
       fetch("./world-scenes/mia-assets/geometry.json",{cache:"no-store"}),
-      fetch("./world-scenes/mia-assets/stone-path-forest-to-lounge.json",{cache:"no-store"})
+      fetch("./world-scenes/mia-assets/stone-path-forest-to-lounge.json",{cache:"no-store"}),
+      fetch("./world-scenes/mia-assets/navigation.json",{cache:"no-store"})
     ]);
-    if(!sceneRes.ok||!geometryRes.ok||!pathRes.ok) throw new Error("场景源文件读取失败");
-    const [sceneData,geometryData,pathData]=await Promise.all([sceneRes.json(),geometryRes.json(),pathRes.json()]);
+    if(!sceneRes.ok||!geometryRes.ok||!pathRes.ok||!navRes.ok) throw new Error("场景源文件读取失败");
+    const [sceneData,geometryData,pathData,navigationData]=await Promise.all([sceneRes.json(),geometryRes.json(),pathRes.json(),navRes.json()]);
+    loadedScene=sceneData; loadedNavigation=navigationData;
     const result=validateForestSource(sceneData,geometryData,pathData);
     if(!result.valid) throw new Error(result.errors.join("；"));
     runtime=buildForestCorner(THREE,sceneData,pathData,mount);
@@ -72,9 +76,16 @@ async function loadScene(){
     controls.target.set(500,0,-350); controls.enableDamping=true; controls.dampingFactor=.06;
     const render=()=>{if(!runtime)return;controls.update();requestAnimationFrame(render);}; render();
     status.textContent="3D 展示运行中 · 源数据校验通过（非物理世界）";
+    captureFrame();
   }catch(error){status.textContent="场景载入失败："+error.message;console.error(error);}
 }
 document.querySelector("#reset-view").addEventListener("click",loadScene);
+document.querySelector("#capture-frame").addEventListener("click",captureFrame);
+function captureFrame(){
+ if(!loadedScene)return;
+ const frame=createForestObservationFrame({scene:loadedScene,navigation:loadedNavigation,runtimeStatus:"3d-preview-rendered",cameraPose:runtime?{position:runtime.camera.position.toArray(),target:controls?.target.toArray()??null}:null});
+ document.querySelector("#observation-frame").textContent=JSON.stringify(frame,null,2);
+}
 document.querySelector("#fit-view").addEventListener("click",()=>{status.textContent="拖动旋转、滚轮缩放；本页仅浏览场景，不驱动 Mia 移动。";});
 loadScene();
 </script>

@@ -263,6 +263,7 @@ as $fn$
 declare
   new_card_id uuid;
   has_initial_proposal boolean;
+  cards_today integer;
 begin
   if octet_length(p_card::text) > 12288 then
     raise exception 'Card payload exceeds 12 KiB';
@@ -278,6 +279,9 @@ begin
   if p_event_key is null or length(p_event_key) not between 16 and 200 then
     raise exception 'Invalid proposal event idempotency key';
   end if;
+
+  -- Serialize all new proposals for this prototype and enforce a hard UTC-day cap.
+  perform pg_advisory_xact_lock(20261104, 1);
 
   insert into public.mia_forest_corner_cards (
     identity_id, schema_version, category, title, summary, emotional_tone,
@@ -314,6 +318,13 @@ begin
       raise exception 'Existing card is missing its initial proposal event; refusing silent repair';
     end if;
     return new_card_id;
+  end if;
+
+  select count(*) into cards_today
+    from public.mia_forest_corner_cards
+   where created_at >= (date_trunc('day', now() at time zone 'UTC') at time zone 'UTC');
+  if cards_today > 2 then
+    raise exception 'Daily Forest Corner proposal limit reached';
   end if;
 
   insert into public.mia_forest_corner_card_events (

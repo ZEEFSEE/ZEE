@@ -81,15 +81,15 @@ The RPC uses SECURITY DEFINER only for the narrow atomic card + initial proposal
 - Source digest and source_refs validation declarations.
 - Append-only and event-transition declarations.
 
-### Disposable PostgreSQL tests (not yet run)
-- SQL parse and clean install on a disposable database.
+### Disposable PostgreSQL tests (V1.3 smoke subset passed)
+- SQL parse and clean install on ephemeral PostgreSQL 16.15 passed (Actions run `41825597773`).
 - Object-collision preflight fails without changing existing objects.
-- anon/authenticated cannot access tables or RPC.
-- service_role can list and review only through intended paths.
+- anon/authenticated tested table/RPC privilege denial passed.
+- service_role tested card SELECT, event INSERT, and narrow RPC execution; direct card INSERT denial passed.
 - card INSERT is denied directly; atomic RPC succeeds.
 - invalid JSON, oversized source_refs, invalid digest, wrong category, wrong identity fail.
 - UPDATE, DELETE, TRUNCATE fail.
-- duplicate card/event idempotency behaves deterministically.
+- duplicate card idempotency, single terminal review, and RPC rollback after event-key collision passed.
 - concurrent accept/reject requests yield exactly one terminal decision.
 - injected event-insert failure rolls back card insertion.
 - function owner, SECURITY DEFINER, search_path, grants, and RLS behavior are inspected.

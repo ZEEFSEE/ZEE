@@ -5,16 +5,7 @@ import { ALLOWED_CATEGORIES, IDENTITY_ID, SOURCE_TABLES, canonical, isHistorical
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const MAX_BODY_BYTES = 16 * 1024;
-const MAX_SOURCE_REFS = 12;
 const MAX_CARD_BYTES = 12 * 1024;
-const ALLOWED_CATEGORIES = new Set([
-  "comfort_anchor", "shared_decision", "emotion_residue", "life_event",
-  "reflection", "creative_seed", "relationship_context", "scene_build_progress",
-]);
-const SOURCE_TABLES = new Set([
-  "mia_messages", "mia_memories", "mia_emotion_events",
-  "mia_life_events", "mia_relationship_context",
-]);
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, apikey, content-type",

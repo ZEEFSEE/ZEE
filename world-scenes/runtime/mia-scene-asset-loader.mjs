@@ -26,7 +26,7 @@ export async function resolveTinyPlanetFriendsUrl({ token, fetchImpl = fetch }) 
   }
   let signed;
   try { signed = new URL(payload.signedUrl); } catch { throw new Error("资产授权服务返回了无效地址。"); }
-  if (signed.origin !== PROJECT_ORIGIN || !signed.pathname.startsWith(OBJECT_PATH)) {
+  if (signed.origin !== PROJECT_ORIGIN || signed.pathname !== OBJECT_PATH) {
     throw new Error("资产授权地址与预期的私有 GLB 不匹配，已拒绝加载。");
   }
   if (!Number.isFinite(payload.expiresIn) || payload.expiresIn <= 0 || payload.expiresIn > 3600) {

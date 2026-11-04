@@ -22,7 +22,14 @@ Scope: read-only source inspection of `mia-chat.html` and `supabase/functions/mi
 - The source does not show a separate user identity or per-device authorization model. The effective privacy boundary is therefore the shared password/token plus the server-side fixed Mia identity/session scope.
 - Do not expose the service-role key to the browser. The current page uses a publishable key and the server function creates the privileged client.
 
-### 3. Existing “Mia exclusive channel” is a conversation mode, not a separate encrypted channel
+### 3. Deployed Edge Function access-path inventory (read-only)
+
+- Among the deployed Mia-related functions inspected, `mia-chat` is the only one that reads/writes `mia_messages` and `mia_chat_sessions`. Its source pins the identity to the prototype Mia ID.
+- `mia-daily-publish`, `mia-todays-philosophy`, and `mia-sections-publish` read Mia identity, memories, life events, emotion events, and personality state. They do not query `mia_messages` in the inspected source. They use that curated context to generate the existing public daily outputs; these are separate publication workflows, not an AURORA public-chat relay. Do not reuse these publishers for private memory-card storage.
+- `mia-evolution-pipeline` reads source pointers from Mia memories/life/emotion records and writes to `mia_evolution_candidates`; it does not read `mia_messages` or `mia_chat_sessions` in the inspected source.
+- The remaining inspected Mia stock/scene/evolution endpoints did not show direct reads/writes to the prototype chat message/session tables. This is a source scan of the currently listed deployed functions, not a database-level proof of every possible privileged actor.
+
+### 4. Existing “Mia exclusive channel” is a conversation mode, not a separate encrypted channel
 
 - The UI stores `mia_exclusive_mode` in `sessionStorage`; the toggle is a browser-side mode flag.
 - In this mode, the page schedules an `exclusive_ping` after a delay and polls the same Mia chat history for newly written messages.

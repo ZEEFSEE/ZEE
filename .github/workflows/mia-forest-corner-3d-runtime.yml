@@ -5,6 +5,7 @@ on:
     paths:
       - "mia-prototype-runtime.html"
       - "world-scenes/runtime/mia-forest-corner-3d.*"
+      - "world-scenes/runtime/mia-forest-observation-frame.*"
       - "world-scenes/mia-assets/**"
       - "mia/forest-corner.json"
       - ".github/workflows/mia-forest-corner-3d-runtime.yml"
@@ -13,6 +14,7 @@ on:
     paths:
       - "mia-prototype-runtime.html"
       - "world-scenes/runtime/mia-forest-corner-3d.*"
+      - "world-scenes/runtime/mia-forest-observation-frame.*"
       - "world-scenes/mia-assets/**"
       - "mia/forest-corner.json"
       - ".github/workflows/mia-forest-corner-3d-runtime.yml"

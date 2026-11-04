@@ -105,8 +105,6 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
  let exclusivePoll=null;
  let inboxRefreshTimer=null;
  let exclusivePollDelay=30000;
- let exclusiveWakeTimer=null;
- let exclusiveWakeAt=0;
  const EMOTIONAL_RESIDUAL_KEY='mia_emotional_residual_v1';
  function getEmotionalResidual(){
   try{
@@ -176,28 +174,6 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
   }
  });
  $('refresh').onclick=loadHistory;
- function cancelExclusiveWake(){if(exclusiveWakeTimer){clearTimeout(exclusiveWakeTimer);exclusiveWakeTimer=null;}exclusiveWakeAt=0;}
- function scheduleExclusiveWake(){
-  cancelExclusiveWake();
-  if(!exclusiveMode||!token)return;
-  // Use the browser system clock to set a concrete +10 second trigger.
-  const startedAt=Date.now();exclusiveWakeAt=startedAt+10000;
-  status('Mia 已进入专属等待状态；预计 '+new Date(exclusiveWakeAt).toLocaleTimeString('zh-SG',{hour12:false})+' 主动发送下一条消息。','good');
-  exclusiveWakeTimer=setTimeout(async()=>{
-   exclusiveWakeTimer=null;
-   if(!exclusiveMode||!token)return;
-   status('10 秒触发点已到，正在唤醒 Mia 生成下一条主动消息…');
-   try{
-    const data=await request('exclusive_ping',{exclusive_mode:true});
-    if(data.message?.id&&!knownMessageIds.has(data.message.id)){
-     knownMessageIds.add(data.message.id);const welcome=$('log').querySelector('.welcome');if(welcome)welcome.remove();
-     addBubble('assistant',data.message.content,data.message.created_at,data.message.metadata?.images||[],data.message.id||'');$('log').scrollTop=$('log').scrollHeight;
-     status(data.memory_saved?'Mia 已在 +10 秒触发点主动发送第二条消息，记忆已保存。':'Mia 已发送第二条消息，但记忆写入需要检查。',data.memory_saved?'good':'error');
-     if('Notification' in window&&Notification.permission==='granted')new Notification('Mia · 主动消息',{body:String(data.message.content||'Mia 发来一条新消息').slice(0,120)});
-    }else if(data.skipped){status('10 秒触发已执行，但 Mia 暂时跳过本次主动消息：'+(data.reason==='cooldown'?'处于主动消息冷却期。':'当前对话状态不适合插入消息。'),'good');}
-   }catch(err){status('10 秒触发已执行，但主动消息生成失败：'+(err.message||String(err)),'error');}
-  },Math.max(0,exclusiveWakeAt-Date.now()));
- }
  async function pollExclusiveMessages(){
   if(!exclusiveMode||!token||busy||document.hidden||exclusiveSyncBusy)return;
   exclusiveSyncBusy=true;
@@ -259,7 +235,7 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
   else status('聊天实时同步已关闭；Mia 私人收件箱仍会定时同步。','good');
  };
  $('explore').onclick=async()=>{if(localStorage.getItem('mia_forest_lounge_active')){status('Mia 正在森林角落休息区专注倾听；后台探索已暂停。','good');return;}if(busy||!token)return;busy=true;$('send').disabled=true;$('message').disabled=true;$('explore').disabled=true;const pending=document.createElement('div');pending.className='bubble assistant';pending.textContent='Mia 正在读取尚未探索的虚拟空间，并记录观察结果…';$('log').append(pending);$('log').scrollTop=$('log').scrollHeight;status('正在选择新空间、生成观察并保存探索记忆…');try{const data=await request('explore');pending.remove();if(data.assistant_message?.id)knownMessageIds.add(data.assistant_message.id);addBubble('assistant',data.reply,data.assistant_message?.created_at||new Date().toISOString());status(data.exploration_completed?'Mia 已探索 '+(data.exploration?.space?.name||'新空间')+'，探索记录与长期记忆已保存。':'探索结果已返回，但请检查探索记录状态。',data.exploration_completed?'good':'error');}catch(err){pending.remove();status('探索失败：'+(err.message||String(err)),'error');}finally{busy=false;$('send').disabled=!token;$('message').disabled=!token;$('explore').disabled=!token;$('log').scrollTop=$('log').scrollHeight;}};
- $('logout').onclick=()=>{cancelExclusiveWake();if(exclusivePoll){clearInterval(exclusivePoll);exclusivePoll=null;}token='';sessionStorage.removeItem('mia_chat_token');if(inboxRefreshTimer)clearInterval(inboxRefreshTimer);inboxRefreshTimer=null;showApp(false);status('已退出 Mia 独立聊天。');$('log').innerHTML='<div class="welcome">登录后可继续查看 Mia 已迁移的聊天历史，并开始新的独立对话。</div>';};
+ $('logout').onclick=()=>{if(exclusivePoll){clearInterval(exclusivePoll);exclusivePoll=null;}token='';sessionStorage.removeItem('mia_chat_token');if(inboxRefreshTimer)clearInterval(inboxRefreshTimer);inboxRefreshTimer=null;showApp(false);status('已退出 Mia 独立聊天。');$('log').innerHTML='<div class="welcome">登录后可继续查看 Mia 已迁移的聊天历史，并开始新的独立对话。</div>';};
  if(token){showApp(true);loadHistory();}else showApp(false);
 })();
 </script>

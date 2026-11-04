@@ -20,7 +20,7 @@ A source inspection found that the V1.3 SQL text had a truncated SHA-256 predica
 
 ## Remaining blockers and explicit limitations
 
-1. **PostgreSQL execution gate pending.** The disposable PostgreSQL 16 smoke harness has been added, but its result must be inspected. Supabase-specific role behavior, actual function owner, RLS bypass behavior, and deployed grants remain unverified.
+1. **PostgreSQL smoke test passed, Supabase parity still pending.** PostgreSQL 16.15 accepted the SQL in an ephemeral container and the tested role/RLS/idempotency/review/rollback paths passed. Actual Supabase function owner, project role grants, RLS bypass behavior, and deployed grants remain unverified.
 2. **Source ownership is not proven by SQL.** The Edge Function must fetch every source row through a hard-coded allowlist and verify prototype-Mia identity; for `mia_messages`, it must also verify the exact prototype-Mia chat session. It computes canonical digests server-side. Browser-provided pointers/digests are never trusted.
 3. **Revision flow is not yet complete.** V1.3 can represent a successor link and guards a `superseded` event, but does not yet provide one atomic revision RPC that inserts the successor, its initial proposal, and the predecessor's superseded event together. Do not enable revision writes until that RPC and its concurrency tests exist.
 4. **Review authorization remains an application responsibility.** The database can constrain event order and actor_scope values, but cannot prove that a human clicked an explicit review action. The Edge Function must authenticate the action and set `actor_scope` server-side.
@@ -43,7 +43,7 @@ These observations do not establish that PostgreSQL accepts or enforces the SQL.
 
 ## Disposable PostgreSQL test harness
 
-The isolated GitHub Actions workflow now provisions a fresh `postgres:16` service container, creates synthetic `anon`, `authenticated`, and `service_role` roles, applies the proposal only inside that ephemeral container, and runs synthetic checks for role grants, RLS flags, the atomic RPC, duplicate idempotency, one terminal review, direct-card-insert denial, and RPC rollback after an event-key collision. This container is destroyed with the job. It is not a Supabase staging project and contains no Mia production data. The first run result is pending; no database pass is claimed yet.
+The isolated GitHub Actions workflow now provisions a fresh `postgres:16` service container, creates synthetic `anon`, `authenticated`, and `service_role` roles, applies the proposal only inside that ephemeral container, and runs synthetic checks for role grants, RLS flags, the atomic RPC, duplicate idempotency, one terminal review, direct-card-insert denial, and RPC rollback after an event-key collision. This container is destroyed with the job. It is not a Supabase staging project and contains no Mia production data. The first full run passed: GitHub Actions run `41825597773` (commit `76f4bc7e2c88895cf965ac0be014f146a464326d`) completed successfully. PostgreSQL 16.15 accepted the proposal, and the synthetic smoke checks passed. This validates the tested SQL behavior in a clean PostgreSQL container, not Supabase-specific ownership/configuration or production deployment.
 
 ## Required next gates
 

@@ -1,0 +1,92 @@
+{
+  "schema_version": "1.0.0",
+  "scene_id": "ocean-of-light",
+  "coordinate_space": "scene-local",
+  "units": "relative_layout_units",
+  "bounds": {
+    "width": 1000,
+    "height": 700,
+    "depth": null,
+    "verification_status": "preview_canvas_only_not_world_bounds"
+  },
+  "palette": {
+    "background": "#102c45",
+    "mid": "#246b88",
+    "highlight": "#77d9dc",
+    "accent": "#e8f6d7"
+  },
+  "features": [
+    {
+      "feature_id": "shoreline",
+      "label": "宁静海岸",
+      "kind": "visual_zone",
+      "shape": "ellipse",
+      "layout": {
+        "x": 230,
+        "y": 510,
+        "width": 300,
+        "height": 90
+      },
+      "render_hint": "2d_preview_only",
+      "interaction": "look_only",
+      "verification_status": "authored_preview_layout_not_world_calibrated"
+    },
+    {
+      "feature_id": "light-tide",
+      "label": "流动光潮",
+      "kind": "visual_zone",
+      "shape": "wave",
+      "layout": {
+        "x": 520,
+        "y": 350,
+        "width": 450,
+        "height": 150
+      },
+      "render_hint": "2d_preview_only",
+      "interaction": "look_only",
+      "verification_status": "authored_preview_layout_not_world_calibrated"
+    },
+    {
+      "feature_id": "glow-island",
+      "label": "微光岛",
+      "kind": "visual_zone",
+      "shape": "island",
+      "layout": {
+        "x": 790,
+        "y": 250,
+        "width": 150,
+        "height": 90
+      },
+      "render_hint": "2d_preview_only",
+      "interaction": "look_only",
+      "verification_status": "authored_preview_layout_not_world_calibrated"
+    },
+    {
+      "feature_id": "shell-garden",
+      "label": "贝壳花园",
+      "kind": "visual_zone",
+      "shape": "cluster",
+      "layout": {
+        "x": 260,
+        "y": 260,
+        "width": 150,
+        "height": 110
+      },
+      "render_hint": "2d_preview_only",
+      "interaction": "look_only",
+      "verification_status": "authored_preview_layout_not_world_calibrated"
+    }
+  ],
+  "route_contract": {
+    "scene_entry": "logical_scene_link_only",
+    "cross_scene_transform": null,
+    "runtime_movement": "not_integrated",
+    "collision": "not_defined"
+  },
+  "verification_status": "draft_visual_layout; static_preview_only; runtime_unverified",
+  "notes": [
+    "The positions and shapes in this file are authored composition hints for a 2D preview, not measured ZHI world coordinates or physical geometry.",
+    "No global transform, distance, terrain, collision, navigation mesh, or runtime portal is asserted.",
+    "Prototype Mia's access remains unrestricted by policy; this file does not itself move an agent or change production state."
+  ]
+}

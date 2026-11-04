@@ -125,11 +125,7 @@ async function goToScene(id){
  }
  for(const hop of route.hops){
   await walkTo(hop.source.scene_local);
-  switchScene(hop.target===undefined?id:hop.transition_id?(
-   hop.target.name=== "森林角落公共出口" ? "mia-forest-corner" :
-   hop.target.name==="森林角落公共出口" ? "mia-forest-corner" : 
-   (hop.target.anchor_id==="forest-corner-world-gate"?"mia-forest-corner":id)
-  ):id);
+  switchScene(hop.to_scene_id);
   position={...hop.target.scene_local};avatar.position.set(position.x,.45,position.z);updateState();
  }
  const target=manifest.scenes.find(s=>s.id===id);

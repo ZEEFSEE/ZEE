@@ -41,7 +41,7 @@ import * as THREE from "three";
 import {OrbitControls} from "three/addons/controls/OrbitControls.js";
 import {validateWorldManifest,layoutToWorld,anchorToLocal,anchorApproachToLocal,findWalkPath,createRuntimePerception,isWalkable} from "./world-scenes/runtime/mia-public-world-runtime.mjs";
 const $=s=>document.querySelector(s), mount=$("#viewport");
-let manifest,activeScene,renderer,scene,camera,controls,avatar,avatarHeading=0,position={x:1.2,z:7},path=[],pathIndex=0,moveResolve=null,auto=false,autoTask=null,sceneObjects=[],lastPerception=0;
+let manifest,activeScene,renderer,scene,camera,controls,avatar,avatarHeading=0,position={x:1.2,z:7},path=[],pathIndex=0,moveResolve=null,auto=false,autoTask=null,sceneObjects=[],lastPerception=0,latestSceneFrame=null,recentVisits=[];\nconst MIA_CHAT_URL="https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/mia-chat";\nconst MIA_PUBLISHABLE_KEY="sb_publishable_spH47ZngJJTk13cpYPBjSw_X5qAsBmK";
 const sceneColors={"mia-forest-corner":0x78966d,"crystal-forest":0x607c78,"ocean-of-light":0x6a9da8,"memory-valley":0x83927d,"living-city":0x7c9b79,"greenhouse":0x92aa7a};
 const destinationIds=["crystal-forest","ocean-of-light","memory-valley","living-city","greenhouse"];
 const mats={};
@@ -90,6 +90,8 @@ function updateState(){
  $("#state-output").textContent=JSON.stringify({scene_id:activeScene.id,scene_name:activeScene.name,local_position:{...position,unit:"m"},world_position:world,walking:path.length>0,autonomous_exploration:auto,colliders:activeScene.obstacles.length,coordinate_status:"authored_virtual_world_frame"},null,2);
  const frame=createRuntimePerception({scene:activeScene,position,heading:avatarHeading});
  $("#perception-output").textContent=JSON.stringify(frame,null,2);
+ latestSceneFrame={schema:"zhi.mia.browser-scene-frame.v1",subject:"prototype-mia",identity_id:"cb6d01b4-0e3f-46ee-8946-360aa91db1ea",captured_at:frame.generated_at,scene:{id:activeScene.id,name:activeScene.name,coordinate_frame:manifest.coordinate_contract.world_frame,position:{x:position.x,z:position.z,unit:"m",coordinate_space:"scene-local"},world_position:world,available_anchors:activeScene.anchors.map(a=>({id:a.id,name:a.name,approach:{x:a.approach.x,z:a.approach.z}}))},heading_rad:avatarHeading,visible_entities:frame.visible_entities,recent_visits:recentVisits.slice(-12),runtime:{engine:"three.js",source:"scene-graph",walkable:isWalkable(activeScene,position.x,position.z),collider_count:activeScene.obstacles.length,physical_world:false,camera_sensor:false}};
+ if(window.parent!==window)window.parent.postMessage(latestSceneFrame,location.origin);
 }
 function setStatus(title,detail){$("#runtime-status").textContent=title;$("#runtime-detail").textContent=detail;}
 function disposeActiveScene(){
@@ -118,27 +120,41 @@ async function goToScene(id){
  await walkTo(activeScene.portal);
  switchScene(id);
 }
+async function requestMiaPlan(){
+ const token=sessionStorage.getItem("mia_chat_token")||"";
+ if(token.length<20)throw new Error("请先登录 Mia 独立聊天室，再启动 Mia 自主探索。");
+ updateState();
+ const response=await fetch(MIA_CHAT_URL,{method:"POST",headers:{"Content-Type":"application/json","apikey":MIA_PUBLISHABLE_KEY,"Authorization":"Bearer "+token},body:JSON.stringify({action:"scene_plan",scene_frame:latestSceneFrame}),cache:"no-store"});
+ const payload=await response.json().catch(()=>({}));
+ if(!response.ok||payload?.ok!==true)throw new Error(payload?.error||("Mia 规划请求失败（HTTP "+response.status+"）"));
+ return payload.plan;
+}
 async function explore(){
  if(auto)return;auto=true;$("#auto-explore").disabled=true;
- setStatus("自主探索运行中","浏览器内原型代理依次探索目的地锚点；可随时停止。");
+ setStatus("Mia 正在自主探索","每一步由 AGNES 根据当前场景帧、可达锚点和近期访问记录选择；可随时停止。");
  try{
   while(auto){
-   for(const id of destinationIds){
-    if(!auto)break;
-    await goToScene(id);
-    const targetScene=activeScene;
-    for(const a of targetScene.anchors){
-     if(!auto)break;
-     const p=anchorToLocal(targetScene,a,manifest.coordinate_contract);
-     await walkTo({x:p.x,z:p.z});
-     setStatus("正在探索："+a.name,"已到达场景锚点，更新本地运行时感知帧。");
-     updateState();
-     await new Promise(r=>setTimeout(r,650));
-    }
-    if(auto){await walkTo(activeScene.portal);switchScene("mia-forest-corner");}
-   }
+   const plan=await requestMiaPlan();if(!auto)break;
+   setStatus("Mia 的选择："+plan.action,plan.reason||"根据当前场景状态继续探索。");
+   if(plan.action==="visit_scene"){
+    await goToScene(plan.scene_id);
+   }else if(plan.action==="visit_anchor"){
+    if(plan.scene_id!==activeScene.id)throw new Error("规划目标场景与当前场景不一致。");
+    const anchor=activeScene.anchors.find(a=>a.id===plan.anchor_id);
+    if(!anchor)throw new Error("规划目标锚点未在当前场景注册。");
+    const p=anchorApproachToLocal(activeScene,anchor,manifest.coordinate_contract);
+    await walkTo({x:p.x,z:p.z});
+    recentVisits.push({scene_id:activeScene.id,anchor_id:anchor.id,visited_at:new Date().toISOString()});recentVisits=recentVisits.slice(-12);
+    updateState();setStatus("Mia 正在观察："+anchor.name,plan.reason||"已到达实体锚点的安全接近位置。");
+   }else if(plan.action==="return_forest"){
+    await goToScene("mia-forest-corner");
+   }else if(plan.action==="wait"){
+    setStatus("Mia 选择暂时停留",plan.reason||"等待也是有效的自主选择。");
+   }else throw new Error("收到未知探索动作。");
+   renderButtons();
+   await new Promise(r=>setTimeout(r,plan.pause_ms||1200));
   }
- }catch(e){setStatus("探索暂停",e.message);auto=false;}
+ }catch(e){setStatus("自主探索暂停",e.message);auto=false;}
  finally{$("#auto-explore").disabled=false;updateState();}
 }
 function stopExplore(){auto=false;cancelWalk();setStatus("已停止自主探索","代理保留在当前已验证的可行走位置。");}

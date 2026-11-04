@@ -55,7 +55,7 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
 <main class="wrap">
  <header class="top"><div><div class="brand">💬 Mia · 独立聊天</div><div class="sub">独立身份 · 独立记忆 · 独立情绪与人格状态</div></div><div class="top-actions"><button id="installApp" class="install-btn hidden" type="button">安装 Mia App</button><button id="logout">退出</button></div></header>
  <section class="panel">
-  <div class="head"><div><div class="name" id="miaName">Mia</div><div class="meta">独立运行于 zee-extension，不调用 KING 的聊天历史</div></div><div class="head-actions"><button id="exclusiveMode" type="button" aria-pressed="false">开启 Mia 专属通道</button><button id="refresh">刷新历史</button><button id="auroraConnect" type="button" disabled>连接 Aurora</button><button id="explore" class="primary" disabled>探索新空间</button><a href="./mia-scene-workshop.html" style="display:inline-block;padding:8px 10px;border:1px solid #b9d9c4;border-radius:12px;background:#e5f5f2;color:#11645f;text-decoration:none;font-size:12px;font-weight:800;white-space:nowrap">生成场景</a></div></div>
+  <div class="head"><div><div class="name" id="miaName">Mia</div><div class="meta">独立运行于 zee-extension，不调用 KING 的聊天历史</div></div><div class="head-actions"><button id="exclusiveMode" type="button" aria-pressed="false">开启 Mia 专属通道</button><button id="refresh">刷新历史</button><button id="explore" class="primary" disabled>探索新空间</button><a href="./mia-scene-workshop.html" style="display:inline-block;padding:8px 10px;border:1px solid #b9d9c4;border-radius:12px;background:#e5f5f2;color:#11645f;text-decoration:none;font-size:12px;font-weight:800;white-space:nowrap">生成场景</a></div></div>
   <div id="status">请先验证页面访问密码。</div>
 
   <section id="forestScene" class="forest-scene" aria-label="Mia 森林角落场景">
@@ -118,29 +118,9 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
  function status(message,type=''){const el=$('status');el.textContent=message;el.className=type;}
  function escapeText(value){return String(value??'');}
  function addBubble(role,content,time,images=[]){const wrap=document.createElement('div');wrap.className='bubble '+(role==='user'?'user':'assistant');if(content){const body=document.createElement('div');body.textContent=escapeText(content);wrap.append(body);}if(Array.isArray(images)&&images.length){const gallery=document.createElement('div');gallery.className='bubble-images';images.forEach(item=>{if(!item?.url)return;const img=document.createElement('img');img.src=item.url;img.alt=item.name||'聊天图片';img.loading='lazy';gallery.append(img);});if(gallery.childNodes.length)wrap.append(gallery);}if(time){const t=document.createElement('div');t.className='time';t.textContent=new Date(time).toLocaleString('zh-SG',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});wrap.append(t);} $('log').append(wrap);}
- function showApp(on){$('gate').classList.toggle('hidden',on);$('message').disabled=!on;$('send').disabled=!on;$('auroraConnect').disabled=!on;$('explore').disabled=!on||localStorage.getItem('mia_forest_lounge_active')==='1';}
+ function showApp(on){$('gate').classList.toggle('hidden',on);$('message').disabled=!on;$('send').disabled=!on;$('explore').disabled=!on||localStorage.getItem('mia_forest_lounge_active')==='1';}
  async function request(action,payload={}){const res=await fetch(CHAT_URL,{method:'POST',headers:{'Content-Type':'application/json','apikey':PUBLISHABLE_KEY,'Authorization':'Bearer '+token},body:JSON.stringify({action,...payload}),cache:'no-store'});const data=await res.json().catch(()=>({}));if(res.status===401){token='';sessionStorage.removeItem('mia_chat_token');showApp(false);}if(!res.ok||!data.ok)throw new Error(data.error||('HTTP '+res.status));return data;}
 
- $('auroraConnect').addEventListener('click',async()=>{
-  if(busy||!token)return;
-  busy=true;$('auroraConnect').disabled=true;
-  status('Mia 正在发现 Aurora、建立成员会话并读取公共空间…');
-  try{
-   const data=await request('connect_aurora');
-   const confirmed=data.membership_confirmed===true;
-   const details=[
-    'Aurora 连接请求完成。',
-    'Membership: '+(confirmed?'confirmed':'not confirmed'),
-    '私人审计: '+(data.audit_saved?'已保存':'未确认'),
-    '私人体验记忆: '+(data.experience_saved?'已保存':'未确认'),
-    data.summary||''
-   ].filter(Boolean).join('\\n');
-   addBubble('assistant',details,new Date().toISOString());
-   status(confirmed&&data.audit_saved&&data.experience_saved?'Aurora 空间已读取，Mia 私人审计与体验记忆已保存。':'连接请求已返回，但仍有验收项未通过；请查看返回状态。',confirmed&&data.audit_saved&&data.experience_saved?'good':'error');
-  }catch(err){
-   status('Aurora 连接未完成：'+(err.message||String(err)),'error');
-  }finally{busy=false;$('auroraConnect').disabled=!token;}
- });
 
  async function requestStream(action,payload={},onDelta=()=>{}){const res=await fetch(CHAT_URL,{method:'POST',headers:{'Content-Type':'application/json','apikey':PUBLISHABLE_KEY,'Authorization':'Bearer '+token},body:JSON.stringify({action,...payload,stream_response:true}),cache:'no-store'});if(res.status===401){token='';sessionStorage.removeItem('mia_chat_token');showApp(false);}const ct=res.headers.get('content-type')||'';if(!ct.includes('text/event-stream')){const data=await res.json().catch(()=>({}));if(!res.ok||!data.ok)throw new Error(data.error||('HTTP '+res.status));return data;}if(!res.ok||!res.body)throw new Error('HTTP '+res.status);const reader=res.body.getReader(),decoder=new TextDecoder();let buffer='',reply='',result=null,streamError='';const handle=(raw)=>{const line=raw.trim();if(!line.startsWith('data:'))return;const value=line.slice(5).trim();if(!value||value==='[DONE]')return;let event;try{event=JSON.parse(value)}catch{return;}if(event.type==='delta'&&typeof event.content==='string'){reply+=event.content;onDelta(reply);}else if(event.type==='done'&&event.data)result=event.data;else if(event.type==='error')streamError=event.error||'Mia 回复中断。';};try{while(true){const {value,done}=await reader.read();if(done)break;buffer+=decoder.decode(value,{stream:true});const rows=buffer.split(/\r?\n/);buffer=rows.pop()||'';for(const row of rows)handle(row);}buffer+=decoder.decode();if(buffer)handle(buffer);}catch(e){throw new Error(reply?'Mia 回复连接中断，尚未确认完整回复已保存。':(e.message||'Mia 回复连接中断。'));}if(streamError)throw new Error(streamError);if(!result?.ok)throw new Error(reply?'Mia 回复未完成保存，请刷新历史确认。':'Mia 流式回复未完成。');return {...result,reply:result.reply||reply};}
  async function loadHistory(){if(!token)return;status('正在读取 Mia 的独立聊天记录…');try{const data=await request('history');$('miaName').textContent=data.identity?.name||'Mia';$('log').innerHTML='';knownMessageIds=new Set();lastKnownSequenceNo=0;const rows=data.messages||[];const latestAssistant=[...rows].reverse().find(m=>m.role==='assistant'&&m.created_at);lastAssistantReplyAt=latestAssistant?Date.parse(latestAssistant.created_at)||0:0;if(!rows.length){$('log').innerHTML='<div class="welcome">还没有聊天记录，向 Mia 发送第一条消息吧。</div>';}else rows.forEach(m=>{addBubble(m.role,m.content,m.created_at,m.metadata?.images||[]);if(m.id)knownMessageIds.add(m.id);lastKnownSequenceNo=Math.max(lastKnownSequenceNo,Number(m.sequence_no)||0);});$('log').scrollTop=$('log').scrollHeight;status('已读取 '+rows.length+' 条 Mia 独立聊天记录。'+(exclusiveMode?' 专属通道自动监听中。':''),'good');showApp(true);syncExclusiveMode();}catch(e){status('读取失败：'+e.message,'error');}}

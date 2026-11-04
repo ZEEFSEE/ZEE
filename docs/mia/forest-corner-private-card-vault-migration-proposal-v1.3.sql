@@ -198,6 +198,7 @@ for each statement execute function public.mia_forest_corner_reject_mutation_v13
 create function public.mia_forest_corner_guard_event_v13()
 returns trigger
 language plpgsql
+security definer
 set search_path = pg_catalog, public
 as $fn$
 declare

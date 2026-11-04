@@ -38,8 +38,9 @@ button:hover,a:hover{background:#edf3e9}
   <div class="overlay"><div class="status"><span class="dot"></span><span id="runtime-status">正在读取场景资产…</span></div>
   <div>坐标映射：场景局部 X/Y → 展示 X/Z；不是 ZHI 世界坐标。</div></div>
  </section>
- <div class="controls"><button id="reset-view" type="button">重新载入场景</button><button id="fit-view" type="button">视角说明</button><button id="capture-frame" type="button">生成场景观察帧</button></div>
+ <div class="controls"><button id="reset-view" type="button">重新载入场景</button><button id="fit-view" type="button">视角说明</button><button id="capture-frame" type="button">生成场景观察帧</button><button id="load-glb" type="button">安全加载 Tiny Planet Friends GLB</button></div>
  <section class="tile" style="margin-bottom:14px"><strong>场景观察帧（本地语义数据）</strong><small>根据场景源文件生成结构化描述；不是摄像头视觉识别，不会发送给 Mia 或写入数据库。</small><pre id="observation-frame" style="white-space:pre-wrap;overflow:auto;max-height:340px;font-size:12px"></pre></section>
+ <div id="asset-status" class="notice" style="margin-bottom:12px">私有 GLB 默认不加载。需要先在同一浏览器标签页登录 Mia 独立聊天室，再打开本页；点击安全加载后使用现有短期会话授权。不会在 URL、页面文本或本地存储中保存令牌。</div>
  <div class="notice"><strong>运行边界：</strong>本页使用 Three.js 绘制森林角落的程序化 3D 展示物；石板几何来自仓库资产定义。当前没有真实物理碰撞、角色行走、跨场景传送或 Mia 实时视觉感知。Tiny Planet Friends 私有 GLB 暂不请求签名地址，因此这里只显示待加载标记。页面不会连接聊天、记忆、人格、情绪 API，也不写入数据库。</div>
  <section class="grid" aria-label="scene status">
   <div class="tile"><strong>森林角落</strong><small>局部布局 1000 × 700</small></div>
@@ -53,6 +54,8 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { buildForestCorner, validateForestSource } from "./world-scenes/runtime/mia-forest-corner-3d.mjs";
 import { createForestObservationFrame } from "./world-scenes/runtime/mia-forest-observation-frame.mjs";
+import { resolveTinyPlanetFriendsUrl } from "./world-scenes/runtime/mia-scene-asset-loader.mjs";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 const mount=document.querySelector("#viewport"), status=document.querySelector("#runtime-status");
 let runtime=null, controls=null, loadedScene=null, loadedNavigation=null;
 async function loadScene(){
@@ -81,6 +84,40 @@ async function loadScene(){
 }
 document.querySelector("#reset-view").addEventListener("click",loadScene);
 document.querySelector("#capture-frame").addEventListener("click",captureFrame);
+document.querySelector("#load-glb").addEventListener("click",loadPrivateGlb);
+async function loadPrivateGlb(){
+ const panel=document.querySelector("#asset-status"),button=document.querySelector("#load-glb");
+ if(!runtime){panel.textContent="请先等待场景加载完成。";return;}
+ button.disabled=true; panel.textContent="正在使用当前 Mia 登录会话请求短期资产授权…";
+ try{
+  const token=sessionStorage.getItem("mia_chat_token")||"";
+  const grant=await resolveTinyPlanetFriendsUrl({token});
+  const loader=new GLTFLoader();
+  loader.load(grant.url,(gltf)=>{
+   const model=gltf.scene;
+   // Source anchor is Forest Corner local (650,240); native GLB scale is preserved.
+   model.position.set(650,0.38,-240);
+   model.scale.set(1,1,1);
+   model.name="tiny-planet-friends-glb";
+   runtime.scene.add(model);
+   const marker=runtime.scene.getObjectByName("tiny-planet-friends-placeholder");
+   if(marker){runtime.scene.remove(marker);marker.geometry?.dispose();marker.material?.dispose();}
+   const label=runtime.scene.getObjectByName("tiny-planet-friends-label");
+   if(label){runtime.scene.remove(label);label.material?.map?.dispose();label.material?.dispose();}
+   panel.textContent="GLB 已从私有存储加载到本地 3D 预览；原始比例保留。此操作只读取资产，不代表 Mia 已获得视觉感知。短期签名地址仅保留在内存中。";
+   button.disabled=false;
+  },(progress)=>{
+   if(progress.total) panel.textContent="正在加载 GLB："+Math.round(progress.loaded/progress.total*100)+"%";
+  },(error)=>{
+   console.error("Private scene GLB load failed",error);
+   panel.textContent="GLB 下载或解析失败；没有写入任何数据。请检查当前登录会话或资产存储可用性。";
+   button.disabled=false;
+  });
+ }catch(error){
+  panel.textContent=error.message||"私有 GLB 授权失败。";
+  button.disabled=false;
+ }
+}
 function captureFrame(){
  if(!loadedScene)return;
  const frame=createForestObservationFrame({scene:loadedScene,navigation:loadedNavigation,runtimeStatus:"3d-preview-rendered",cameraPose:runtime?{position:runtime.camera.position.toArray(),target:controls?.target.toArray()??null}:null});

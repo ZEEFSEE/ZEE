@@ -83,7 +83,7 @@ assert.equal(fnTags, 8, "four PL/pgSQL function bodies require eight $fn$ delimi
 assert.equal(preflightTags, 2, "preflight block requires two $preflight$ delimiters");
 assert.match(sql, /or source_digest !~ '\^\[0-9a-f\]\{64\}\$' then/i,
   "source digest predicate must be complete and followed by THEN");
-assert.doesNotMatch(sql, /source_digest !~[^\n]*\n\s*raise exception/i,
+assert.doesNotMatch(sql, /source_digest !~ '\^\[0-9a-f\]\{64\}\s*\n\s*raise exception/i,
   "malformed digest predicate regression");
 assert.equal((sql.match(/create function public\.mia_forest_corner_validate_card_v13/gi) || []).length, 1);
 assert.doesNotMatch(lower, /create table if not exists/);

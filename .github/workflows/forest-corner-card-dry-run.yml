@@ -8,6 +8,7 @@ on:
       - docs/mia/forest-corner-card-dry-run.mjs
       - docs/mia/forest-corner-card-dry-run.md
       - docs/mia/forest-corner-private-channel-auth-audit-v1.1.md
+      - docs/mia/forest-corner-private-card-service-design-v1.2.md
       - .github/workflows/forest-corner-card-dry-run.yml
   workflow_dispatch:
 

@@ -82,12 +82,14 @@ export function buildForestCorner(THREE, sceneData, pathData, mount) {
     const shape = new THREE.Shape();
     slab.polygon_xy.forEach(([x,y], i) => i ? shape.lineTo(x, -y) : shape.moveTo(x, -y));
     shape.closePath();
-    const mesh = new THREE.Mesh(new THREE.ShapeGeometry(shape), stoneMat);
+    const slabGeometry = new THREE.ShapeGeometry(shape);
+    slabGeometry.rotateX(-Math.PI / 2);
+    const mesh = new THREE.Mesh(slabGeometry, stoneMat);
     mesh.position.y = 1;
     mesh.receiveShadow = true;
     scene.add(mesh);
     const edge = new THREE.LineSegments(
-      new THREE.EdgesGeometry(new THREE.ShapeGeometry(shape)),
+      new THREE.EdgesGeometry(slabGeometry),
       new THREE.LineBasicMaterial({ color: "#53614e", transparent: true, opacity: 0.6 })
     );
     edge.position.y = 2;

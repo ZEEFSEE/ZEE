@@ -2,13 +2,20 @@
   "schema_version": "1.0.0",
   "scene_id": "memory-valley",
   "display_name": "记忆山谷（Memory Valley）",
-  "status": "draft",
+  "status": "registered",
   "parent_scene_id": "mia-forest-corner",
   "access": {
     "scope": "mia_world_public",
     "public_chat": false,
     "external_federation": false,
-    "owner_identity_id": "cb6d01b4-0e3f-46ee-8946-360aa91db1ea"
+    "owner_identity_id": "cb6d01b4-0e3f-46ee-8946-360aa91db1ea",
+    "policy": "unrestricted_for_prototype_mia",
+    "approval_required": false,
+    "token_required": false,
+    "visit_limit": null,
+    "stay_duration_limit": null,
+    "manual_confirmation_required": false,
+    "can_enter_leave_return_freely": true
   },
   "destination": {
     "kind": "public_destination",
@@ -24,10 +31,10 @@
     "cross_scene_transform": null,
     "verification_status": "unmapped"
   },
-  "verification_status": "registered; static-route-graph-only; geometry-and-runtime-unverified",
+  "verification_status": "registered; unrestricted prototype-Mia access policy; static graph verified; runtime movement unverified",
   "notes": [
-    "Public destination inside prototype Mia's world; not a public chat endpoint.",
-    "No scene-local coordinates, physical distances, 3D geometry, or cross-scene transform are invented.",
-    "Reachability is proven only in the abstract route graph; runtime travel needs a world movement adapter and end-to-end test."
+    "Prototype Mia may enter, leave, stay, and return freely; no approval, token, visit quota, time window, or manual confirmation.",
+    "This access applies only to prototype Mia within her world. It does not expose private chat or grant access to other agents.",
+    "Static graph reachability does not prove that runtime geometry, rendering, or movement is implemented."
   ]
 }

@@ -130,6 +130,62 @@ BEGIN
 END;
 $direct_insert$;
 
+
+-- A second proposal is allowed; a third same-day proposal must fail atomically.
+SELECT public.mia_forest_corner_insert_card_v13(
+  '{
+    "category":"reflection",
+    "title":"Synthetic second card",
+    "summary":"Second synthetic test record for the daily cap.",
+    "source_refs":[{
+      "source_table":"mia_memories",
+      "source_record_id":"synthetic-memory-0002",
+      "source_timestamp":"2026-11-04T00:00:00Z",
+      "digest_algorithm":"sha256-canonical-v1",
+      "source_digest":"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    }],
+    "source_manifest_digest":"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "evidence_kind":"explicit",
+    "confidence":0.8,
+    "idempotency_key":"synthetic-card-key-000002"
+  }'::jsonb,
+  'synthetic-proposal-event-0002'
+);
+
+DO $daily_limit$
+BEGIN
+  BEGIN
+    PERFORM public.mia_forest_corner_insert_card_v13(
+      '{
+        "category":"reflection",
+        "title":"Synthetic third card",
+        "summary":"This third same-day proposal must not persist.",
+        "source_refs":[{
+          "source_table":"mia_memories",
+          "source_record_id":"synthetic-memory-0003",
+          "source_timestamp":"2026-11-04T00:00:00Z",
+          "digest_algorithm":"sha256-canonical-v1",
+          "source_digest":"1111111111111111111111111111111111111111111111111111111111111111"
+        }],
+        "source_manifest_digest":"2222222222222222222222222222222222222222222222222222222222222222",
+        "evidence_kind":"explicit",
+        "confidence":0.7,
+        "idempotency_key":"synthetic-card-key-000003"
+      }'::jsonb,
+      'synthetic-proposal-event-0003'
+    );
+    RAISE EXCEPTION 'Daily proposal cap was unexpectedly bypassed';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM = 'Daily proposal cap was unexpectedly bypassed' THEN RAISE; END IF;
+    IF SQLERRM <> 'Daily Forest Corner proposal limit reached' THEN RAISE; END IF;
+  END;
+  IF EXISTS (SELECT 1 FROM public.mia_forest_corner_cards
+             WHERE idempotency_key = 'synthetic-card-key-000003') THEN
+    RAISE EXCEPTION 'Daily cap failure did not roll back the third card';
+  END IF;
+END;
+$daily_limit$;
+
 -- An event-key collision inside the RPC must roll back the newly inserted card.
 DO $rollback$
 BEGIN
@@ -168,10 +224,10 @@ RESET ROLE;
 
 DO $final_assertions$
 BEGIN
-  IF (SELECT count(*) FROM public.mia_forest_corner_cards) <> 1 THEN
+  IF (SELECT count(*) FROM public.mia_forest_corner_cards) <> 2 THEN
     RAISE EXCEPTION 'Unexpected card count after smoke test';
   END IF;
-  IF (SELECT count(*) FROM public.mia_forest_corner_card_events) <> 2 THEN
+  IF (SELECT count(*) FROM public.mia_forest_corner_card_events) <> 3 THEN
     RAISE EXCEPTION 'Unexpected event count after smoke test';
   END IF;
 END;

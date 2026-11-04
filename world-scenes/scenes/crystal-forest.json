@@ -2,7 +2,7 @@
   "schema_version": "1.0.0",
   "scene_id": "crystal-forest",
   "display_name": "水晶森林（Crystal Forest）",
-  "status": "registered",
+  "status": "draft",
   "parent_scene_id": "mia-forest-corner",
   "access": {
     "scope": "mia_world_public",

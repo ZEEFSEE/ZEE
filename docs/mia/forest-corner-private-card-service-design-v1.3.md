@@ -26,7 +26,7 @@ A future isolated Edge Function, tentatively `mia-forest-card-vault`, is the onl
 Allowed operations after all gates pass:
 - `list`: return a bounded page of accepted cards only.
 - `propose`: verify source pointers server-side, calculate canonical digests, then call the atomic insert RPC.
-- `review`: append exactly one accept/reject event after an explicit authenticated user action.\n\nThe current candidate is `supabase/functions/mia-forest-card-vault/index.ts`. It verifies the existing Mia HMAC token server-side, resolves source rows from an allowlist, checks identity/session ownership, computes canonical SHA-256 digests, and submits only pointer/digest metadata to the atomic RPC. A static guard is included; this is not yet a Deno runtime/integration test.
+- `review`: append exactly one accept/reject event after an explicit authenticated user action.\n\nThe current candidate is `supabase/functions/mia-forest-card-vault/index.ts`. It verifies the existing Mia HMAC token server-side, resolves source rows from an allowlist, checks identity/session ownership, computes canonical SHA-256 digests, and submits only pointer/digest metadata to the atomic RPC. Static security guards and synthetic Deno unit tests for HMAC validation, token age, source allowlists, historical-source exclusion, canonical hashing, timestamp normalization, and proposal input bounds are included. Their GitHub Actions result is not yet confirmed; database-backed Edge Function integration tests remain pending.
 - `revise`: **disabled until a dedicated atomic revision RPC and concurrency tests exist**.
 
 The Edge Function must use a hard-coded source allowlist:

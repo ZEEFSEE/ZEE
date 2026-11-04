@@ -1,6 +1,6 @@
 # Prototype Mia Forest Corner — Private Card Service Design V1.3
 
-**Status:** implementation design only. No Edge Function deployed; no database schema created.  
+**Status:** isolated implementation candidate committed on this branch. No Edge Function deployed; no database schema created or migrated.  
 **Branch:** `work/forest-corner-card-dry-run-v1`.
 
 ## 1. Purpose and quiet-use boundary
@@ -26,7 +26,7 @@ A future isolated Edge Function, tentatively `mia-forest-card-vault`, is the onl
 Allowed operations after all gates pass:
 - `list`: return a bounded page of accepted cards only.
 - `propose`: verify source pointers server-side, calculate canonical digests, then call the atomic insert RPC.
-- `review`: append exactly one accept/reject event after an explicit authenticated user action.
+- `review`: append exactly one accept/reject event after an explicit authenticated user action.\n\nThe current candidate is `supabase/functions/mia-forest-card-vault/index.ts`. It verifies the existing Mia HMAC token server-side, resolves source rows from an allowlist, checks identity/session ownership, computes canonical SHA-256 digests, and submits only pointer/digest metadata to the atomic RPC. A static guard is included; this is not yet a Deno runtime/integration test.
 - `revise`: **disabled until a dedicated atomic revision RPC and concurrency tests exist**.
 
 The Edge Function must use a hard-coded source allowlist:
@@ -65,7 +65,7 @@ The RPC uses SECURITY DEFINER only for the narrow atomic card + initial proposal
 - No automatic persistence of moment-to-moment emotional fluctuations.
 - `emotion_residue` is a classification label only, not a standing instruction to store transient emotional state.
 - Only meaningful durable moments may be proposed.
-- Initial proposal cap: at most two/day, subject to a tested cooldown.
+- Initial proposal cap: at most two new cards per UTC day, enforced inside the atomic RPC under a transaction-scoped advisory lock. Duplicate idempotent retries do not consume another slot. The disposable PostgreSQL smoke test includes a third-card rejection/rollback check.
 - Proposed cards remain hidden from the accepted shelf.
 - Rejected cards remain in the append-only ledger but are not displayed.
 - No content is generated while Mia is idle/listening.
@@ -115,10 +115,10 @@ The RPC uses SECURITY DEFINER only for the narrow atomic card + initial proposal
 A. Static CI checks pass (this does not prove SQL correctness).  
 B. Independent review of SQL, function owner, grants, RLS, and rollback.  
 C. Execute and test only in a disposable isolated PostgreSQL environment after explicit approval.  
-D. Implement source verification and explicit-review Edge Function; run full isolated tests.  
+D. Candidate source verification and explicit-review Edge Function now exist on the isolated branch; complete Deno runtime/integration tests and independent security review.  
 E. Add and test atomic revision RPC before enabling revisions.  
 F. Separate explicit approval for production migration/deployment.
 
 ## 10. Explicit non-actions
 
-No production or staging database has been accessed or changed. No SQL has been executed. No table, function, Edge Function, secret, API, login, chat, personality, memory, emotion, growth, AURORA, or MIA-02 configuration has been changed. No branch merge occurred.
+The production database was queried read-only for source schema verification; no production or staging writes/DDL occurred and no SQL proposal was executed. No table, function, Edge Function, secret, API, login, chat, personality, memory, emotion, growth, AURORA, or MIA-02 configuration has been changed. No branch merge occurred.

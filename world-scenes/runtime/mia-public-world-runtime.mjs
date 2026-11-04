@@ -102,7 +102,7 @@ export function resolveSceneTransition(manifest, fromSceneId, toSceneId) {
   const reverse=edge.from_scene_id!==fromSceneId;
   const source=reverse?edge.target:edge.source, target=reverse?edge.source:edge.target;
   for(const p of [source?.scene_local,target?.scene_local]) if(!Number.isFinite(p?.x)||!Number.isFinite(p?.z)||p.unit!=="m") return {ok:false,status:"unknown",reason:"portal_coordinates_missing"};
-  return {ok:true,status:"authored_virtual_portal_handoff",continuous_walk_path:false,source,target,transition_id:edge.transition_id,provenance:edge.coordinate_provenance};
+  return {ok:true,status:"authored_virtual_portal_handoff",continuous_walk_path:false,source,target,from_scene_id:fromSceneId,to_scene_id:toSceneId,transition_id:edge.transition_id,provenance:edge.coordinate_provenance};
 }
 
 /** Resolve a declared direct portal or a declared two-leg route via Forest Corner. */

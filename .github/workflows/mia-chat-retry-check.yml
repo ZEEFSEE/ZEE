@@ -7,6 +7,10 @@ on:
       - "tests/mia-chat-retry-contract.test.mjs"
       - "tests/mia-scene-frame-contract.test.mjs"
       - "supabase/functions/mia-chat/scene-frame.mjs"
+      - "mia-public-world-runtime.html"
+      - "world-scenes/runtime/mia-public-world-runtime.mjs"
+      - "world-scenes/runtime/mia-public-world-runtime.test.mjs"
+      - "world-scenes/public-destinations/world-spatial-manifest.v1.json"
       - ".github/workflows/mia-chat-retry-check.yml"
   push:
     branches:
@@ -29,7 +33,7 @@ jobs:
         with:
           node-version: 22
       - name: Check retry and stream safety contracts
-        run: node --test tests/mia-chat-retry-contract.test.mjs tests/mia-scene-frame-contract.test.mjs
+        run: node --test tests/mia-chat-retry-contract.test.mjs tests/mia-scene-frame-contract.test.mjs world-scenes/runtime/mia-public-world-runtime.test.mjs
 
   typecheck:
     runs-on: ubuntu-latest

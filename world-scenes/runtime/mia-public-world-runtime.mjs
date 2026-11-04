@@ -38,6 +38,11 @@ export function layoutToWorld(scene,point,contract) {
 export function anchorToLocal(scene,anchor,contract) {
   return {id:anchor.id,name:anchor.name,x:anchor.layout.x*contract.meters_per_layout_unit,z:anchor.layout.y*contract.meters_per_layout_unit};
 }
+export function anchorApproachToLocal(scene,anchor,contract) {
+  const p=anchor.approach;
+  if(!p||!Number.isFinite(p.x)||!Number.isFinite(p.z)) throw new TypeError("safe walk-up point required for "+anchor.id);
+  return {id:anchor.id,name:anchor.name,x:p.x,z:p.z};
+}
 export function isWalkable(scene,x,z,margin=0.45) {
   const width=scene.layout.width*0.02, depth=scene.layout.height*0.02;
   if(x<margin||z<margin||x>width-margin||z>depth-margin) return false;

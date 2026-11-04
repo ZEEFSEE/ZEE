@@ -13,7 +13,8 @@ const reply = (v:unknown,s=200) => new Response(JSON.stringify(v),{status:s,head
 
 export function safeFallback(s:any) {
   if (s.session_status !== "active") return {action:"enter",reason:"Safe fallback: enter the registered Forest_Corner scene."};
-  if ((s.last_interaction_sequence ?? -1) < s.sequence) return {action:"interact",behavior:"observe_greenhouse",target:"greenhouse",reason:"Safe fallback: make one quiet local observation."};
+  const lastAt = Date.parse(String(s.environment_state?.last_interaction?.occurred_at || ""));
+  if (!Number.isFinite(lastAt) || Date.now() - lastAt > 2 * 60 * 60 * 1000) return {action:"interact",behavior:"observe_greenhouse",target:"greenhouse",reason:"Safe fallback: make one quiet local observation after a long rest interval."};
   return {action:"wait",reason:"Preserve the current state without forcing activity."};
 }
 export function applyAction(input:any, plan:any, at:string) {

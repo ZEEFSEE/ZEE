@@ -20,8 +20,8 @@ This is an isolated, read-only Three.js scene presentation for prototype Mia
 - No cross-scene travel; destination portal edges remain non-integrated.
 - A manual, session-authenticated, read-only panel displays the latest headless autonomy snapshot.
 - No camera/visual perception, no physical movement, and no movement command path.
-- No private GLB signed-URL request. The Tiny Planet Friends asset is marked
-  as pending secure loading and not fetched by this page.
+- Tiny Planet Friends GLB loading is user-initiated and uses the existing
+  session-authenticated short-lived signed-URL service; the URL stays in memory.
 - The observation Edge Function only reads the latest prototype Mia autonomy run; it does not write Supabase.
 - No chat API, memories, personality, emotion, MIA-02,
   Jason, Mark, AURORA or federation access.

@@ -30,7 +30,7 @@ const encoder = new TextEncoder();
 function safeText(value: unknown, max: number): string {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
 }
-async function loadVerifiedSource(db: ReturnType<typeof createClient>, table: string, id: string, sessionId: string) {
+async function loadVerifiedSource(db: any, table: string, id: string, sessionId: string) {
   if (!SOURCE_TABLES.has(table) || !/^[0-9a-f-]{36}$/i.test(id)) throw new Error("source_ref_invalid");
   let query: any;
   switch (table) {
@@ -79,13 +79,13 @@ function overlapsRawSource(text: string, sources: Record<string, unknown>[]): bo
     return sourceText.length >= 80 && sourceText.includes(normalized);
   });
 }
-async function getPrivateSession(db: ReturnType<typeof createClient>): Promise<string> {
+async function getPrivateSession(db: any): Promise<string> {
   const { data, error } = await db.from("mia_chat_sessions").select("id")
     .eq("identity_id", IDENTITY_ID).order("created_at", { ascending: true }).limit(1).maybeSingle();
   if (error || !data?.id) throw new Error("mia_private_session_unavailable");
   return data.id;
 }
-async function listAcceptedCards(db: ReturnType<typeof createClient>) {
+async function listAcceptedCards(db: any) {
   const { data: cards, error } = await db.from("mia_forest_corner_cards")
     .select("card_id,category,title,summary,emotional_tone,evidence_kind,confidence,created_at,supersedes_card_id")
     .eq("identity_id", IDENTITY_ID).eq("privacy_scope", "prototype_mia_private_pair")

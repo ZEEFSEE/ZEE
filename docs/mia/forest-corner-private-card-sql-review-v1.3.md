@@ -6,7 +6,7 @@
 
 ## V1.3.1 static repair note
 
-A source inspection found that the V1.3 SQL text had a truncated SHA-256 predicate and a duplicated SQL tail after the decommission notes. Both were repaired in the isolated branch. The V1.3 static guard was strengthened to check lexical closure, balanced parentheses, one transaction boundary, expected function definitions and dollar-quote delimiters, and the complete digest predicate. This is still a structural text guard, not a PostgreSQL parser or execution test. The repaired files require a fresh CI run before this static gate can be considered passed.
+A source inspection found that the V1.3 SQL text had a truncated SHA-256 predicate and a duplicated SQL tail after the decommission notes. Both were repaired in the isolated branch. A further privilege-path review found that the event guard's row lock (`SELECT ... FOR UPDATE`) would otherwise execute as `service_role`, which intentionally has no UPDATE privilege on cards. The event guard is now a narrowly-scoped `SECURITY DEFINER` trigger function with a pinned search path and schema-qualified references; its owner and effective privileges must be inspected in the disposable database. The V1.3 static guard was strengthened to check lexical closure, balanced parentheses, one transaction boundary, expected function definitions and dollar-quote delimiters, and the complete digest predicate. This is still a structural text guard, not a PostgreSQL parser or execution test. The repaired files require a fresh CI run before this static gate can be considered passed.
 
 ## What changed from V1.2
 
@@ -20,7 +20,7 @@ A source inspection found that the V1.3 SQL text had a truncated SHA-256 predica
 
 ## Remaining blockers and explicit limitations
 
-1. **Not a PostgreSQL execution test.** SQL syntax, Supabase role behavior, trigger execution, function ownership, RLS bypass behavior, and grants remain unverified. A disposable Postgres instance is required.
+1. **PostgreSQL execution gate pending.** The disposable PostgreSQL 16 smoke harness has been added, but its result must be inspected. Supabase-specific role behavior, actual function owner, RLS bypass behavior, and deployed grants remain unverified.
 2. **Source ownership is not proven by SQL.** The Edge Function must fetch every source row through a hard-coded allowlist and verify prototype-Mia identity; for `mia_messages`, it must also verify the exact prototype-Mia chat session. It computes canonical digests server-side. Browser-provided pointers/digests are never trusted.
 3. **Revision flow is not yet complete.** V1.3 can represent a successor link and guards a `superseded` event, but does not yet provide one atomic revision RPC that inserts the successor, its initial proposal, and the predecessor's superseded event together. Do not enable revision writes until that RPC and its concurrency tests exist.
 4. **Review authorization remains an application responsibility.** The database can constrain event order and actor_scope values, but cannot prove that a human clicked an explicit review action. The Edge Function must authenticate the action and set `actor_scope` server-side.
@@ -40,6 +40,10 @@ A source inspection found that the V1.3 SQL text had a truncated SHA-256 predica
 - Source digest metadata, bounded source_refs, transition checks, and rollback notes are present.
 
 These observations do not establish that PostgreSQL accepts or enforces the SQL.
+
+## Disposable PostgreSQL test harness
+
+The isolated GitHub Actions workflow now provisions a fresh `postgres:16` service container, creates synthetic `anon`, `authenticated`, and `service_role` roles, applies the proposal only inside that ephemeral container, and runs synthetic checks for role grants, RLS flags, the atomic RPC, duplicate idempotency, one terminal review, direct-card-insert denial, and RPC rollback after an event-key collision. This container is destroyed with the job. It is not a Supabase staging project and contains no Mia production data. The first run result is pending; no database pass is claimed yet.
 
 ## Required next gates
 

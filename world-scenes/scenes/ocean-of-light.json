@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0.0",
+  "scene_id": "ocean-of-light",
+  "display_name": "光之海洋（Ocean of Light）",
+  "status": "draft",
+  "parent_scene_id": "mia-forest-corner",
+  "access": {
+    "scope": "mia_world_public",
+    "public_chat": false,
+    "external_federation": false,
+    "owner_identity_id": "cb6d01b4-0e3f-46ee-8946-360aa91db1ea"
+  },
+  "destination": {
+    "kind": "public_destination",
+    "theme": "流动光潮与宁静海岸",
+    "purpose": "聆听海潮、观看光线变化",
+    "icon": "🌊",
+    "entry_portal_id": "portal-ocean-of-light"
+  },
+  "coordinate_reference": {
+    "coordinate_space": "scene-local",
+    "units": "unassigned",
+    "origin": "destination-defined",
+    "cross_scene_transform": null,
+    "verification_status": "unmapped"
+  },
+  "verification_status": "registered; static-route-graph-only; geometry-and-runtime-unverified",
+  "notes": [
+    "Public destination inside prototype Mia's world; not a public chat endpoint.",
+    "No scene-local coordinates, physical distances, 3D geometry, or cross-scene transform are invented.",
+    "Reachability is proven only in the abstract route graph; runtime travel needs a world movement adapter and end-to-end test."
+  ]
+}

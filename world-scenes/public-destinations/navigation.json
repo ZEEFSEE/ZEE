@@ -1,0 +1,118 @@
+{
+  "schema_version": "1.0.0",
+  "world_id": "mia-extensible-world",
+  "network_id": "mia-public-destinations-network-v1",
+  "scope": "mia_world_public",
+  "root_node_id": "forest-corner-public-gateway",
+  "nodes": [
+    {
+      "node_id": "forest-corner-public-gateway",
+      "scene_id": "mia-forest-corner",
+      "node_type": "gateway",
+      "coordinate": null
+    },
+    {
+      "node_id": "portal-crystal-forest",
+      "scene_id": "crystal-forest",
+      "node_type": "destination_portal",
+      "coordinate": null
+    },
+    {
+      "node_id": "portal-ocean-of-light",
+      "scene_id": "ocean-of-light",
+      "node_type": "destination_portal",
+      "coordinate": null
+    },
+    {
+      "node_id": "portal-memory-valley",
+      "scene_id": "memory-valley",
+      "node_type": "destination_portal",
+      "coordinate": null
+    },
+    {
+      "node_id": "portal-living-city",
+      "scene_id": "living-city",
+      "node_type": "destination_portal",
+      "coordinate": null
+    },
+    {
+      "node_id": "portal-greenhouse",
+      "scene_id": "greenhouse",
+      "node_type": "destination_portal",
+      "coordinate": null
+    }
+  ],
+  "edges": [
+    {
+      "edge_id": "forest-to-crystal-forest",
+      "from": "forest-corner-public-gateway",
+      "to": "portal-crystal-forest",
+      "direction": "bidirectional",
+      "mode": "public_world_route",
+      "distance": null,
+      "geometry_ref": null,
+      "runtime_status": "not_integrated"
+    },
+    {
+      "edge_id": "forest-to-ocean-of-light",
+      "from": "forest-corner-public-gateway",
+      "to": "portal-ocean-of-light",
+      "direction": "bidirectional",
+      "mode": "public_world_route",
+      "distance": null,
+      "geometry_ref": null,
+      "runtime_status": "not_integrated"
+    },
+    {
+      "edge_id": "forest-to-memory-valley",
+      "from": "forest-corner-public-gateway",
+      "to": "portal-memory-valley",
+      "direction": "bidirectional",
+      "mode": "public_world_route",
+      "distance": null,
+      "geometry_ref": null,
+      "runtime_status": "not_integrated"
+    },
+    {
+      "edge_id": "forest-to-living-city",
+      "from": "forest-corner-public-gateway",
+      "to": "portal-living-city",
+      "direction": "bidirectional",
+      "mode": "public_world_route",
+      "distance": null,
+      "geometry_ref": null,
+      "runtime_status": "not_integrated"
+    },
+    {
+      "edge_id": "forest-to-greenhouse",
+      "from": "forest-corner-public-gateway",
+      "to": "portal-greenhouse",
+      "direction": "bidirectional",
+      "mode": "public_world_route",
+      "distance": null,
+      "geometry_ref": null,
+      "runtime_status": "not_integrated"
+    }
+  ],
+  "route_policy": {
+    "all_destinations_must_be_reachable_from_root": true,
+    "travel_mode": "world_portal_route",
+    "distance": "unspecified",
+    "coordinate_transform": "unverified",
+    "runtime_movement": "not_integrated",
+    "no_coordinate_guessing": true
+  },
+  "verification": {
+    "graph_connectivity": "static-validator-required",
+    "runtime_traversal": "not_tested",
+    "production_deployment": false
+  },
+  "exclusions": [
+    "MIA-02",
+    "Jason",
+    "Mark",
+    "AURORA",
+    "federation",
+    "public-chat-relay"
+  ]
+}

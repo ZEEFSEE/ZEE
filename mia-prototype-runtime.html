@@ -39,6 +39,14 @@ button:hover,a:hover{background:#edf3e9}
   <div>坐标映射：场景局部 X/Y → 展示 X/Z；不是 ZHI 世界坐标。</div></div>
  </section>
  <div class="controls"><button id="reset-view" type="button">重新载入场景</button><button id="fit-view" type="button">视角说明</button><button id="capture-frame" type="button">生成场景观察帧</button><button id="load-glb" type="button">安全加载 Tiny Planet Friends GLB</button></div>
+ <section class="tile" style="margin-bottom:14px">
+  <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">
+   <div><strong>后台场景状态（只读）</strong><small>手动读取 Mia Forest Corner 最近一次自主运行记录；不会驱动 3D 位置或写入数据。</small></div>
+   <button id="refresh-observation" type="button">刷新语义状态</button>
+  </div>
+  <p id="observation-status" role="status" aria-live="polite">尚未读取；请在同一浏览器会话中登录后手动刷新。</p>
+  <pre id="remote-observation" style="white-space:pre-wrap;overflow:auto;max-height:340px;font-size:12px"></pre>
+ </section>
  <section class="tile" style="margin-bottom:14px"><strong>场景观察帧（本地语义数据）</strong><small>根据场景源文件生成结构化描述；不是摄像头视觉识别，不会发送给 Mia 或写入数据库。</small><pre id="observation-frame" style="white-space:pre-wrap;overflow:auto;max-height:340px;font-size:12px"></pre></section>
  <div id="asset-status" class="notice" style="margin-bottom:12px">私有 GLB 默认不加载。需要先在同一浏览器标签页登录 Mia 独立聊天室，再打开本页；点击安全加载后使用现有短期会话授权。不会在 URL、页面文本或本地存储中保存令牌。</div>
  <div class="notice"><strong>运行边界：</strong>本页使用 Three.js 绘制森林角落的程序化 3D 展示物；石板几何来自仓库资产定义。当前没有真实物理碰撞、角色行走、跨场景传送或 Mia 实时视觉感知。Tiny Planet Friends 私有 GLB 仅在用户点击并通过现有 Mia 会话授权后加载。页面不会连接聊天、记忆、人格、情绪 API，也不写入数据库。</div>
@@ -54,6 +62,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { buildForestCorner, validateForestSource } from "./world-scenes/runtime/mia-forest-corner-3d.mjs";
 import { createForestObservationFrame } from "./world-scenes/runtime/mia-forest-observation-frame.mjs";
+import { fetchMiaForestObservation } from "./world-scenes/runtime/mia-forest-observation-client.mjs";
 import { resolveTinyPlanetFriendsUrl } from "./world-scenes/runtime/mia-scene-asset-loader.mjs";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 const mount=document.querySelector("#viewport"), status=document.querySelector("#runtime-status");
@@ -125,6 +134,37 @@ async function loadPrivateGlb(){
   button.disabled=false;
  }
 }
+
+async function refreshRemoteObservation(){
+ const button=document.querySelector("#refresh-observation");
+ const statusLine=document.querySelector("#observation-status");
+ const output=document.querySelector("#remote-observation");
+ button.disabled=true; statusLine.textContent="正在验证当前 Mia 会话并读取最新只读状态…"; output.textContent="";
+ try{
+  const token=sessionStorage.getItem("mia_chat_token")||"";
+  const observation=await fetchMiaForestObservation({token});
+  const summary={
+   scene:observation.scene,
+   autonomy:{
+    status:observation.autonomy.status,
+    trigger:observation.autonomy.trigger,
+    planner_mode:observation.autonomy.planner_mode,
+    action:observation.autonomy.action,
+    sequence:observation.autonomy.sequence,
+    current_node_id:observation.autonomy.current_node_id,
+    session_status:observation.autonomy.session_status
+   },
+   position:observation.position,
+   provenance:observation.provenance
+  };
+  output.textContent=JSON.stringify(summary,null,2);
+  statusLine.textContent="已读取后台语义状态（只读）；它不是当前画面的实时视觉或物理位置。";
+ }catch(error){
+  statusLine.textContent=error.message||"读取失败；未更改任何数据。";
+ }finally{button.disabled=false;}
+}
+document.querySelector("#refresh-observation").addEventListener("click",refreshRemoteObservation);
+
 function captureFrame(){
  if(!loadedScene)return;
  const frame=createForestObservationFrame({scene:loadedScene,navigation:loadedNavigation,runtimeStatus:"3d-preview-rendered",cameraPose:runtime?{position:runtime.camera.position.toArray(),target:controls?.target.toArray()??null}:null});

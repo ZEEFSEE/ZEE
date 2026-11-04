@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zeefsee.github.io/ZEE/docs/mia/forest-corner-memory-card.schema.json",
+  "title": "Prototype Mia Forest Corner Memory Card",
+  "description": "A private, source-linked, append-only derived card. This schema does not authorize database writes or export of raw chat content.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "card_id",
+    "schema_version",
+    "identity_scope",
+    "category",
+    "title",
+    "summary",
+    "source_refs",
+    "evidence_kind",
+    "confidence",
+    "privacy_scope",
+    "created_at",
+    "idempotency_key",
+    "record_state"
+  ],
+  "properties": {
+    "card_id": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 128
+    },
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "identity_scope": {
+      "const": "prototype_mia"
+    },
+    "category": {
+      "enum": [
+        "comfort_anchor",
+        "shared_decision",
+        "emotion_residue",
+        "life_event",
+        "reflection",
+        "creative_seed",
+        "relationship_context",
+        "scene_build_progress"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1200
+    },
+    "emotional_tone": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 80
+    },
+    "source_refs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source_table",
+          "source_record_id"
+        ],
+        "properties": {
+          "source_table": {
+            "enum": [
+              "mia_messages",
+              "mia_memories",
+              "mia_emotion_events",
+              "mia_life_events",
+              "mia_relationship_context"
+            ]
+          },
+          "source_record_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "occurred_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "content_sha256": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        }
+      }
+    },
+    "evidence_kind": {
+      "enum": [
+        "explicit",
+        "derived"
+      ]
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "privacy_scope": {
+      "const": "prototype_mia_private_pair"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 16,
+      "maxLength": 200
+    },
+    "record_state": {
+      "enum": [
+        "proposed",
+        "accepted",
+        "superseded",
+        "rejected"
+      ]
+    },
+    "supersedes_card_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128
+    },
+    "review_note": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 500
+    }
+  }
+}

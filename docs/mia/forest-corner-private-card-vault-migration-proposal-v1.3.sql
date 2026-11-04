@@ -250,14 +250,18 @@ for each row execute function public.mia_forest_corner_guard_event_v13();
 
 -- Single transaction boundary for creating a card and its initial proposal event.
 -- Caller supplies a complete, already source-verified card document.
--- This function does not independently prove source ownership/session membership.
+-- SECURITY DEFINER is used only for this narrowly-scoped insert transaction;
+-- search_path is pinned, object references are schema-qualified, and EXECUTE
+-- is revoked from browser roles below. The function does not prove source ownership/session.
 create function public.mia_forest_corner_insert_card_v13(p_card jsonb, p_event_key text)
 returns uuid
 language plpgsql
+security definer
 set search_path = pg_catalog, public
 as $fn$
 declare
   new_card_id uuid;
+  has_initial_proposal boolean;
 begin
   if octet_length(p_card::text) > 12288 then
     raise exception 'Card payload exceeds 12 KiB';
@@ -303,6 +307,11 @@ begin
     if new_card_id is null then
       raise exception 'Idempotent card insert could not resolve original row';
     end if;
+    select exists(select 1 from public.mia_forest_corner_card_events
+      where card_id = new_card_id and event_type = 'proposed') into has_initial_proposal;
+    if not has_initial_proposal then
+      raise exception 'Existing card is missing its initial proposal event; refusing silent repair';
+    end if;
     return new_card_id;
   end if;
 
@@ -319,8 +328,9 @@ alter table public.mia_forest_corner_card_events enable row level security;
 
 revoke all on table public.mia_forest_corner_cards from public, anon, authenticated;
 revoke all on table public.mia_forest_corner_card_events from public, anon, authenticated;
-grant select, insert on table public.mia_forest_corner_cards to service_role;
+grant select on table public.mia_forest_corner_cards to service_role;
 grant select, insert on table public.mia_forest_corner_card_events to service_role;
+revoke insert on table public.mia_forest_corner_cards from service_role;
 revoke update, delete, truncate, references, trigger
   on table public.mia_forest_corner_cards from service_role;
 revoke update, delete, truncate, references, trigger

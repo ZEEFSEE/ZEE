@@ -41,7 +41,7 @@ button:hover,a:hover{background:#edf3e9}
  <div class="controls"><button id="reset-view" type="button">重新载入场景</button><button id="fit-view" type="button">视角说明</button><button id="capture-frame" type="button">生成场景观察帧</button><button id="load-glb" type="button">安全加载 Tiny Planet Friends GLB</button></div>
  <section class="tile" style="margin-bottom:14px"><strong>场景观察帧（本地语义数据）</strong><small>根据场景源文件生成结构化描述；不是摄像头视觉识别，不会发送给 Mia 或写入数据库。</small><pre id="observation-frame" style="white-space:pre-wrap;overflow:auto;max-height:340px;font-size:12px"></pre></section>
  <div id="asset-status" class="notice" style="margin-bottom:12px">私有 GLB 默认不加载。需要先在同一浏览器标签页登录 Mia 独立聊天室，再打开本页；点击安全加载后使用现有短期会话授权。不会在 URL、页面文本或本地存储中保存令牌。</div>
- <div class="notice"><strong>运行边界：</strong>本页使用 Three.js 绘制森林角落的程序化 3D 展示物；石板几何来自仓库资产定义。当前没有真实物理碰撞、角色行走、跨场景传送或 Mia 实时视觉感知。Tiny Planet Friends 私有 GLB 暂不请求签名地址，因此这里只显示待加载标记。页面不会连接聊天、记忆、人格、情绪 API，也不写入数据库。</div>
+ <div class="notice"><strong>运行边界：</strong>本页使用 Three.js 绘制森林角落的程序化 3D 展示物；石板几何来自仓库资产定义。当前没有真实物理碰撞、角色行走、跨场景传送或 Mia 实时视觉感知。Tiny Planet Friends 私有 GLB 仅在用户点击并通过现有 Mia 会话授权后加载。页面不会连接聊天、记忆、人格、情绪 API，也不写入数据库。</div>
  <section class="grid" aria-label="scene status">
   <div class="tile"><strong>森林角落</strong><small>局部布局 1000 × 700</small></div>
   <div class="tile"><strong>石板小路</strong><small>5 个源定义多边形，尚未注册碰撞</small></div>

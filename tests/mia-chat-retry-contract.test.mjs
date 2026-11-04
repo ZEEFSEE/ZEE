@@ -11,7 +11,7 @@ const source = await readFile(
 test("transient retry status allowlist is explicit and bounded", () => {
   assert.match(source, /!\[429,502,503,504\]\.includes\(response\.status\)/);
   assert.match(source, /maxAttempts=2,totalBudgetMs=35000/);
-  assert.match(source, /16000,2,35000/);
+  assert.match(source, /14000,2,30000/);
   assert.match(source, /8000,1,8000/);
 });
 
@@ -52,10 +52,12 @@ function makeRetryHelper(fakeFetch) {
     AGNES_KEY: "unit-test-key",
     fetch: fakeFetch,
     AbortSignal,
+    AbortController,
     Response,
     Date,
     Promise,
     setTimeout,
+    clearTimeout,
     console: { warn() {} },
   });
 }

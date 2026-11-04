@@ -76,23 +76,12 @@
     }
   ],
   "safety": {
-    "federation_runtime_state_writes": true,
-    "mia_chat_mutation": false,
-    "production_deployment": true,
-    "agent_private_memory_export": false,
+    "database_writes": false,
+    "production_deployment": false,
+    "agent_state_mutation": false,
     "coordinate_guessing": false,
-    "authoritative_mia_source_preserved": true,
-    "live_presence_requires_authenticated_server_runtime_transition": true
+    "authoritative_mia_source_preserved": true
   },
   "scene_creation_policy_summary": "Open-ended catalog rooted in Mia's existing Forest_Corner. New scenes must connect to a registered parent scene. Unconnected scenes are excluded from the manifest.",
-  "catalog_policy_summary": "Mia-authored scenes are automatically materialized after structural checks; no per-scene human approval. Production deployment remains disabled.",
-  "primary_runtime_scene": {
-    "scene_id": "mia-forest-corner",
-    "world_id": "50b06c01-060d-49fa-8988-8f38c13406d7",
-    "designation": "primary_scene_for_mia",
-    "runtime_activation": "active_headless_agent_runtime",
-    "coordinate_transform": "unverified",
-    "runtime_provider": "Supabase Edge Function zhi-forest-runtime",
-    "runtime_instance_id": "forest-corner-headless-v1"
-  }
+  "catalog_policy_summary": "Mia-authored scenes are automatically materialized after structural checks; no per-scene human approval. Production deployment remains disabled."
 }

@@ -1,0 +1,586 @@
+{
+  "schema": "zhi.mia.public-world.spatial-manifest.v1",
+  "world_id": "mia-extensible-world",
+  "coordinate_contract": {
+    "unit": "meter",
+    "meters_per_layout_unit": 0.02,
+    "axis": "X=east,Y=up,Z=south",
+    "layout_origin": "top-left",
+    "layout_y_to_world_z": "positive",
+    "floor_y": 0,
+    "frame_kind": "authored_virtual_world_frame",
+    "calibration_status": "deterministic_virtual_calibration_not_physical_site_survey"
+  },
+  "scope": {
+    "principal": "prototype-mia",
+    "other_agents_access": false,
+    "aurora_enabled": false,
+    "federation_enabled": false
+  },
+  "scenes": [
+    {
+      "id": "mia-forest-corner",
+      "name": "森林角落",
+      "origin": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "layout": {
+        "width": 1000,
+        "height": 700
+      },
+      "spawn": {
+        "x": 1.2,
+        "z": 7
+      },
+      "portal": {
+        "x": 1.2,
+        "z": 7
+      },
+      "anchors": [
+        {
+          "id": "greenhouse",
+          "name": "智能温室",
+          "layout": {
+            "x": 180,
+            "y": 120
+          }
+        },
+        {
+          "id": "data-shelf",
+          "name": "数据书架",
+          "layout": {
+            "x": 500,
+            "y": 140
+          }
+        },
+        {
+          "id": "lounge",
+          "name": "休息区",
+          "layout": {
+            "x": 800,
+            "y": 350
+          }
+        },
+        {
+          "id": "rabbit",
+          "name": "森林小白兔",
+          "layout": {
+            "x": 300,
+            "y": 280
+          }
+        }
+      ],
+      "obstacles": [
+        {
+          "id": "greenhouse-shell",
+          "shape": "circle",
+          "x": 3.6,
+          "z": 2.4,
+          "radius": 1.1
+        },
+        {
+          "id": "data-shelf-body",
+          "shape": "rect",
+          "x": 9.1,
+          "z": 2.3,
+          "width": 2.6,
+          "depth": 0.9
+        },
+        {
+          "id": "lounge-bench",
+          "shape": "rect",
+          "x": 14.6,
+          "z": 6.8,
+          "width": 3.4,
+          "depth": 1.3
+        },
+        {
+          "id": "tree-nw",
+          "shape": "circle",
+          "x": 1.4,
+          "z": 1.8,
+          "radius": 0.55
+        },
+        {
+          "id": "tree-ne",
+          "shape": "circle",
+          "x": 18.4,
+          "z": 1.8,
+          "radius": 0.6
+        },
+        {
+          "id": "tree-sw",
+          "shape": "circle",
+          "x": 1.6,
+          "z": 12.2,
+          "radius": 0.5
+        },
+        {
+          "id": "tree-se",
+          "shape": "circle",
+          "x": 18.6,
+          "z": 12.1,
+          "radius": 0.6
+        }
+      ]
+    },
+    {
+      "id": "crystal-forest",
+      "name": "水晶森林",
+      "origin": {
+        "x": 30,
+        "y": 0,
+        "z": 0
+      },
+      "layout": {
+        "width": 1000,
+        "height": 700
+      },
+      "spawn": {
+        "x": 1.2,
+        "z": 7
+      },
+      "portal": {
+        "x": 1.2,
+        "z": 7
+      },
+      "anchors": [
+        {
+          "id": "crystal-grove",
+          "name": "晶簇林地",
+          "layout": {
+            "x": 210,
+            "y": 300
+          }
+        },
+        {
+          "id": "prism-clearing",
+          "name": "折光空地",
+          "layout": {
+            "x": 500,
+            "y": 330
+          }
+        },
+        {
+          "id": "quiet-pool",
+          "name": "静水镜池",
+          "layout": {
+            "x": 790,
+            "y": 480
+          }
+        },
+        {
+          "id": "moss-path",
+          "name": "苔石小径",
+          "layout": {
+            "x": 490,
+            "y": 520
+          }
+        }
+      ],
+      "obstacles": [
+        {
+          "id": "crystal-cluster-a",
+          "shape": "circle",
+          "x": 4.2,
+          "z": 6,
+          "radius": 1.25
+        },
+        {
+          "id": "crystal-cluster-b",
+          "shape": "circle",
+          "x": 5.1,
+          "z": 7.4,
+          "radius": 0.7
+        },
+        {
+          "id": "mirror-pool",
+          "shape": "ellipse",
+          "x": 15.8,
+          "z": 9.6,
+          "rx": 1.45,
+          "rz": 0.8
+        },
+        {
+          "id": "boundary-rock-nw",
+          "shape": "circle",
+          "x": 1.8,
+          "z": 1.5,
+          "radius": 0.45
+        },
+        {
+          "id": "boundary-rock-ne",
+          "shape": "circle",
+          "x": 18.2,
+          "z": 1.5,
+          "radius": 0.45
+        }
+      ]
+    },
+    {
+      "id": "ocean-of-light",
+      "name": "光之海洋",
+      "origin": {
+        "x": 60,
+        "y": 0,
+        "z": 0
+      },
+      "layout": {
+        "width": 1000,
+        "height": 700
+      },
+      "spawn": {
+        "x": 1.2,
+        "z": 7
+      },
+      "portal": {
+        "x": 1.2,
+        "z": 7
+      },
+      "anchors": [
+        {
+          "id": "shoreline",
+          "name": "宁静海岸",
+          "layout": {
+            "x": 230,
+            "y": 510
+          }
+        },
+        {
+          "id": "light-tide",
+          "name": "流动光潮",
+          "layout": {
+            "x": 520,
+            "y": 350
+          }
+        },
+        {
+          "id": "glow-island",
+          "name": "微光岛",
+          "layout": {
+            "x": 790,
+            "y": 250
+          }
+        },
+        {
+          "id": "shell-garden",
+          "name": "贝壳花园",
+          "layout": {
+            "x": 260,
+            "y": 260
+          }
+        }
+      ],
+      "obstacles": [
+        {
+          "id": "tidal-water",
+          "shape": "rect",
+          "x": 8.7,
+          "z": 5.1,
+          "width": 5.8,
+          "depth": 2.4
+        },
+        {
+          "id": "glow-island-water",
+          "shape": "ellipse",
+          "x": 15.8,
+          "z": 5,
+          "rx": 1.2,
+          "rz": 0.85
+        },
+        {
+          "id": "shell-bed",
+          "shape": "circle",
+          "x": 5.2,
+          "z": 5.2,
+          "radius": 0.75
+        }
+      ]
+    },
+    {
+      "id": "memory-valley",
+      "name": "记忆山谷",
+      "origin": {
+        "x": 90,
+        "y": 0,
+        "z": 0
+      },
+      "layout": {
+        "width": 1000,
+        "height": 700
+      },
+      "spawn": {
+        "x": 1.2,
+        "z": 7
+      },
+      "portal": {
+        "x": 1.2,
+        "z": 7
+      },
+      "anchors": [
+        {
+          "id": "echo-ridge",
+          "name": "回声山脊",
+          "layout": {
+            "x": 250,
+            "y": 260
+          }
+        },
+        {
+          "id": "memory-lake",
+          "name": "记忆湖",
+          "layout": {
+            "x": 520,
+            "y": 480
+          }
+        },
+        {
+          "id": "story-stones",
+          "name": "故事石阵",
+          "layout": {
+            "x": 790,
+            "y": 330
+          }
+        },
+        {
+          "id": "valley-trail",
+          "name": "山谷小径",
+          "layout": {
+            "x": 500,
+            "y": 570
+          }
+        }
+      ],
+      "obstacles": [
+        {
+          "id": "echo-ridge-body",
+          "shape": "rect",
+          "x": 5,
+          "z": 4.4,
+          "width": 4.8,
+          "depth": 2.8
+        },
+        {
+          "id": "memory-lake",
+          "shape": "ellipse",
+          "x": 10.4,
+          "z": 9.6,
+          "rx": 2.7,
+          "rz": 0.9
+        },
+        {
+          "id": "story-stones-a",
+          "shape": "circle",
+          "x": 15.8,
+          "z": 6.6,
+          "radius": 0.6
+        },
+        {
+          "id": "story-stones-b",
+          "shape": "circle",
+          "x": 16.8,
+          "z": 7.1,
+          "radius": 0.55
+        }
+      ]
+    },
+    {
+      "id": "living-city",
+      "name": "生命之城",
+      "origin": {
+        "x": 120,
+        "y": 0,
+        "z": 0
+      },
+      "layout": {
+        "width": 1000,
+        "height": 700
+      },
+      "spawn": {
+        "x": 1.2,
+        "z": 7
+      },
+      "portal": {
+        "x": 1.2,
+        "z": 7
+      },
+      "anchors": [
+        {
+          "id": "green-square",
+          "name": "绿色广场",
+          "layout": {
+            "x": 500,
+            "y": 360
+          }
+        },
+        {
+          "id": "living-district",
+          "name": "生态街区",
+          "layout": {
+            "x": 230,
+            "y": 300
+          }
+        },
+        {
+          "id": "canopy-garden",
+          "name": "树冠花园",
+          "layout": {
+            "x": 790,
+            "y": 260
+          }
+        },
+        {
+          "id": "riverwalk",
+          "name": "河畔步道",
+          "layout": {
+            "x": 520,
+            "y": 570
+          }
+        }
+      ],
+      "obstacles": [
+        {
+          "id": "district-a",
+          "shape": "rect",
+          "x": 4.6,
+          "z": 6,
+          "width": 3.5,
+          "depth": 3.6
+        },
+        {
+          "id": "canopy-planter",
+          "shape": "circle",
+          "x": 15.8,
+          "z": 5.2,
+          "radius": 1.1
+        },
+        {
+          "id": "square-fountain",
+          "shape": "circle",
+          "x": 10,
+          "z": 7.2,
+          "radius": 0.75
+        }
+      ]
+    },
+    {
+      "id": "greenhouse",
+      "name": "温室",
+      "origin": {
+        "x": 150,
+        "y": 0,
+        "z": 0
+      },
+      "layout": {
+        "width": 1000,
+        "height": 700
+      },
+      "spawn": {
+        "x": 1.2,
+        "z": 7
+      },
+      "portal": {
+        "x": 1.2,
+        "z": 7
+      },
+      "anchors": [
+        {
+          "id": "glass-hall",
+          "name": "玻璃温室",
+          "layout": {
+            "x": 500,
+            "y": 330
+          }
+        },
+        {
+          "id": "fern-corner",
+          "name": "蕨类角落",
+          "layout": {
+            "x": 220,
+            "y": 440
+          }
+        },
+        {
+          "id": "seed-table",
+          "name": "种子与育苗台",
+          "layout": {
+            "x": 780,
+            "y": 460
+          }
+        },
+        {
+          "id": "sunlight-bed",
+          "name": "阳光苗床",
+          "layout": {
+            "x": 520,
+            "y": 560
+          }
+        }
+      ],
+      "obstacles": [
+        {
+          "id": "glass-hall-frame",
+          "shape": "rect",
+          "x": 10,
+          "z": 6.6,
+          "width": 7.2,
+          "depth": 4.6
+        },
+        {
+          "id": "fern-planter",
+          "shape": "circle",
+          "x": 4.4,
+          "z": 8.8,
+          "radius": 0.9
+        },
+        {
+          "id": "seed-table",
+          "shape": "rect",
+          "x": 15.6,
+          "z": 9.2,
+          "width": 2.4,
+          "depth": 1
+        }
+      ]
+    }
+  ],
+  "routes": [
+    {
+      "from": "mia-forest-corner",
+      "to": "crystal-forest",
+      "direction": "bidirectional",
+      "mode": "scene-portal",
+      "access": "prototype-mia-unrestricted"
+    },
+    {
+      "from": "mia-forest-corner",
+      "to": "ocean-of-light",
+      "direction": "bidirectional",
+      "mode": "scene-portal",
+      "access": "prototype-mia-unrestricted"
+    },
+    {
+      "from": "mia-forest-corner",
+      "to": "memory-valley",
+      "direction": "bidirectional",
+      "mode": "scene-portal",
+      "access": "prototype-mia-unrestricted"
+    },
+    {
+      "from": "mia-forest-corner",
+      "to": "living-city",
+      "direction": "bidirectional",
+      "mode": "scene-portal",
+      "access": "prototype-mia-unrestricted"
+    },
+    {
+      "from": "mia-forest-corner",
+      "to": "greenhouse",
+      "direction": "bidirectional",
+      "mode": "scene-portal",
+      "access": "prototype-mia-unrestricted"
+    }
+  ]
+}

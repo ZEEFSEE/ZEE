@@ -1,0 +1,54 @@
+name: Mia Proactive Private Messages
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+      timezone: "Asia/Singapore"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Preview decision without sending a message"
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: mia-proactive-private-messages
+  cancel-in-progress: false
+
+jobs:
+  check-and-send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Obtain short-lived GitHub OIDC token
+        id: oidc
+        shell: bash
+        run: |
+          set -euo pipefail
+          response="$(curl --fail --silent --show-error \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=mia-proactive-messenger")"
+          token="$(node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const j=JSON.parse(s);if(!j.value)process.exit(1);process.stdout.write(j.value)})' <<< "$response")"
+          echo "::add-mask::$token"
+          echo "token=$token" >> "$GITHUB_OUTPUT"
+
+      - name: Ask Mia whether a message is worth sending
+        env:
+          OIDC_TOKEN: ${{ steps.oidc.outputs.token }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || false }}
+          PROACTIVE_FUNCTION_URL: https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/mia-proactive-message
+        shell: bash
+        run: |
+          set -euo pipefail
+          payload="$(node -e 'process.stdout.write(JSON.stringify({dry_run: process.env.DRY_RUN === "true"}))')"
+          response="$(curl --fail --silent --show-error \
+            -X POST "$PROACTIVE_FUNCTION_URL" \
+            -H "Authorization: Bearer $OIDC_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$payload")"
+          echo "$response" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const x=JSON.parse(s);if(!x.ok||!["sent","skipped","dry_run"].includes(x.status)){console.error(JSON.stringify(x));process.exit(1)}console.log("Mia proactive check:",x.status,x.reason||"");if(x.status==="sent")console.log("Message persisted:",x.message_id)})'

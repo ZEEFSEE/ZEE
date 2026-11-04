@@ -1,0 +1,143 @@
+{
+  "snapshot_id": "prototype-mia-forest-corner-v1.1",
+  "snapshot_version": "1.1.0",
+  "created_at": "2026-11-04",
+  "scope": "prototype_mia_only",
+  "source_repository": "ZEEFSEE/ZEE",
+  "source_branch": "main",
+  "source_commit": "c0da50c634e90ae627e9ee849036fd279a6f4177",
+  "coordinate_system": "Forest_Corner scene-local layout; not ZHI global coordinates",
+  "baseline": {
+    "scene_id": "mia-forest-corner",
+    "bounds": {
+      "width": 1000,
+      "height": 700
+    },
+    "lounge": {
+      "x": 800,
+      "y": 350,
+      "state": "idle/listening"
+    },
+    "greenhouse": {
+      "x": 180,
+      "y": 120
+    },
+    "data_shelf": {
+      "x": 500,
+      "y": 140
+    },
+    "rabbit": {
+      "x": 300,
+      "y": 280
+    },
+    "tiny_planet_friends_glb": {
+      "x": 650,
+      "y": 240,
+      "rendering": "unverified"
+    },
+    "roses": {
+      "red": 3,
+      "yellow": 3,
+      "white": 3,
+      "total": 9
+    }
+  },
+  "integrity": {
+    "algorithm": "SHA-256",
+    "git_blob_reference": "Git blob SHA-1 values recorded as provenance; SHA-256 is the integrity check."
+  },
+  "files": [
+    {
+      "source_path": "mia/forest-corner.json",
+      "snapshot_path": "world-scenes/snapshots/forest-corner-v1.1/repo/mia/forest-corner.json",
+      "git_blob_sha1": "08ea23614a1d92baf53d082b7344a3bb639d4186",
+      "sha256": "9745240d9ededbbcecd6a04745c976a39e564b6b08a2da14d9b60da8bd45e5d9",
+      "bytes": 5154
+    },
+    {
+      "source_path": "mia-forest-corner.html",
+      "snapshot_path": "world-scenes/snapshots/forest-corner-v1.1/repo/mia-forest-corner.html",
+      "git_blob_sha1": "f2a53be5d2975bf2343651b5db7e61ff0b8f1f2a",
+      "sha256": "8773f6bcbee21ff55d6754ee4daa7402e67a993105ec36074d9e55a36b1f0bb4",
+      "bytes": 9655
+    },
+    {
+      "source_path": "mia-world.html",
+      "snapshot_path": "world-scenes/snapshots/forest-corner-v1.1/repo/mia-world.html",
+      "git_blob_sha1": "85f4a375514a6351a16928b5d97f9286a779d015",
+      "sha256": "ee54f55af252ebbf286e19d24a1e4b7bde64ac4782020dfa1fdcce3b7a3fd7ba",
+      "bytes": 664
+    },
+    {
+      "source_path": "mia-chat.html",
+      "snapshot_path": "world-scenes/snapshots/forest-corner-v1.1/repo/mia-chat.html",
+      "git_blob_sha1": "e645be955b8162a9cb1fd4d52fe8bca52cbb0654",
+      "sha256": "3a51a351fcfef6fb4be52fbfea3c11007cfc156c963c8b5acd7e435d82b25536",
+      "bytes": 37335
+    },
+    {
+      "source_path": "world-scenes/world-manifest.json",
+      "snapshot_path": "world-scenes/snapshots/forest-corner-v1.1/repo/world-scenes/world-manifest.json",
+      "git_blob_sha1": "8418dd7de32e44d45bcb780f1cc2be3a792143ee",
+      "sha256": "558c9847724223b3938384e39b6c53ad30e0e9aa48acae9360c294dfe7c1e259",
+      "bytes": 3452
+    },
+    {
+      "source_path": "world-scenes/scenes/mia-forest-corner.json",
+      "snapshot_path": "world-scenes/snapshots/forest-corner-v1.1/repo/world-scenes/scenes/mia-forest-corner.json",
+      "git_blob_sha1": "ace82598227ac5fff7edd9a31c547cb05a9d6245",
+      "sha256": "9575172c02d918ed37ed86de82f6041b468534cd09df0d6fb7dce3b8def26f7d",
+      "bytes": 1871
+    },
+    {
+      "source_path": "world-scenes/validate-scenes.mjs",
+      "snapshot_path": "world-scenes/snapshots/forest-corner-v1.1/repo/world-scenes/validate-scenes.mjs",
+      "git_blob_sha1": "240db4c25496286e0d1426b26285bb3de5ace114",
+      "sha256": "b6511528064565a18f5917c77faa26db08ae35402afb2b2f6c8a0bdbfdf689da",
+      "bytes": 6021
+    },
+    {
+      "source_path": "world-scenes/mia-assets/geometry.json",
+      "snapshot_path": "world-scenes/snapshots/forest-corner-v1.1/repo/world-scenes/mia-assets/geometry.json",
+      "git_blob_sha1": "cbb89e71aaa08b34b69e54f46309e23e816d40d4",
+      "sha256": "7d41b54851cd55522edf24628b05e177682ed52272fcdcdde8c2bdf4dabe9798",
+      "bytes": 1373
+    },
+    {
+      "source_path": "world-scenes/mia-assets/entities.json",
+      "snapshot_path": "world-scenes/snapshots/forest-corner-v1.1/repo/world-scenes/mia-assets/entities.json",
+      "git_blob_sha1": "0f5f5b19cf21deeba8c83b63dbbdaec021c8dcab",
+      "sha256": "0a9030f3c19cc949fa4af3616481068499e16cba5381638df6de14ee11fc248b",
+      "bytes": 4559
+    },
+    {
+      "source_path": "world-scenes/mia-assets/navigation.json",
+      "snapshot_path": "world-scenes/snapshots/forest-corner-v1.1/repo/world-scenes/mia-assets/navigation.json",
+      "git_blob_sha1": "4ac8d7aa4d0ce45fd5baa1ae9591cabe22add2c3",
+      "sha256": "bb0677d615f04cdeda0abaf21869ce1e3a48f2d1378bdb7aa2d7429bb3481c42",
+      "bytes": 7664
+    },
+    {
+      "source_path": "world-scenes/mia-assets/interactions.json",
+      "snapshot_path": "world-scenes/snapshots/forest-corner-v1.1/repo/world-scenes/mia-assets/interactions.json",
+      "git_blob_sha1": "5b53d8fb94dbc96ac3f1f3aad94e4e6292a9f1fb",
+      "sha256": "fbb627b47494022d10675f948e74bd670c72e8c00b9e8affcfbd1fcbcaaf7c9e",
+      "bytes": 1445
+    },
+    {
+      "source_path": "world-scenes/mia-assets/stone-path-forest-to-lounge.json",
+      "snapshot_path": "world-scenes/snapshots/forest-corner-v1.1/repo/world-scenes/mia-assets/stone-path-forest-to-lounge.json",
+      "git_blob_sha1": "5bb3c61fa7bbf51b20910a880d543aa1d1037545",
+      "sha256": "20710a02102d782649684f331317d271c2d47dc4e680f0bf2e45ea3fd268e524",
+      "bytes": 9963
+    }
+  ],
+  "safety": {
+    "database_writes": false,
+    "chat_history_mutation": false,
+    "personality_or_emotion_engine_changes": false,
+    "api_changes": false,
+    "aurora_reconnection": false,
+    "other_agents_touched": false
+  }
+}

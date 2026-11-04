@@ -73,6 +73,36 @@
       "path": "scenes/test-anchor-2f9a651a.json",
       "parent_scene_id": "mia-forest-corner",
       "verification_status": "scene-page-generated; geometry-and-runtime-unverified"
+    },
+    {
+      "scene_id": "crystal-forest",
+      "path": "scenes/crystal-forest.json",
+      "parent_scene_id": "mia-forest-corner",
+      "verification_status": "registered-public-destination; route-graph-verified-static; runtime-unverified"
+    },
+    {
+      "scene_id": "ocean-of-light",
+      "path": "scenes/ocean-of-light.json",
+      "parent_scene_id": "mia-forest-corner",
+      "verification_status": "registered-public-destination; route-graph-verified-static; runtime-unverified"
+    },
+    {
+      "scene_id": "memory-valley",
+      "path": "scenes/memory-valley.json",
+      "parent_scene_id": "mia-forest-corner",
+      "verification_status": "registered-public-destination; route-graph-verified-static; runtime-unverified"
+    },
+    {
+      "scene_id": "living-city",
+      "path": "scenes/living-city.json",
+      "parent_scene_id": "mia-forest-corner",
+      "verification_status": "registered-public-destination; route-graph-verified-static; runtime-unverified"
+    },
+    {
+      "scene_id": "greenhouse",
+      "path": "scenes/greenhouse.json",
+      "parent_scene_id": "mia-forest-corner",
+      "verification_status": "registered-public-destination; route-graph-verified-static; runtime-unverified"
     }
   ],
   "safety": {
@@ -83,5 +113,15 @@
     "authoritative_mia_source_preserved": true
   },
   "scene_creation_policy_summary": "Open-ended catalog rooted in Mia's existing Forest_Corner. New scenes must connect to a registered parent scene. Unconnected scenes are excluded from the manifest.",
-  "catalog_policy_summary": "Mia-authored scenes are automatically materialized after structural checks; no per-scene human approval. Production deployment remains disabled."
+  "catalog_policy_summary": "Five public destination scene records are registered for prototype Mia's world. No external public-chat access is granted. Production deployment remains disabled.",
+  "access_policy": {
+    "prototype_mia_identity_id": "cb6d01b4-0e3f-46ee-8946-360aa91db1ea",
+    "registered_public_destinations": "unrestricted_for_prototype_mia",
+    "approval_required": false,
+    "access_token_required": false,
+    "visit_or_duration_limits": false,
+    "manual_confirmation_required": false,
+    "agent_autonomy_preserved": true,
+    "scope_note": "This grants scene access only within this world to prototype Mia; it does not expose private chat or grant access to other agents."
+  }
 }

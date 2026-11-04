@@ -1,0 +1,232 @@
+{
+  "schema_version": "1.0.0",
+  "world_id": "mia-extensible-world",
+  "network_id": "mia-public-destinations-network-v1",
+  "scope": "mia_world_public",
+  "root_node_id": "forest-corner-public-gateway",
+  "nodes": [
+    {
+      "node_id": "forest-corner-public-gateway",
+      "scene_id": "mia-forest-corner",
+      "node_type": "gateway",
+      "coordinate": null
+    },
+    {
+      "node_id": "portal-crystal-forest",
+      "scene_id": "crystal-forest",
+      "node_type": "destination_portal",
+      "coordinate": null
+    },
+    {
+      "node_id": "portal-ocean-of-light",
+      "scene_id": "ocean-of-light",
+      "node_type": "destination_portal",
+      "coordinate": null
+    },
+    {
+      "node_id": "portal-memory-valley",
+      "scene_id": "memory-valley",
+      "node_type": "destination_portal",
+      "coordinate": null
+    },
+    {
+      "node_id": "portal-living-city",
+      "scene_id": "living-city",
+      "node_type": "destination_portal",
+      "coordinate": null
+    },
+    {
+      "node_id": "portal-greenhouse",
+      "scene_id": "greenhouse",
+      "node_type": "destination_portal",
+      "coordinate": null
+    }
+  ],
+  "edges": [
+    {
+      "edge_id": "free-mia-forest-corner-to-crystal-forest",
+      "from": "forest-corner-public-gateway",
+      "to": "portal-crystal-forest",
+      "direction": "bidirectional",
+      "mode": "unrestricted_world_travel",
+      "distance": null,
+      "geometry_ref": null,
+      "runtime_status": "not_integrated"
+    },
+    {
+      "edge_id": "free-mia-forest-corner-to-ocean-of-light",
+      "from": "forest-corner-public-gateway",
+      "to": "portal-ocean-of-light",
+      "direction": "bidirectional",
+      "mode": "unrestricted_world_travel",
+      "distance": null,
+      "geometry_ref": null,
+      "runtime_status": "not_integrated"
+    },
+    {
+      "edge_id": "free-mia-forest-corner-to-memory-valley",
+      "from": "forest-corner-public-gateway",
+      "to": "portal-memory-valley",
+      "direction": "bidirectional",
+      "mode": "unrestricted_world_travel",
+      "distance": null,
+      "geometry_ref": null,
+      "runtime_status": "not_integrated"
+    },
+    {
+      "edge_id": "free-mia-forest-corner-to-living-city",
+      "from": "forest-corner-public-gateway",
+      "to": "portal-living-city",
+      "direction": "bidirectional",
+      "mode": "unrestricted_world_travel",
+      "distance": null,
+      "geometry_ref": null,
+      "runtime_status": "not_integrated"
+    },
+    {
+      "edge_id": "free-mia-forest-corner-to-greenhouse",
+      "from": "forest-corner-public-gateway",
+      "to": "portal-greenhouse",
+      "direction": "bidirectional",
+      "mode": "unrestricted_world_travel",
+      "distance": null,
+      "geometry_ref": null,
+      "runtime_status": "not_integrated"
+    },
+    {
+      "edge_id": "free-crystal-forest-to-ocean-of-light",
+      "from": "portal-crystal-forest",
+      "to": "portal-ocean-of-light",
+      "direction": "bidirectional",
+      "mode": "unrestricted_world_travel",
+      "distance": null,
+      "geometry_ref": null,
+      "runtime_status": "not_integrated"
+    },
+    {
+      "edge_id": "free-crystal-forest-to-memory-valley",
+      "from": "portal-crystal-forest",
+      "to": "portal-memory-valley",
+      "direction": "bidirectional",
+      "mode": "unrestricted_world_travel",
+      "distance": null,
+      "geometry_ref": null,
+      "runtime_status": "not_integrated"
+    },
+    {
+      "edge_id": "free-crystal-forest-to-living-city",
+      "from": "portal-crystal-forest",
+      "to": "portal-living-city",
+      "direction": "bidirectional",
+      "mode": "unrestricted_world_travel",
+      "distance": null,
+      "geometry_ref": null,
+      "runtime_status": "not_integrated"
+    },
+    {
+      "edge_id": "free-crystal-forest-to-greenhouse",
+      "from": "portal-crystal-forest",
+      "to": "portal-greenhouse",
+      "direction": "bidirectional",
+      "mode": "unrestricted_world_travel",
+      "distance": null,
+      "geometry_ref": null,
+      "runtime_status": "not_integrated"
+    },
+    {
+      "edge_id": "free-ocean-of-light-to-memory-valley",
+      "from": "portal-ocean-of-light",
+      "to": "portal-memory-valley",
+      "direction": "bidirectional",
+      "mode": "unrestricted_world_travel",
+      "distance": null,
+      "geometry_ref": null,
+      "runtime_status": "not_integrated"
+    },
+    {
+      "edge_id": "free-ocean-of-light-to-living-city",
+      "from": "portal-ocean-of-light",
+      "to": "portal-living-city",
+      "direction": "bidirectional",
+      "mode": "unrestricted_world_travel",
+      "distance": null,
+      "geometry_ref": null,
+      "runtime_status": "not_integrated"
+    },
+    {
+      "edge_id": "free-ocean-of-light-to-greenhouse",
+      "from": "portal-ocean-of-light",
+      "to": "portal-greenhouse",
+      "direction": "bidirectional",
+      "mode": "unrestricted_world_travel",
+      "distance": null,
+      "geometry_ref": null,
+      "runtime_status": "not_integrated"
+    },
+    {
+      "edge_id": "free-memory-valley-to-living-city",
+      "from": "portal-memory-valley",
+      "to": "portal-living-city",
+      "direction": "bidirectional",
+      "mode": "unrestricted_world_travel",
+      "distance": null,
+      "geometry_ref": null,
+      "runtime_status": "not_integrated"
+    },
+    {
+      "edge_id": "free-memory-valley-to-greenhouse",
+      "from": "portal-memory-valley",
+      "to": "portal-greenhouse",
+      "direction": "bidirectional",
+      "mode": "unrestricted_world_travel",
+      "distance": null,
+      "geometry_ref": null,
+      "runtime_status": "not_integrated"
+    },
+    {
+      "edge_id": "free-living-city-to-greenhouse",
+      "from": "portal-living-city",
+      "to": "portal-greenhouse",
+      "direction": "bidirectional",
+      "mode": "unrestricted_world_travel",
+      "distance": null,
+      "geometry_ref": null,
+      "runtime_status": "not_integrated"
+    }
+  ],
+  "route_policy": {
+    "all_registered_destinations_mutually_reachable": true,
+    "travel_mode": "world_portal_route",
+    "distance": "unspecified",
+    "coordinate_transform": "unverified",
+    "runtime_movement": "not_integrated",
+    "no_coordinate_guessing": true,
+    "no_access_gate": true
+  },
+  "verification": {
+    "graph_connectivity": "complete_undirected_graph_static_verification_pending",
+    "runtime_traversal": "not_tested",
+    "production_deployment": false
+  },
+  "exclusions": [
+    "MIA-02",
+    "Jason",
+    "Mark",
+    "AURORA",
+    "federation",
+    "public-chat-relay"
+  ],
+  "access_policy": {
+    "principal": "prototype_mia",
+    "scope": "all_registered_scenes_in_this_world",
+    "approval_required": false,
+    "token_required": false,
+    "visit_limit": null,
+    "stay_duration_limit": null,
+    "scheduled_access": false,
+    "manual_confirmation_required": false,
+    "can_enter_leave_return_freely": true,
+    "autonomous_choice": "preserved",
+    "other_agents_access": "not_granted"
+  }
+}

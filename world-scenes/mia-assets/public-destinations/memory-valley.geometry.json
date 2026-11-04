@@ -1,0 +1,92 @@
+{
+  "schema_version": "1.0.0",
+  "scene_id": "memory-valley",
+  "coordinate_space": "scene-local",
+  "units": "relative_layout_units",
+  "bounds": {
+    "width": 1000,
+    "height": 700,
+    "depth": null,
+    "verification_status": "preview_canvas_only_not_world_bounds"
+  },
+  "palette": {
+    "background": "#263247",
+    "mid": "#596b8b",
+    "highlight": "#b4c6df",
+    "accent": "#f0d8a6"
+  },
+  "features": [
+    {
+      "feature_id": "echo-ridge",
+      "label": "回声山脊",
+      "kind": "visual_zone",
+      "shape": "mountain",
+      "layout": {
+        "x": 250,
+        "y": 260,
+        "width": 270,
+        "height": 190
+      },
+      "render_hint": "2d_preview_only",
+      "interaction": "look_only",
+      "verification_status": "authored_preview_layout_not_world_calibrated"
+    },
+    {
+      "feature_id": "memory-lake",
+      "label": "记忆湖",
+      "kind": "visual_zone",
+      "shape": "ellipse",
+      "layout": {
+        "x": 520,
+        "y": 480,
+        "width": 300,
+        "height": 100
+      },
+      "render_hint": "2d_preview_only",
+      "interaction": "look_only",
+      "verification_status": "authored_preview_layout_not_world_calibrated"
+    },
+    {
+      "feature_id": "story-stones",
+      "label": "故事石阵",
+      "kind": "visual_zone",
+      "shape": "cluster",
+      "layout": {
+        "x": 790,
+        "y": 330,
+        "width": 150,
+        "height": 130
+      },
+      "render_hint": "2d_preview_only",
+      "interaction": "look_only",
+      "verification_status": "authored_preview_layout_not_world_calibrated"
+    },
+    {
+      "feature_id": "valley-trail",
+      "label": "山谷小径",
+      "kind": "visual_zone",
+      "shape": "path",
+      "layout": {
+        "x": 500,
+        "y": 570,
+        "width": 700,
+        "height": 24
+      },
+      "render_hint": "2d_preview_only",
+      "interaction": "look_only",
+      "verification_status": "authored_preview_layout_not_world_calibrated"
+    }
+  ],
+  "route_contract": {
+    "scene_entry": "logical_scene_link_only",
+    "cross_scene_transform": null,
+    "runtime_movement": "not_integrated",
+    "collision": "not_defined"
+  },
+  "verification_status": "draft_visual_layout; static_preview_only; runtime_unverified",
+  "notes": [
+    "The positions and shapes in this file are authored composition hints for a 2D preview, not measured ZHI world coordinates or physical geometry.",
+    "No global transform, distance, terrain, collision, navigation mesh, or runtime portal is asserted.",
+    "Prototype Mia's access remains unrestricted by policy; this file does not itself move an agent or change production state."
+  ]
+}

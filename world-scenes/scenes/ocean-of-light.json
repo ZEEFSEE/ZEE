@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0.0",
+  "scene_id": "ocean-of-light",
+  "display_name": "光之海洋（Ocean of Light）",
+  "status": "draft",
+  "parent_scene_id": "mia-forest-corner",
+  "access": {
+    "scope": "mia_world_public",
+    "public_chat": false,
+    "external_federation": false,
+    "owner_identity_id": "cb6d01b4-0e3f-46ee-8946-360aa91db1ea",
+    "policy": "unrestricted_for_prototype_mia",
+    "approval_required": false,
+    "token_required": false,
+    "visit_limit": null,
+    "stay_duration_limit": null,
+    "manual_confirmation_required": false,
+    "can_enter_leave_return_freely": true
+  },
+  "destination": {
+    "kind": "public_destination",
+    "theme": "流动光潮与宁静海岸",
+    "purpose": "聆听海潮、观看光线变化",
+    "icon": "🌊",
+    "entry_portal_id": "portal-ocean-of-light"
+  },
+  "coordinate_reference": {
+    "coordinate_space": "scene-local",
+    "units": "unassigned",
+    "origin": "destination-defined",
+    "cross_scene_transform": null,
+    "verification_status": "unmapped"
+  },
+  "verification_status": "scene metadata registered; visual layout draft authored; static preview available; runtime movement unverified",
+  "notes": [
+    "Prototype Mia may enter, leave, stay, and return freely; no approval, token, visit quota, time window, or manual confirmation.",
+    "This access applies only to prototype Mia within her world. It does not expose private chat or grant access to other agents.",
+    "Static graph reachability does not prove that runtime geometry, rendering, or movement is implemented.",
+    "A scene-local 2D composition draft is available in files.geometry. It is not a calibrated world transform, 3D mesh, collision shape, or runtime navigation surface."
+  ],
+  "files": {
+    "geometry": "../mia-assets/public-destinations/ocean-of-light.geometry.json"
+  }
+}

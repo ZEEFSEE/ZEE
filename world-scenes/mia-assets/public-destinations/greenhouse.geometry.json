@@ -1,0 +1,92 @@
+{
+  "schema_version": "1.0.0",
+  "scene_id": "greenhouse",
+  "coordinate_space": "scene-local",
+  "units": "relative_layout_units",
+  "bounds": {
+    "width": 1000,
+    "height": 700,
+    "depth": null,
+    "verification_status": "preview_canvas_only_not_world_bounds"
+  },
+  "palette": {
+    "background": "#183a2b",
+    "mid": "#3c7950",
+    "highlight": "#a9d78e",
+    "accent": "#f1e7b4"
+  },
+  "features": [
+    {
+      "feature_id": "glass-hall",
+      "label": "玻璃温室",
+      "kind": "visual_zone",
+      "shape": "house",
+      "layout": {
+        "x": 500,
+        "y": 330,
+        "width": 360,
+        "height": 230
+      },
+      "render_hint": "2d_preview_only",
+      "interaction": "look_only",
+      "verification_status": "authored_preview_layout_not_world_calibrated"
+    },
+    {
+      "feature_id": "fern-corner",
+      "label": "蕨类角落",
+      "kind": "visual_zone",
+      "shape": "cluster",
+      "layout": {
+        "x": 220,
+        "y": 440,
+        "width": 170,
+        "height": 150
+      },
+      "render_hint": "2d_preview_only",
+      "interaction": "look_only",
+      "verification_status": "authored_preview_layout_not_world_calibrated"
+    },
+    {
+      "feature_id": "seed-table",
+      "label": "种子与育苗台",
+      "kind": "visual_zone",
+      "shape": "rect",
+      "layout": {
+        "x": 780,
+        "y": 460,
+        "width": 180,
+        "height": 90
+      },
+      "render_hint": "2d_preview_only",
+      "interaction": "look_only",
+      "verification_status": "authored_preview_layout_not_world_calibrated"
+    },
+    {
+      "feature_id": "sunlight-bed",
+      "label": "阳光苗床",
+      "kind": "visual_zone",
+      "shape": "ellipse",
+      "layout": {
+        "x": 520,
+        "y": 560,
+        "width": 520,
+        "height": 70
+      },
+      "render_hint": "2d_preview_only",
+      "interaction": "look_only",
+      "verification_status": "authored_preview_layout_not_world_calibrated"
+    }
+  ],
+  "route_contract": {
+    "scene_entry": "logical_scene_link_only",
+    "cross_scene_transform": null,
+    "runtime_movement": "not_integrated",
+    "collision": "not_defined"
+  },
+  "verification_status": "draft_visual_layout; static_preview_only; runtime_unverified",
+  "notes": [
+    "The positions and shapes in this file are authored composition hints for a 2D preview, not measured ZHI world coordinates or physical geometry.",
+    "No global transform, distance, terrain, collision, navigation mesh, or runtime portal is asserted.",
+    "Prototype Mia's access remains unrestricted by policy; this file does not itself move an agent or change production state."
+  ]
+}

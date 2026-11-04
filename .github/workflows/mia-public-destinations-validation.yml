@@ -1,0 +1,30 @@
+name: Mia public destinations graph validation
+on:
+  push:
+    branches: [work/mia-public-destinations-v1]
+    paths:
+      - world-scenes/world-manifest.json
+      - world-scenes/scenes/**
+      - world-scenes/public-destinations/**
+      - world-scenes/validate-public-destinations.mjs
+      - mia-public-destinations.html
+      - mia-public-destination-preview.html
+      - world-scenes/mia-assets/public-destinations/**
+      - mia-forest-corner.html
+      - .github/workflows/mia-public-destinations-validation.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate-static-world-graph:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/mia-public-destinations-v1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node world-scenes/validate-scenes.mjs
+      - run: node world-scenes/validate-public-destinations.mjs
+      - run: node --test world-scenes/public-destinations/mia-public-destination-runtime-adapter.test.mjs

@@ -31,10 +31,14 @@
     "cross_scene_transform": null,
     "verification_status": "unmapped"
   },
-  "verification_status": "registered; unrestricted prototype-Mia access policy; static graph verified; runtime movement unverified",
+  "verification_status": "scene metadata registered; visual layout draft authored; static preview available; runtime movement unverified",
   "notes": [
     "Prototype Mia may enter, leave, stay, and return freely; no approval, token, visit quota, time window, or manual confirmation.",
     "This access applies only to prototype Mia within her world. It does not expose private chat or grant access to other agents.",
-    "Static graph reachability does not prove that runtime geometry, rendering, or movement is implemented."
-  ]
+    "Static graph reachability does not prove that runtime geometry, rendering, or movement is implemented.",
+    "A scene-local 2D composition draft is available in files.geometry. It is not a calibrated world transform, 3D mesh, collision shape, or runtime navigation surface."
+  ],
+  "files": {
+    "geometry": "../mia-assets/public-destinations/memory-valley.geometry.json"
+  }
 }

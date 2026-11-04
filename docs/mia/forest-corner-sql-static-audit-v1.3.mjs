@@ -1,7 +1,7 @@
 /**
- * Static guard for the V1.3 Forest Corner SQL proposal.
+ * Structural static guard for the V1.3 Forest Corner SQL proposal.
  * This is NOT a PostgreSQL parser, migration test, or database execution.
- * It reads only the checked-in SQL text and never connects to a database.
+ * It reads checked-in SQL only; no network, filesystem writes, or DB access.
  * Run: node docs/mia/forest-corner-sql-static-audit-v1.3.mjs
  */
 import assert from "node:assert/strict";
@@ -11,11 +11,81 @@ const path = "docs/mia/forest-corner-private-card-vault-migration-proposal-v1.3.
 const sql = readFileSync(path, "utf8");
 const lower = sql.toLowerCase();
 
+function stripSqlLiteralsAndComments(source) {
+  let out = "";
+  let i = 0;
+  let state = "normal";
+  let dollarTag = "";
+  while (i < source.length) {
+    const c = source[i];
+    const n = source[i + 1];
+    if (state === "line-comment") {
+      if (c === "\n") { state = "normal"; out += "\n"; } else out += " ";
+      i++; continue;
+    }
+    if (state === "block-comment") {
+      if (c === "*" && n === "/") { out += "  "; i += 2; state = "normal"; }
+      else { out += c === "\n" ? "\n" : " "; i++; }
+      continue;
+    }
+    if (state === "single-quote") {
+      if (c === "'" && n === "'") { out += "  "; i += 2; }
+      else if (c === "'") { out += " "; i++; state = "normal"; }
+      else { out += c === "\n" ? "\n" : " "; i++; }
+      continue;
+    }
+    if (state === "double-quote") {
+      if (c === '"' && n === '"') { out += "  "; i += 2; }
+      else if (c === '"') { out += " "; i++; state = "normal"; }
+      else { out += c === "\n" ? "\n" : " "; i++; }
+      continue;
+    }
+    if (state === "dollar-quote") {
+      if (source.startsWith(dollarTag, i)) {
+        out += " ".repeat(dollarTag.length); i += dollarTag.length; state = "normal"; dollarTag = "";
+      } else { out += c === "\n" ? "\n" : " "; i++; }
+      continue;
+    }
+    if (c === "-" && n === "-") { out += "  "; i += 2; state = "line-comment"; continue; }
+    if (c === "/" && n === "*") { out += "  "; i += 2; state = "block-comment"; continue; }
+    if (c === "'") { out += " "; i++; state = "single-quote"; continue; }
+    if (c === '"') { out += " "; i++; state = "double-quote"; continue; }
+    if (c === "$") {
+      const match = source.slice(i).match(/^\$[A-Za-z_][A-Za-z0-9_]*\$|^\$\$/);
+      if (match) { dollarTag = match[0]; out += " ".repeat(dollarTag.length); i += dollarTag.length; state = "dollar-quote"; continue; }
+    }
+    out += c; i++;
+  }
+  assert.equal(state, "normal", `Unterminated SQL lexical construct: ${state}`);
+  return out;
+}
+
+const executable = stripSqlLiteralsAndComments(sql);
 assert.match(sql, /PROPOSAL ONLY/i);
-assert.match(lower, /begin;/);
-assert.match(lower, /commit;/);
-assert.match(lower, /do \$preflight\$/);
-assert.match(lower, /raise exception 'refusing to proceed/);
+assert.equal((executable.match(/\bbegin\s*;/gi) || []).length, 1, "exactly one transaction BEGIN is required");
+assert.equal((executable.match(/\bcommit\s*;/gi) || []).length, 1, "exactly one transaction COMMIT is required");
+assert.equal((executable.match(/\bcreate\s+function\s+public\.mia_forest_corner_validate_card_v13\b/gi) || []).length, 1);
+assert.equal((executable.match(/\bcreate\s+function\s+public\.mia_forest_corner_reject_mutation_v13\b/gi) || []).length, 1);
+assert.equal((executable.match(/\bcreate\s+function\s+public\.mia_forest_corner_guard_event_v13\b/gi) || []).length, 1);
+assert.equal((executable.match(/\bcreate\s+function\s+public\.mia_forest_corner_insert_card_v13\b/gi) || []).length, 1);
+
+let depth = 0;
+for (const ch of executable) {
+  if (ch === "(") depth++;
+  if (ch === ")") depth--;
+  assert.ok(depth >= 0, "SQL closing parenthesis has no matching opener");
+}
+assert.equal(depth, 0, "SQL parentheses must be balanced");
+
+const fnTags = (sql.match(/\$fn\$/g) || []).length;
+const preflightTags = (sql.match(/\$preflight\$/g) || []).length;
+assert.equal(fnTags, 8, "four PL/pgSQL function bodies require eight $fn$ delimiters");
+assert.equal(preflightTags, 2, "preflight block requires two $preflight$ delimiters");
+assert.match(sql, /or source_digest !~ '\^\[0-9a-f\]\{64\}\$' then/i,
+  "source digest predicate must be complete and followed by THEN");
+assert.doesNotMatch(sql, /source_digest !~[^\n]*\n\s*raise exception/i,
+  "malformed digest predicate regression");
+assert.equal((sql.match(/create function public\.mia_forest_corner_validate_card_v13/gi) || []).length, 1);
 assert.doesNotMatch(lower, /create table if not exists/);
 assert.doesNotMatch(lower, /create or replace function/);
 assert.doesNotMatch(lower, /drop trigger/);
@@ -37,11 +107,11 @@ assert.match(lower, /alter table public\.mia_forest_corner_cards enable row leve
 assert.match(lower, /alter table public\.mia_forest_corner_card_events enable row level security/);
 assert.match(lower, /rollback \/ decommission/i);
 
-console.log("Forest Corner SQL V1.3 static guard: PASS");
-console.log("- fail-closed preflight and no replace/drop-if-exists patterns: PASS");
-console.log("- source digest, bounded source_refs, allowlist, and payload limits: PASS");
-console.log("- event serialization and uniqueness declarations: PASS");
-console.log("- narrow atomic insert RPC and browser-role EXECUTE revokes: PASS");
-console.log("- RLS, browser-role table revokes, append-only triggers: PASS");
+console.log("Forest Corner SQL V1.3 structural static guard: PASS");
+console.log("- lexical closure, balanced parentheses, one transaction boundary: PASS");
+console.log("- function definitions and dollar-quote delimiters: PASS");
+console.log("- complete SHA-256 predicate and malformed-predicate regression: PASS");
+console.log("- fail-closed preflight, source allowlist, bounded references: PASS");
+console.log("- narrow RPC grants, RLS, append-only triggers: PASS");
 console.log("- NON-EXECUTING CHECK ONLY: PostgreSQL syntax/behavior remains unverified");
 console.log("- status: NOT APPROVED FOR STAGING OR PRODUCTION EXECUTION");

@@ -25,6 +25,7 @@ const checks = [
   ["request body bounded", /MAX_BODY_BYTES = 16 \* 1024/],
   ["no private source content logging", !/console\.(log|error)\([^\n]*(content|summary|sourceRows)/i.test(source)],
   ["database RPC serializes and caps proposals at two per UTC day", /pg_advisory_xact_lock\(20261104, 1\)/.test(sql) && /if cards_today > 2 then/.test(sql)],
+  ["confidence must be an actual finite JSON number", /typeof body\.confidence !== "number"[\s\S]*!Number\.isFinite\(confidence\)/],
 ];
 
 for (const [name, pattern] of checks) {

@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { normalizeMiaSceneFrame, MIA_SCENE_IDS } from "./scene-frame.mjs";
+import { validateMiaScenePlan } from "./scene-plan-contract.mjs";
 declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void };
 const URL=Deno.env.get("SUPABASE_URL")||"";
 const SERVICE_KEY=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
@@ -141,17 +142,8 @@ Deno.serve(async(req:Request)=>{
   if(first<0||last<=first)return json({error:"Mia 场景规划没有返回有效计划。"},502);
   let plan:any;try{plan=JSON.parse(plannerText.slice(first,last+1));}catch{return json({error:"Mia 场景计划格式无效。"},502);}
   const actionName=String(plan.action||""),sceneId=String(plan.scene_id||""),anchorId=String(plan.anchor_id||"");
-  let targetValidationError="";
-  if(actionName==="visit_scene"){
-   if(!["crystal-forest","ocean-of-light","memory-valley","living-city","greenhouse"].includes(sceneId))targetValidationError="目标场景 ID 不属于已登记的五处公共目的地。";
-   else if(sceneId===frame.scene.id)targetValidationError="规划器选择了当前所在场景；请改选已登记锚点、其他目的地或 wait。";
-  }else if(actionName==="visit_anchor"){
-   if(sceneId!==frame.scene.id)targetValidationError="锚点目标场景与当前场景不一致。";
-   else if(!frame.scene.available_anchors.some((a:any)=>a.id===anchorId))targetValidationError="目标锚点未在当前场景帧登记。";
-  }else if(actionName==="return_forest"){
-   if(sceneId!=="mia-forest-corner")targetValidationError="返回森林角落的目标 ID 不正确。";
-  }else if(actionName!=="wait"&&actionName!=="report_unknown")targetValidationError="探索动作不在允许列表中。";
-  if(targetValidationError){console.warn("Mia scene plan target rejected",JSON.stringify({action:actionName,scene_id:sceneId,anchor_id:anchorId,reason:targetValidationError,current_scene_id:frame.scene.id}));return json({error:targetValidationError,code:"SCENE_PLAN_TARGET_INVALID"},502);}
+  const targetValidation=validateMiaScenePlan(plan,frame);
+  if(!targetValidation.valid){console.warn("Mia scene plan target rejected",JSON.stringify({action:actionName,scene_id:sceneId,anchor_id:anchorId,reason:targetValidation.error,current_scene_id:frame.scene.id}));return json({error:targetValidation.error,code:"SCENE_PLAN_TARGET_INVALID"},502);}
   return json({ok:true,plan:{action:actionName,scene_id:sceneId,anchor_id:actionName==="visit_anchor"?anchorId:null,reason:String(plan.reason||"根据当前场景状态选择下一步。").slice(0,240),pause_ms:Math.max(600,Math.min(4000,Number(plan.pause_ms)||1200))},provenance:{planner:"agnes",mode:"browser_local_scene_proxy",database_writes:false,chat_memory_writes:false,physical_world:false}});
  }
  const [identityRes,sessionRes]=await Promise.all([

@@ -53,6 +53,11 @@ jobs:
         run: node docs/mia/forest-corner-sql-static-audit-v1.3.mjs
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Bootstrap Supabase-like roles in disposable PostgreSQL
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h 127.0.0.1 -U postgres -d forest_corner_test -v ON_ERROR_STOP=1 -c "CREATE ROLE anon NOLOGIN; CREATE ROLE authenticated NOLOGIN; CREATE ROLE service_role NOLOGIN BYPASSRLS;"
       - name: Execute proposal in disposable PostgreSQL service
         env:
           PGPASSWORD: postgres

@@ -12,6 +12,9 @@ on:
       - docs/mia/forest-corner-private-card-vault-migration-proposal-v1.2.sql
       - docs/mia/forest-corner-private-card-sql-review-v1.2.md
       - docs/mia/forest-corner-sql-static-audit.mjs
+      - docs/mia/forest-corner-private-card-vault-migration-proposal-v1.3.sql
+      - docs/mia/forest-corner-private-card-sql-review-v1.3.md
+      - docs/mia/forest-corner-sql-static-audit-v1.3.mjs
       - .github/workflows/forest-corner-card-dry-run.yml
   workflow_dispatch:
 
@@ -30,5 +33,7 @@ jobs:
           node-version: 20
       - name: Run synthetic-only contract tests
         run: node docs/mia/forest-corner-card-dry-run.mjs
-      - name: Run SQL proposal static guard (not a database test)
+      - name: Run V1.2 SQL proposal static guard (not a database test)
         run: node docs/mia/forest-corner-sql-static-audit.mjs
+      - name: Run V1.3 SQL proposal static guard (not a database test)
+        run: node docs/mia/forest-corner-sql-static-audit-v1.3.mjs

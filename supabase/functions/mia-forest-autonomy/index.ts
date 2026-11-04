@@ -61,7 +61,7 @@ function seed(forest:any) {
 }
 async function planWithAgnes(state:any, scenes:any[]) {
   if (!AGNES) throw new Error("AGNES_API_KEY missing");
-  const ctl = new AbortController(); const timer = setTimeout(()=>ctl.abort(),12000);
+  const ctl = new AbortController(); const timer = setTimeout(()=>ctl.abort(),20000);
   try {
     const r = await fetch("https://apihub.agnes-ai.com/v1/chat/completions",{method:"POST",headers:{Authorization:"Bearer "+AGNES,"Content-Type":"application/json"},signal:ctl.signal,body:JSON.stringify({
       model:MODEL,temperature:0.3,max_tokens:300,

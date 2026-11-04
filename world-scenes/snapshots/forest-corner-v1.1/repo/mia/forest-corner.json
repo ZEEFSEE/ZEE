@@ -1,0 +1,179 @@
+{
+  "schema_version": 1,
+  "slug": "mia-forest-corner",
+  "name": "Forest_Corner · Mia 森林角落",
+  "status": "active",
+  "source": "zee-extension.mia_virtual_spaces",
+  "world_anchor": {
+    "slug": "zhi-facility-forest",
+    "name": "探索森林",
+    "x": 1650,
+    "y": 650,
+    "entrance_x": 1650,
+    "entrance_y": 670,
+    "coordinate_system": "ZHI world coordinates mirrored from source data",
+    "note": "Parent forest facility anchor only; not a separately confirmed Forest_Corner world coordinate."
+  },
+  "local_coordinate_system": {
+    "name": "Forest_Corner local layout",
+    "units": "relative layout units; not ZHI world coordinates",
+    "width": 1000,
+    "height": 700
+  },
+  "entities": [
+    {
+      "id": "greenhouse",
+      "name": "智能温室",
+      "type": "ambient_asset",
+      "status": "active",
+      "x": 180,
+      "y": 120,
+      "behavior": "slow_light_variation",
+      "ai_interaction": false
+    },
+    {
+      "id": "data-shelf",
+      "name": "数据书架",
+      "type": "memory_anchor",
+      "status": "active",
+      "x": 500,
+      "y": 140,
+      "storage": "local_vault",
+      "write_mode": "append_only",
+      "scope": "browser_device_local"
+    },
+    {
+      "id": "lounge",
+      "name": "休息区",
+      "type": "interaction_zone",
+      "status": "active",
+      "x": 800,
+      "y": 350,
+      "interaction_mode": "idle/listening",
+      "priority": "user_interaction_over_aesthetic_vibe",
+      "pauses": "new exploration requests initiated by this page only"
+    },
+    {
+      "id": "forest-rabbit",
+      "name": "森林小白兔",
+      "type": "interactive_creature",
+      "status": "active",
+      "x": 300,
+      "y": 280,
+      "coordinate_system": "Forest_Corner local coordinates",
+      "appearance": {
+        "model": "white_rabbit",
+        "animation_set": [
+          "idle",
+          "hop",
+          "look_at_user",
+          "rest"
+        ]
+      },
+      "behavior": {
+        "autonomous_movement": true,
+        "movement_speed": "slow",
+        "interaction_range": 80,
+        "responses": {
+          "approach": "look_at_user",
+          "touch": "hop",
+          "idle": "rest"
+        }
+      },
+      "ai_interaction": {
+        "enabled": false
+      }
+    },
+    {
+      "id": "tiny-planet-friends-glb",
+      "name": "Tiny Planet Friends · 3D 场景资产",
+      "type": "scene_model",
+      "status": "active",
+      "asset_id": "tiny-planet-friends-3d",
+      "asset_source": {
+        "provider": "supabase-storage",
+        "bucket": "lovelydragon",
+        "object": "tiny_planet_friends_3d-defective-product-4083.glb",
+        "access": "private-signed-url",
+        "resolver": "https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/mia-scene-asset-url"
+      },
+      "x": 650,
+      "y": 240,
+      "coordinate_system": "Forest_Corner local layout",
+      "transform": {
+        "rotation": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "unit": "degrees",
+          "status": "default-unverified"
+        },
+        "scale": {
+          "x": 1,
+          "y": 1,
+          "z": 1,
+          "status": "default-unverified"
+        }
+      },
+      "render_contract": {
+        "format": "model/gltf-binary",
+        "runtime": "scene-asset-loader",
+        "load_on_scene_entry": true,
+        "chat_ui_embedding": false
+      },
+      "perception": {
+        "enabled": false,
+        "status": "not-connected",
+        "note": "Asset registration does not imply Mia visual perception."
+      },
+      "verification_status": "registered-in-scene-source; 3d-runtime-render-unverified"
+    }
+  ],
+  "priority": [
+    "user_interaction",
+    "aesthetic_vibe"
+  ],
+  "limitations": [
+    "Local entity coordinates are layout positions inside Forest_Corner, not ZHI world travel coordinates.",
+    "The lounge does not cancel already-running backend tasks.",
+    "The browser local_vault is not synced across devices.",
+    "Tiny Planet Friends GLB is registered as a scene asset; runtime rendering, real 3D transform, collision, navigation, and Mia visual perception require separate validation."
+  ],
+  "gift": {
+    "id": "gift-mia-three-color-rose",
+    "name": "给 Mia 的三色玫瑰",
+    "status": "delivered_in_virtual_scene",
+    "flower_count": 9,
+    "flowers": [
+      {
+        "color": "red",
+        "name": "红玫瑰",
+        "count": 3
+      },
+      {
+        "color": "yellow",
+        "name": "黄玫瑰",
+        "count": 3
+      },
+      {
+        "color": "white",
+        "name": "白玫瑰",
+        "count": 3
+      }
+    ],
+    "location": {
+      "scene_slug": "mia-forest-corner",
+      "entity_id": "lounge",
+      "x": 800,
+      "y": 350,
+      "coordinate_system": "Forest_Corner local coordinates"
+    },
+    "scent": {
+      "mode": "virtual_scent_imagery",
+      "profile": "fresh rose petals, dewy green stems, soft garden air",
+      "intensity": "gentle",
+      "note": "Textual/visual simulation only; no physical scent is emitted."
+    },
+    "message": "希望红色带给你温暖，黄色带给你快乐，白色提醒我们始终真诚。Mia，这束花送给你。"
+  }
+}

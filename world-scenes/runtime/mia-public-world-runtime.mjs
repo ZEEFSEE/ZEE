@@ -90,3 +90,17 @@ export function createRuntimePerception({scene,position,heading=0,visibleDistanc
   }).filter(e=>e.in_range).sort((a,b)=>a.distance_m-b.distance_m);
   return {schema:"zhi.mia.runtime-perception.v1",scene_id:scene.id,position:{...position,unit:"m",coordinate_space:"scene-local"},heading_rad:heading,visible_distance_m:visibleDistance,visible_entities:entities,collider_count:scene.obstacles.length,perception_mode:"live_runtime_scene_graph",camera_sensor:false,physical_world:false,generated_at:new Date().toISOString()};
 }
+
+/** Resolve only an explicitly authored portal handoff; never infer missing coordinates. */
+export function resolveSceneTransition(manifest, fromSceneId, toSceneId) {
+  const edge=(manifest?.scene_transitions??[]).find(e=>
+    (e.from_scene_id===fromSceneId&&e.to_scene_id===toSceneId)||
+    (e.direction==="bidirectional"&&e.from_scene_id===toSceneId&&e.to_scene_id===fromSceneId));
+  if(!edge) return {ok:false,status:"unknown",reason:"no_registered_transition_contract"};
+  if(edge.calibration_status!=="virtual_portal_handoff_defined_not_physical_survey" || edge.mode!=="scene_portal_handoff")
+    return {ok:false,status:"unverified",reason:"transition_contract_not_verified"};
+  const reverse=edge.from_scene_id!==fromSceneId;
+  const source=reverse?edge.target:edge.source, target=reverse?edge.source:edge.target;
+  for(const p of [source?.scene_local,target?.scene_local]) if(!Number.isFinite(p?.x)||!Number.isFinite(p?.z)||p.unit!=="m") return {ok:false,status:"unknown",reason:"portal_coordinates_missing"};
+  return {ok:true,status:"authored_virtual_portal_handoff",continuous_walk_path:false,source,target,transition_id:edge.transition_id,provenance:edge.coordinate_provenance};
+}

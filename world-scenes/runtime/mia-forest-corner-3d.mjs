@@ -112,6 +112,7 @@ export function buildForestCorner(THREE, sceneData, pathData, mount) {
     ctx.fillText(text,256,60);
     const texture = new THREE.CanvasTexture(canvas);
     const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map:texture, transparent:true, depthTest:false }));
+    if(text.includes("Tiny Planet")) sprite.name = "tiny-planet-friends-label";
     sprite.position.set(x, 92, z); sprite.scale.set(190,36,1); scene.add(sprite);
   }
   function cylinder(x,y,z,r,h,mat,segments=12) {
@@ -171,6 +172,7 @@ export function buildForestCorner(THREE, sceneData, pathData, mount) {
 
   // Registered private GLB is deliberately not fetched here; no signed URL or token is exposed.
   const assetMarker = new THREE.Mesh(new THREE.IcosahedronGeometry(32,1), makeMat("#9b9ac5"));
+  assetMarker.name = "tiny-planet-friends-placeholder";
   assetMarker.position.set(650,38,-240); assetMarker.castShadow=true; scene.add(assetMarker);
   label("Tiny Planet Friends · GLB 待安全加载",650,-325,"#4a4772");
 

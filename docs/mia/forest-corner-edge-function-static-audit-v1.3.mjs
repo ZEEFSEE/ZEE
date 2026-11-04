@@ -24,6 +24,7 @@ const checks = [
   ["no AURORA endpoint or public relay", !/aurora.*(fetch|invoke)|federation|public_chat/i.test(source)],
   ["request body bounded", /MAX_BODY_BYTES = 16 \* 1024/],
   ["no private source content logging", !/console\.(log|error)\([^\n]*(content|summary|sourceRows)/i.test(source)],
+  ["database RPC serializes and caps proposals at two per UTC day", /pg_advisory_xact_lock\(20261104, 1\)/.test(sql) && /if cards_today > 2 then/.test(sql)],
 ];
 
 for (const [name, pattern] of checks) {

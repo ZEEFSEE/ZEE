@@ -98,6 +98,9 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
  let exclusivePollDelay=30000;
  let exclusiveWakeTimer=null;
  let exclusiveWakeAt=0;
+ let lastSceneFrame=null;
+ function getFreshSceneFrame(){if(!lastSceneFrame)return null;const age=Date.now()-Date.parse(lastSceneFrame.captured_at||"");return Number.isFinite(age)&&age>=-5000&&age<=10000?lastSceneFrame:null;}
+ window.addEventListener("message",event=>{const frame=event.data;if(event.origin!==location.origin||event.source!==$("worldRuntime")?.contentWindow||frame?.schema!=="zhi.mia.browser-scene-frame.v1"||frame?.subject!=="prototype-mia"||frame?.identity_id!=="cb6d01b4-0e3f-46ee-8946-360aa91db1ea")return;lastSceneFrame=frame;const scene=frame.scene||{};$("sceneFrameStatus").textContent="已接收运行时场景帧 · "+String(scene.name||scene.id||"未知场景")+" · 本地位置 "+Number(scene.position?.x||0).toFixed(1)+", "+Number(scene.position?.z||0).toFixed(1)+"m · 附近实体 "+(frame.visible_entities||[]).length+" 个";});
  const EMOTIONAL_RESIDUAL_KEY='mia_emotional_residual_v1';
  function getEmotionalResidual(){
   try{

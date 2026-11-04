@@ -1,0 +1,92 @@
+{
+  "schema_version": "1.0.0",
+  "scene_id": "crystal-forest",
+  "coordinate_space": "scene-local",
+  "units": "relative_layout_units",
+  "bounds": {
+    "width": 1000,
+    "height": 700,
+    "depth": null,
+    "verification_status": "preview_canvas_only_not_world_bounds"
+  },
+  "palette": {
+    "background": "#172b36",
+    "mid": "#4b8790",
+    "highlight": "#bce8df",
+    "accent": "#e7f4d4"
+  },
+  "features": [
+    {
+      "feature_id": "crystal-grove",
+      "label": "晶簇林地",
+      "kind": "visual_zone",
+      "shape": "crystal",
+      "layout": {
+        "x": 210,
+        "y": 300,
+        "width": 150,
+        "height": 190
+      },
+      "render_hint": "2d_preview_only",
+      "interaction": "look_only",
+      "verification_status": "authored_preview_layout_not_world_calibrated"
+    },
+    {
+      "feature_id": "prism-clearing",
+      "label": "折光空地",
+      "kind": "visual_zone",
+      "shape": "ellipse",
+      "layout": {
+        "x": 500,
+        "y": 330,
+        "width": 230,
+        "height": 130
+      },
+      "render_hint": "2d_preview_only",
+      "interaction": "look_only",
+      "verification_status": "authored_preview_layout_not_world_calibrated"
+    },
+    {
+      "feature_id": "quiet-pool",
+      "label": "静水镜池",
+      "kind": "visual_zone",
+      "shape": "ellipse",
+      "layout": {
+        "x": 790,
+        "y": 480,
+        "width": 150,
+        "height": 90
+      },
+      "render_hint": "2d_preview_only",
+      "interaction": "look_only",
+      "verification_status": "authored_preview_layout_not_world_calibrated"
+    },
+    {
+      "feature_id": "moss-path",
+      "label": "苔石小径",
+      "kind": "visual_zone",
+      "shape": "path",
+      "layout": {
+        "x": 490,
+        "y": 520,
+        "width": 620,
+        "height": 28
+      },
+      "render_hint": "2d_preview_only",
+      "interaction": "look_only",
+      "verification_status": "authored_preview_layout_not_world_calibrated"
+    }
+  ],
+  "route_contract": {
+    "scene_entry": "logical_scene_link_only",
+    "cross_scene_transform": null,
+    "runtime_movement": "not_integrated",
+    "collision": "not_defined"
+  },
+  "verification_status": "draft_visual_layout; static_preview_only; runtime_unverified",
+  "notes": [
+    "The positions and shapes in this file are authored composition hints for a 2D preview, not measured ZHI world coordinates or physical geometry.",
+    "No global transform, distance, terrain, collision, navigation mesh, or runtime portal is asserted.",
+    "Prototype Mia's access remains unrestricted by policy; this file does not itself move an agent or change production state."
+  ]
+}

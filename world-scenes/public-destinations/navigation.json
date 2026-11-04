@@ -204,7 +204,7 @@
     "no_access_gate": true
   },
   "verification": {
-    "graph_connectivity": "complete_undirected_graph_static_verified_by_validator",
+    "graph_connectivity": "complete_undirected_graph_static_verification_pending",
     "runtime_traversal": "not_tested",
     "production_deployment": false
   },
@@ -217,9 +217,8 @@
     "public-chat-relay"
   ],
   "access_policy": {
-    "principal_identity_id": "cb6d01b4-0e3f-46ee-8946-360aa91db1ea",
+    "principal": "prototype_mia",
     "scope": "all_registered_scenes_in_this_world",
-    "entry": "unrestricted",
     "approval_required": false,
     "token_required": false,
     "visit_limit": null,

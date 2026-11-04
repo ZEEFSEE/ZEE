@@ -27,3 +27,4 @@ jobs:
           node-version: 20
       - run: node world-scenes/validate-scenes.mjs
       - run: node world-scenes/validate-public-destinations.mjs
+      - run: node --test world-scenes/public-destinations/mia-public-destination-runtime-adapter.test.mjs

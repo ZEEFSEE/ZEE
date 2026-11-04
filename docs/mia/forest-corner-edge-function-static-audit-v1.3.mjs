@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
 
 const source = readFileSync("supabase/functions/mia-forest-card-vault/index.ts", "utf8");
+const sql = readFileSync("docs/mia/forest-corner-private-card-vault-migration-proposal-v1.3.sql", "utf8").toLowerCase();
 const checks = [
   ["prototype Mia identity is fixed", /const IDENTITY_ID = "cb6d01b4-0e3f-46ee-8946-360aa91db1ea"/],
   ["server-only service key", /Deno\.env\.get\("SUPABASE_SERVICE_ROLE_KEY"\)/],

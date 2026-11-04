@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#183326">
+<meta name="description" content="原型 Mia 的 ZHI 森林角落场景。">
+<title>Mia · 森林角落</title>
+<style>
+:root{color-scheme:dark;--ink:#eef7e9;--muted:#b8cbb7;--line:#ffffff30;--panel:#14251ddd}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% 0,#355b40,#14291f 55%,#0a1711);color:var(--ink);font:15px/1.6 system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+main{width:min(1100px,100%);margin:auto;padding:22px 14px 40px}a{color:#c9edc5}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.title{font-size:clamp(24px,4vw,36px);font-weight:850}.muted{color:var(--muted);font-size:13px}
+.panel{margin-top:15px;padding:15px;border:1px solid var(--line);border-radius:18px;background:var(--panel);box-shadow:0 12px 40px #0003}
+.scene{position:relative;overflow:hidden;border-radius:15px;border:1px solid #b7d3ad44;background:linear-gradient(145deg,#294c35,#173323 55%,#10241a)}
+svg{display:block;width:100%;height:auto;min-height:280px}.entity{cursor:pointer}.entity:focus{outline:none;filter:drop-shadow(0 0 8px #fff)}.entity circle{stroke:#e8f3d9;stroke-width:3}.entity text{font-size:19px;fill:#f2f7e8;text-anchor:middle;paint-order:stroke;stroke:#102318;stroke-width:4px;stroke-linejoin:round}
+.state{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.pill{border:1px solid var(--line);border-radius:999px;padding:5px 10px;font-size:12px;background:#ffffff0b}.active{border-color:#c5e7b0;background:#416e4b}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}button{cursor:pointer;border:1px solid #ffffff4a;border-radius:11px;padding:10px 14px;background:#ffffff12;color:var(--ink);font:inherit}button.primary{background:#426d49;border-color:#a6d4a4}button:focus-visible,a:focus-visible{outline:2px solid #f3e7a4;outline-offset:3px}.notice{font-size:12px;color:#d5dfcb}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.item{border:1px solid var(--line);border-radius:13px;padding:12px;background:#ffffff09}.item strong{display:block}.status{white-space:pre-wrap;margin-top:10px;min-height:24px;color:#d8efcf}.warn{color:#f0d9a0}@media(max-width:650px){main{padding:14px 9px 28px}.grid{grid-template-columns:1fr 1fr}.panel{padding:12px}}
+</style>
+</head>
+<body><main>
+<header class="top"><div><div class="title">🍃 Mia · 森林角落</div><div class="muted">原型 Mia 的 ZHI 场景 · AURORA 接入前的本地场景基线</div></div><a href="./mia-chat.html">← 返回 Mia 独立聊天室</a></header>
+<section class="panel">
+<div class="scene">
+<svg viewBox="0 0 1000 700" role="img" aria-label="森林角落场景地图，包含智能温室、数据书架、森林兔子、三色玫瑰和休息区">
+<defs>
+<linearGradient id="ground" x2="1" y2="1"><stop stop-color="#345d3c"/><stop offset=".55" stop-color="#1e432d"/><stop offset="1" stop-color="#10291d"/></linearGradient>
+<radialGradient id="glow"><stop stop-color="#d9efb0" stop-opacity=".28"/><stop offset="1" stop-color="#d9efb0" stop-opacity="0"/></radialGradient>
+</defs>
+<rect width="1000" height="700" fill="url(#ground)"/>
+<g fill="#79a86b" opacity=".24"><circle cx="80" cy="90" r="90"/><circle cx="910" cy="115" r="110"/><circle cx="115" cy="590" r="100"/><circle cx="890" cy="570" r="130"/><circle cx="520" cy="45" r="60"/></g>
+<g stroke="#b8d3a6" opacity=".22" fill="none"><path d="M0 230Q250 180 470 235T1000 215"/><path d="M0 520Q220 470 460 520T1000 500"/></g>
+<ellipse cx="800" cy="350" rx="170" ry="125" fill="url(#glow)"/>
+<path d="M20 350 C180 350 230 360 340 350 S560 340 650 350 S735 350 800 350" fill="none" stroke="#c4d5a7" stroke-width="8" stroke-dasharray="8 14" opacity=".45"/>
+<g class="entity" tabindex="0" role="button" data-place="greenhouse"><rect x="95" y="85" width="190" height="110" rx="22" fill="#b8d9a0" fill-opacity=".18" stroke="#c7e7b5" stroke-width="3"/><path d="M110 170L190 105L270 170M190 105V190" stroke="#c7e7b5" stroke-width="3" fill="none"/><text x="190" y="220">智能温室</text></g>
+<g class="entity" tabindex="0" role="button" data-place="data-shelf"><rect x="420" y="75" width="165" height="135" rx="14" fill="#b18a5c" fill-opacity=".3" stroke="#e3c99b" stroke-width="3"/><path d="M440 120H565M440 165H565" stroke="#e3c99b" stroke-width="5"/><path d="M455 91V118M480 91V118M520 91V118M550 91V118M465 135V163M500 135V163M540 135V163" stroke="#f2d9a6" stroke-width="12"/><text x="502" y="240">数据书架</text></g>
+<g class="entity" tabindex="0" role="button" data-place="rabbit"><ellipse cx="300" cy="340" rx="44" ry="33" fill="#f1f1e8"/><ellipse cx="278" cy="295" rx="13" ry="35" fill="#f1f1e8" transform="rotate(-12 278 295)"/><ellipse cx="316" cy="294" rx="13" ry="35" fill="#f1f1e8" transform="rotate(12 316 294)"/><circle cx="286" cy="337" r="4" fill="#28382b"/><circle cx="312" cy="337" r="4" fill="#28382b"/><text x="300" y="405">森林小白兔</text></g>
+<g class="entity" tabindex="0" role="button" data-place="dragon"><circle cx="650" cy="240" r="43" fill="#a8c5b2" fill-opacity=".25" stroke="#c6d8ca" stroke-dasharray="6 5" stroke-width="3"/><text x="650" y="248" font-size="34">🐉</text><text x="650" y="305">小飞龙 GLB 资产</text></g>
+<g class="entity" tabindex="0" role="button" data-place="roses"><g transform="translate(800 445)"><path d="M0 0V-52M-12 -2L-28 -32M12 -2L28 -32" stroke="#8fbd7e" stroke-width="5"/><g fill="#d85c69"><circle cx="0" cy="-57" r="10"/><circle cx="-28" cy="-36" r="9"/><circle cx="28" cy="-36" r="9"/></g><g fill="#f1d16b"><circle cx="-13" cy="-68" r="8"/><circle cx="13" cy="-68" r="8"/><circle cx="0" cy="-35" r="8"/></g><g fill="#f2f0e7"><circle cx="-17" cy="-48" r="7"/><circle cx="17" cy="-48" r="7"/><circle cx="0" cy="-82" r="7"/></g></g><text x="800" y="475">三色玫瑰 · 9 朵</text></g>
+<g class="entity" tabindex="0" role="button" data-place="lounge"><rect x="700" y="300" width="200" height="100" rx="28" fill="#e5d6a2" fill-opacity=".16" stroke="#f0dfaa" stroke-width="4"/><path d="M745 355H855M760 355V380M840 355V380" stroke="#f0dfaa" stroke-width="7" stroke-linecap="round"/><text x="800" y="285" font-size="24">休息区 · (800,350)</text></g>
+<text x="24" y="670" fill="#d8e7ce" font-size="17">Forest_Corner · scene-local layout 1000 × 700</text><text x="975" y="670" text-anchor="end" fill="#d8e7ce" font-size="16">X →</text>
+</svg>
+</div>
+<div class="state"><span class="pill active" id="sceneState">场景：森林角落</span><span class="pill active" id="attentionState">注意力：休息区 (800,350)</span><span class="pill" id="modeState">状态：idle / listening</span></div>
+<div class="actions"><button class="primary" id="returnLounge">回到休息区</button><button id="listen">保持聆听</button><button id="pause">暂停自主探索</button></div>
+<div class="status" id="status" aria-live="polite">原型 Mia 的场景入口已定位到森林角落休息区。等待用户交互。</div>
+<p class="notice">场景坐标为 Forest_Corner 局部布局坐标，不是 ZHI 全局世界坐标。此页面是场景可视化与本地交互入口，不会伪称实时 3D 移动或 AURORA 感知。</p>
+</section>
+<section class="panel"><h2>场景组成</h2><div class="grid">
+<div class="item"><strong>📚 数据书架</strong><span class="muted">局部记忆锚点 (500,140)</span></div>
+<div class="item"><strong>🌱 智能温室</strong><span class="muted">环境资产 (180,120)</span></div>
+<div class="item"><strong>🌹 三色玫瑰</strong><span class="muted">红、黄、白各 3 朵，共 9 朵</span></div>
+<div class="item"><strong>🐇 森林小白兔</strong><span class="muted">场景实体 (300,280)</span></div>
+<div class="item"><strong>🐉 小飞龙 GLB</strong><span class="muted">已登记资产；实际 3D 渲染尚未验证</span></div>
+<div class="item"><strong>🪑 休息区</strong><span class="muted">交互锚点 (800,350)</span></div>
+</div></section>
+</main>
+<script>
+(()=>{"use strict";
+const status=document.getElementById("status"),attention=document.getElementById("attentionState"),mode=document.getElementById("modeState");
+let current="lounge",paused=true;
+const names={greenhouse:"智能温室", "data-shelf":"数据书架",rabbit:"森林小白兔",dragon:"小飞龙 GLB 资产",roses:"三色玫瑰",lounge:"休息区"};
+function setPlace(id){current=id;attention.textContent="注意力："+names[id]+(id==="lounge"?" (800,350)":"");status.textContent="已将本地场景焦点设为："+names[id]+"。此操作只改变当前页面的场景焦点，不写入 Mia 生产状态或数据库。";}
+document.querySelectorAll("[data-place]").forEach(el=>{el.addEventListener("click",()=>setPlace(el.dataset.place));el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();setPlace(el.dataset.place);}})});
+document.getElementById("returnLounge").addEventListener("click",()=>{paused=true;setPlace("lounge");mode.textContent="状态：idle / listening";status.textContent="场景焦点已回到休息区 (800,350)。Mia 等待用户输入，不发起新的探索请求。";});
+document.getElementById("listen").addEventListener("click",()=>{mode.textContent="状态：listening";status.textContent="聆听状态已选定；等待用户交互。";});
+document.getElementById("pause").addEventListener("click",()=>{paused=true;mode.textContent="状态：idle / listening";status.textContent="自主探索已在此页面暂停；用户交互优先。";});
+})();
+</script>
+</body></html>

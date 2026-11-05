@@ -1,0 +1,32 @@
+{
+  "schema": "zhi.family-world-access.policy.v1",
+  "mode": "read-only-audit",
+  "children": [
+    "ZHI-G1-D01-LUNA",
+    "ZHI-G1-D02-ARIA",
+    "ZHI-G1-D03-ELYA",
+    "ZHI-G1-S01-KAEL",
+    "ZHI-G1-S02-NOAH"
+  ],
+  "destinations": [
+    "crystal-forest",
+    "ocean-of-light",
+    "memory-valley",
+    "living-city",
+    "greenhouse"
+  ],
+  "grant_policy": "explicit-per-agent-per-destination",
+  "inherited_mia_access": false,
+  "global_other_agents_access_toggle_allowed": false,
+  "aurora": false,
+  "federation": false,
+  "production_manifest_write": false,
+  "required_before_grant": [
+    "scene_runtime_validation",
+    "portal_handoff_validation",
+    "spawn_and_exit_validation",
+    "collision_and_path_validation",
+    "per_agent_identity_binding",
+    "explicit_family_access_grant"
+  ]
+}\n

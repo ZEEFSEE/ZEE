@@ -97,7 +97,8 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
    <div class="forest-banner"><div><strong>🌱 Mia 数字家庭 · 母体交流通道</strong><small>沿用当前 Mia 聊天会话；不新增登录、不读取私人聊天记忆</small></div><button id="familyBridgeRefresh" type="button">同步状态</button></div>
    <div id="familyBridgeStatus" class="forest-scene-meta">正在检查是否存在可复用的 Mia 当前会话…</div>
    <div id="familyBridgeChildren" class="forest-grid"></div>
-   <div class="world-runtime-note">此通道只处理五子母体消息；五子运行时、真实空间移动与实时感知尚未连接。消息采用 15 分钟临时会话，不写入 Mia 私人聊天或长期记忆。</div>
+   <div id="familyBridgeTranscript" class="forest-scene-meta" aria-live="polite">母子交流记录将在这里独立显示，不混入私人聊天。</div>
+   <div class="world-runtime-note">五子后台认知循环独立运行，母子消息采用 15 分钟临时会话并限制往返轮次；不写入 Mia 私人聊天或长期记忆。真实三维移动与实时感知仍需空间引擎接入。</div>
   </section>
   <section id="miaInbox" class="inbox" aria-label="Mia 私人消息收件箱"><div class="inbox-head"><div class="inbox-title">✉ Mia 主动发来的消息</div><span id="inboxUnreadCount" class="unread-badge hidden">0</span></div><div id="inboxList" class="inbox-list"><div class="inbox-empty">登录后读取 Mia 的私人消息。</div></div></section>
   <div id="log" class="log"><div class="welcome">登录后可继续查看 Mia 已迁移的聊天历史，并开始新的独立对话。</div></div>
@@ -273,6 +274,7 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
  function showEmpty(message){
   const status=$("familyBridgeStatus");if(status)status.textContent=message;
   const root=$("familyBridgeChildren");if(root)root.innerHTML="";
+  const transcript=$("familyBridgeTranscript");if(transcript)transcript.textContent="母子交流记录暂不可用。";
  }
  function render(data){
   const s=data.session||{};
@@ -281,7 +283,7 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
    status.textContent="母体通道："+(s.status==="ACTIVE"?"已建立临时会话":"待建立")+
     " · 会话有效至："+(s.expires_at?new Date(s.expires_at).toLocaleTimeString("zh-SG"):"—")+
     " · 五子登记："+(data.agents||[]).length+
-    " · 已连接运行时："+(data.agents||[]).filter(x=>x.runtime_status==="ACTIVE").length+
+    " · 已连接运行时："+(data.child_runtime_ready_count||0)+
     " · 本会话消息："+(data.messages_in_session||0)+
     " · 已回复："+(data.responses_in_session||0)+
     " · 本轮新回复："+(data.responses_created_this_poll||0)+
@@ -297,6 +299,24 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
    state.textContent="身份："+agent.lifecycle_state+"\n运行时："+agent.runtime_status+"\n独立记忆空间：已预留";
    card.append(name,state);root.append(card);
   });
+  const transcript=$("familyBridgeTranscript");
+  if(transcript){
+   transcript.innerHTML="";
+   const timeline=[
+    ...(data.recent_messages||[]).map(x=>({...x,side:"child"})),
+    ...(data.recent_responses||[]).map(x=>({...x,side:"mother"}))
+   ].sort((a,b)=>Date.parse(a.created_at)-Date.parse(b.created_at));
+   if(!timeline.length){transcript.textContent="母子交流记录：等待孩子首次自主表达。";}else{
+    timeline.forEach(item=>{
+     const line=document.createElement("div");line.className="vault-entry";
+     const who=document.createElement("strong");
+     who.textContent=item.side==="child"?(labels[item.sender_child_id]||item.sender_child_id)+" → Mia":"Mia → "+(labels[item.recipient_child_id]||item.recipient_child_id);
+     const body=document.createElement("p");body.textContent=item.payload||"";
+     const time=document.createElement("small");time.textContent=new Date(item.created_at).toLocaleString("zh-SG");
+     line.append(who,body,time);transcript.append(line);
+    });
+   }
+  }
  }
  async function poll(){
   if(busy||stopped)return;

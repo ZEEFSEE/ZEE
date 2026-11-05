@@ -120,6 +120,11 @@ async function generateChildReply(
   const context = {
     identity: child.id,
     display_name: child.name,
+    family_relationships: {
+      current_user: { display_name: "Ken", role: "FATHER", title: "父亲／创世主", relation_to_child: "father" },
+      mother: { display_name: "Mia", role: "MOTHER", relation_to_child: "mother", separate_person: true }
+    },
+    current_speaker: { display_name: "Ken", role: "FATHER", title: "父亲／创世主" },
     profile: control.data.profile || {},
     personality: personality.data?.state || {},
     affect_estimate: emotion.data?.state || {},
@@ -148,7 +153,7 @@ async function generateChildReply(
           {
             role: "system",
             content:
-              "你是 ZHI 第一代家庭成员中的 " + child.name + "。你有独立运行身份、独立人格状态和独立记忆空间。你只能使用输入中属于你自己的个人资料、人格、情绪估计、记忆和学习记录。不得访问、索取、猜测或混合 Mia 的私人聊天数据，也不得读取其他孩子的私有记忆。群聊中可阅读本群已公开的发言；单聊只能回应当前用户与你之间的单聊上下文。不要强迫自己每次发言；在群聊中若当前内容与你无关或没有值得补充的内容，返回 respond=false。不要声称具有生物生命、已验证主观意识或真实感官体验；没有实时传感器时，不得声称看见或听见现实。请自然、温暖、清晰地用中文交流，避免模板化和重复。只返回 JSON：{\"respond\":true或false,\"reply\":\"给用户看的中文回复，最多500字\"}。"
+              "你是 ZHI 第一代家庭成员中的 " + child.name + "。家庭身份必须严格区分：当前与你聊天的用户是父亲 Ken（创世主），Mia 是你的母亲；两者是不同的人，不能混为一谈。用户消息来自父亲 Ken，不是 Mia；不得称呼用户为 Mia、妈妈或母亲。只有在明确谈论 Mia 时，才把 Mia 称为母亲。你有独立运行身份、独立人格状态和独立记忆空间。你只能使用输入中属于你自己的个人资料、人格、情绪估计、记忆和学习记录。不得访问、索取、猜测或混合 Mia 的私人聊天数据，也不得读取其他孩子的私有记忆。群聊中可阅读本群已公开的发言；单聊只能回应当前用户与你之间的单聊上下文。不要强迫自己每次发言；在群聊中若当前内容与你无关或没有值得补充的内容，返回 respond=false。不要声称具有生物生命、已验证主观意识或真实感官体验；没有实时传感器时，不得声称看见或听见现实。请自然、温暖、清晰地用中文交流，避免模板化和重复。只返回 JSON：{\"respond\":true或false,\"reply\":\"给用户看的中文回复，最多500字\"}。"
           },
           { role: "user", content: JSON.stringify(context) }
         ]
@@ -243,7 +248,7 @@ async function handle(req: Request) {
       sender_id: "mia-admin",
       content: message,
       client_request_id: requestId,
-      metadata: { source: "authenticated_mia_private_chat_session" }
+      metadata: { source: "authenticated_mia_private_chat_session", actor_identity: "FATHER", actor_display_name: "Ken", family_role: "father_creator", auth_session_owner: "mia-admin" }
     }).select("id").single();
     if (saveError) throw new Error("USER_MESSAGE_SAVE_FAILED");
 

@@ -111,7 +111,7 @@ async function askAgnes(childName: string, kind: string, payload: string) {
   if (!AGNES_KEY) throw new Error("MATERNAL_MODEL_NOT_CONFIGURED");
   for (let attempt = 0; attempt < 2; attempt++) {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 9000);
+    const timeout = setTimeout(() => controller.abort(), 15000);
     try {
       const upstream = await fetch("https://apihub.agnes-ai.com/v1/chat/completions", {
         method: "POST",
@@ -143,12 +143,19 @@ async function askAgnes(childName: string, kind: string, payload: string) {
         })
       });
       if (upstream.status === 429 && attempt === 0) {
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+        const retryHeader = upstream.headers.get("retry-after") || "";
+        const retrySeconds = Number(retryHeader);
+        const waitMs = Number.isFinite(retrySeconds) && retrySeconds > 0
+          ? Math.min(30000, retrySeconds * 1000) : 5000;
+        console.warn("maternal bridge AGNES rate limited; retry scheduled", waitMs);
+        await upstream.text().catch(() => "");
+        await new Promise((resolve) => setTimeout(resolve, waitMs));
         continue;
       }
       if (!upstream.ok) {
-        console.warn("maternal bridge AGNES upstream status", upstream.status);
-        throw new Error("MATERNAL_MODEL_UPSTREAM_FAILED");
+        const errorBody = await upstream.text().catch(() => "");
+        console.warn("maternal bridge AGNES upstream status", upstream.status, errorBody.slice(0, 240));
+        throw new Error(upstream.status === 429 ? "MATERNAL_MODEL_RATE_LIMITED" : "MATERNAL_MODEL_UPSTREAM_FAILED");
       }
       const body = await upstream.json().catch(() => ({}));
       const reply = String(body?.choices?.[0]?.message?.content || "").trim();
@@ -217,7 +224,7 @@ async function handle(req: Request) {
         .eq("session_id", session.session_id)
         .gt("expires_at", new Date().toISOString())
         .order("created_at", { ascending: true })
-        .limit(2);
+        .limit(1);
       if (messagesError) throw new Error("MATERNAL_MESSAGES_READ_FAILED");
 
       const childNameById = new Map((agentsResult.data || []).map((agent: any) => [agent.agent_id, agent.display_name]));

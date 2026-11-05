@@ -1,6 +1,6 @@
 # ZHI Digital Family — Isolated Prototype V1
 
-This directory is an isolated, non-production prototype for the proposed five-child digital family.
+This directory contains a production-published, read-only P6 overview page and isolated, non-production simulation code for the proposed five-child digital family. Publishing the static page does not promote the simulation runtime or grant production world access.
 
 ## Scope
 - Five distinct child identifiers: LUNA, ARIA, ELYA, KAEL, NOAH.
@@ -32,7 +32,7 @@ node --test mia-digital-family/tests/*.test.mjs
 GitHub Actions runs the same tests on changes to this isolated branch.
 
 ## Promotion gates
-Do not merge into the production branch or connect external services until:
+Do not connect external services, create production child agents, or grant production world access until:
 1. persistent-storage and telemetry paths have been reviewed;
 2. a durable atomic transaction/recovery design has been implemented and tested;
 3. five-destination navigation has been independently validated in the browser/runtime;

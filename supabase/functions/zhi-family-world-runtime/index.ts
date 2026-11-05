@@ -61,7 +61,7 @@ function perceive(s:any,position:any){
 function parseJson(raw:string){const t=raw.trim().replace(/^```(?:json)?\s*/i,"").replace(/```$/i,"").trim();try{return JSON.parse(t)}catch{const a=t.indexOf("{"),b=t.lastIndexOf("}");if(a>=0&&b>a)return JSON.parse(t.slice(a,b+1));throw new Error("MODEL_OUTPUT_NOT_JSON");}}
 async function chooseVisit(child:any,profile:any,current:any,memories:any[],visits:any[]){
  if(!AGNES_KEY)throw new Error("AGNES_API_KEY_NOT_CONFIGURED");
- const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),18000);
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),30000);
  try{
   const r=await fetch("https://apihub.agnes-ai.com/v1/chat/completions",{method:"POST",
    headers:{"Authorization":"Bearer "+AGNES_KEY,"Content-Type":"application/json"},signal:controller.signal,

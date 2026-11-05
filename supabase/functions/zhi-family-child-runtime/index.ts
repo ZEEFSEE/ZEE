@@ -86,7 +86,6 @@ async function callAgnes(input: {
         temperature: 0.42,
         max_tokens: 620,
         stream: false,
-        response_format: { type: "json_object" },
         messages: [
           {
             role: "system",
@@ -377,20 +376,19 @@ Deno.serve(async (req: Request) => {
   if (!(await validScheduler(req))) return json({ ok: false, error: "SCHEDULER_AUTH_REQUIRED" }, 401);
   const client = db();
   try {
-    const results = [];
-    for (const agentId of CHILD_IDS) {
-      try { results.push(await runOne(client, agentId)); }
+    const results = await Promise.all(CHILD_IDS.map(async (agentId) => {
+      try { return await runOne(client, agentId); }
       catch (error) {
         const code = error instanceof Error ? error.message : "RUNTIME_ERROR";
-        results.push({ agent_id: agentId, status: "RUNTIME_ERROR", error: code.slice(0, 80) });
+        return { agent_id: agentId, status: "RUNTIME_ERROR", error: code.slice(0, 80) };
       }
-    }
+    }));
     return json({
       ok: true,
       runtime: "ZHI_FIVE_CHILD_INDEPENDENT_RUNTIME_V1",
       model: MODEL,
       results,
-      active_agents: results.filter((r: any) => r.status === "CYCLE_SUCCEEDED").length,
+      cycles_succeeded: results.filter((r: any) => r.status === "CYCLE_SUCCEEDED").length,
       physical_movement_enabled: false,
       live_perception_enabled: false,
       private_mia_data_access: false

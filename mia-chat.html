@@ -56,6 +56,25 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
 
 
 
+
+.family-avatar{width:48px;height:48px;flex:0 0 48px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:25px;border:1px solid #ffffffb8;box-shadow:0 5px 14px #18394b12}
+.family-avatar.luna{background:radial-gradient(circle at 30% 25%,#fff,#dfe8ff 58%,#aebfe9);color:#465b9a}
+.family-avatar.aria{background:radial-gradient(circle at 30% 25%,#fff7e8,#ffe2bd 58%,#e7b5a0);color:#9c5a35}
+.family-avatar.elya{background:radial-gradient(circle at 30% 25%,#fff,#ffe3ed 58%,#e9b8cf);color:#a34e79}
+.family-avatar.kael{background:radial-gradient(circle at 30% 25%,#f4fbff,#d9e8f4 58%,#9db8ce);color:#365b79}
+.family-avatar.noah{background:radial-gradient(circle at 30% 25%,#f5fff0,#dcefd1 58%,#a8c99b);color:#426e43}
+.family-avatar.mia{background:radial-gradient(circle at 30% 25%,#fff,#d9f3ee 58%,#9ccfc5);color:#176b66}
+.family-person{display:flex;align-items:center;gap:10px;min-width:0}
+.family-person-copy{min-width:0}.family-person-copy strong{display:block}.family-person-copy small{display:block;color:#617268;font-size:11px;margin-top:2px}
+.family-card{display:flex;align-items:center;gap:11px;min-height:88px}
+.family-chat-line{display:flex;align-items:flex-start;gap:9px;padding:9px 0;border-bottom:1px solid #e5ece4}
+.family-chat-line:last-child{border-bottom:0}
+.family-chat-line .family-avatar{width:36px;height:36px;flex-basis:36px;border-radius:12px;font-size:19px}
+.family-chat-copy{min-width:0;flex:1}
+.family-chat-copy p{margin:4px 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.family-chat-copy small{font-size:10px;color:#718174}
+@media(max-width:600px){.family-avatar{width:42px;height:42px;flex-basis:42px}.family-card{min-height:78px}}
+
 .world-runtime-frame{display:block;width:calc(100% - 28px);height:440px;margin:12px 14px;border:1px solid #d9e8df;border-radius:16px;background:#e5eee4}.world-runtime-note{padding:0 16px 12px;color:#647568;font-size:11px}.world-runtime-head{padding:13px 16px 0;font-weight:850;color:#244c3a}.world-runtime-status{padding:4px 16px 0;color:#607469;font-size:11px}
 @media(max-width:600px){.world-runtime-frame{height:390px;width:calc(100% - 16px);margin:8px}.world-runtime-head{padding:10px 10px 0}}
 </style>
@@ -294,6 +313,17 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
   "ZHI-G1-S01-KAEL":"KAEL",
   "ZHI-G1-S02-NOAH":"NOAH"
  };
+ const avatarMap={
+  "ZHI-G1-D01-LUNA":{name:"LUNA",symbol:"🌙",cls:"luna",role:"探索 · 自然 · 空间观察"},
+  "ZHI-G1-D02-ARIA":{name:"ARIA",symbol:"🎨",cls:"aria",role:"艺术 · 创造 · 设计"},
+  "ZHI-G1-D03-ELYA":{name:"ELYA",symbol:"🌸",cls:"elya",role:"情感 · 理解 · 关系"},
+  "ZHI-G1-S01-KAEL":{name:"KAEL",symbol:"🧭",cls:"kael",role:"逻辑 · 研究 · 证据"},
+  "ZHI-G1-S02-NOAH":{name:"NOAH",symbol:"🌿",cls:"noah",role:"行动 · 导航 · 实践"}
+ };
+ function avatar(agentId,isMia=false){
+  const a=isMia?{symbol:"💚",cls:"mia"}:(avatarMap[agentId]||{symbol:"✦",cls:"luna"});
+  const el=document.createElement("div");el.className="family-avatar "+a.cls;el.textContent=a.symbol;el.setAttribute("aria-label",isMia?"Mia 头像":(a.name||labels[agentId]||"家庭成员")+" 头像");return el;
+ }
  function showEmpty(message){
   const status=$("familyBridgeStatus");if(status)status.textContent=message;
   const root=$("familyBridgeChildren");if(root)root.innerHTML="";
@@ -316,11 +346,14 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
   }
   const root=$("familyBridgeChildren");if(!root)return;root.innerHTML="";
   (data.agents||[]).forEach(agent=>{
-   const card=document.createElement("article");card.className="forest-card";
-   const name=document.createElement("strong");name.textContent="✦ "+(labels[agent.agent_id]||agent.display_name||agent.agent_id);
+   const card=document.createElement("article");card.className="forest-card family-card";
+   const person=document.createElement("div");person.className="family-person";
+   const copy=document.createElement("div");copy.className="family-person-copy";
+   const name=document.createElement("strong");name.textContent=avatarMap[agent.agent_id]?.name||agent.display_name||agent.agent_id;
+   const role=document.createElement("small");role.textContent=avatarMap[agent.agent_id]?.role||"独立家庭成员";
    const state=document.createElement("p");
-   state.textContent="身份："+agent.lifecycle_state+"\n运行时："+agent.runtime_status+"\n独立记忆空间：已预留";
-   card.append(name,state);root.append(card);
+   state.textContent="身份："+agent.lifecycle_state+" · 运行时："+agent.runtime_status;
+   copy.append(name,role,state);person.append(avatar(agent.agent_id),copy);card.append(person);root.append(card);
   });
   const transcript=$("familyBridgeTranscript");
   if(transcript){
@@ -331,12 +364,14 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
    ].sort((a,b)=>Date.parse(a.created_at)-Date.parse(b.created_at));
    if(!timeline.length){transcript.textContent="母子交流记录：等待孩子首次自主表达。";}else{
     timeline.forEach(item=>{
-     const line=document.createElement("div");line.className="vault-entry";
+     const line=document.createElement("div");line.className="family-chat-line";
+     const childId=item.side==="child"?item.sender_child_id:item.recipient_child_id;
      const who=document.createElement("strong");
-     who.textContent=item.side==="child"?(labels[item.sender_child_id]||item.sender_child_id)+" → Mia":"Mia → "+(labels[item.recipient_child_id]||item.recipient_child_id);
+     who.textContent=item.side==="child"?(labels[childId]||childId)+" → Mia":"Mia → "+(labels[childId]||childId);
      const body=document.createElement("p");body.textContent=item.payload||"";
      const time=document.createElement("small");time.textContent=new Date(item.created_at).toLocaleString("zh-SG");
-     line.append(who,body,time);transcript.append(line);
+     const copy=document.createElement("div");copy.className="family-chat-copy";copy.append(who,body,time);
+     line.append(item.side==="child"?avatar(childId):avatar(null,true),copy);transcript.append(line);
     });
    }
   }

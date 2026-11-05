@@ -16,6 +16,7 @@ small{color:var(--muted)}pre{white-space:pre-wrap;overflow:auto;max-height:200px
 @media(max-width:640px){.stage{height:56vh;min-height:340px}}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+ <script src="./assets/family-identity.js"></script>
 </head><body>
 <header><div><h1>🌿 ZHI · 家庭公共世界</h1><p>五个孩子独立探索 · 五处公共目的地 · 自由往返</p></div><a href="./mia-chat.html">返回家庭聊天室</a></header>
 <main>
@@ -32,7 +33,8 @@ const PROJECT="https://dbooikzqprnqbgpfwsze.supabase.co";
 const ENDPOINT=PROJECT+"/functions/v1/zhi-family-world-runtime";
 const KEY="sb_publishable_spH47ZngJJTk13cpYPBjSw_X5qAsBmK";
 const $=s=>document.querySelector(s),mount=$("#viewport");
-const ids=["ZHI-G1-D01-LUNA","ZHI-G1-D02-ARIA","ZHI-G1-D03-ELYA","ZHI-G1-S01-KAEL","ZHI-G1-S02-NOAH"];
+const FAMILY=window.ZHI_FAMILY_IDENTITY;
+const ids=Object.keys(FAMILY.children);
 const colors=[0xd7a8e8,0xe8b56e,0xe69ba8,0x83a9d6,0x91b98a];
 let manifest,children=[],activeId="crystal-forest",renderer,scene,camera,controls,objects=[];
 function token(){return sessionStorage.getItem("mia_chat_token")||"";}
@@ -73,7 +75,7 @@ function build(id){
   const armGeo=new THREE.CapsuleGeometry(.075,.28,3,8);for(const side of [-1,1]){const arm=new THREE.Mesh(armGeo,skinMat);arm.position.set(side*.29,.67,0);arm.rotation.z=side*.25;g.add(arm);const leg=new THREE.Mesh(new THREE.CapsuleGeometry(.09,.22,3,8),dark);leg.position.set(side*.12,.17,0);g.add(leg);}
   if(idx<3){const bow=new THREE.Mesh(new THREE.SphereGeometry(.1,10,8),new THREE.MeshStandardMaterial({color:idx===0?0xf1d7ff:idx===1?0xffd0bd:0xf4c5e8}));bow.scale.set(1,.55,.4);bow.position.set(.22,1.43,.02);g.add(bow);}
   else {const badge=new THREE.Mesh(new THREE.SphereGeometry(.075,10,8),new THREE.MeshStandardMaterial({color:idx===3?0xf4d77a:0xb7d89c}));badge.position.set(0,.73,.23);g.add(badge);}
-  g.position.set(p.x+(i%2)*.32,.0,p.z+Math.floor(i/2)*.32);g.traverse(o=>{if(o.isMesh)o.castShadow=true;});scene.add(g);objects.push(g);label(c.agent.display_name,p.x,p.z+.55,"#273a2c");
+  g.position.set(p.x+(i%2)*.32,.0,p.z+Math.floor(i/2)*.32);g.traverse(o=>{if(o.isMesh)o.castShadow=true;});scene.add(g);objects.push(g);label(FAMILY.nameOf(c.agent.agent_id,c.agent.display_name),p.x,p.z+.55,"#273a2c");
  });
  camera.lookAt(w/2,0,d/2);controls=new OrbitControls(camera,renderer.domElement);controls.target.set(w/2,0,d/2);controls.enableDamping=true;resize();
 }
@@ -83,8 +85,8 @@ function animate(){requestAnimationFrame(animate);controls?.update();renderer?.r
 function buttons(){const root=$("#scene-buttons");root.replaceChildren();for(const s of manifest.scenes){const b=document.createElement("button");b.textContent=s.name;b.className=s.id===activeId?"active":"";b.onclick=()=>{activeId=s.id;build(activeId);buttons();};root.append(b);}}
 function cards(){
  const root=$("#children");root.replaceChildren();
- for(const c of children){const e=document.createElement("article");e.className="child";const s=manifest.scenes.find(x=>x.id===c.state?.scene_id);const frame=c.state?.perception_frame;const anchors=frame?.visible_entities?.map(x=>x.name).join("、")||"尚无场景锚点帧";const idx=ids.indexOf(c.agent.agent_id),cls=["luna","aria","elya","kael","noah"][idx]||"luna";
- const head=document.createElement("div");head.className="child-head";const img=document.createElement("img");img.className="child-avatar";img.src="./assets/family-avatars/"+cls+".svg";img.alt=c.agent.display_name+" 卡通头像";const name=document.createElement("div");name.className="child-name";name.textContent=c.agent.display_name;head.append(img,name);e.append(head);
+ for(const c of children){const e=document.createElement("article");e.className="child";const s=manifest.scenes.find(x=>x.id===c.state?.scene_id);const frame=c.state?.perception_frame;const anchors=frame?.visible_entities?.map(x=>x.name).join("、")||"尚无场景锚点帧";const idx=ids.indexOf(c.agent.agent_id),cls=FAMILY.children[c.agent.agent_id]?.cls||"luna";
+ const head=document.createElement("div");head.className="child-head";const img=document.createElement("img");img.className="child-avatar";img.src="./assets/family-avatars/"+cls+".svg";img.alt=FAMILY.nameOf(c.agent.agent_id,c.agent.display_name)+" 卡通头像";const name=document.createElement("div");name.className="child-name";name.textContent=FAMILY.nameOf(c.agent.agent_id,c.agent.display_name);head.append(img,name);e.append(head);
  const place=document.createElement("p");place.textContent=s?.name||"等待首次探索";const pos=document.createElement("small");pos.textContent="位置："+(c.state?.position?Number(c.state.position.x).toFixed(1)+", "+Number(c.state.position.z).toFixed(1)+" m":"尚未初始化");const anchor=document.createElement("small");anchor.textContent="观察锚点："+anchors;const rev=document.createElement("small");rev.textContent="移动版本："+(c.state?.movement_revision??0)+" · "+(c.state?.perception_provenance||"NONE");e.append(place,pos,document.createElement("br"),anchor,document.createElement("br"),rev);root.append(e);
  }
 }

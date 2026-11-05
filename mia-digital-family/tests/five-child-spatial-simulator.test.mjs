@@ -42,6 +42,15 @@ test("portal handoff is denied until a volatile simulation grant is made",()=>{
   assert.equal(sim.agents.get(ids[1]).sceneId,"mia-forest-corner");
 });
 
+test("portal handoff requires the child to reach the authored entrance anchor",()=>{
+  const sim=createFiveChildSpatialSimulator();
+  grantSimulationAccess(sim,ids[0],"crystal-forest");
+  moveChild(sim,ids[0],{x:8,z:11});
+  assert.throws(()=>handoffChild(sim,ids[0],"crystal-forest"),/reach the authored scene portal anchor/);
+  moveChild(sim,ids[0],{x:1.2,z:7});
+  assert.equal(handoffChild(sim,ids[0],"crystal-forest").sceneId,"crystal-forest");
+});
+
 test("portal graph rejects unregistered direct transitions",()=>{
   const sim=createFiveChildSpatialSimulator();
   grantSimulationAccess(sim,ids[0],"crystal-forest");

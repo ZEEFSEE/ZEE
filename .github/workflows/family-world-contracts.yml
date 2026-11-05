@@ -7,6 +7,7 @@ on:
       - "mia-digital-family/family-public-world-access.v1.json"
       - "mia-digital-family/runtime/family-public-world-runtime-adapter.mjs"
       - "mia-digital-family/tests/family-public-world-runtime-adapter.test.mjs"
+      - "mia-digital-family/PUBLIC-WORLD-ACCESS.md"
       - "world-scenes/public-destinations/**"
       - "world-scenes/runtime/mia-public-world-runtime.mjs"
   pull_request:

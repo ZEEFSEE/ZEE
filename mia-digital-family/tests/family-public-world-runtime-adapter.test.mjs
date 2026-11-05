@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { FAMILY_CHILD_IDS, FAMILY_PUBLIC_DESTINATIONS, travelFamilyChild } from "./family-public-world-runtime-adapter.mjs";
+import { FAMILY_CHILD_IDS, FAMILY_PUBLIC_DESTINATIONS, travelFamilyChild } from "../runtime/family-public-world-runtime-adapter.mjs";
 
 const root = new URL("../../world-scenes/", import.meta.url);
 const policy = JSON.parse(await readFile(new URL("../family-public-world-access.v1.json", import.meta.url), "utf8"));

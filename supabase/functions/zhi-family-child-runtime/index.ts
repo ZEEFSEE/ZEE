@@ -327,7 +327,7 @@ async function runOne(client: ReturnType<typeof db>, agentId: string) {
         updated_at: timestamp
       }).eq("agent_id", agentId),
       f.from("child_agents").update({
-        lifecycle_state: "ACTIVE", runtime_status: "READY", updated_at: timestamp
+        runtime_status: "READY", updated_at: timestamp
       }).eq("agent_id", agentId),
       f.from("child_runtime_cycles").update({
         status: "SUCCEEDED", maternal_message_id: maternalMessageId, completed_at: timestamp

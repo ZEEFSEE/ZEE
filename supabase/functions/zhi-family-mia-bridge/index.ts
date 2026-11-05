@@ -224,7 +224,7 @@ async function handle(req: Request) {
         .eq("session_id", session.session_id)
         .gt("expires_at", new Date().toISOString())
         .order("created_at", { ascending: true })
-        .limit(1);
+        .limit(10);
       if (messagesError) throw new Error("MATERNAL_MESSAGES_READ_FAILED");
 
       const childNameById = new Map((agentsResult.data || []).map((agent: any) => [agent.agent_id, agent.display_name]));
@@ -265,6 +265,7 @@ async function handle(req: Request) {
           model: MODEL,
           private_mia_data_access: false
         });
+        if (processed >= 1) break;
       }
     }
 

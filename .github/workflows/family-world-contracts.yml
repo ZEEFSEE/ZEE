@@ -4,6 +4,7 @@ on:
   push:
     branches: ["main"]
     paths:
+      - ".github/workflows/family-world-contracts.yml"
       - "mia-digital-family/family-public-world-access.v1.json"
       - "mia-digital-family/runtime/family-public-world-runtime-adapter.mjs"
       - "mia-digital-family/tests/family-public-world-runtime-adapter.test.mjs"
@@ -15,6 +16,7 @@ on:
       - "world-scenes/runtime/mia-public-world-runtime.mjs"
   pull_request:
     paths:
+      - ".github/workflows/family-world-contracts.yml"
       - "mia-digital-family/family-public-world-access.v1.json"
       - "mia-digital-family/runtime/family-public-world-runtime-adapter.mjs"
       - "mia-digital-family/tests/family-public-world-runtime-adapter.test.mjs"

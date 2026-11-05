@@ -1,0 +1,33 @@
+{
+  "schema": "zhi.family.world-validation-suite.v1",
+  "mode": "isolated-read-only-validation",
+  "production_manifest_write": false,
+  "production_access_granted": false,
+  "destinations": [
+    "crystal-forest",
+    "ocean-of-light",
+    "memory-valley",
+    "living-city",
+    "greenhouse"
+  ],
+  "scene_checks": [
+    "spawn_walkability",
+    "all_authored_collider_centres_blocked",
+    "scene_bounds_enforced",
+    "spawn_to_each_anchor_approach_path",
+    "bidirectional_forest_corner_portal_handoff",
+    "greenhouse_ocean_direct_handoff",
+    "unknown_scene_fail_closed"
+  ],
+  "family_simulation_checks": [
+    "five_distinct_agent_positions",
+    "agent_local_perception_frames",
+    "movement_state_isolation",
+    "scene_transition_isolation",
+    "failed_transition_state_rollback",
+    "transition_event_idempotency",
+    "no_production_or_global_access_grant"
+  ],
+  "runtime_validation_claim": "deterministic_node_simulation_only",
+  "physical_world_or_browser_runtime_claim": false
+}

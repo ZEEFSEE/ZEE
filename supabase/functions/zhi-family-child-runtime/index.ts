@@ -75,7 +75,7 @@ async function callAgnes(input: {
 }) {
   if (!AGNES_KEY) throw new Error("AGNES_API_KEY_NOT_CONFIGURED");
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 18000);
+  const timeout = setTimeout(() => controller.abort(), 30000);
   try {
     const upstream = await fetch("https://apihub.agnes-ai.com/v1/chat/completions", {
       method: "POST",

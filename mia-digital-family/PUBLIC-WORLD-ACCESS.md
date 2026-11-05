@@ -1,10 +1,10 @@
 # ZHI Family Public-World Runtime v1
 
 ## Scope
-Five independent children (LUNA, ARIA, ELYA, KAEL, NOAH) can visit the five public destinations: Crystal Forest, Ocean of Light, Memory Valley, Living City, and Greenhouse. Forest Corner is the shared portal gateway and return point.
+Five independent children (LUNA, ARIA, ELYA, KAEL, NOAH) can visit the five public destinations: Crystal Forest, Ocean of Light, Memory Valley, Living City, and Greenhouse. Forest Corner is the shared portal gateway and return point. Every child can choose any of the five destinations or return to Forest Corner.
 
 ## Runtime
-- Supabase Edge Function: `zhi-family-world-runtime` (version 5, ACTIVE).
+- Supabase Edge Function: `zhi-family-world-runtime` (version 6, ACTIVE).
 - Five Supabase Cron jobs (IDs 11–15) run one child every 15 minutes at staggered offsets, using the existing Vault-backed scheduler authentication.
 - GitHub Actions is not used for runtime credentials; no scheduler secret is stored in repository settings.
 - Each child independently selects a destination and registered anchor using its own profile, memories and recent visit history.

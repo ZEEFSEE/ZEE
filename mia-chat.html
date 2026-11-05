@@ -138,11 +138,11 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
    <div class="world-runtime-note">场景帧只在本轮请求中临时使用，不写入聊天记录、长期记忆或人格状态。它描述虚拟场景代理，不代表现实世界感官。</div>
   </section>
   <section id="miaFamilyBridge" class="forest-scene" aria-label="Mia 数字家庭母体通道">
-   <div class="forest-banner"><div><strong>🌱 Mia 数字家庭 · 母体交流通道</strong><small>沿用当前 Mia 聊天会话；不新增登录、不读取私人聊天记忆</small></div><button id="familyBridgeRefresh" type="button">同步状态</button></div>
+   <div class="forest-banner"><div><strong>🌱 Mia 数字家庭 · 母体交流通道</strong><small>沿用现有登录凭证；聊天身份为父亲 Ken，Mia 是独立的母亲身份</small></div><button id="familyBridgeRefresh" type="button">同步状态</button></div>
    <div id="familyBridgeStatus" class="forest-scene-meta">正在检查是否存在可复用的 Mia 当前会话…</div>
    <div id="familyBridgeChildren" class="forest-grid"></div>
    <div class="family-chat-workspace" id="familyChatWorkspace" aria-label="五个孩子的群聊和单独聊天">
-    <strong>💬 和孩子们聊天</strong>
+    <strong>💬 ZHI 家庭聊天 · 父亲 Ken 与五个孩子</strong>
     <div class="family-chat-toolbar">
      <button id="familyChatGroup" type="button" class="active">家庭群聊</button>
      <div id="familyChatDirects" class="family-chat-directs">
@@ -153,7 +153,7 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
       <button type="button" class="family-chat-direct-button" data-family-agent="ZHI-G1-S02-NOAH"><span class="mini-avatar">🌿</span>NOAH</button>
      </div>
     </div>
-    <div id="familyChatTarget" class="family-chat-target">家庭群聊 · 消息将分别交给五个孩子独立回应</div>
+    <div id="familyChatTarget" class="family-chat-target">你（父亲 Ken）与五个孩子的家庭群聊 · 孩子独立判断是否回应</div>
     <div id="familyChatMessages" class="family-chat-messages" aria-live="polite"><div class="family-chat-empty">登录现有 Mia 聊天后，即可在这里与孩子们交流。</div></div>
     <form id="familyChatComposer" class="family-chat-compose">
      <textarea id="familyChatInput" maxlength="1500" rows="2" placeholder="对五个孩子说些什么……"></textarea>
@@ -467,7 +467,7 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
   mode=nextMode;agentId=nextAgent;
   $("familyChatGroup").classList.toggle("active",mode==="GROUP");
   document.querySelectorAll("[data-family-agent]").forEach(b=>b.classList.toggle("active",mode==="DIRECT"&&b.dataset.familyAgent===agentId));
-  $("familyChatTarget").textContent=mode==="GROUP"?"家庭群聊 · 消息将分别交给五个孩子独立判断和回应":"与 "+(children[agentId]?.name||"孩子")+" 单独聊天 · 只有你和该孩子的对话会进入此单聊记录";
+  $("familyChatTarget").textContent=mode==="GROUP"?"你（父亲 Ken）与五个孩子的家庭群聊 · 孩子独立判断是否回应":"父亲 Ken与你的"+(children[agentId]?.name||"孩子")+"单独聊天 · 只有你和该孩子的对话会进入此单聊记录";
   $("familyChatInput").placeholder=mode==="GROUP"?"对五个孩子说些什么……":"对 "+(children[agentId]?.name||"孩子")+" 说些什么……";
   $("familyChatSend").textContent=mode==="GROUP"?"发送给孩子们 ↗":"发送给 "+(children[agentId]?.name||"孩子")+" ↗";
   loadHistory();

@@ -251,11 +251,12 @@ async function handle(req: Request) {
       ? body.client_request_id : crypto.randomUUID();
 
     const { data: existing, error: existingError } = await family(client).from("family_chat_messages")
-      .select("id").eq("thread_key", thread.threadKey)
+      .select("id,content").eq("thread_key", thread.threadKey)
       .eq("client_request_id", requestId).eq("sender_type", "USER").maybeSingle();
     if (existingError) throw new Error("CHAT_IDEMPOTENCY_LOOKUP_FAILED");
 
     let parentId = existing?.id as string | undefined;
+    let effectiveMessage = typeof existing?.content === "string" ? existing.content : message;
     if (!parentId) {
       const { data: parent, error: saveError } = await family(client).from("family_chat_messages").insert({
         thread_key: thread.threadKey,
@@ -269,6 +270,7 @@ async function handle(req: Request) {
       }).select("id").single();
       if (saveError) throw new Error("USER_MESSAGE_SAVE_FAILED");
       parentId = parent.id;
+      effectiveMessage = message;
     }
 
     // Recover a partially completed request: only retry children without a saved reply.
@@ -285,7 +287,7 @@ async function handle(req: Request) {
       .map((child) => ({ child_id: child.id, status: "ALREADY_REPLIED" }));
     for (const child of targets.filter((item) => !completed.has(item.id))) {
       try {
-        outcomes.push(await generateChildReply(client, child, thread, message, parentId, requestId));
+        outcomes.push(await generateChildReply(client, child, thread, effectiveMessage, parentId, requestId));
       } catch (error) {
         outcomes.push({
           child_id: child.id,

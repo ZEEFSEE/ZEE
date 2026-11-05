@@ -64,6 +64,7 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
 .family-avatar.kael{background:radial-gradient(circle at 30% 25%,#f4fbff,#d9e8f4 58%,#9db8ce);color:#365b79}
 .family-avatar.noah{background:radial-gradient(circle at 30% 25%,#f5fff0,#dcefd1 58%,#a8c99b);color:#426e43}
 .family-avatar.mia{background:radial-gradient(circle at 30% 25%,#fff,#d9f3ee 58%,#9ccfc5);color:#176b66}
+.family-avatar.father{background:radial-gradient(circle at 30% 25%,#fff9e8,#f6e5b7 58%,#d7bd7a);color:#75551a}
 .family-person{display:flex;align-items:center;gap:10px;min-width:0}
 .family-person-copy{min-width:0}.family-person-copy strong{display:block}.family-person-copy small{display:block;color:#617268;font-size:11px;margin-top:2px}
 .family-card{display:flex;align-items:center;gap:11px;min-height:88px}
@@ -458,7 +459,7 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
  let mode="GROUP",agentId=null,busy=false,refreshing=false;
  function token(){return sessionStorage.getItem("mia_chat_token")||"";}
  function avatar(senderType,senderId){
-  const a=senderType==="USER"?{symbol:"💚",cls:"mia"}:(children[senderId]||{symbol:"✦",cls:"luna"});
+  const a=senderType==="USER"?{symbol:"👑",cls:"father"}:(children[senderId]||{symbol:"✦",cls:"luna"});
   const el=document.createElement("div");el.className="family-avatar "+a.cls;el.textContent=a.symbol;return el;
  }
  function setStatus(message){const el=$("familyChatStatus");if(el)el.textContent=message;}
@@ -478,7 +479,7 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
    const line=document.createElement("div");line.className="family-chat-line"+(item.sender_type==="USER"?" user":"");
    const copy=document.createElement("div");copy.className="family-chat-copy";
    const who=document.createElement("strong");
-   who.textContent=item.sender_type==="USER"?"你":(children[item.sender_id]?.name||item.sender_id);
+   who.textContent=item.sender_type==="USER"?"父亲 Ken（你）":(children[item.sender_id]?.name||item.sender_id);
    const body=document.createElement("p");body.textContent=item.content||"";
    const time=document.createElement("small");time.textContent=new Date(item.created_at).toLocaleString("zh-SG");
    copy.append(who,body,time);line.append(avatar(item.sender_type,item.sender_id),copy);root.append(line);

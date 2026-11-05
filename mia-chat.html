@@ -456,7 +456,7 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
   "ZHI-G1-S02-NOAH":{name:"NOAH",symbol:"🌿",cls:"noah"}
  };
  const $=id=>document.getElementById(id);
- let mode="GROUP",agentId=null,busy=false,refreshing=false;
+ let mode="GROUP",agentId=null,busy=false,refreshing=false,pendingSend=null;
  function token(){return sessionStorage.getItem("mia_chat_token")||"";}
  function avatar(senderType,senderId){
   const a=senderType==="USER"?{symbol:"👑",cls:"father"}:(children[senderId]||{symbol:"✦",cls:"luna"});
@@ -511,14 +511,18 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
   busy=true;$("familyChatSend").disabled=true;$("familyChatInput").disabled=true;
   setStatus(mode==="GROUP"?"消息已送达，五个孩子正在分别思考；请稍候……":"消息已送达，"+(children[agentId]?.name||"孩子")+" 正在回应……");
   try{
-   const data=await request({action:"send",mode,agent_id:agentId,message,client_request_id:crypto.randomUUID()});
+   if(!pendingSend||pendingSend.mode!==mode||pendingSend.agentId!==agentId||pendingSend.message!==message){
+    pendingSend={mode,agentId,message,requestId:crypto.randomUUID()};
+   }
+   const data=await request({action:"send",mode,agent_id:agentId,message,client_request_id:pendingSend.requestId});
+   pendingSend=null;
    $("familyChatInput").value="";render(data.messages||[]);
    const failed=(data.child_outcomes||[]).filter(x=>x.status==="FAILED");
    const replied=Number(data.replies_created||0);
    if(failed.length)setStatus("本轮 "+replied+" 位孩子已回应；"+failed.length+" 位暂时未能完成，稍后可重试。");
    else if(replied===0)setStatus("消息已保存。孩子们本轮选择暂不回应；你可以继续交流。");
    else setStatus("本轮收到 "+replied+" 条独立回复。群聊/单聊记录已保存。");
-  }catch(error){setStatus("发送未完成："+(error.message||String(error))+"。用户消息若已保存，刷新记录即可查看。");await loadHistory();}
+  }catch(error){setStatus("发送未完成："+(error.message||String(error))+"。原消息已保留；再次发送相同内容会沿用同一请求编号，安全恢复未完成的回复。");await loadHistory();}
   finally{busy=false;$("familyChatSend").disabled=false;$("familyChatInput").disabled=false;$("familyChatInput").focus();}
  });
  $("familyChatRefresh")?.addEventListener("click",loadHistory);

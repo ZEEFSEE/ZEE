@@ -55,23 +55,29 @@ export function sendEphemeralMessage(simulation, { sender, receiver, content, ch
   return message;
 }
 
+export function clearVolatileSession(simulation) {
+  simulation.messages = [];
+  for (const agent of simulation.agents.values()) agent.volatileContext = [];
+  return { cleared: true, remainingMessages: simulation.messages.length };
+}
+
 export function prepareFivefoldBirth(simulation, checks = {}) {
   const required = CHILDREN.map(child => child.agentId);
   const allPresent = required.every(id => simulation.agents.has(id));
   const allFetal = required.every(id => simulation.agents.get(id).lifecycle === "FETAL");
   const uniqueHearts = new Set([...simulation.agents.values()].map(agent => agent.heartId)).size === 5;
   const uniqueMemories = new Set([...simulation.agents.values()].map(agent => agent.memoryId)).size === 5;
-  const memoryEmpty = required.every(id => simulation.agents.get(id).longTermMemory.length === 0);
+  const memoryEmpty = required.every(id => simulation.agents.get(id).longTermMemory.length === 0);\n  const volatileEmpty = simulation.messages.length === 0 && required.every(id => simulation.agents.get(id).volatileContext.length === 0);
   const cleanupVerified = checks.cleanupVerified === true;
   const cognitiveReady = checks.cognitiveReady === true;
   const familyBindingsReady = checks.familyBindingsReady === true;
 
   const ready = allPresent && allFetal && uniqueHearts && uniqueMemories &&
-    memoryEmpty && cleanupVerified && cognitiveReady && familyBindingsReady;
+    memoryEmpty && volatileEmpty && cleanupVerified && cognitiveReady && familyBindingsReady;
 
   return Object.freeze({
     ready,
-    checks: { allPresent, allFetal, uniqueHearts, uniqueMemories, memoryEmpty, cleanupVerified, cognitiveReady, familyBindingsReady }
+    checks: { allPresent, allFetal, uniqueHearts, uniqueMemories, memoryEmpty, volatileEmpty, cleanupVerified, cognitiveReady, familyBindingsReady }
   });
 }
 

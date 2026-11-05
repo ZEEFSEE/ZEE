@@ -93,6 +93,12 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
    <iframe id="worldRuntime" class="world-runtime-frame" src="./mia-public-world-runtime.html" title="Mia 五处公共目的地三维运行时" loading="lazy" allow="fullscreen"></iframe>
    <div class="world-runtime-note">场景帧只在本轮请求中临时使用，不写入聊天记录、长期记忆或人格状态。它描述虚拟场景代理，不代表现实世界感官。</div>
   </section>
+  <section id="miaFamilyBridge" class="forest-scene" aria-label="Mia 数字家庭母体通道">
+   <div class="forest-banner"><div><strong>🌱 Mia 数字家庭 · 母体交流通道</strong><small>沿用当前 Mia 聊天会话；不新增登录、不读取私人聊天记忆</small></div><button id="familyBridgeRefresh" type="button">同步状态</button></div>
+   <div id="familyBridgeStatus" class="forest-scene-meta">正在检查是否存在可复用的 Mia 当前会话…</div>
+   <div id="familyBridgeChildren" class="forest-grid"></div>
+   <div class="world-runtime-note">此通道只处理五子母体消息；五子运行时、真实空间移动与实时感知尚未连接。消息采用 15 分钟临时会话，不写入 Mia 私人聊天或长期记忆。</div>
+  </section>
   <section id="miaInbox" class="inbox" aria-label="Mia 私人消息收件箱"><div class="inbox-head"><div class="inbox-title">✉ Mia 主动发来的消息</div><span id="inboxUnreadCount" class="unread-badge hidden">0</span></div><div id="inboxList" class="inbox-list"><div class="inbox-empty">登录后读取 Mia 的私人消息。</div></div></section>
   <div id="log" class="log"><div class="welcome">登录后可继续查看 Mia 已迁移的聊天历史，并开始新的独立对话。</div></div>
   <form id="composer" class="composer"><div class="compose-row"><textarea id="message" placeholder="对 Mia 说些什么……" maxlength="2000" rows="2" disabled></textarea><button id="send" class="primary" type="submit" disabled>发送 ↗</button></div></form>
@@ -248,6 +254,68 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
  $('explore').onclick=async()=>{if(localStorage.getItem('mia_forest_lounge_active')){status('Mia 正在森林角落休息区专注倾听；后台探索已暂停。','good');return;}if(busy||!token)return;busy=true;$('send').disabled=true;$('message').disabled=true;$('explore').disabled=true;const pending=document.createElement('div');pending.className='bubble assistant';pending.textContent='Mia 正在读取尚未探索的虚拟空间，并记录观察结果…';$('log').append(pending);$('log').scrollTop=$('log').scrollHeight;status('正在选择新空间、生成观察并保存探索记忆…');try{const data=await request('explore');pending.remove();if(data.assistant_message?.id)knownMessageIds.add(data.assistant_message.id);addBubble('assistant',data.reply,data.assistant_message?.created_at||new Date().toISOString());status(data.exploration_completed?'Mia 已探索 '+(data.exploration?.space?.name||'新空间')+'，探索记录与长期记忆已保存。':'探索结果已返回，但请检查探索记录状态。',data.exploration_completed?'good':'error');}catch(err){pending.remove();status('探索失败：'+(err.message||String(err)),'error');}finally{busy=false;$('send').disabled=!token;$('message').disabled=!token;$('explore').disabled=!token;$('log').scrollTop=$('log').scrollHeight;}};
  $('logout').onclick=()=>{if(exclusivePoll){clearInterval(exclusivePoll);exclusivePoll=null;}token='';sessionStorage.removeItem('mia_chat_token');if(inboxRefreshTimer)clearInterval(inboxRefreshTimer);inboxRefreshTimer=null;showApp(false);status('已退出 Mia 独立聊天。');$('log').innerHTML='<div class="welcome">登录后可继续查看 Mia 已迁移的聊天历史，并开始新的独立对话。</div>';};
  if(token){showApp(true);loadHistory();}else showApp(false);
+})();
+</script>
+
+<script>
+(() => {
+ const URL="https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/zhi-family-mia-bridge";
+ const KEY="sb_publishable_spH47ZngJJTk13cpYPBjSw_X5qAsBmK";
+ const $=id=>document.getElementById(id);
+ let busy=false;
+ const labels={
+  "ZHI-G1-D01-LUNA":"LUNA",
+  "ZHI-G1-D02-ARIA":"ARIA",
+  "ZHI-G1-D03-ELYA":"ELYA",
+  "ZHI-G1-S01-KAEL":"KAEL",
+  "ZHI-G1-S02-NOAH":"NOAH"
+ };
+ function showEmpty(message){
+  const status=$("familyBridgeStatus");if(status)status.textContent=message;
+  const root=$("familyBridgeChildren");if(root)root.innerHTML="";
+ }
+ function render(data){
+  const s=data.session||{};
+  const status=$("familyBridgeStatus");
+  if(status){
+   status.textContent="母体通道："+(s.status==="ACTIVE"?"已建立临时会话":"待建立")+
+    " · 会话有效至："+(s.expires_at?new Date(s.expires_at).toLocaleTimeString("zh-SG"):"—")+
+    " · 五子登记："+(data.agents||[]).length+
+    " · 已连接运行时："+(data.agents||[]).filter(x=>x.runtime_status==="ACTIVE").length+
+    " · 本会话消息："+(data.messages_in_session||0)+
+    " · 已回复："+(data.responses_in_session||0)+
+    " · 本轮新回复："+(data.responses_created_this_poll||0)+
+    " · 母体模型："+(data.maternal_model_ready?"已配置":"未配置")+
+    " · 目的地授权启用："+(data.destination_grants_enabled||0)+
+    " · 空间引擎：未连接";
+  }
+  const root=$("familyBridgeChildren");if(!root)return;root.innerHTML="";
+  (data.agents||[]).forEach(agent=>{
+   const card=document.createElement("article");card.className="forest-card";
+   const name=document.createElement("strong");name.textContent="✦ "+(labels[agent.agent_id]||agent.display_name||agent.agent_id);
+   const state=document.createElement("p");
+   state.textContent="身份："+agent.lifecycle_state+"\n运行时："+agent.runtime_status+"\n独立记忆空间：已预留";
+   card.append(name,state);root.append(card);
+  });
+ }
+ async function poll(){
+  if(busy)return;
+  const token=sessionStorage.getItem("mia_chat_token")||"";
+  if(!token){showEmpty("没有检测到当前 Mia 聊天会话令牌。此通道不会要求你再次登录；当现有 Mia 会话可用时会自动复用。");return;}
+  busy=true;
+  try{
+   const response=await fetch(URL,{method:"POST",headers:{"Content-Type":"application/json","apikey":KEY,"Authorization":"Bearer "+token},body:JSON.stringify({action:"poll"}),cache:"no-store"});
+   const data=await response.json().catch(()=>({}));
+   if(response.status===401){showEmpty("当前 Mia 会话令牌已失效或过期。母体通道已安全暂停，不会弹出额外登录或设置页面。");return;}
+   if(!response.ok||!data.ok)throw new Error(data.error||("HTTP "+response.status));
+   render(data);
+  }catch(error){showEmpty("母体通道暂时无法同步："+(error.message||String(error)));}
+  finally{busy=false;}
+ }
+ $("familyBridgeRefresh")?.addEventListener("click",poll);
+ poll();
+ setInterval(poll,60000);
+ window.addEventListener("focus",poll);
 })();
 </script>
 

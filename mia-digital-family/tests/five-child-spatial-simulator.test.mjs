@@ -44,7 +44,8 @@ test("portal handoff is denied until a volatile simulation grant is made",()=>{
 
 test("portal graph rejects unregistered direct transitions",()=>{
   const sim=createFiveChildSpatialSimulator();
-  grantSimulationAccess(sim,ids[0],"ocean-of-light");
+  grantSimulationAccess(sim,ids[0],"crystal-forest");
+  handoffChild(sim,ids[0],"crystal-forest");
   assert.throws(()=>handoffChild(sim,ids[0],"memory-valley"),/no authored portal/);
 });
 

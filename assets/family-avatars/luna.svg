@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 130 150" role="img" aria-label="luna cartoon child avatar">
+<defs><linearGradient id="bg" x2="0" y2="1"><stop stop-color="#dce7ff"/><stop offset="1" stop-color="#fff"/></linearGradient><linearGradient id="shirt" x2="0" y2="1"><stop stop-color="#7187c8"/><stop offset="1" stop-color="#dce7ff"/></linearGradient></defs>
+<rect width="130" height="150" rx="25" fill="url(#bg)"/><circle cx="104" cy="25" r="12" fill="#fff" opacity=".75"/>
+<path d="M16 150 Q18 108 43 103 L87 103 Q112 108 114 150" fill="url(#shirt)"/>
+<path d="M46 105 L65 122 L84 105" fill="none" stroke="#fff" stroke-width="4" opacity=".8"/>
+<path d="M26 77 Q18 17 64 14 Q111 12 105 76 L99 111 Q88 91 88 57 Q66 79 39 56 L36 111Z" fill="#5b4a76"/>
+<ellipse cx="65" cy="66" rx="30" ry="35" fill="#e9c7a7"/>
+<path d="M36 55 Q39 25 65 25 Q91 25 94 55 Q79 43 65 47 Q49 43 36 55Z" fill="#5b4a76"/>
+<ellipse cx="53" cy="67" rx="3.4" ry="4.6" fill="#40343a"/><ellipse cx="77" cy="67" rx="3.4" ry="4.6" fill="#40343a"/>
+<circle cx="52" cy="65" r="1.2" fill="#fff"/><circle cx="76" cy="65" r="1.2" fill="#fff"/>
+<path d="M58 83 Q65 89 72 83" fill="none" stroke="#a85f65" stroke-width="2.6" stroke-linecap="round"/>
+<ellipse cx="43" cy="79" rx="6" ry="3" fill="#ef9d9d" opacity=".5"/><ellipse cx="87" cy="79" rx="6" ry="3" fill="#ef9d9d" opacity=".5"/>
+<path d="M91 34 Q109 22 111 39 Q102 48 91 43Z" fill="#7187c8" stroke="#fff" stroke-width="2"/>
+<circle cx="104" cy="116" r="13" fill="#fff" opacity=".9"/><text x="104" y="121" text-anchor="middle" font-size="15">🌙</text>
+</svg>

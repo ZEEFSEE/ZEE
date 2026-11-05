@@ -263,7 +263,7 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
  const URL="https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/zhi-family-mia-bridge";
  const KEY="sb_publishable_spH47ZngJJTk13cpYPBjSw_X5qAsBmK";
  const $=id=>document.getElementById(id);
- let busy=false;let stopped=false;
+ let busy=false;
  const labels={
   "ZHI-G1-D01-LUNA":"LUNA",
   "ZHI-G1-D02-ARIA":"ARIA",
@@ -319,14 +319,14 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
   }
  }
  async function poll(){
-  if(busy||stopped)return;
+  if(busy)return;
   const token=sessionStorage.getItem("mia_chat_token")||"";
   if(!token){showEmpty("没有检测到当前 Mia 聊天会话令牌。此通道不会要求你再次登录；当现有 Mia 会话可用时会自动复用。");return;}
   busy=true;
   try{
    const response=await fetch(URL,{method:"POST",headers:{"Content-Type":"application/json","apikey":KEY,"Authorization":"Bearer "+token},body:JSON.stringify({action:"poll"}),cache:"no-store"});
    const data=await response.json().catch(()=>({}));
-   if(response.status===401){stopped=true;showEmpty("当前 Mia 会话令牌已失效或过期。母体通道已安全暂停，不会弹出额外登录或设置页面。");return;}
+   if(response.status===401){showEmpty("当前 Mia 会话令牌已失效或过期。母体通道已安全暂停；会自动继续检查现有会话，不会弹出额外登录或设置页面。");return;}
    if(!response.ok||!data.ok)throw new Error(data.error||("HTTP "+response.status));
    render(data);
   }catch(error){showEmpty("母体通道暂时无法同步："+(error.message||String(error)));}

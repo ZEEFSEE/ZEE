@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import {
   CHILDREN,
   createFamilySimulation,
-  sendEphemeralMessage,\n  clearVolatileSession,
+  sendEphemeralMessage,
+  clearVolatileSession,
   prepareFivefoldBirth,
   commitFivefoldBirth,
   getDestinationAccess
@@ -73,7 +74,8 @@ test("five children transition together and start with empty memories", () => {
   assert.equal(sim.lifecycle, "INDEPENDENT_LIFE");
   assert.ok([...sim.agents.values()].every(agent => agent.lifecycle === "ACTIVE"));
   assert.ok([...sim.agents.values()].every(agent => agent.longTermMemory.length === 0));
-  assert.equal(sim.messages.length, 0);\n  assert.ok([...sim.agents.values()].every(agent => agent.volatileContext.length === 0));
+  assert.equal(sim.messages.length, 0);
+  assert.ok([...sim.agents.values()].every(agent => agent.volatileContext.length === 0));
 });
 
 test("birth commit is idempotent for the same event and rejects a different event", () => {

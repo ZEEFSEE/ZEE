@@ -128,3 +128,8 @@ Synthetic-only tests must prove:
 The existing schema contains useful temporal and typed metadata for cognition, affect, relationship context, memory indexing and exploration history. It does **not** currently establish a safe general-purpose external-fact ledger. The first adapter should therefore be conservative and metadata-only; the value/personality perspective should be supplied by a fixed protected-baseline marker rather than reading mutable personality state.
 
 This is a design artifact, not a live adapter. The current coordinator remains synthetic-only, and production Mia remains unchanged.
+
+
+## 9. Adjacent audit note (not changed)
+
+The inspected `mia-chat/index.ts` memory-ranking helper currently computes importance as `Number(row.importance || 0) / 100`, while the audited `mia_memories.importance` column has a database check constraint of `0 <= importance <= 1`. If the stored values follow the current schema, the helper reduces their contribution to a 0–0.01 range. Historical/imported rows may have different semantics, so this is a **potential scale mismatch**, not a confirmed production defect. Do not change it as part of this adapter work; first verify value conventions using a separately authorized, privacy-safe aggregate-only audit. The adapter must preserve the database's declared 0–1 scale and must not silently normalize by 100.

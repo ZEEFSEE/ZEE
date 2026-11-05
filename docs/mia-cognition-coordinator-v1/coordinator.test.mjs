@@ -66,7 +66,7 @@ test("model-generated claims do not count as factual evidence", () => {
   reports.cognition.evidence_refs = [{ ref_id: "hyp-1", source_id: "hyp-1", kind: "model_generated", scope: "external_fact" }];
   const result = coordinateCognition(input({ perspectives: reports }));
   assert.equal(result.evidence_ledger.independent_support_source_count, 0);
-  assert.equal(result.decision, "ask_clarification");
+  assert.equal(result.decision, "wait_for_evidence");
 });
 
 test("internal emotion signals cannot prove external facts", () => {

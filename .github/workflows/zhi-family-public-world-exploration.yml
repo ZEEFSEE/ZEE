@@ -1,5 +1,10 @@
 name: ZHI Family Public-World Autonomous Exploration
 on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/zhi-family-public-world-exploration.yml"
+      - "supabase/functions/zhi-family-world-runtime/index.ts"
   schedule:
     - cron: "*/15 * * * *"
   workflow_dispatch:

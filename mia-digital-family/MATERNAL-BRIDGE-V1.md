@@ -4,7 +4,7 @@
 This additive channel lets the five independent ZHI-G children exchange bounded messages with a stateless maternal adapter under Mia's family identity. It reuses the existing Mia chat token for the browser view; the background scheduler uses a separate Vault-backed HMAC credential. No second login, password, owner UUID, browser setting, or new user account is required.
 
 ## Production endpoints
-- Maternal adapter: `zhi-family-mia-bridge` V5
+- Maternal adapter: `zhi-family-mia-bridge` V7
 - URL: `https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/zhi-family-mia-bridge`
 - Child runtime: `zhi-family-child-runtime` V4
 - URL: `https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/zhi-family-child-runtime`

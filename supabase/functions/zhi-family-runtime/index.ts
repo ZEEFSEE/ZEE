@@ -28,26 +28,20 @@ function response(body: unknown, status = 200, origin = "") {
   return new Response(JSON.stringify(body), { status, headers });
 }
 
-function claimsFromVerifiedJwt(req: Request) {
+async function claimsFromVerifiedJwt(req: Request, client: ReturnType<typeof db>) {
   const auth = req.headers.get("authorization") ?? "";
   if (!auth.startsWith("Bearer ")) throw new Error("AUTH_REQUIRED");
   const token = auth.slice(7);
-  const parts = token.split(".");
-  if (parts.length !== 3) throw new Error("AUTH_REQUIRED");
-  const normalized = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-  const raw = atob(normalized + "=".repeat((4 - normalized.length % 4) % 4));
-  const payload = JSON.parse(new TextDecoder().decode(Uint8Array.from(raw, c => c.charCodeAt(0))));
-  if (!payload.sub || !payload.exp || payload.exp <= Math.floor(Date.now() / 1000)) {
-    throw new Error("AUTH_REQUIRED");
-  }
-  // Supabase Gateway validates the JWT signature because verify_jwt=true.
-  // Authorization decisions use server-managed app_metadata only, never user_metadata.
-  const app = payload.app_metadata ?? {};
+  // The platform gateway verifies the JWT signature (verify_jwt=true); getUser
+  // independently resolves the live Auth user before we trust app_metadata.
+  const { data, error } = await client.auth.getUser(token);
+  if (error || !data.user) throw new Error("AUTH_REQUIRED");
+  const app = data.user.app_metadata ?? {};
   const role = String(app.zhi_family_role ?? "");
   const childId = String(app.zhi_family_child_id ?? "");
   if (!["admin", "child", "maternal_adapter"].includes(role)) throw new Error("ROLE_DENIED");
   if (role === "child" && !CHILD_IDS.has(childId)) throw new Error("ROLE_DENIED");
-  return { userId: String(payload.sub), role, childId };
+  return { userId: data.user.id, role, childId };
 }
 
 const db = () => createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
@@ -93,8 +87,9 @@ async function handle(req: Request) {
   if (req.method !== "POST") return response({ ok: false, error: "POST_REQUIRED" }, 405, origin);
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY) return response({ ok: false, error: "SERVICE_NOT_CONFIGURED" }, 503, origin);
 
+  const client = db();
   let actor;
-  try { actor = claimsFromVerifiedJwt(req); }
+  try { actor = await claimsFromVerifiedJwt(req, client); }
   catch (error) {
     const code = error instanceof Error ? error.message : "AUTH_REQUIRED";
     return response({ ok: false, error: code }, code === "ROLE_DENIED" ? 403 : 401, origin);
@@ -103,8 +98,6 @@ async function handle(req: Request) {
   let body: Record<string, unknown>;
   try { body = await req.json(); }
   catch { return response({ ok: false, error: "INVALID_JSON" }, 400, origin); }
-
-  const client = db();
   try {
     await purge(client);
     const action = String(body.action ?? "");

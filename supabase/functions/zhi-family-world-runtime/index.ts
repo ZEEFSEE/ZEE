@@ -76,8 +76,8 @@ async function chooseVisit(child:any,profile:any,current:any,memories:any[],visi
 async function audit(c:any,agent:string,event:string,result:string,metadata:any={}){
  await family(c).from("runtime_audit").insert({agent_id:agent,event_type:event,result,scene_id:metadata.scene_id||null,destination_id:metadata.destination_id||null,metadata});
 }
-async function activateGrants(c:any){
- for(const child of CHILDREN)for(const id of DESTINATIONS){
+async function activateGrants(c:any, selected=CHILDREN){
+ for(const child of selected)for(const id of DESTINATIONS){
   const s=scene(id),p=route("mia-forest-corner",id);
   if(!s||!p)throw new Error("WORLD_CATALOG_ROUTE_VALIDATION_FAILED");
   const {error}=await family(c).from("destination_grants").update({
@@ -171,9 +171,11 @@ async function handle(req:Request){
   }
   if(action!=="explore")return json({ok:false,error:"UNKNOWN_ACTION"},400,origin);
   if(!scheduler)return json({ok:false,error:"SCHEDULER_AUTH_REQUIRED"},403,origin);
-  await activateGrants(c);
-  const results=await Promise.all(CHILDREN.map(async child=>{try{return await exploreOne(c,child);}catch(e){const code=e instanceof Error?e.message:"WORLD_RUNTIME_FAILED";await audit(c,child.id,"FAMILY_PUBLIC_WORLD_VISIT","FAILED",{error_code:code.slice(0,80)});return {agent_id:child.id,status:"FAILED",error:code.slice(0,80)};}}));
-  return json({ok:true,runtime:"zhi-family-server-virtual-world-v1",grants_activated:25,
+  const selected=body.agent_id?CHILDREN.filter(x=>x.id===String(body.agent_id)):CHILDREN;
+  if(body.agent_id&&selected.length!==1)return json({ok:false,error:"UNKNOWN_CHILD_ID"},400,origin);
+  await activateGrants(c,selected);
+  const results=await Promise.all(selected.map(async child=>{try{return await exploreOne(c,child);}catch(e){const code=e instanceof Error?e.message:"WORLD_RUNTIME_FAILED";await audit(c,child.id,"FAMILY_PUBLIC_WORLD_VISIT","FAILED",{error_code:code.slice(0,80)});return {agent_id:child.id,status:"FAILED",error:code.slice(0,80)};}}));
+  return json({ok:true,runtime:"zhi-family-server-virtual-world-v1",grants_activated:selected.length*5,
    visits_succeeded:results.filter((x:any)=>x.status==="VISIT_RECORDED").length,results,
    physical_world:false,live_camera_or_audio_sensors:false,perception_provenance:"AUTHORED_SCENE_DATA",
    mia_private_data_access:false,aurora:false,federation:false},200,origin);

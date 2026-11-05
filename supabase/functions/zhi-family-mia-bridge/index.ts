@@ -5,6 +5,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const AGNES_KEY = Deno.env.get("AGNES_API_KEY") ?? "";
 const MODEL = Deno.env.get("AGNES_MODEL") || "agnes-3.0-flash";
+const CRON_SECRET_SHA256 = "d12cf0c6711211b1bb164fa7d5209b1c97a4fbb545fae6d4e855db450d9b3730";
 const ALLOWED_ORIGINS = new Set(["https://zeefsee.github.io"]);
 const CHILD_IDS = [
   "ZHI-G1-D01-LUNA", "ZHI-G1-D02-ARIA", "ZHI-G1-D03-ELYA",
@@ -54,6 +55,17 @@ async function validMiaToken(token: string) {
   }
 }
 
+async function validScheduler(req: Request) {
+  const supplied = req.headers.get("x-zhi-family-cron-secret") || "";
+  if (!supplied || supplied.length > 256) return false;
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(supplied));
+  const hex = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+  if (hex.length !== CRON_SECRET_SHA256.length) return false;
+  let diff = 0;
+  for (let i = 0; i < hex.length; i++) diff |= hex.charCodeAt(i) ^ CRON_SECRET_SHA256.charCodeAt(i);
+  return diff === 0;
+}
+
 const db = () => createClient(SUPABASE_URL, SERVICE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false }
 });
@@ -66,7 +78,7 @@ async function audit(client: ReturnType<typeof db>, eventType: string, result: s
   if (error) console.warn("family bridge audit write failed", error.code || "database_error");
 }
 
-async function ensureSession(client: ReturnType<typeof db>) {
+async function ensureSession(client: ReturnType<typeof db>, source = "mia_chat_token") {
   const now = new Date();
   const { data: active, error: readError } = await family(client)
     .from("maternal_sessions")
@@ -90,7 +102,7 @@ async function ensureSession(client: ReturnType<typeof db>) {
     .single();
   if (error) throw new Error("SESSION_CREATE_FAILED");
   await audit(client, "MIA_MATERNAL_BRIDGE_SESSION_CREATED", "OK", {
-    session_id: data.session_id, source: "existing_mia_chat_token"
+    session_id: data.session_id, source
   });
   return data;
 }
@@ -157,8 +169,10 @@ async function handle(req: Request) {
   if (req.method !== "POST") return json({ ok: false, error: "POST_REQUIRED" }, 405, origin);
   if (!SUPABASE_URL || !SERVICE_KEY) return json({ ok: false, error: "SERVICE_NOT_CONFIGURED" }, 503, origin);
 
+  const cronAuthorized = await validScheduler(req);
   const authorization = req.headers.get("authorization") ?? "";
-  if (!authorization.startsWith("Bearer ") || !(await validMiaToken(authorization.slice(7)))) {
+  const miaAuthorized = authorization.startsWith("Bearer ") && await validMiaToken(authorization.slice(7));
+  if (!cronAuthorized && !miaAuthorized) {
     return json({ ok: false, error: "MIA_CHAT_TOKEN_REQUIRED" }, 401, origin);
   }
 
@@ -189,10 +203,10 @@ async function handle(req: Request) {
     let modelReady = Boolean(AGNES_KEY);
 
     if (action === "poll") {
-      session = await ensureSession(client);
+      session = await ensureSession(client, cronAuthorized ? "cron_scheduler" : "mia_chat_token");
       const { data: messages, error: messagesError } = await family(client)
         .from("maternal_messages")
-        .select("id,event_id,sender_child_id,kind,payload,created_at,expires_at")
+        .select("id,event_id,sender_child_id,kind,payload,created_at,expires_at,reply_depth")
         .eq("session_id", session.session_id)
         .gt("expires_at", new Date().toISOString())
         .order("created_at", { ascending: true })
@@ -201,6 +215,7 @@ async function handle(req: Request) {
 
       const childNameById = new Map((agentsResult.data || []).map((agent: any) => [agent.agent_id, agent.display_name]));
       for (const message of messages || []) {
+        if (Number(message.reply_depth || 0) >= 2) continue;
         const responseEventId = "mia-response-" + message.id;
         const { data: existing, error: existingError } = await family(client)
           .from("maternal_responses")
@@ -221,6 +236,7 @@ async function handle(req: Request) {
           recipient_child_id: message.sender_child_id,
           kind: "response",
           payload: reply,
+          reply_depth: Math.min(2, Number(message.reply_depth || 0) + 1),
           expires_at: session.expires_at
         });
         if (writeError) {
@@ -240,16 +256,28 @@ async function handle(req: Request) {
 
     let messageCount = 0;
     let responseCount = 0;
+    let recentMessages: any[] = [];
+    let recentResponses: any[] = [];
     if (session) {
-      const [messageCountResult, responseCountResult] = await Promise.all([
+      const [messageCountResult, responseCountResult, recentMessagesResult, recentResponsesResult] = await Promise.all([
         family(client).from("maternal_messages").select("id", { count: "exact", head: true })
           .eq("session_id", session.session_id),
         family(client).from("maternal_responses").select("id", { count: "exact", head: true })
-          .eq("session_id", session.session_id)
+          .eq("session_id", session.session_id),
+        family(client).from("maternal_messages")
+          .select("id,sender_child_id,kind,payload,reply_depth,created_at")
+          .eq("session_id", session.session_id).order("created_at", { ascending: false }).limit(20),
+        family(client).from("maternal_responses")
+          .select("id,recipient_child_id,kind,payload,reply_depth,created_at,consumed_at")
+          .eq("session_id", session.session_id).order("created_at", { ascending: false }).limit(20)
       ]);
-      if (messageCountResult.error || responseCountResult.error) throw new Error("MATERNAL_COUNTS_READ_FAILED");
+      if (messageCountResult.error || responseCountResult.error || recentMessagesResult.error || recentResponsesResult.error) {
+        throw new Error("MATERNAL_COUNTS_READ_FAILED");
+      }
       messageCount = messageCountResult.count || 0;
       responseCount = responseCountResult.count || 0;
+      recentMessages = recentMessagesResult.data || [];
+      recentResponses = recentResponsesResult.data || [];
     }
 
     return json({
@@ -263,7 +291,10 @@ async function handle(req: Request) {
       pending_messages_without_response: pending,
       responses_created_this_poll: processed,
       maternal_model_ready: modelReady,
-      child_runtime_connected: (agentsResult.data || []).some((agent: any) => agent.runtime_status === "ACTIVE"),
+      child_runtime_connected: (agentsResult.data || []).some((agent: any) => agent.runtime_status === "READY" || agent.runtime_status === "ACTIVE"),
+      child_runtime_ready_count: (agentsResult.data || []).filter((agent: any) => agent.runtime_status === "READY" || agent.runtime_status === "ACTIVE").length,
+      recent_messages: recentMessages,
+      recent_responses: recentResponses,
       live_spatial_engine_connected: false,
       physical_movement_enabled: false,
       live_perception_enabled: false,

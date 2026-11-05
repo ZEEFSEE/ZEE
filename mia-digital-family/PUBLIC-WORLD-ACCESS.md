@@ -5,7 +5,8 @@ Five independent children (LUNA, ARIA, ELYA, KAEL, NOAH) can visit the five publ
 
 ## Runtime
 - Supabase Edge Function: `zhi-family-world-runtime` (version 2, ACTIVE).
-- GitHub Actions scheduler: every 15 minutes; Singapore local display time is UTC+8.
+- Supabase Cron job `zhi-family-public-world-exploration` (job 10): every 15 minutes, authenticated using the existing Vault secret `zhi_family_runtime_cron_secret`.
+- GitHub Actions is not used for runtime credentials; no scheduler secret is stored in repository settings.
 - Each child independently selects a destination and registered anchor using its own profile, memories and recent visit history.
 - Bidirectional portal handoffs are resolved only from authored manifest transitions.
 - The child’s own `child_runtime_state` is updated with scene, position, movement revision and a scene-derived perception frame.

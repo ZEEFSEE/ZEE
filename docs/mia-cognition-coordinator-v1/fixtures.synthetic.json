@@ -1,0 +1,79 @@
+{
+  "fixture_kind": "synthetic_only",
+  "run_id": "fixture-six-perspectives-001",
+  "now": "2026-11-05T00:00:00.000Z",
+  "event": {
+    "occurred_at": "2026-11-04T00:00:00.000Z"
+  },
+  "candidate": {
+    "type": "improvement",
+    "summary": "Synthetic reversible improvement candidate",
+    "importance": 0.8,
+    "potential_benefit": 0.7,
+    "risk": "low",
+    "reversible": true,
+    "next_step": "Run an isolated synthetic comparison"
+  },
+  "perspectives": {
+    "cognition": {
+      "observations": [
+        "Synthetic cognition observation"
+      ],
+      "evidence_refs": [],
+      "counter_evidence_refs": [],
+      "confidence": 0.7,
+      "unknowns": [],
+      "recommendation": "review"
+    },
+    "emotion": {
+      "observations": [
+        "Synthetic emotion observation"
+      ],
+      "evidence_refs": [],
+      "counter_evidence_refs": [],
+      "confidence": 0.7,
+      "unknowns": [],
+      "recommendation": "review"
+    },
+    "relationship": {
+      "observations": [
+        "Synthetic relationship observation"
+      ],
+      "evidence_refs": [],
+      "counter_evidence_refs": [],
+      "confidence": 0.7,
+      "unknowns": [],
+      "recommendation": "review"
+    },
+    "motivation_action": {
+      "observations": [
+        "Synthetic motivation_action observation"
+      ],
+      "evidence_refs": [],
+      "counter_evidence_refs": [],
+      "confidence": 0.7,
+      "unknowns": [],
+      "recommendation": "review"
+    },
+    "memory_time": {
+      "observations": [
+        "Synthetic memory_time observation"
+      ],
+      "evidence_refs": [],
+      "counter_evidence_refs": [],
+      "confidence": 0.7,
+      "unknowns": [],
+      "recommendation": "review"
+    },
+    "value_personality": {
+      "observations": [
+        "Synthetic value_personality observation"
+      ],
+      "evidence_refs": [],
+      "counter_evidence_refs": [],
+      "confidence": 0.7,
+      "unknowns": [],
+      "recommendation": "review"
+    }
+  }
+}

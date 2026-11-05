@@ -4,7 +4,7 @@
 
 - Supabase project: `dbooikzqprnqbgpfwsze` (`zee-extension`)
 - Private database schema: `zhi_family`
-- Edge Function: `zhi-family-runtime`, version 1, JWT verification enabled
+- Edge Function: `zhi-family-runtime`, version 2, JWT verification enabled; JWT is resolved through Supabase Auth `getUser()` before app-metadata authorization
 - Function URL: `https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/zhi-family-runtime`
 - Database migrations applied: `zhi_digital_family_runtime_v1`, `zhi_family_maternal_responses_v1`, `zhi_family_security_and_ttl_v1`, `zhi_family_message_fk_indexes_v1`
 
@@ -22,7 +22,7 @@ The five records are registered, not marked ACTIVE. Runtime status remains NOT_C
 
 ## API authentication
 
-The function requires a valid Supabase JWT (`verify_jwt=true`). Authorization reads only server-managed JWT `app_metadata`; it never trusts `user_metadata`.
+The function requires a valid Supabase JWT (`verify_jwt=true`). The platform gateway verifies the JWT and the function then resolves the live Auth user with `client.auth.getUser(token)` before reading authorization claims. Authorization reads only server-managed `app_metadata`; it never trusts `user_metadata`.
 
 Required server-managed claims:
 - Administrator: `app_metadata.zhi_family_role = "admin"`
@@ -55,4 +55,4 @@ No child Auth users or role claims are created by this deployment. Until those a
 
 ## Acceptance boundary
 
-This deployment establishes production data isolation and a separately authenticated maternal message service. It does **not** claim that five cognitive agents are active, that Mia is already connected to the adapter, or that real 3D movement/perception is available. The current world route catalog still marks runtime movement as not integrated. Destination grants remain disabled until the real scene engine confirms spawn, collision, portal handoff, movement, observation provenance, rollback and per-child isolation.
+This deployment establishes production data isolation and a separately authenticated maternal message service. Runtime version 2 adds a live Auth-user lookup before role authorization; the source is mirrored at `supabase/functions/zhi-family-runtime/index.ts`. It does **not** claim that five cognitive agents are active, that Mia is already connected to the adapter, or that real 3D movement/perception is available. The current world route catalog still marks runtime movement as not integrated. Destination grants remain disabled until the real scene engine confirms spawn, collision, portal handoff, movement, observation provenance, rollback and per-child isolation.

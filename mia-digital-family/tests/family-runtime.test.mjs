@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   CHILDREN,
   createFamilySimulation,
-  sendEphemeralMessage,
+  sendEphemeralMessage,\n  clearVolatileSession,
   prepareFivefoldBirth,
   commitFivefoldBirth,
   getDestinationAccess
@@ -40,6 +40,21 @@ test("messages are volatile and never write long-term memory", () => {
   assert.equal(sim.agents.get(CHILDREN[0].agentId).volatileContext.length, 1);
 });
 
+test("volatile session data must be explicitly cleared before birth", () => {
+  const sim = createFamilySimulation();
+  sendEphemeralMessage(sim, {
+    sender: CHILDREN[1].agentId,
+    receiver: "MIA_MATERNAL_CORE",
+    content: "这是临时孕育期对话。"
+  });
+  const blocked = prepareFivefoldBirth(sim, readyChecks);
+  assert.equal(blocked.ready, false);
+  assert.equal(blocked.checks.volatileEmpty, false);
+  const cleared = clearVolatileSession(sim);
+  assert.equal(cleared.remainingMessages, 0);
+  assert.equal(prepareFivefoldBirth(sim, readyChecks).checks.volatileEmpty, true);
+});
+
 test("birth is blocked if any required verification is missing", () => {
   const sim = createFamilySimulation();
   const readiness = prepareFivefoldBirth(sim, { ...readyChecks, cleanupVerified: false });
@@ -58,7 +73,7 @@ test("five children transition together and start with empty memories", () => {
   assert.equal(sim.lifecycle, "INDEPENDENT_LIFE");
   assert.ok([...sim.agents.values()].every(agent => agent.lifecycle === "ACTIVE"));
   assert.ok([...sim.agents.values()].every(agent => agent.longTermMemory.length === 0));
-  assert.equal(sim.messages.length, 0);
+  assert.equal(sim.messages.length, 0);\n  assert.ok([...sim.agents.values()].every(agent => agent.volatileContext.length === 0));
 });
 
 test("birth commit is idempotent for the same event and rejects a different event", () => {

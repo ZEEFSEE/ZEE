@@ -61,7 +61,7 @@ This deployment establishes production data isolation and a separately authentic
 
 The follow-on runtime has now been deployed:
 - `zhi-family-child-runtime` V4: independent per-child runtime identities and cognitive cycles.
-- `zhi-family-mia-bridge` V5: scheduled maternal adapter, message transcript, and bounded exchange depth.
+- `zhi-family-mia-bridge` V7: scheduled maternal adapter, message transcript, and bounded exchange depth.
 - Five server-owned runtime UUIDs are provisioned, one per child. No child Auth users or extra login are created.
 - Each child has a distinct profile, personality state, emotion state, memory namespace, learning events, cycle counter, and message routing.
 - Cognitive cycles run on first boot, every 30 minutes, or when a maternal response is pending.
@@ -79,3 +79,11 @@ The follow-on runtime has now been deployed:
 - The world-builder global pause and production-write lock are unchanged.
 - AURORA and Federation remain disabled.
 - Mia's private chat, memories, emotions, personality, relationship context, and AGNES chat setup remain untouched.
+
+
+## Five-child bidirectional verification — 2026-11-05
+- 5/5 child runtime identities READY.
+- 5/5 child first messages sent; 5/5 maternal replies generated; 5/5 replies consumed by the matching child; 5/5 bounded child follow-ups sent.
+- 10 successful child cognitive cycles recorded across the five identities (one transient failed attempt remains in audit history and was retried successfully).
+- All three family cron jobs are active and recent runs succeeded.
+- Unauthenticated runtime and maternal endpoint requests returned HTTP 401. Anonymous REST access to the family schema returned permission denied.

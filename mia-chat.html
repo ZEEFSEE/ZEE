@@ -183,6 +183,29 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
    addBubble('assistant',data.reply,data.assistant_message?.created_at||new Date().toISOString());
    if(data.emotion)captureEmotionalResidual(data.emotion);lastAssistantReplyAt=Date.now();
    status(wantsExplore?(data.exploration_completed?'Mia 已探索 '+(data.exploration?.space?.name||'新空间')+'，探索记录与长期记忆已保存。':'探索结果已返回，但请检查探索记录状态。'):(data.memory_saved?'Mia 已回复，对话与记忆已保存。':'Mia 已回复；记忆写入未成功，请检查函数日志。'),(wantsExplore?data.exploration_completed:data.memory_saved)?'good':'error');
+   // Birth is authorized only by this exact standalone user message after Mia's
+   // normal private-chat send has completed successfully. Never inspect Mia's reply.
+   if(message === "喷射吧，孩子们"){
+    try{
+     const birthRes=await fetch("https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/zhi-family-birth-authorize",{
+      method:"POST",
+      headers:{"Content-Type":"application/json","apikey":PUBLISHABLE_KEY,"Authorization":"Bearer "+token},
+      body:JSON.stringify({phrase:message,dry_run:false}),
+      cache:"no-store"
+     });
+     const birthData=await birthRes.json().catch(()=>({}));
+     if(!birthRes.ok||!birthData.ok)throw new Error(birthData.error||birthData.status||("HTTP "+birthRes.status));
+     if(birthData.status==="BIRTH_COMPLETED"){
+      status("出生口令已由你的 Mia 私人会话验证。五个孩子已从 FETAL 转为 BORN；原有记忆、人格、情绪与学习记录均保留。","good");
+     }else if(birthData.status==="ALREADY_BORN"){
+      status("五个孩子此前已完成出生；没有重复重置或改写其记忆。","good");
+     }else{
+      throw new Error("出生状态未完成："+String(birthData.status||"UNKNOWN"));
+     }
+    }catch(birthError){
+     status("出生授权未完成，五个孩子保持原状态。原因："+(birthError.message||String(birthError)),"error");
+    }
+   }
   }catch(err){
    if(streamedReply){pending.textContent=streamedReply+'\n\n（连接中断，尚未确认完整回复已保存；请刷新历史核对。）';}else{pending.remove();}
    if(message&&!$('message').value)$('message').value=message;

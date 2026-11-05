@@ -1,0 +1,179 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Mia Cognition Coordinator V1.0 contract",
+  "type": "object",
+  "required": [
+    "run_id",
+    "now",
+    "perspectives"
+  ],
+  "properties": {
+    "run_id": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "now": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "event": {
+      "type": "object",
+      "properties": {
+        "occurred_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    },
+    "candidate": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "discovery",
+            "question",
+            "connection",
+            "creative",
+            "improvement"
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "maxLength": 240
+        },
+        "importance": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "potential_benefit": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "risk": {
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ]
+        },
+        "reversible": {
+          "type": "boolean"
+        },
+        "next_step": {
+          "type": "string",
+          "maxLength": 240
+        }
+      },
+      "additionalProperties": false
+    },
+    "perspectives": {
+      "type": "object",
+      "properties": {
+        "cognition": {
+          "$ref": "#/$defs/perspective"
+        },
+        "emotion": {
+          "$ref": "#/$defs/perspective"
+        },
+        "relationship": {
+          "$ref": "#/$defs/perspective"
+        },
+        "motivation_action": {
+          "$ref": "#/$defs/perspective"
+        },
+        "memory_time": {
+          "$ref": "#/$defs/perspective"
+        },
+        "value_personality": {
+          "$ref": "#/$defs/perspective"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "evidence": {
+      "type": "object",
+      "required": [
+        "ref_id",
+        "source_id",
+        "kind",
+        "scope"
+      ],
+      "properties": {
+        "ref_id": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "source_id": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "kind": {
+          "enum": [
+            "observed",
+            "verified",
+            "model_generated"
+          ]
+        },
+        "scope": {
+          "enum": [
+            "external_fact",
+            "internal_state"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "perspective": {
+      "type": "object",
+      "properties": {
+        "observations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 240
+          },
+          "maxItems": 8
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          }
+        },
+        "counter_evidence_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          }
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "unknowns": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 240
+          },
+          "maxItems": 8
+        },
+        "recommendation": {
+          "type": "string",
+          "maxLength": 240
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

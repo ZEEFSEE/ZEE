@@ -32,6 +32,9 @@ jobs:
       - name: Validate Mia public diary safety
         run: node mia/safety-check.mjs
 
+      - name: Validate family identity consistency
+        run: node --test mia-digital-family/tests/family-display.test.mjs
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 

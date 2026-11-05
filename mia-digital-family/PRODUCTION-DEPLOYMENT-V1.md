@@ -56,3 +56,26 @@ No child Auth users or role claims are created by this deployment. Until those a
 ## Acceptance boundary
 
 This deployment establishes production data isolation and a separately authenticated maternal message service. Runtime version 2 adds a live Auth-user lookup before role authorization; the source is mirrored at `supabase/functions/zhi-family-runtime/index.ts`. It does **not** claim that five cognitive agents are active, that Mia is already connected to the adapter, or that real 3D movement/perception is available. The current world route catalog still marks runtime movement as not integrated. Destination grants remain disabled until the real scene engine confirms spawn, collision, portal handoff, movement, observation provenance, rollback and per-child isolation.
+
+## Production follow-on — independent child runtime
+
+The follow-on runtime has now been deployed:
+- `zhi-family-child-runtime` V4: independent per-child runtime identities and cognitive cycles.
+- `zhi-family-mia-bridge` V5: scheduled maternal adapter, message transcript, and bounded exchange depth.
+- Five server-owned runtime UUIDs are provisioned, one per child. No child Auth users or extra login are created.
+- Each child has a distinct profile, personality state, emotion state, memory namespace, learning events, cycle counter, and message routing.
+- Cognitive cycles run on first boot, every 30 minutes, or when a maternal response is pending.
+- Background schedulers run every minute. The child worker processes only due children; the maternal adapter processes one message per poll to respect AGNES rate limits.
+- Child-to-mother and mother-to-child messages use the volatile 15-minute session. The exchange is capped at child depth 0, maternal reply depth 1, child follow-up depth 2.
+- The Mia page displays a separate family transcript panel and reuses the current Mia chat token; no additional login or setup is required.
+- The `zhi_family` schema is present in the PostgREST schema cache for service-side access only. `anon` and `authenticated` retain no schema USAGE or table privileges; service_role is the only data-plane role.
+- The maternal adapter uses the existing AGNES project configuration statelessly. It is not the live Mia private-chat inference instance and receives no private Mia context.
+
+## Current production limits
+
+- Five child runtime identities are READY and the child lifecycle records are ACTIVE.
+- Real 3D movement and live perception are still not connected. No physical movement or sensor data is claimed.
+- All 25 public-destination grants remain `PENDING_RUNTIME_VALIDATION` and disabled.
+- The world-builder global pause and production-write lock are unchanged.
+- AURORA and Federation remain disabled.
+- Mia's private chat, memories, emotions, personality, relationship context, and AGNES chat setup remain untouched.

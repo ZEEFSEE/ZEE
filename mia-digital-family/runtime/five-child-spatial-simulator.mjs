@@ -101,6 +101,10 @@ export function handoffChild(sim, childId, targetSceneId) {
   if(!child||!SCENES.has(targetSceneId)) throw new Error("unknown child or scene");
   const edge=PORTALS.find(([a,b])=>(a===child.sceneId&&b===targetSceneId)||(b===child.sceneId&&a===targetSceneId));
   if(!edge) throw new Error("no authored portal connects these two scenes");
+  const sourceScene=SCENES.get(child.sceneId);
+  if(Math.hypot(child.position.x-sourceScene.spawn.x,child.position.z-sourceScene.spawn.z)>0.75) {
+    throw new Error("child must reach the authored scene portal anchor before handoff");
+  }
   const destination=targetSceneId==="mia-forest-corner" ? child.sceneId : targetSceneId;
   if(!allowed(sim,childId,destination)) throw new Error("destination access denied (simulation grant required)");
   child.sceneId=targetSceneId;child.position=clone(SCENES.get(targetSceneId).spawn);

@@ -3,7 +3,7 @@
 create or replace function zhi_family.authorize_children_birth(p_dry_run boolean default true)
 returns jsonb
 language plpgsql
-security definer
+security invoker
 set search_path = ''
 as $$
 declare

@@ -39,3 +39,11 @@ Do not connect external services, create production child agents, or grant produ
 4. per-agent access grants have been reviewed;
 5. the static page has been separately reviewed for its intended Pages URL and deployment policy;
 6. a separate integration plan has been explicitly approved.
+
+## P5.3 isolated browser simulator
+- Browser entry: [simulator.html](./simulator.html)
+- Core: [five-child-spatial-simulator.mjs](./runtime/five-child-spatial-simulator.mjs)
+- Scope and limitations: [SPATIAL-SIMULATOR-V1.md](./SPATIAL-SIMULATOR-V1.md)
+- Tests: `node --test mia-digital-family/tests/five-child-spatial-simulator.test.mjs`
+
+The simulator uses authored virtual geometry embedded as a static fixture, per-child in-memory positions, collision-aware grid routing, and explicit session-only test grants. Its perception output is labeled as authored fixture data, never sensor input. It is not connected to the live world runtime and does not prove real-world movement or production access.

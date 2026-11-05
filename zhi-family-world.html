@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#e9f1e8"><title>ZHI · 家庭公共世界</title>
+<style>
+:root{color-scheme:light;--ink:#26382c;--muted:#637466;--line:#d3dfd2;--paper:#f3f7f1}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+header,main{max-width:1500px;margin:auto;padding:16px clamp(12px,3vw,30px)}header{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+h1{font-size:clamp(22px,3vw,30px);margin:0}p{color:var(--muted);margin:4px 0}.stage{height:min(65vh,680px);min-height:360px;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:#dce9dd}
+#viewport,#viewport canvas{width:100%;height:100%;display:block}.controls{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+button,a{border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);padding:9px 14px;font:inherit;text-decoration:none;cursor:pointer}
+button.active{background:#e2efdf;border-color:#94b894}.panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:12px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}.child{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff}
+small{color:var(--muted)}pre{white-space:pre-wrap;overflow:auto;max-height:200px;font-size:12px}
+.badge{display:inline-block;border-radius:20px;background:#edf2e9;padding:3px 9px;font-size:12px;margin:2px}
+@media(max-width:640px){.stage{height:56vh;min-height:340px}}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+</head><body>
+<header><div><h1>🌿 ZHI · 家庭公共世界</h1><p>五个孩子独立探索 · 五处公共目的地 · 自由往返</p></div><a href="./mia-chat.html">返回家庭聊天室</a></header>
+<main>
+<section class="stage"><div id="viewport" aria-label="ZHI family virtual world"></div></section>
+<div class="controls" id="scene-buttons"></div>
+<section class="panel"><strong id="status">正在连接家庭世界…</strong><p id="detail">读取孩子各自的空间位置、访问记录和场景感知来源。</p><div id="tags"></div></section>
+<section class="grid" id="children"></section>
+<section class="panel"><strong>运行边界</strong><p>孩子们在作者定义的虚拟场景图中自主选择目的地和锚点。页面展示的是虚拟场景位置与场景资料感知，不是现实世界摄像头、声音或触觉，也不代表物理移动。家庭世界后台每 15 分钟运行一次，不要求本页面保持打开。</p></section>
+</main>
+<script type="module">
+import * as THREE from "three";
+import {OrbitControls} from "three/addons/controls/OrbitControls.js";
+const PROJECT="https://dbooikzqprnqbgpfwsze.supabase.co";
+const ENDPOINT=PROJECT+"/functions/v1/zhi-family-world-runtime";
+const KEY="sb_publishable_spH47ZngJJTk13cpYPBjSw_X5qAsBmK";
+const $=s=>document.querySelector(s),mount=$("#viewport");
+const ids=["ZHI-G1-D01-LUNA","ZHI-G1-D02-ARIA","ZHI-G1-D03-ELYA","ZHI-G1-S01-KAEL","ZHI-G1-S02-NOAH"];
+const colors=[0xd7a8e8,0xe8b56e,0xe69ba8,0x83a9d6,0x91b98a];
+let manifest,children=[],activeId="crystal-forest",renderer,scene,camera,controls,objects=[];
+function token(){return sessionStorage.getItem("mia_chat_token")||"";}
+async function api(action){
+ const t=token();if(t.length<20)throw Error("请先在同一标签页登录 Mia 独立聊天室，再打开本页。");
+ const r=await fetch(ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json","apikey":KEY,"Authorization":"Bearer "+t},body:JSON.stringify({action}),cache:"no-store"});
+ const data=await r.json().catch(()=>({}));if(!r.ok||data.ok!==true)throw Error(data.error||("HTTP "+r.status));return data;
+}
+function dispose(){
+ controls?.dispose();scene?.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){const a=Array.isArray(o.material)?o.material:[o.material];a.forEach(m=>m.dispose());}});
+ renderer?.dispose();renderer=null;objects=[];
+}
+function add(geo,mat,x,y,z,name){const o=new THREE.Mesh(geo,mat);o.position.set(x,y,z);o.name=name||"object";o.castShadow=true;o.receiveShadow=true;scene.add(o);objects.push(o);return o;}
+function label(text,x,z,color="#344b38"){
+ const c=document.createElement("canvas");c.width=512;c.height=100;const ctx=c.getContext("2d");ctx.fillStyle="rgba(250,252,246,.9)";ctx.beginPath();ctx.roundRect(5,5,502,90,22);ctx.fill();ctx.fillStyle=color;ctx.font="bold 34px sans-serif";ctx.textAlign="center";ctx.fillText(text,256,65);
+ const tex=new THREE.CanvasTexture(c),sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false}));sp.position.set(x,2.4,z);sp.scale.set(4.4,.86,1);scene.add(sp);objects.push(sp);
+}
+function build(id){
+ dispose();const s=manifest.scenes.find(x=>x.id===id);if(!s)return;
+ scene=new THREE.Scene();scene.background=new THREE.Color(id==="ocean-of-light"?0x8eb8c4:id==="crystal-forest"?0x718f89:id==="memory-valley"?0x99a58d:id==="living-city"?0x87a98a:id==="greenhouse"?0xa8c18e:0x7f9b7d);
+ const w=s.layout.width*.02,d=s.layout.height*.02;camera=new THREE.PerspectiveCamera(48,1,.1,160);camera.position.set(w*.75,Math.max(w,d)*.8,d*.85);
+ renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.shadowMap.enabled=true;renderer.setSize(mount.clientWidth,mount.clientHeight);mount.replaceChildren(renderer.domElement);
+ scene.add(new THREE.HemisphereLight(0xf4fff2,0x52614d,2));const sun=new THREE.DirectionalLight(0xfff0d2,2);sun.position.set(-10,22,12);sun.castShadow=true;scene.add(sun);
+ add(new THREE.BoxGeometry(w,.25,d),new THREE.MeshStandardMaterial({color:scene.background,roughness:1}),w/2,-.13,d/2,"ground");
+ const grid=new THREE.GridHelper(Math.max(w,d),40,0xe0eadc,0x9db19a);grid.position.set(w/2,.02,d/2);scene.add(grid);
+ for(const o of s.obstacles||[]){if(o.shape==="circle"||o.shape==="ellipse"){const rx=o.radius??o.rx,rz=o.radius??o.rz;const m=add(new THREE.CylinderGeometry(Math.max(rx,rz),Math.max(rx,rz),1.1,20),new THREE.MeshStandardMaterial({color:0x78856f}),o.x,.55,o.z,o.id);m.scale.set(rx/Math.max(rx,rz),1,rz/Math.max(rx,rz));}else add(new THREE.BoxGeometry(o.width,1.1,o.depth),new THREE.MeshStandardMaterial({color:0x78856f}),o.x,.55,o.z,o.id);}
+ for(const a of s.anchors){const p=a.approach;add(new THREE.CylinderGeometry(.09,.14,.55,8),new THREE.MeshStandardMaterial({color:0xe9d99a}),p.x,.28,p.z,a.id);label(a.name,p.x,p.z-.55);}
+ const same=children.filter(c=>c.state?.scene_id===id);
+ same.forEach((c,i)=>{const p=c.state.position||s.spawn;const g=new THREE.Group();const mat=new THREE.MeshStandardMaterial({color:colors[ids.indexOf(c.agent.agent_id)]||0xffffff});const body=new THREE.Mesh(new THREE.CapsuleGeometry(.22,.52,4,8),mat);body.position.y=.55;g.add(body);const head=new THREE.Mesh(new THREE.SphereGeometry(.22,14,10),new THREE.MeshStandardMaterial({color:0xf2d6c4}));head.position.y=1.02;g.add(head);g.position.set(p.x+(i%2)*.32,.0,p.z+Math.floor(i/2)*.32);g.traverse(o=>{if(o.isMesh)o.castShadow=true;});scene.add(g);objects.push(g);label(c.agent.display_name,p.x,p.z+0.55,"#273a2c");});
+ camera.lookAt(w/2,0,d/2);controls=new OrbitControls(camera,renderer.domElement);controls.target.set(w/2,0,d/2);controls.enableDamping=true;resize();
+}
+function resize(){if(!renderer||!camera)return;const w=Math.max(1,mount.clientWidth),h=Math.max(1,mount.clientHeight);camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h);}
+window.addEventListener("resize",resize);
+function animate(){requestAnimationFrame(animate);controls?.update();renderer?.render(scene,camera);}animate();
+function buttons(){const root=$("#scene-buttons");root.replaceChildren();for(const s of manifest.scenes){const b=document.createElement("button");b.textContent=s.name;b.className=s.id===activeId?"active":"";b.onclick=()=>{activeId=s.id;build(activeId);buttons();};root.append(b);}}
+function cards(){
+ const root=$("#children");root.replaceChildren();
+ for(const c of children){const e=document.createElement("article");e.className="child";const s=manifest.scenes.find(x=>x.id===c.state?.scene_id);const frame=c.state?.perception_frame;const anchors=frame?.visible_entities?.map(x=>x.name).join("、")||"尚无场景锚点帧";
+ e.innerHTML="<strong>"+c.agent.display_name+"</strong><p>"+(s?.name||"等待首次探索")+"</p><small>位置："+(c.state?.position?Number(c.state.position.x).toFixed(1)+", "+Number(c.state.position.z).toFixed(1)+" m":"尚未初始化")+"</small><br><small>观察锚点："+anchors+"</small><br><small>移动版本："+(c.state?.movement_revision??0)+" · "+(c.state?.perception_provenance||"NONE")+"</small>";
+ root.append(e);
+ }
+}
+async function refresh(){
+ const data=await api("status");children=data.children||[];cards();
+ $("#status").textContent="家庭世界运行中 · "+children.filter(c=>c.state?.scene_id).length+"/5 位孩子已有场景位置";
+ $("#detail").textContent="后台独立探索调度每 15 分钟运行；本页面每 30 秒同步一次空间状态。";
+ $("#tags").innerHTML=["25 项公共场景授权","独立场景位置与记忆","双向入口/返回","Mia 私聊隔离","AURORA / federation 关闭"].map(x=>'<span class="badge">'+x+"</span>").join("");
+ build(activeId);
+}
+try{
+ const r=await fetch("./world-scenes/public-destinations/world-spatial-manifest.v1.json",{cache:"no-store"});if(!r.ok)throw Error("场景清单读取失败");manifest=await r.json();buttons();await refresh();setInterval(()=>refresh().catch(e=>{$("#status").textContent="同步暂时失败";$("#detail").textContent=e.message;}),30000);
+}catch(e){$("#status").textContent="家庭世界未连接";$("#detail").textContent=e.message;}
+</script></body></html>

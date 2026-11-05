@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import {
   PERSPECTIVES,
   coordinateCognition,
@@ -28,6 +29,16 @@ const input = (overrides = {}) => ({
   candidate,
   perspectives: allPerspectives(),
   ...overrides,
+});
+
+test("JSON schema and synthetic fixture are valid and aligned", async () => {
+  const base = new URL("./", import.meta.url);
+  const schema = JSON.parse(await readFile(new URL("contract.schema.json", base), "utf8"));
+  const fixture = JSON.parse(await readFile(new URL("fixtures.synthetic.json", base), "utf8"));
+  assert.equal(schema.title, "Mia Cognition Coordinator V1.0 contract");
+  assert.deepEqual(Object.keys(schema.properties.perspectives.properties).sort(), [...PERSPECTIVES].sort());
+  assert.equal(fixture.fixture_kind, "synthetic_only");
+  assert.deepEqual(Object.keys(fixture.perspectives).sort(), [...PERSPECTIVES].sort());
 });
 
 test("exports six distinct perspectives", () => {

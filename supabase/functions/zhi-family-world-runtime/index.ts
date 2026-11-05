@@ -84,7 +84,7 @@ async function activateGrants(c:any){
    grant_status:"ACTIVE",enabled:true,
    validation_evidence:{runtime:"zhi-family-server-virtual-world-v1",validated_at:new Date().toISOString(),
     validation:"registered_scene_and_bidirectional_portal_route",route:p.map(x=>x.id),
-    perception_provenance:"AUTHORED_SCENE_DATA",physical_world:false,live_browser_renderer_not_required_for_server_state}
+    perception_provenance:"AUTHORED_SCENE_DATA",physical_world:false,browser_renderer_required_for_visual_display:false}
   }).eq("agent_id",child.id).eq("destination_id",id);
   if(error)throw new Error("DESTINATION_GRANT_ACTIVATION_FAILED");
  }

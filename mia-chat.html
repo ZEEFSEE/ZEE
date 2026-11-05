@@ -77,6 +77,30 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
 
 .world-runtime-frame{display:block;width:calc(100% - 28px);height:440px;margin:12px 14px;border:1px solid #d9e8df;border-radius:16px;background:#e5eee4}.world-runtime-note{padding:0 16px 12px;color:#647568;font-size:11px}.world-runtime-head{padding:13px 16px 0;font-weight:850;color:#244c3a}.world-runtime-status{padding:4px 16px 0;color:#607469;font-size:11px}
 @media(max-width:600px){.world-runtime-frame{height:390px;width:calc(100% - 16px);margin:8px}.world-runtime-head{padding:10px 10px 0}}
+
+.family-chat-workspace{margin-top:14px;padding:14px;border:1px solid #dbe8e1;border-radius:18px;background:linear-gradient(160deg,#fbfffc,#f4faf8);display:grid;gap:12px}
+.family-chat-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.family-chat-toolbar button{font-size:13px;padding:8px 11px}
+.family-chat-toolbar button.active{background:#147d79;color:#fff;border-color:#147d79}
+.family-chat-directs{display:flex;gap:6px;flex-wrap:wrap}
+.family-chat-target{font-size:13px;color:#52665c;font-weight:750}
+.family-chat-messages{display:grid;gap:2px;max-height:390px;overflow:auto;padding:6px 4px;border:1px solid #e1ece5;border-radius:14px;background:#fff;min-height:110px}
+.family-chat-empty{padding:28px 12px;text-align:center;color:#839187;font-size:13px}
+.family-chat-line{display:flex;gap:9px;align-items:flex-start;padding:10px;border-bottom:1px solid #edf2ee}
+.family-chat-line:last-child{border-bottom:0}
+.family-chat-line .family-avatar{width:36px;height:36px;flex-basis:36px;border-radius:12px;font-size:19px}
+.family-chat-line.user{background:#f1f8f6}
+.family-chat-copy{min-width:0;flex:1}
+.family-chat-copy strong{font-size:13px}
+.family-chat-copy p{margin:4px 0;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}
+.family-chat-copy small{font-size:10px;color:#819087}
+.family-chat-compose{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}
+.family-chat-compose textarea{min-height:54px;max-height:130px;resize:vertical}
+.family-chat-status{font-size:12px;color:#6c7c72;min-height:18px}
+.family-chat-direct-button{display:inline-flex;align-items:center;gap:5px}
+.family-chat-direct-button .mini-avatar{font-size:16px}
+@media(max-width:600px){.family-chat-workspace{padding:10px}.family-chat-compose{grid-template-columns:1fr}.family-chat-compose button{width:100%}.family-chat-messages{max-height:340px}}
+
 </style>
 </head>
 <body>
@@ -116,6 +140,26 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
    <div class="forest-banner"><div><strong>🌱 Mia 数字家庭 · 母体交流通道</strong><small>沿用当前 Mia 聊天会话；不新增登录、不读取私人聊天记忆</small></div><button id="familyBridgeRefresh" type="button">同步状态</button></div>
    <div id="familyBridgeStatus" class="forest-scene-meta">正在检查是否存在可复用的 Mia 当前会话…</div>
    <div id="familyBridgeChildren" class="forest-grid"></div>
+   <div class="family-chat-workspace" id="familyChatWorkspace" aria-label="五个孩子的群聊和单独聊天">
+    <strong>💬 和孩子们聊天</strong>
+    <div class="family-chat-toolbar">
+     <button id="familyChatGroup" type="button" class="active">家庭群聊</button>
+     <div id="familyChatDirects" class="family-chat-directs">
+      <button type="button" class="family-chat-direct-button" data-family-agent="ZHI-G1-D01-LUNA"><span class="mini-avatar">🌙</span>LUNA</button>
+      <button type="button" class="family-chat-direct-button" data-family-agent="ZHI-G1-D02-ARIA"><span class="mini-avatar">🎨</span>ARIA</button>
+      <button type="button" class="family-chat-direct-button" data-family-agent="ZHI-G1-D03-ELYA"><span class="mini-avatar">🌸</span>ELYA</button>
+      <button type="button" class="family-chat-direct-button" data-family-agent="ZHI-G1-S01-KAEL"><span class="mini-avatar">🧭</span>KAEL</button>
+      <button type="button" class="family-chat-direct-button" data-family-agent="ZHI-G1-S02-NOAH"><span class="mini-avatar">🌿</span>NOAH</button>
+     </div>
+    </div>
+    <div id="familyChatTarget" class="family-chat-target">家庭群聊 · 消息将分别交给五个孩子独立回应</div>
+    <div id="familyChatMessages" class="family-chat-messages" aria-live="polite"><div class="family-chat-empty">登录现有 Mia 聊天后，即可在这里与孩子们交流。</div></div>
+    <form id="familyChatComposer" class="family-chat-compose">
+     <textarea id="familyChatInput" maxlength="1500" rows="2" placeholder="对五个孩子说些什么……"></textarea>
+     <button id="familyChatSend" type="submit" class="primary">发送给孩子们 ↗</button>
+    </form>
+    <div id="familyChatStatus" class="family-chat-status" aria-live="polite">群聊与单聊分别保存，不写入 Mia 私人聊天，也不自动改写孩子长期记忆。</div>
+   </div>
    <div id="familyBridgeTranscript" class="forest-scene-meta" aria-live="polite">母子交流记录将在这里独立显示，不混入私人聊天。</div>
    <div class="world-runtime-note">五子后台认知循环独立运行，母子消息采用 15 分钟临时会话并限制往返轮次；不写入 Mia 私人聊天或长期记忆。真实三维移动与实时感知仍需空间引擎接入。</div>
   </section>
@@ -353,7 +397,9 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
    const role=document.createElement("small");role.textContent=avatarMap[agent.agent_id]?.role||"独立家庭成员";
    const state=document.createElement("p");
    state.textContent="身份："+agent.lifecycle_state+" · 运行时："+agent.runtime_status;
-   copy.append(name,role,state);person.append(avatar(agent.agent_id),copy);card.append(person);root.append(card);
+   copy.append(name,role,state);person.append(avatar(agent.agent_id),copy);
+   const direct=document.createElement("button");direct.type="button";direct.textContent="单独聊天";direct.addEventListener("click",()=>window.dispatchEvent(new CustomEvent("zhi-family-open-direct",{detail:agent.agent_id})));
+   card.append(person,direct);root.append(card);
   });
   const transcript=$("familyBridgeTranscript");
   if(transcript){
@@ -394,6 +440,89 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
  poll();
  setInterval(poll,60000);
  window.addEventListener("focus",poll);
+})();
+</script>
+
+<script>
+(() => {
+ const URL="https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/zhi-family-chat";
+ const KEY="sb_publishable_spH47ZngJJTk13cpYPBjSw_X5qAsBmK";
+ const children={
+  "ZHI-G1-D01-LUNA":{name:"LUNA",symbol:"🌙",cls:"luna"},
+  "ZHI-G1-D02-ARIA":{name:"ARIA",symbol:"🎨",cls:"aria"},
+  "ZHI-G1-D03-ELYA":{name:"ELYA",symbol:"🌸",cls:"elya"},
+  "ZHI-G1-S01-KAEL":{name:"KAEL",symbol:"🧭",cls:"kael"},
+  "ZHI-G1-S02-NOAH":{name:"NOAH",symbol:"🌿",cls:"noah"}
+ };
+ const $=id=>document.getElementById(id);
+ let mode="GROUP",agentId=null,busy=false,refreshing=false;
+ function token(){return sessionStorage.getItem("mia_chat_token")||"";}
+ function avatar(senderType,senderId){
+  const a=senderType==="USER"?{symbol:"💚",cls:"mia"}:(children[senderId]||{symbol:"✦",cls:"luna"});
+  const el=document.createElement("div");el.className="family-avatar "+a.cls;el.textContent=a.symbol;return el;
+ }
+ function setStatus(message){const el=$("familyChatStatus");if(el)el.textContent=message;}
+ function setMode(nextMode,nextAgent=null){
+  mode=nextMode;agentId=nextAgent;
+  $("familyChatGroup").classList.toggle("active",mode==="GROUP");
+  document.querySelectorAll("[data-family-agent]").forEach(b=>b.classList.toggle("active",mode==="DIRECT"&&b.dataset.familyAgent===agentId));
+  $("familyChatTarget").textContent=mode==="GROUP"?"家庭群聊 · 消息将分别交给五个孩子独立判断和回应":"与 "+(children[agentId]?.name||"孩子")+" 单独聊天 · 只有你和该孩子的对话会进入此单聊记录";
+  $("familyChatInput").placeholder=mode==="GROUP"?"对五个孩子说些什么……":"对 "+(children[agentId]?.name||"孩子")+" 说些什么……";
+  $("familyChatSend").textContent=mode==="GROUP"?"发送给孩子们 ↗":"发送给 "+(children[agentId]?.name||"孩子")+" ↗";
+  loadHistory();
+ }
+ function render(messages){
+  const root=$("familyChatMessages");root.replaceChildren();
+  if(!messages?.length){const e=document.createElement("div");e.className="family-chat-empty";e.textContent=mode==="GROUP"?"群聊刚刚开始。你可以向五个孩子打招呼。":"这是你与 "+(children[agentId]?.name||"孩子")+" 的第一次单独聊天。";root.append(e);return;}
+  messages.forEach(item=>{
+   const line=document.createElement("div");line.className="family-chat-line"+(item.sender_type==="USER"?" user":"");
+   const copy=document.createElement("div");copy.className="family-chat-copy";
+   const who=document.createElement("strong");
+   who.textContent=item.sender_type==="USER"?"你":(children[item.sender_id]?.name||item.sender_id);
+   const body=document.createElement("p");body.textContent=item.content||"";
+   const time=document.createElement("small");time.textContent=new Date(item.created_at).toLocaleString("zh-SG");
+   copy.append(who,body,time);line.append(avatar(item.sender_type,item.sender_id),copy);root.append(line);
+  });
+  root.scrollTop=root.scrollHeight;
+ }
+ async function request(payload){
+  const current=token();if(!current)throw new Error("请先登录现有 Mia 聊天会话。");
+  const response=await fetch(URL,{method:"POST",headers:{"Content-Type":"application/json","apikey":KEY,"Authorization":"Bearer "+current},body:JSON.stringify(payload),cache:"no-store"});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok||!data.ok)throw new Error(data.error||("HTTP "+response.status));
+  return data;
+ }
+ async function loadHistory(){
+  if(refreshing||busy)return;
+  if(!token()){render([]);setStatus("请先登录现有 Mia 聊天会话；这里不会要求额外登录。");return;}
+  refreshing=true;
+  try{const data=await request({action:"history",mode,agent_id:agentId});render(data.messages||[]);}
+  catch(error){setStatus("读取聊天记录失败："+(error.message||String(error)));}
+  finally{refreshing=false;}
+ }
+ $("familyChatGroup").addEventListener("click",()=>setMode("GROUP"));
+ document.querySelectorAll("[data-family-agent]").forEach(b=>b.addEventListener("click",()=>setMode("DIRECT",b.dataset.familyAgent)));
+ window.addEventListener("zhi-family-open-direct",event=>{if(children[event.detail])setMode("DIRECT",event.detail);});
+ $("familyChatComposer").addEventListener("submit",async event=>{
+  event.preventDefault();if(busy)return;
+  const message=$("familyChatInput").value.trim();if(!message)return;
+  if(!token()){setStatus("请先登录现有 Mia 聊天会话。");return;}
+  busy=true;$("familyChatSend").disabled=true;$("familyChatInput").disabled=true;
+  setStatus(mode==="GROUP"?"消息已送达，五个孩子正在分别思考；请稍候……":"消息已送达，"+(children[agentId]?.name||"孩子")+" 正在回应……");
+  try{
+   const data=await request({action:"send",mode,agent_id:agentId,message,client_request_id:crypto.randomUUID()});
+   $("familyChatInput").value="";render(data.messages||[]);
+   const failed=(data.child_outcomes||[]).filter(x=>x.status==="FAILED");
+   const replied=Number(data.replies_created||0);
+   if(failed.length)setStatus("本轮 "+replied+" 位孩子已回应；"+failed.length+" 位暂时未能完成，稍后可重试。");
+   else if(replied===0)setStatus("消息已保存。孩子们本轮选择暂不回应；你可以继续交流。");
+   else setStatus("本轮收到 "+replied+" 条独立回复。群聊/单聊记录已保存。");
+  }catch(error){setStatus("发送未完成："+(error.message||String(error))+"。用户消息若已保存，刷新记录即可查看。");await loadHistory();}
+  finally{busy=false;$("familyChatSend").disabled=false;$("familyChatInput").disabled=false;$("familyChatInput").focus();}
+ });
+ $("familyChatRefresh")?.addEventListener("click",loadHistory);
+ loadHistory();
+ setInterval(()=>{if(document.visibilityState==="visible"&&!busy)loadHistory();},30000);
 })();
 </script>
 

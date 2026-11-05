@@ -104,6 +104,7 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
 @media(max-width:600px){.family-chat-workspace{padding:10px}.family-chat-compose{grid-template-columns:1fr}.family-chat-compose button{width:100%}.family-chat-messages{max-height:340px}}
 
 </style>
+ <script src="./assets/family-identity.js"></script>
 </head>
 <body>
 <div id="gate" class="gate">
@@ -352,20 +353,9 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
  const KEY="sb_publishable_spH47ZngJJTk13cpYPBjSw_X5qAsBmK";
  const $=id=>document.getElementById(id);
  let busy=false;
- const labels={
-  "ZHI-G1-D01-LUNA":"LUNA",
-  "ZHI-G1-D02-ARIA":"ARIA",
-  "ZHI-G1-D03-ELYA":"ELYA",
-  "ZHI-G1-S01-KAEL":"KAEL",
-  "ZHI-G1-S02-NOAH":"NOAH"
- };
- const avatarMap={
-  "ZHI-G1-D01-LUNA":{name:"LUNA",symbol:"🌙",cls:"luna",role:"探索 · 自然 · 空间观察"},
-  "ZHI-G1-D02-ARIA":{name:"ARIA",symbol:"🎨",cls:"aria",role:"艺术 · 创造 · 设计"},
-  "ZHI-G1-D03-ELYA":{name:"ELYA",symbol:"🌸",cls:"elya",role:"情感 · 理解 · 关系"},
-  "ZHI-G1-S01-KAEL":{name:"KAEL",symbol:"🧭",cls:"kael",role:"逻辑 · 研究 · 证据"},
-  "ZHI-G1-S02-NOAH":{name:"NOAH",symbol:"🌿",cls:"noah",role:"行动 · 导航 · 实践"}
- };
+ const FAMILY=window.ZHI_FAMILY_IDENTITY;
+ const labels=FAMILY.labels;
+ const avatarMap=FAMILY.children;
  function avatar(agentId,isMia=false){
   const a=isMia?{symbol:"💚",cls:"mia"}:(avatarMap[agentId]||{symbol:"✦",cls:"luna"});
   const el=document.createElement("div");el.className="family-avatar "+a.cls;
@@ -452,13 +442,7 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
 (() => {
  const URL="https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/zhi-family-chat";
  const KEY="sb_publishable_spH47ZngJJTk13cpYPBjSw_X5qAsBmK";
- const children={
-  "ZHI-G1-D01-LUNA":{name:"LUNA",symbol:"🌙",cls:"luna"},
-  "ZHI-G1-D02-ARIA":{name:"ARIA",symbol:"🎨",cls:"aria"},
-  "ZHI-G1-D03-ELYA":{name:"ELYA",symbol:"🌸",cls:"elya"},
-  "ZHI-G1-S01-KAEL":{name:"KAEL",symbol:"🧭",cls:"kael"},
-  "ZHI-G1-S02-NOAH":{name:"NOAH",symbol:"🌿",cls:"noah"}
- };
+ const children=FAMILY.children;
  const $=id=>document.getElementById(id);
  let mode="GROUP",agentId=null,busy=false,refreshing=false,pendingSend=null;
  function token(){return sessionStorage.getItem("mia_chat_token")||"";}

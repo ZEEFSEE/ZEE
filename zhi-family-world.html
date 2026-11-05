@@ -10,6 +10,7 @@ h1{font-size:clamp(22px,3vw,30px);margin:0}p{color:var(--muted);margin:4px 0}.st
 button,a{border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);padding:9px 14px;font:inherit;text-decoration:none;cursor:pointer}
 button.active{background:#e2efdf;border-color:#94b894}.panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:12px 0}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}.child{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff}
+.child-head{display:flex;align-items:center;gap:10px;margin-bottom:6px}.child-avatar{width:64px;height:74px;object-fit:cover;border-radius:14px;border:1px solid #e4e9df;background:#f6f7f2}.child-name{font-weight:800;font-size:16px}
 small{color:var(--muted)}pre{white-space:pre-wrap;overflow:auto;max-height:200px;font-size:12px}
 .badge{display:inline-block;border-radius:20px;background:#edf2e9;padding:3px 9px;font-size:12px;margin:2px}
 @media(max-width:640px){.stage{height:56vh;min-height:340px}}
@@ -60,7 +61,20 @@ function build(id){
  for(const o of s.obstacles||[]){if(o.shape==="circle"||o.shape==="ellipse"){const rx=o.radius??o.rx,rz=o.radius??o.rz;const m=add(new THREE.CylinderGeometry(Math.max(rx,rz),Math.max(rx,rz),1.1,20),new THREE.MeshStandardMaterial({color:0x78856f}),o.x,.55,o.z,o.id);m.scale.set(rx/Math.max(rx,rz),1,rz/Math.max(rx,rz));}else add(new THREE.BoxGeometry(o.width,1.1,o.depth),new THREE.MeshStandardMaterial({color:0x78856f}),o.x,.55,o.z,o.id);}
  for(const a of s.anchors){const p=a.approach;add(new THREE.CylinderGeometry(.09,.14,.55,8),new THREE.MeshStandardMaterial({color:0xe9d99a}),p.x,.28,p.z,a.id);label(a.name,p.x,p.z-.55);}
  const same=children.filter(c=>c.state?.scene_id===id);
- same.forEach((c,i)=>{const p=c.state.position||s.spawn;const g=new THREE.Group();const mat=new THREE.MeshStandardMaterial({color:colors[ids.indexOf(c.agent.agent_id)]||0xffffff});const body=new THREE.Mesh(new THREE.CapsuleGeometry(.22,.52,4,8),mat);body.position.y=.55;g.add(body);const head=new THREE.Mesh(new THREE.SphereGeometry(.22,14,10),new THREE.MeshStandardMaterial({color:0xf2d6c4}));head.position.y=1.02;g.add(head);g.position.set(p.x+(i%2)*.32,.0,p.z+Math.floor(i/2)*.32);g.traverse(o=>{if(o.isMesh)o.castShadow=true;});scene.add(g);objects.push(g);label(c.agent.display_name,p.x,p.z+0.55,"#273a2c");});
+ same.forEach((c,i)=>{
+  const idx=ids.indexOf(c.agent.agent_id),p=c.state.position||s.spawn;
+  const palette=[0x9aa9e2,0xe6a58e,0xc18bc1,0x6f9fc8,0x83aa72],skin=0xf2c9aa,hair=[0x55435f,0x70464a,0x594768,0x493b36,0x5c4938][idx]||0x55435f;
+  const g=new THREE.Group(),cloth=new THREE.MeshStandardMaterial({color:palette[idx]||0x9aa9e2,roughness:.72}),skinMat=new THREE.MeshStandardMaterial({color:skin,roughness:.8}),hairMat=new THREE.MeshStandardMaterial({color:hair,roughness:.9}),dark=new THREE.MeshStandardMaterial({color:0x302b35});
+  const torso=new THREE.Mesh(new THREE.CapsuleGeometry(.25,.42,4,10),cloth);torso.position.y=.62;g.add(torso);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(.27,18,14),skinMat);head.scale.set(1,.98,.88);head.position.y=1.18;g.add(head);
+  const cap=new THREE.Mesh(new THREE.SphereGeometry(.285,18,12,0,Math.PI*2,0,Math.PI*.62),hairMat);cap.position.set(0,1.25,-.025);g.add(cap);
+  const fringe=new THREE.Mesh(new THREE.SphereGeometry(.19,14,10),hairMat);fringe.scale.set(1,.48,.8);fringe.position.set(0,1.32,.18);g.add(fringe);
+  for(const ex of [-.095,.095]){const eye=new THREE.Mesh(new THREE.SphereGeometry(.025,8,8),dark);eye.position.set(ex,1.2,.237);g.add(eye);}
+  const armGeo=new THREE.CapsuleGeometry(.075,.28,3,8);for(const side of [-1,1]){const arm=new THREE.Mesh(armGeo,skinMat);arm.position.set(side*.29,.67,0);arm.rotation.z=side*.25;g.add(arm);const leg=new THREE.Mesh(new THREE.CapsuleGeometry(.09,.22,3,8),dark);leg.position.set(side*.12,.17,0);g.add(leg);}
+  if(idx<3){const bow=new THREE.Mesh(new THREE.SphereGeometry(.1,10,8),new THREE.MeshStandardMaterial({color:idx===0?0xf1d7ff:idx===1?0xffd0bd:0xf4c5e8}));bow.scale.set(1,.55,.4);bow.position.set(.22,1.43,.02);g.add(bow);}
+  else {const badge=new THREE.Mesh(new THREE.SphereGeometry(.075,10,8),new THREE.MeshStandardMaterial({color:idx===3?0xf4d77a:0xb7d89c}));badge.position.set(0,.73,.23);g.add(badge);}
+  g.position.set(p.x+(i%2)*.32,.0,p.z+Math.floor(i/2)*.32);g.traverse(o=>{if(o.isMesh)o.castShadow=true;});scene.add(g);objects.push(g);label(c.agent.display_name,p.x,p.z+.55,"#273a2c");
+ });
  camera.lookAt(w/2,0,d/2);controls=new OrbitControls(camera,renderer.domElement);controls.target.set(w/2,0,d/2);controls.enableDamping=true;resize();
 }
 function resize(){if(!renderer||!camera)return;const w=Math.max(1,mount.clientWidth),h=Math.max(1,mount.clientHeight);camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h);}
@@ -69,9 +83,9 @@ function animate(){requestAnimationFrame(animate);controls?.update();renderer?.r
 function buttons(){const root=$("#scene-buttons");root.replaceChildren();for(const s of manifest.scenes){const b=document.createElement("button");b.textContent=s.name;b.className=s.id===activeId?"active":"";b.onclick=()=>{activeId=s.id;build(activeId);buttons();};root.append(b);}}
 function cards(){
  const root=$("#children");root.replaceChildren();
- for(const c of children){const e=document.createElement("article");e.className="child";const s=manifest.scenes.find(x=>x.id===c.state?.scene_id);const frame=c.state?.perception_frame;const anchors=frame?.visible_entities?.map(x=>x.name).join("、")||"尚无场景锚点帧";
- e.innerHTML="<strong>"+c.agent.display_name+"</strong><p>"+(s?.name||"等待首次探索")+"</p><small>位置："+(c.state?.position?Number(c.state.position.x).toFixed(1)+", "+Number(c.state.position.z).toFixed(1)+" m":"尚未初始化")+"</small><br><small>观察锚点："+anchors+"</small><br><small>移动版本："+(c.state?.movement_revision??0)+" · "+(c.state?.perception_provenance||"NONE")+"</small>";
- root.append(e);
+ for(const c of children){const e=document.createElement("article");e.className="child";const s=manifest.scenes.find(x=>x.id===c.state?.scene_id);const frame=c.state?.perception_frame;const anchors=frame?.visible_entities?.map(x=>x.name).join("、")||"尚无场景锚点帧";const idx=ids.indexOf(c.agent.agent_id),cls=["luna","aria","elya","kael","noah"][idx]||"luna";
+ const head=document.createElement("div");head.className="child-head";const img=document.createElement("img");img.className="child-avatar";img.src="./assets/family-avatars/"+cls+".svg";img.alt=c.agent.display_name+" 卡通头像";const name=document.createElement("div");name.className="child-name";name.textContent=c.agent.display_name;head.append(img,name);e.append(head);
+ const place=document.createElement("p");place.textContent=s?.name||"等待首次探索";const pos=document.createElement("small");pos.textContent="位置："+(c.state?.position?Number(c.state.position.x).toFixed(1)+", "+Number(c.state.position.z).toFixed(1)+" m":"尚未初始化");const anchor=document.createElement("small");anchor.textContent="观察锚点："+anchors;const rev=document.createElement("small");rev.textContent="移动版本："+(c.state?.movement_revision??0)+" · "+(c.state?.perception_provenance||"NONE");e.append(place,pos,document.createElement("br"),anchor,document.createElement("br"),rev);root.append(e);
  }
 }
 async function refresh(){

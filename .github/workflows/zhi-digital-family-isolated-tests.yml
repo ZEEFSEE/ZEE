@@ -1,0 +1,28 @@
+name: ZHI Digital Family isolated prototype tests
+
+on:
+  push:
+    branches:
+      - feat/zhi-digital-family-isolated-v1
+    paths:
+      - "mia-digital-family/**"
+      - ".github/workflows/zhi-digital-family-isolated-tests.yml"
+  pull_request:
+    paths:
+      - "mia-digital-family/**"
+      - ".github/workflows/zhi-digital-family-isolated-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  isolated-family-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run isolated family tests
+        run: node --test mia-digital-family/tests/family-runtime.test.mjs

@@ -22,3 +22,6 @@ node --test mia-digital-family/tests/family-public-world-runtime-adapter.test.mj
 node --test world-scenes/runtime/mia-public-world-runtime.test.mjs
 node world-scenes/validate-public-destinations.mjs
 ```
+
+
+Current release note: explicit family grants and the fail-closed travel adapter are committed; the adapter still requires live scene-runtime injection before movement can be reported as operational.

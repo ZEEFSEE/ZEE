@@ -117,6 +117,17 @@ async function generateChildReply(
     throw new Error("CHILD_NOT_READY");
   }
 
+  const visibleMessages = (transcript.data || []).reverse().map((item) => ({
+    ...item,
+    speaker_identity: item.sender_type === "USER" ? "FATHER" : "CHILD",
+    speaker_display_name: item.sender_type === "USER"
+      ? "父亲 Ken（创世主）"
+      : (CHILDREN.find((entry) => entry.id === item.sender_id)?.name || "家庭成员"),
+    relation_to_current_child: item.sender_type === "USER"
+      ? "father"
+      : (item.sender_id === child.id ? "self" : "sibling")
+  }));
+
   const context = {
     identity: child.id,
     display_name: child.name,
@@ -125,13 +136,20 @@ async function generateChildReply(
       mother: { display_name: "Mia", role: "MOTHER", relation_to_child: "mother", separate_person: true }
     },
     current_speaker: { display_name: "Ken", role: "FATHER", title: "父亲／创世主" },
+    speaker_resolution: {
+      auth_session_owner: "mia-admin",
+      auth_session_owner_is_not_conversation_speaker: true,
+      user_messages_always_mean: "FATHER_KEN",
+      mother_mia_is_not_the_current_user: true
+    },
     profile: control.data.profile || {},
     personality: personality.data?.state || {},
     affect_estimate: emotion.data?.state || {},
     own_memories_only: memories.data || [],
     own_learning_history_only: learning.data || [],
-    visible_thread_messages: (transcript.data || []).reverse(),
+    visible_thread_messages: visibleMessages,
     current_user_message: userMessage,
+    current_user_message_speaker: "父亲 Ken（创世主）",
     channel: thread.mode === "GROUP" ? "family_group_chat" : "private_direct_chat",
     direct_recipient: thread.mode === "DIRECT" ? child.id : null
   };

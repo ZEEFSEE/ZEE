@@ -21,7 +21,7 @@
 <div class="stat"><strong>当前感知帧（模拟）</strong><pre id="perception" class="log"></pre></div>
 <div class="stat"><strong>隔离事件记录</strong><div id="events" class="log"></div></div>
 </aside></div>
-<p class="muted" style="margin-top:16px">数据来源：从现有空间清单提取的作者定义虚拟坐标；场景单位为米，布局换算比例 0.02 m/layout-unit。门户切换是场景交接，不代表连续步行。该模拟器不校准真实物理空间。</p>
+<p class="muted" style="margin-top:16px">数据来源：从现有空间清单提取的作者定义虚拟坐标；场景单位为米，布局换算比例 0.02 m/layout-unit。感知来源标识：<code>AUTHORED_VIRTUAL_SCENE_FIXTURE_NOT_SENSOR_DATA</code>。门户切换是场景交接，不代表连续步行。该模拟器不校准真实物理空间。</p>
 </main>
 <script type="module">
 import { createFiveChildSpatialSimulator, grantSimulationAccess, revokeSimulationAccess, moveChild, handoffChild, observeChild, resetFiveChildSpatialSimulator, simulatorSceneCatalog, SCENE_FIXTURE, SIMULATOR_MODE } from "./runtime/five-child-spatial-simulator.mjs";

@@ -25,4 +25,4 @@ jobs:
         with:
           node-version: 20
       - name: Run isolated family tests
-        run: node --test mia-digital-family/tests/family-runtime.test.mjs
+        run: node --test mia-digital-family/tests/*.test.mjs

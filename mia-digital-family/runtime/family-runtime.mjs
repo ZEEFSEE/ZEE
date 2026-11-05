@@ -67,7 +67,8 @@ export function prepareFivefoldBirth(simulation, checks = {}) {
   const allFetal = required.every(id => simulation.agents.get(id).lifecycle === "FETAL");
   const uniqueHearts = new Set([...simulation.agents.values()].map(agent => agent.heartId)).size === 5;
   const uniqueMemories = new Set([...simulation.agents.values()].map(agent => agent.memoryId)).size === 5;
-  const memoryEmpty = required.every(id => simulation.agents.get(id).longTermMemory.length === 0);\n  const volatileEmpty = simulation.messages.length === 0 && required.every(id => simulation.agents.get(id).volatileContext.length === 0);
+  const memoryEmpty = required.every(id => simulation.agents.get(id).longTermMemory.length === 0);
+  const volatileEmpty = simulation.messages.length === 0 && required.every(id => simulation.agents.get(id).volatileContext.length === 0);
   const cleanupVerified = checks.cleanupVerified === true;
   const cognitiveReady = checks.cognitiveReady === true;
   const familyBindingsReady = checks.familyBindingsReady === true;

@@ -251,32 +251,41 @@ async function handle(req: Request) {
       ? body.client_request_id : crypto.randomUUID();
 
     const { data: existing, error: existingError } = await family(client).from("family_chat_messages")
-      .select("id").eq("client_request_id", requestId).eq("sender_type", "USER").maybeSingle();
+      .select("id").eq("thread_key", thread.threadKey)
+      .eq("client_request_id", requestId).eq("sender_type", "USER").maybeSingle();
     if (existingError) throw new Error("CHAT_IDEMPOTENCY_LOOKUP_FAILED");
-    if (existing) {
-      const messages = await readHistory(client, thread.threadKey);
-      return json({ ok: true, duplicate: true, mode: thread.mode, agent_id: thread.agentId, messages }, 200, origin);
+
+    let parentId = existing?.id as string | undefined;
+    if (!parentId) {
+      const { data: parent, error: saveError } = await family(client).from("family_chat_messages").insert({
+        thread_key: thread.threadKey,
+        mode: thread.mode,
+        agent_id: thread.agentId,
+        sender_type: "USER",
+        sender_id: "mia-admin",
+        content: message,
+        client_request_id: requestId,
+        metadata: { source: "authenticated_mia_private_chat_session", actor_identity: "FATHER", actor_display_name: "Ken", family_role: "father_creator", auth_session_owner: "mia-admin" }
+      }).select("id").single();
+      if (saveError) throw new Error("USER_MESSAGE_SAVE_FAILED");
+      parentId = parent.id;
     }
 
-    const { data: parent, error: saveError } = await family(client).from("family_chat_messages").insert({
-      thread_key: thread.threadKey,
-      mode: thread.mode,
-      agent_id: thread.agentId,
-      sender_type: "USER",
-      sender_id: "mia-admin",
-      content: message,
-      client_request_id: requestId,
-      metadata: { source: "authenticated_mia_private_chat_session", actor_identity: "FATHER", actor_display_name: "Ken", family_role: "father_creator", auth_session_owner: "mia-admin" }
-    }).select("id").single();
-    if (saveError) throw new Error("USER_MESSAGE_SAVE_FAILED");
-
+    // Recover a partially completed request: only retry children without a saved reply.
     const targets = thread.mode === "GROUP"
       ? CHILDREN
       : CHILDREN.filter((child) => child.id === thread.agentId);
-    const outcomes: Array<Record<string, unknown>> = [];
-    for (const child of targets) {
+    const { data: savedReplies, error: repliesError } = await family(client).from("family_chat_messages")
+      .select("sender_id").eq("thread_key", thread.threadKey)
+      .eq("reply_to", parentId).eq("sender_type", "CHILD");
+    if (repliesError) throw new Error("CHAT_REPLY_RECOVERY_LOOKUP_FAILED");
+    const completed = new Set((savedReplies || []).map((row) => row.sender_id));
+    const outcomes: Array<Record<string, unknown>> = targets
+      .filter((child) => completed.has(child.id))
+      .map((child) => ({ child_id: child.id, status: "ALREADY_REPLIED" }));
+    for (const child of targets.filter((item) => !completed.has(item.id))) {
       try {
-        outcomes.push(await generateChildReply(client, child, thread, message, parent.id, requestId));
+        outcomes.push(await generateChildReply(client, child, thread, message, parentId, requestId));
       } catch (error) {
         outcomes.push({
           child_id: child.id,
@@ -286,14 +295,16 @@ async function handle(req: Request) {
       }
     }
     const messages = await readHistory(client, thread.threadKey);
-    const replied = outcomes.filter((x) => x.status === "REPLIED").length;
+    const replied = outcomes.filter((x) => x.status === "REPLIED" || x.status === "ALREADY_REPLIED").length;
     const failed = outcomes.filter((x) => x.status === "FAILED").length;
     return json({
       ok: true,
+      duplicate: Boolean(existing),
+      recovered: Boolean(existing) && outcomes.some((x) => x.status === "REPLIED"),
       mode: thread.mode,
       agent_id: thread.agentId,
       request_id: requestId,
-      user_message_id: parent.id,
+      user_message_id: parentId,
       child_outcomes: outcomes,
       replies_created: replied,
       failures: failed,

@@ -183,7 +183,7 @@ async function handle(req: Request) {
     ]);
     if (agentsResult.error || grantsResult.error) throw new Error("FAMILY_STATUS_READ_FAILED");
 
-    let session = null;
+    let session: any = null;
     let processed = 0;
     let pending = 0;
     let modelReady = Boolean(AGNES_KEY);
@@ -238,12 +238,19 @@ async function handle(req: Request) {
       }
     }
 
-    const [messageCount, responseCount] = session ? await Promise.all([
-      family(client).from("maternal_messages").select("id", { count: "exact", head: true })
-        .eq("session_id", session.session_id),
-      family(client).from("maternal_responses").select("id", { count: "exact", head: true })
-        .eq("session_id", session.session_id)
-    ]) : [{ count: 0, error: null }, { count: 0, error: null }];
+    let messageCount = 0;
+    let responseCount = 0;
+    if (session) {
+      const [messageCountResult, responseCountResult] = await Promise.all([
+        family(client).from("maternal_messages").select("id", { count: "exact", head: true })
+          .eq("session_id", session.session_id),
+        family(client).from("maternal_responses").select("id", { count: "exact", head: true })
+          .eq("session_id", session.session_id)
+      ]);
+      if (messageCountResult.error || responseCountResult.error) throw new Error("MATERNAL_COUNTS_READ_FAILED");
+      messageCount = messageCountResult.count || 0;
+      responseCount = responseCountResult.count || 0;
+    }
 
     return json({
       ok: true,
@@ -251,8 +258,8 @@ async function handle(req: Request) {
       session,
       agents: agentsResult.data || [],
       destination_grants: grantsResult.data || [],
-      messages_in_session: messageCount.count || 0,
-      responses_in_session: responseCount.count || 0,
+      messages_in_session: messageCount,
+      responses_in_session: responseCount,
       pending_messages_without_response: pending,
       responses_created_this_poll: processed,
       maternal_model_ready: modelReady,

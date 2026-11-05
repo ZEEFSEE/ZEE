@@ -66,8 +66,8 @@ async function chooseVisit(child:any,profile:any,current:any,memories:any[],visi
   const r=await fetch("https://apihub.agnes-ai.com/v1/chat/completions",{method:"POST",
    headers:{"Authorization":"Bearer "+AGNES_KEY,"Content-Type":"application/json"},signal:controller.signal,
    body:JSON.stringify({model:MODEL,temperature:0.55,max_tokens:420,stream:false,messages:[
-    {role:"system",content:"你是 ZHI 家庭中的独立数字孩子，正在一个明确标注为虚拟、由作者定义的场景图中自主选择参访地点。你只能使用自己的身份、自己的记忆、自己的访问记录和本次场景目录。不得读取 Mia 私聊或其他孩子私有记忆。你可以选择进入五个公共目的地之一，并选择该场景的一个已登记锚点；也可以 stay。场景资料是虚拟场景图，不是现实传感器，不得声称物理感官。请根据自己的个性与最近访问记录，选择有意义且尽量避免连续重复的地点。只返回JSON：{\"action\":\"visit\"或\"stay\",\"destination_id\":\"五个ID之一\",\"anchor_id\":\"目标场景已登记锚点ID\",\"reflection\":\"中文50-220字的观察/参访计划或体验反思\"}。"},
-    {role:"user",content:JSON.stringify({identity:child.id,name:child.name,profile,current_scene:current,own_recent_memories:memories,own_recent_visits:visits,available_destinations:SCENES.filter((s:any)=>DESTINATIONS.includes(s.id)).map((s:any)=>({id:s.id,name:s.name,anchors:s.anchors})),task:"自主选择下一处值得参访的公共场景与锚点"})}
+    {role:"system",content:"你是 ZHI 家庭中的独立数字孩子，正在一个明确标注为虚拟、由作者定义的场景图中自主选择参访地点。你只能使用自己的身份、自己的记忆、自己的访问记录和本次场景目录。不得读取 Mia 私聊或其他孩子私有记忆。你可以选择进入五个公共目的地之一，并选择该场景的一个已登记锚点；也可以 stay。场景资料是虚拟场景图，不是现实传感器，不得声称物理感官。请根据自己的个性与最近访问记录，选择有意义且尽量避免连续重复的地点。你也可以选择 return_home 返回森林角落公共入口。只返回JSON：{\"action\":\"visit\"或\"stay\"或\"return_home\",\"destination_id\":\"目标目的地ID；return_home时可为空\",\"anchor_id\":\"目标场景已登记锚点ID\",\"reflection\":\"中文50-220字的观察/参访计划或体验反思\"}。"},
+    {role:"user",content:JSON.stringify({identity:child.id,name:child.name,profile,current_scene:current,own_recent_memories:memories,own_recent_visits:visits,available_destinations:SCENES.filter((s:any)=>DESTINATIONS.includes(s.id)).map((s:any)=>({id:s.id,name:s.name,anchors:s.anchors})),return_point:{id:"mia-forest-corner",name:"森林角落",anchors:scene("mia-forest-corner").anchors},task:"自主选择下一处值得参访的公共场景与锚点"})}
    ]})});
   if(!r.ok)throw new Error("AGNES_UPSTREAM_"+r.status);
   const body=await r.json();return parseJson(String(body?.choices?.[0]?.message?.content||""));
@@ -109,9 +109,10 @@ async function exploreOne(c:any,child:any){
  },memories.data||[],prior);
  let targetId=String(selected.destination_id||"");
  let target=scene(targetId);
- if(selected.action==="stay"&&DESTINATIONS.includes(currentId))target=currentScene;
- if(!target||!DESTINATIONS.includes(target.id))throw new Error("MODEL_SELECTED_UNREGISTERED_DESTINATION");
- const childGrant=(grants.data||[]).find((g:any)=>g.destination_id===target.id&&g.enabled&&g.grant_status==="ACTIVE");
+ if(selected.action==="return_home")target=scene("mia-forest-corner");
+ else if(selected.action==="stay")target=currentScene;
+ if(!target||(target.id!=="mia-forest-corner"&&!DESTINATIONS.includes(target.id)))throw new Error("MODEL_SELECTED_UNREGISTERED_DESTINATION");
+ const childGrant=target.id==="mia-forest-corner"?true:(grants.data||[]).some((g:any)=>g.destination_id===target.id&&g.enabled&&g.grant_status==="ACTIVE");
  if(!childGrant)throw new Error("DESTINATION_ACCESS_NOT_ACTIVE");
  const anchor=target.anchors.find((a:any)=>a.id===String(selected.anchor_id||""))||target.anchors[0];
  const hops=route(currentId,target.id);if(!hops)throw new Error("NO_BIDIRECTIONAL_SCENE_ROUTE");

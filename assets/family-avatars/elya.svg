@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 130 150" role="img" aria-label="elya cartoon child avatar">
+<defs><linearGradient id="bg" x2="0" y2="1"><stop stop-color="#f8dff0"/><stop offset="1" stop-color="#fff"/></linearGradient><linearGradient id="shirt" x2="0" y2="1"><stop stop-color="#ad78b5"/><stop offset="1" stop-color="#f8dff0"/></linearGradient></defs>
+<rect width="130" height="150" rx="25" fill="url(#bg)"/><circle cx="104" cy="25" r="12" fill="#fff" opacity=".75"/>
+<path d="M16 150 Q18 108 43 103 L87 103 Q112 108 114 150" fill="url(#shirt)"/>
+<path d="M46 105 L65 122 L84 105" fill="none" stroke="#fff" stroke-width="4" opacity=".8"/>
+<path d="M24 73 Q18 18 65 15 Q112 17 106 74 Q114 96 99 111 L90 77 Q76 91 63 76 Q50 93 39 76 L30 111 Q16 94 24 73Z" fill="#63496f"/>
+<ellipse cx="65" cy="66" rx="30" ry="35" fill="#f1c5ad"/>
+<path d="M36 55 Q39 25 65 25 Q91 25 94 55 Q79 43 65 47 Q49 43 36 55Z" fill="#63496f"/>
+<ellipse cx="53" cy="67" rx="3.4" ry="4.6" fill="#40343a"/><ellipse cx="77" cy="67" rx="3.4" ry="4.6" fill="#40343a"/>
+<circle cx="52" cy="65" r="1.2" fill="#fff"/><circle cx="76" cy="65" r="1.2" fill="#fff"/>
+<path d="M58 83 Q65 89 72 83" fill="none" stroke="#a85f65" stroke-width="2.6" stroke-linecap="round"/>
+<ellipse cx="43" cy="79" rx="6" ry="3" fill="#ef9d9d" opacity=".5"/><ellipse cx="87" cy="79" rx="6" ry="3" fill="#ef9d9d" opacity=".5"/>
+<path d="M91 34 Q109 22 111 39 Q102 48 91 43Z" fill="#ad78b5" stroke="#fff" stroke-width="2"/>
+<circle cx="104" cy="116" r="13" fill="#fff" opacity=".9"/><text x="104" y="121" text-anchor="middle" font-size="15">🦋</text>
+</svg>

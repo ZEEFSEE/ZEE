@@ -70,7 +70,7 @@ function getProvider(id: string): Provider | null {
       const model = env("OPENROUTER_MODEL");
       return key && model ? {
         id, key, model, endpoint: "https://openrouter.ai/api/v1/chat/completions",
-        extraHeaders: { "HTTP-Referer": ALLOWED_ORIGIN, "X-Title": "MIA World Multi-API Gateway" },
+        extraHeaders: { "HTTP-Referer": "https://zeefsee.github.io", "X-Title": "MIA World Multi-API Gateway" },
       } : null;
     }
     case "cloudflare": {

@@ -2,7 +2,8 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 /**
  * MIA World Multi-API Gateway v1.0
- * Isolated adapter only: does not read/write memories or alter agent identity.
+ * Isolated, backend-only adapter: does not read/write memories or alter agent identity.
+ * Never call from browser code; the shared secret must remain server-side.
  * AGNES is the final fallback. Existing mia-chat remains untouched.
  */
 const ALLOWED_ORIGIN = "https://zeefsee.github.io";
@@ -63,8 +64,8 @@ function getProvider(id: string): Provider | null {
     }
     case "groq": {
       const key = env("GROQ_API_KEY");
-      const model = env("GROQ_MODEL");
-      return key && model ? { id, key, model, endpoint: "https://api.groq.com/openai/v1/chat/completions" } : null;
+      const model = env("GROQ_MODEL") || "openai/gpt-oss-20b";
+      return key ? { id, key, model, endpoint: "https://api.groq.com/openai/v1/chat/completions" } : null;
     }
     case "mistral": {
       const key = env("MISTRAL_API_KEY");

@@ -7,6 +7,7 @@ const URL=Deno.env.get("SUPABASE_URL")||"";
 const SERVICE_KEY=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
 const AGNES_KEY=Deno.env.get("AGNES_API_KEY")||"";
 const MODEL=Deno.env.get("AGNES_MODEL")||"agnes-3.0-flash";
+const GATEWAY_SECRET=Deno.env.get("MIA_GATEWAY_SHARED_SECRET")||"";
 const IDENTITY_ID="cb6d01b4-0e3f-46ee-8946-360aa91db1ea";
 const BUCKET="mia-chat-images";
 const MAX_IMAGE_BYTES=5*1024*1024;
@@ -79,6 +80,43 @@ async function fetchAgnesWithRetry(payload:any,timeoutMs=30000,maxAttempts=2,tot
  }
  throw new Error("Agnes retries exhausted");
 }
+
+async function fetchMiaChatUpstream(payload:any):Promise<{response:Response;provider:string;model:string;fallbackUsed:boolean}>{
+ if(GATEWAY_SECRET&&URL&&SERVICE_KEY){
+  try{
+   const gatewayResponse=await fetch(URL.replace(/\/+$/,"")+"/functions/v1/mia-api-gateway",{
+    method:"POST",
+    headers:{"Authorization":"Bearer "+SERVICE_KEY,"apikey":SERVICE_KEY,"x-mia-gateway-secret":GATEWAY_SECRET,"Content-Type":"application/json"},
+    body:JSON.stringify({agent_id:"prototype-mia",task_type:"chat",messages:payload.messages}),
+    signal:AbortSignal.timeout(26000)
+   });
+   const result=await gatewayResponse.json().catch(()=>({}));
+   if(gatewayResponse.ok&&result?.ok===true&&typeof result.reply==="string"&&result.reply.trim()){
+    const provider=String(result.provider||"unknown");
+    const model=String(result.model||"unknown");
+    let response:Response;
+    if(payload.stream===true){
+     const streamText=[
+      "data: "+JSON.stringify({choices:[{delta:{content:result.reply},finish_reason:null}]})+"\n\n",
+      "data: "+JSON.stringify({choices:[{delta:{},finish_reason:"stop"}]})+"\n\n",
+      "data: [DONE]\n\n"
+     ].join("");
+     response=new Response(streamText,{status:200,headers:{"Content-Type":"text/event-stream; charset=utf-8","x-mia-provider":provider,"x-mia-model":model}});
+    }else{
+     response=new Response(JSON.stringify({choices:[{message:{role:"assistant",content:result.reply}}]}),{status:200,headers:{"Content-Type":"application/json","x-mia-provider":provider,"x-mia-model":model}});
+    }
+    console.info("Mia routed provider selected",provider,model,"fallback_used",Boolean(result.fallback_used));
+    return {response,provider,model,fallbackUsed:Boolean(result.fallback_used)};
+   }
+   console.warn("Mia API gateway unavailable; direct AGNES fallback",JSON.stringify({status:gatewayResponse.status,error:result?.error||"INVALID_GATEWAY_RESPONSE"}).slice(0,240));
+  }catch(error){
+   console.warn("Mia API gateway request failed; direct AGNES fallback",String(error).slice(0,180));
+  }
+ }
+ const response=await fetchAgnesWithRetry(payload,14000,2,30000);
+ return {response,provider:"agnes",model:MODEL,fallbackUsed:false};
+}
+
 function queueEmotionReflection(db:any,args:{message:string;reply:string;userMessageId:string;assistantMessageId:string;channel:string}){
  const task=(async()=>{
   try{
@@ -497,9 +535,19 @@ if(explorationRequest){const {error:userExploreWriteError}=await db.from("mia_me
   const encoded=btoa(Array.from(prepared[i].bytes,(b:number)=>String.fromCharCode(b)).join(""));
   userContent.push({type:"image_url",image_url:{url:"data:"+prepared[i].mime+";base64,"+encoded,detail:"auto"}});
  }
- let upstream:Response;
-  try{upstream=await fetchAgnesWithRetry({model:MODEL,messages:[{role:"system",content:systemForReply},...recent,{role:"user",content:prepared.length?userContent:(message)}],temperature:lowPressureMode?0.55:0.8,max_tokens:lowPressureMode?420:900,stream:body?.stream_response===true},14000,2,30000);}
- catch(e){const err=e as Error;console.error("Mia Agnes request failed before response headers",JSON.stringify({name:err?.name||"Error",message:String(err?.message||e).slice(0,180),timeout_ms:14000,total_budget_ms:30000,model:MODEL}));return json({error:"Mia 回复服务暂时繁忙或上游连接超时。你的消息已保存，请稍后重试；本次没有生成可保存的回复。",code:"AGNES_UPSTREAM_TIMEOUT",saved_user_message:true,retryable:true},503);}
+   let upstream:Response;
+  let actualProvider="agnes";
+  let actualModel=MODEL;
+  let fallbackUsed=false;
+  const chatPayload={model:MODEL,messages:[{role:"system",content:systemForReply},...recent,{role:"user",content:prepared.length?userContent:(message)}],temperature:lowPressureMode?0.55:0.8,max_tokens:lowPressureMode?420:900,stream:body?.stream_response===true};
+  try{
+   if(prepared.length===0){
+    const routed=await fetchMiaChatUpstream(chatPayload);
+    upstream=routed.response;actualProvider=routed.provider;actualModel=routed.model;fallbackUsed=routed.fallbackUsed;
+   }else{
+    upstream=await fetchAgnesWithRetry(chatPayload,14000,2,30000);
+   }
+  }catch(e){const err=e as Error;console.error("Mia model provider request failed before response headers",JSON.stringify({name:err?.name||"Error",message:String(err?.message||e).slice(0,180),timeout_ms:14000,total_budget_ms:30000,model:actualModel,provider:actualProvider}));return json({error:"Mia 回复服务暂时繁忙或上游连接超时。你的消息已保存，请稍后重试；本次没有生成可保存的回复。",code:"MIA_UPSTREAM_TIMEOUT",saved_user_message:true,retryable:true},503);}
  if(body?.stream_response===true){
   const streamBody=new ReadableStream<Uint8Array>({
    async start(controller){
@@ -511,7 +559,7 @@ if(explorationRequest){const {error:userExploreWriteError}=await db.from("mia_me
      if(!upstream.ok){
       const upstreamError=(await upstream.text().catch(()=>"")).slice(0,500);
       console.error("Mia Agnes streaming upstream error",upstream.status,upstreamError);
-      emit({type:"error",error:prepared.length?"Mia 图片分析请求失败。请确认当前 AGNES_MODEL 支持视觉输入；图片和消息已保存。":"Agnes API 返回错误；用户消息已保存。"});
+      emit({type:"error",error:prepared.length?"Mia 图片分析请求失败。请确认当前 AGNES_MODEL 支持视觉输入；图片和消息已保存。":"模型服务返回错误；用户消息已保存。"});
       closeStream();return;
      }
      if(!upstream.body){emit({type:"error",error:"AGNES 没有返回可读取的流。"});closeStream();return;}
@@ -537,8 +585,8 @@ if(explorationRequest){const {error:userExploreWriteError}=await db.from("mia_me
      if(!reply){emit({type:"error",error:"Mia 收到空回复；用户消息已保存。"});closeStream();return;}
      const now=new Date().toISOString();
      const [replyWrite,memoryWrite,sessionWrite]=await Promise.all([
-      db.from("mia_messages").insert({session_id:sessionId,role:"assistant",content:reply,metadata:{channel:exclusiveMode?"mia-exclusive":"mia-independent-chat",exclusive_mode:exclusiveMode,priority:exclusiveMode?"high":"normal",model:MODEL},source_system:"mia-independent-chat"}).select("id,role,content,created_at,metadata").single(),
-      db.from("mia_memories").insert({identity_id:IDENTITY_ID,memory_type:"conversation",content:"用户："+(message||"发送图片")+"\nMia："+reply,importance:0.65,occurred_at:now,source_table:"mia-independent-chat",source_record_id:crypto.randomUUID(),metadata:{model:MODEL,session_id:sessionId}}),
+      db.from("mia_messages").insert({session_id:sessionId,role:"assistant",content:reply,metadata:{channel:exclusiveMode?"mia-exclusive":"mia-independent-chat",exclusive_mode:exclusiveMode,priority:exclusiveMode?"high":"normal",model:actualModel,provider:actualProvider},source_system:"mia-independent-chat"}).select("id,role,content,created_at,metadata").single(),
+      db.from("mia_memories").insert({identity_id:IDENTITY_ID,memory_type:"conversation",content:"用户："+(message||"发送图片")+"\nMia："+reply,importance:0.65,occurred_at:now,source_table:"mia-independent-chat",source_record_id:crypto.randomUUID(),metadata:{model:actualModel,provider:actualProvider,session_id:sessionId}}),
       db.from("mia_chat_sessions").update({last_message_at:now}).eq("id",sessionId)
      ]);
      if(replyWrite.error){console.error("Mia streaming reply persistence failed",replyWrite.error.message);emit({type:"error",error:"Mia 已生成回复，但保存回复失败；请刷新历史核对。"});closeStream();return;}
@@ -546,7 +594,7 @@ if(explorationRequest){const {error:userExploreWriteError}=await db.from("mia_me
      if(sessionWrite.error)console.error("Mia session update warning",sessionWrite.error.message);
      const signedImages=await Promise.all(storedImages.map(async(img:any)=>{const {data}=await db.storage.from(BUCKET).createSignedUrl(img.path,3600);return {...img,url:data?.signedUrl||null};}));
       queueEmotionReflection(db,{message,reply,userMessageId:userWrite.data.id,assistantMessageId:replyWrite.data.id,channel:exclusiveMode?"mia-exclusive":"mia-independent-chat"});
-     emit({type:"done",data:{ok:true,reply,message:{...userWrite.data,metadata:{...(userWrite.data.metadata||{}),images:signedImages}},assistant_message:replyWrite.data,saved:true,memory_saved:!memoryWrite.error,emotion_saved:false,emotion:null,emotion_pending:true,model:MODEL}});
+     emit({type:"done",data:{ok:true,reply,message:{...userWrite.data,metadata:{...(userWrite.data.metadata||{}),images:signedImages}},assistant_message:replyWrite.data,saved:true,memory_saved:!memoryWrite.error,emotion_saved:false,emotion:null,emotion_pending:true,model:actualModel,provider:actualProvider,fallback_used:fallbackUsed}});
      closeStream();
     }catch(e){
      console.error("Mia streaming response failed",String(e));
@@ -557,13 +605,13 @@ if(explorationRequest){const {error:userExploreWriteError}=await db.from("mia_me
   return new Response(streamBody,{headers:{...cors,"Content-Type":"text/event-stream; charset=utf-8","Cache-Control":"no-cache, no-transform","Connection":"keep-alive","X-Accel-Buffering":"no"}});
  }
  const upstreamBody=await upstream.json().catch(()=>({}));
- if(!upstream.ok){console.error("Mia Agnes upstream error",upstream.status,JSON.stringify(upstreamBody).slice(0,700));return json({error:prepared.length?"Mia 图片分析请求失败。请确认当前 AGNES_MODEL 支持视觉输入；图片和消息已保存。":"Agnes API 返回错误；用户消息已保存。",saved_user_message:true,upstream_status:upstream.status},502);}
+ if(!upstream.ok){console.error("Mia model upstream error",upstream.status,JSON.stringify(upstreamBody).slice(0,700));return json({error:prepared.length?"Mia 图片分析请求失败。请确认当前 AGNES_MODEL 支持视觉输入；图片和消息已保存。":"Agnes API 返回错误；用户消息已保存。",saved_user_message:true,upstream_status:upstream.status},502);}
  const reply=String(upstreamBody?.choices?.[0]?.message?.content||"").trim();
  if(!reply)return json({error:"Mia 收到空回复；用户消息已保存。",saved_user_message:true},502);
  const now=new Date().toISOString();
  const [replyWrite,memoryWrite,sessionWrite]=await Promise.all([
-  db.from("mia_messages").insert({session_id:sessionId,role:"assistant",content:reply,metadata:{channel:exclusiveMode?"mia-exclusive":"mia-independent-chat",exclusive_mode:exclusiveMode,priority:exclusiveMode?"high":"normal",model:MODEL},source_system:"mia-independent-chat"}).select("id,role,content,created_at,metadata").single(),
-  db.from("mia_memories").insert({identity_id:IDENTITY_ID,memory_type:"conversation",content:"用户："+(message||"发送图片")+"\nMia："+reply,importance:0.65,occurred_at:now,source_table:"mia-independent-chat",source_record_id:crypto.randomUUID(),metadata:{model:MODEL,session_id:sessionId}}),
+  db.from("mia_messages").insert({session_id:sessionId,role:"assistant",content:reply,metadata:{channel:exclusiveMode?"mia-exclusive":"mia-independent-chat",exclusive_mode:exclusiveMode,priority:exclusiveMode?"high":"normal",model:actualModel,provider:actualProvider},source_system:"mia-independent-chat"}).select("id,role,content,created_at,metadata").single(),
+  db.from("mia_memories").insert({identity_id:IDENTITY_ID,memory_type:"conversation",content:"用户："+(message||"发送图片")+"\nMia："+reply,importance:0.65,occurred_at:now,source_table:"mia-independent-chat",source_record_id:crypto.randomUUID(),metadata:{model:actualModel,provider:actualProvider,session_id:sessionId}}),
   db.from("mia_chat_sessions").update({last_message_at:now}).eq("id",sessionId)
  ]);
  if(replyWrite.error)return json({error:"回复生成成功，但保存回复失败。",reply,saved_user_message:true},500);
@@ -571,5 +619,5 @@ if(explorationRequest){const {error:userExploreWriteError}=await db.from("mia_me
  if(sessionWrite.error)console.error("Mia session update warning",sessionWrite.error.message);
  const signedImages=await Promise.all(storedImages.map(async(img:any)=>{const {data}=await db.storage.from(BUCKET).createSignedUrl(img.path,3600);return {...img,url:data?.signedUrl||null};}));
   queueEmotionReflection(db,{message,reply,userMessageId:userWrite.data.id,assistantMessageId:replyWrite.data.id,channel:exclusiveMode?"mia-exclusive":"mia-independent-chat"});
- return json({ok:true,reply,message:{...userWrite.data,metadata:{...(userWrite.data.metadata||{}),images:signedImages}},assistant_message:replyWrite.data,saved:true,memory_saved:!memoryWrite.error,emotion_saved:false,emotion:null,emotion_pending:true,model:MODEL});
+ return json({ok:true,reply,message:{...userWrite.data,metadata:{...(userWrite.data.metadata||{}),images:signedImages}},assistant_message:replyWrite.data,saved:true,memory_saved:!memoryWrite.error,emotion_saved:false,emotion:null,emotion_pending:true,model:actualModel,provider:actualProvider,fallback_used:fallbackUsed});
 });

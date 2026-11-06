@@ -155,12 +155,12 @@ Deno.serve(async (req: Request) => {
 
   const agentId = String(body?.agent_id ?? "");
   if (!/^(prototype-mia|[A-Z][A-Z0-9_-]{1,47})$/.test(agentId)) {
-    return json({ ok: false, error: "INVALID_AGENT_ID" }, 400, origin);
+    return json({ ok: false, error: "INVALID_AGENT_ID" }, 400);
   }
   const task = String(body?.task_type ?? "chat") as Task;
-  if (!Object.prototype.hasOwnProperty.call(ROUTES, task)) return json({ ok: false, error: "INVALID_TASK_TYPE" }, 400, origin);
+  if (!Object.prototype.hasOwnProperty.call(ROUTES, task)) return json({ ok: false, error: "INVALID_TASK_TYPE" }, 400);
   const messages = cleanMessages(body?.messages);
-  if (!messages) return json({ ok: false, error: "INVALID_MESSAGES" }, 400, origin);
+  if (!messages) return json({ ok: false, error: "INVALID_MESSAGES" }, 400);
 
   const attempts: Array<{ provider: string; status: string }> = [];
   for (const id of ROUTES[task]) {

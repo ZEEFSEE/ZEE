@@ -50,8 +50,15 @@ Headers: `Content-Type: application/json`, `x-mia-gateway-secret: <server-side s
 The response reports the selected provider/model and fallback attempts. Upstream response bodies are not exposed. Prompts and replies are not logged or persisted.
 
 ## Deployment status
-Source scaffold only. Do not deploy or connect production agents until:
-1. provider keys/models are selected and tested;
-2. the gateway secret is installed in Supabase Edge Function Secrets;
-3. authentication, CORS, rate limits, privacy filtering, and fallback behavior are reviewed;
-4. isolated tests pass.
+- Deployed as the isolated Supabase Edge Function `mia-api-gateway`, version 2.
+- Supabase JWT verification is enabled (`verify_jwt=true`); the handler also checks `MIA_GATEWAY_SHARED_SECRET`.
+- Browser CORS response headers were removed. This endpoint is not intended for direct browser use.
+- No production agent or chat function calls this gateway.
+- Secret values cannot be read back through the current management interface. Owner configuration of `GROQ_API_KEY` and `MIA_GATEWAY_SHARED_SECRET` has not been independently verified.
+- No authenticated live Groq request or forced-failure AGNES fallback test has been run.
+
+Before connecting any production agent:
+1. verify both secrets are present in Supabase Edge Function Secrets without exposing their values;
+2. create a server-side caller that holds the shared secret and passes a valid Supabase JWT;
+3. add per-agent authorization, rate limiting, timeout and spend controls;
+4. run isolated Groq success and AGNES fallback tests using synthetic, non-private prompts.

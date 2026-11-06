@@ -87,7 +87,7 @@ async function fetchMiaChatUpstream(payload:any):Promise<{response:Response;prov
    const gatewayResponse=await fetch(URL.replace(/\/+$/,"")+"/functions/v1/mia-api-gateway",{
     method:"POST",
     headers:{"Authorization":"Bearer "+SERVICE_KEY,"apikey":SERVICE_KEY,"x-mia-gateway-secret":GATEWAY_SECRET,"Content-Type":"application/json"},
-    body:JSON.stringify({agent_id:"prototype-mia",task_type:"chat",messages:payload.messages}),
+    body:JSON.stringify({agent_id:"prototype-mia",task_type:"chat",messages:payload.messages,temperature:payload.temperature,max_tokens:payload.max_tokens}),
     signal:AbortSignal.timeout(26000)
    });
    const result=await gatewayResponse.json().catch(()=>({}));

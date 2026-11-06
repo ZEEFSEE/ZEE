@@ -103,9 +103,9 @@ function cleanMessages(value: unknown): Message[] | null {
     const role = (item as Record<string, unknown>).role;
     const content = (item as Record<string, unknown>).content;
     if (!["system", "user", "assistant"].includes(String(role))) return null;
-    if (typeof content !== "string" || !content.trim() || content.length > 24000) return null;
+    if (typeof content !== "string" || !content.trim() || content.length > 100000) return null;
     total += content.length;
-    if (total > 120000) return null;
+    if (total > 200000) return null;
     messages.push({ role: role as Role, content });
   }
   return messages;

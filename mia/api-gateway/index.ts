@@ -151,7 +151,7 @@ async function callProvider(provider: Provider, messages: Message[], task: Task)
 
 Deno.serve(async (req: Request) => {
   const origin = req.headers.get("origin") ?? "";
-  if (req.method === "OPTIONS") return json({ ok: true }, 204, origin);
+  if (req.method === "OPTIONS") return json({ ok: true }, 200, origin);
   if (req.method !== "POST") return json({ ok: false, error: "METHOD_NOT_ALLOWED" }, 405, origin);
   if (origin && origin !== ALLOWED_ORIGIN) return json({ ok: false, error: "ORIGIN_NOT_ALLOWED" }, 403);
   if (!GATEWAY_SECRET) return json({ ok: false, error: "GATEWAY_NOT_CONFIGURED" }, 503, origin);
@@ -166,7 +166,7 @@ Deno.serve(async (req: Request) => {
     return json({ ok: false, error: "INVALID_AGENT_ID" }, 400, origin);
   }
   const task = String(body?.task_type ?? "chat") as Task;
-  if (!(task in ROUTES)) return json({ ok: false, error: "INVALID_TASK_TYPE" }, 400, origin);
+  if (!Object.prototype.hasOwnProperty.call(ROUTES, task)) return json({ ok: false, error: "INVALID_TASK_TYPE" }, 400, origin);
   const messages = cleanMessages(body?.messages);
   if (!messages) return json({ ok: false, error: "INVALID_MESSAGES" }, 400, origin);
 

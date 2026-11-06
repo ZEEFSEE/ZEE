@@ -11,7 +11,7 @@ A separate model-routing adapter for MIA World agents. Free/low-cost providers a
 - Caller must send only the minimum context needed for a task. Do not send full private histories or sensitive records to third-party providers.
 - Gateway authentication uses a separate `MIA_GATEWAY_SHARED_SECRET`; never expose it in GitHub Pages or browser JavaScript.
 
-## Provider secrets
+## First provider: Groq\n\nFor the initial isolated test, configure only `GROQ_API_KEY`. If `GROQ_MODEL` is omitted, the gateway defaults to `openai/gpt-oss-20b` (confirm current availability and account limits in the Groq console). AGNES remains the last-resort fallback.\n\n## Provider secrets
 Configure only after the owner chooses providers and creates their own keys. No key values belong in this repository.
 
 | Provider | Required secrets |
@@ -45,7 +45,7 @@ POST JSON:
   ]
 }
 ```
-Headers: `Content-Type: application/json`, `x-mia-gateway-secret: <server-side secret>`.
+Headers: `Content-Type: application/json`, `x-mia-gateway-secret: <server-side secret>`. **Backend-to-backend only:** never call this function from GitHub Pages/browser JavaScript or expose the shared secret. Production caller authentication, authorization, rate limiting, and secret handling must be completed before deployment.
 
 The response reports the selected provider/model and fallback attempts. Upstream response bodies are not exposed. Prompts and replies are not logged or persisted.
 

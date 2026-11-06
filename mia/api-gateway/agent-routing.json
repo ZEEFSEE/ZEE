@@ -1,0 +1,10 @@
+{
+  "version": "1.0",
+  "name": "MIA World Multi-API Resilience Architecture",
+  "fallback_policy": ["groq", "gemini", "mistral", "openrouter", "cloudflare", "agnes"],
+  "agents": ["prototype-mia", "LUNA", "ARIA", "ELYA", "KAEL", "NOAH", "MARK", "JASON"],
+  "task_types": ["chat", "reasoning", "creative", "summarization", "verification", "planning"],
+  "production_integration": false,
+  "memory_writes": false,
+  "agnes_role": "last_resort_fallback"
+}

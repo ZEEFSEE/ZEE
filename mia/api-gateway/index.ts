@@ -144,16 +144,14 @@ async function callProvider(provider: Provider, messages: Message[], task: Task)
 }
 
 Deno.serve(async (req: Request) => {
-  const origin = req.headers.get("origin") ?? "";
-  if (req.method === "OPTIONS") return json({ ok: true }, 200, origin);
-  if (req.method !== "POST") return json({ ok: false, error: "METHOD_NOT_ALLOWED" }, 405, origin);
-  if (origin && origin !== ALLOWED_ORIGIN) return json({ ok: false, error: "ORIGIN_NOT_ALLOWED" }, 403);
-  if (!GATEWAY_SECRET) return json({ ok: false, error: "GATEWAY_NOT_CONFIGURED" }, 503, origin);
+  if (req.method === "OPTIONS") return json({ ok: true });
+  if (req.method !== "POST") return json({ ok: false, error: "METHOD_NOT_ALLOWED" }, 405);
+  if (!GATEWAY_SECRET) return json({ ok: false, error: "GATEWAY_NOT_CONFIGURED" }, 503);
   const supplied = req.headers.get("x-mia-gateway-secret") ?? "";
-  if (!constantTimeEqual(supplied, GATEWAY_SECRET)) return json({ ok: false, error: "UNAUTHORIZED" }, 401, origin);
+  if (!constantTimeEqual(supplied, GATEWAY_SECRET)) return json({ ok: false, error: "UNAUTHORIZED" }, 401);
 
   let body: any;
-  try { body = await req.json(); } catch { return json({ ok: false, error: "INVALID_JSON" }, 400, origin); }
+  try { body = await req.json(); } catch { return json({ ok: false, error: "INVALID_JSON" }, 400); }
 
   const agentId = String(body?.agent_id ?? "");
   if (!/^(prototype-mia|[A-Z][A-Z0-9_-]{1,47})$/.test(agentId)) {
@@ -182,7 +180,7 @@ Deno.serve(async (req: Request) => {
         fallback_used: attempts.length > 0,
         attempts,
         reply,
-      }, 200, origin);
+      }, 200);
     } catch (error) {
       const message = error instanceof Error ? error.message : "PROVIDER_ERROR";
       attempts.push({ provider: id, status: message.slice(id.length + 1, 80) });
@@ -194,5 +192,5 @@ Deno.serve(async (req: Request) => {
     attempts,
     retryable: true,
     message: "All configured model providers failed. No memory or conversation state was modified by this gateway.",
-  }, 503, origin);
+  }, 503);
 });

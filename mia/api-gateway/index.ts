@@ -120,7 +120,7 @@ function extractText(data: any): string {
   return "";
 }
 
-async function callProvider(provider: Provider, messages: Message[], task: Task): Promise<string> {
+async function callProvider(provider: Provider, messages: Message[], task: Task, temperature: number, maxTokens: number): Promise<string> {
   const response = await fetch(provider.endpoint, {
     method: "POST",
     headers: {
@@ -132,7 +132,8 @@ async function callProvider(provider: Provider, messages: Message[], task: Task)
     body: JSON.stringify({
       model: provider.model,
       messages,
-      temperature: task === "verification" ? 0.1 : 0.7,
+      temperature,
+      max_tokens: maxTokens,
     }),
   });
   if (!response.ok) {
@@ -163,6 +164,8 @@ Deno.serve(async (req: Request) => {
   if (!Object.prototype.hasOwnProperty.call(ROUTES, task)) return json({ ok: false, error: "INVALID_TASK_TYPE" }, 400);
   const messages = cleanMessages(body?.messages);
   if (!messages) return json({ ok: false, error: "INVALID_MESSAGES" }, 400);
+  const temperature = Number.isFinite(Number(body?.temperature)) ? Math.max(0, Math.min(2, Number(body.temperature))) : (task === "verification" ? 0.1 : 0.7);
+  const maxTokens = Number.isFinite(Number(body?.max_tokens)) ? Math.max(128, Math.min(4096, Math.trunc(Number(body.max_tokens)))) : 900;
 
   const attempts: Array<{ provider: string; status: string }> = [];
   for (const id of ROUTES[task]) {
@@ -172,7 +175,7 @@ Deno.serve(async (req: Request) => {
       continue;
     }
     try {
-      const reply = await callProvider(provider, messages, task);
+      const reply = await callProvider(provider, messages, task, temperature, maxTokens);
       return json({
         ok: true,
         agent_id: agentId,

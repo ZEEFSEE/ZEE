@@ -6,6 +6,8 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
  * Never call from browser code; the shared secret must remain server-side.
  * AGNES is the final fallback. Existing mia-chat remains untouched.
  */
+const GATEWAY_SECRET = Deno.env.get("MIA_GATEWAY_SHARED_SECRET") ?? "";
+
 type Role = "system" | "user" | "assistant";
 type Task = "chat" | "reasoning" | "creative" | "summarization" | "verification" | "planning";
 type Message = { role: Role; content: string };

@@ -6,9 +6,6 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
  * Never call from browser code; the shared secret must remain server-side.
  * AGNES is the final fallback. Existing mia-chat remains untouched.
  */
-const ALLOWED_ORIGIN = "https://zeefsee.github.io";
-const GATEWAY_SECRET = Deno.env.get("MIA_GATEWAY_SHARED_SECRET") ?? "";
-
 type Role = "system" | "user" | "assistant";
 type Task = "chat" | "reasoning" | "creative" | "summarization" | "verification" | "planning";
 type Message = { role: Role; content: string };
@@ -30,18 +27,14 @@ const ROUTES: Record<Task, string[]> = {
   planning: ["gemini", "mistral", "groq", "openrouter", "cloudflare", "agnes"],
 };
 
-const json = (body: unknown, status = 200, origin = "") => {
-  const headers = new Headers({
-    "Content-Type": "application/json; charset=utf-8",
-    "Cache-Control": "no-store",
-    "Vary": "Origin",
+const json = (body: unknown, status = 200) => {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store",
+    },
   });
-  if (origin === ALLOWED_ORIGIN) {
-    headers.set("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
-    headers.set("Access-Control-Allow-Headers", "authorization, apikey, content-type, x-mia-gateway-secret");
-    headers.set("Access-Control-Allow-Methods", "POST, OPTIONS");
-  }
-  return new Response(JSON.stringify(body), { status, headers });
 };
 
 function constantTimeEqual(a: string, b: string): boolean {

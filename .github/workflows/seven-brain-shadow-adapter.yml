@@ -29,7 +29,11 @@ on:
       - "mia-digital-family/runtime/identity-evolution-shadow.mjs"
       - "mia-digital-family/tests/identity-evolution-shadow.test.mjs"
       - "mia-digital-family/runtime/historical-identity-evidence-replay.mjs"
+      - "mia-digital-family/runtime/unified-growth-evaluator-shadow.mjs"
+      - "mia-digital-family/tests/unified-growth-evaluator-shadow.test.mjs"
       - "mia-digital-family/tests/historical-identity-evidence-replay.test.mjs"
+      - "mia-digital-family/runtime/unified-growth-evaluator-shadow.mjs"
+      - "mia-digital-family/tests/unified-growth-evaluator-shadow.test.mjs"
       - ".github/workflows/historical-identity-evidence-replay.yml"
 
 permissions:
@@ -55,3 +59,5 @@ jobs:
         run: node --test mia-digital-family/tests/identity-evolution-shadow.test.mjs
       - name: Verify redacted six-agent historical identity evidence replay
         run: node --test mia-digital-family/tests/historical-identity-evidence-replay.test.mjs
+      - name: Verify unified six-subject growth evaluator
+        run: node --test mia-digital-family/tests/unified-growth-evaluator-shadow.test.mjs

@@ -1,4 +1,5 @@
 import test from "node:test";
+import {evaluateCapabilityCandidate} from "../runtime/capability-validation-state-machine.mjs";
 import assert from "node:assert/strict";
 import {
  createIdentityBaseline,appendIdentityEvolution,replayIdentityTimelines,

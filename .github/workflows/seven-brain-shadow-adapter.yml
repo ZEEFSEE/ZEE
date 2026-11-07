@@ -12,12 +12,17 @@ on:
       - "mia-digital-family/runtime/seven-brain-deliberation-simulator.mjs"
       - "mia-digital-family/tests/seven-brain-deliberation-simulator.test.mjs"
       - ".github/workflows/seven-brain-deliberation-simulator.yml"
+      - "mia-digital-family/runtime/capability-validation-state-machine.mjs"
+      - "mia-digital-family/tests/capability-validation-state-machine.test.mjs"
+      - ".github/workflows/capability-validation-state-machine.yml"
   push:
     branches: ["main"]
     paths:
       - "mia-digital-family/runtime/seven-brain-shadow-adapter.mjs"
       - "mia-digital-family/tests/seven-brain-shadow-adapter.test.mjs"
       - ".github/workflows/seven-brain-shadow-adapter.yml"
+      - "mia-digital-family/runtime/capability-validation-state-machine.mjs"
+      - "mia-digital-family/tests/capability-validation-state-machine.test.mjs"
 
 permissions:
   contents: read
@@ -36,3 +41,5 @@ jobs:
         run: node --test mia-digital-family/tests/seven-brain-coordination-bus.test.mjs
       - name: Verify seven-brain deliberation simulator
         run: node --test mia-digital-family/tests/seven-brain-deliberation-simulator.test.mjs
+      - name: Verify isolated capability validation state machine
+        run: node --test mia-digital-family/tests/capability-validation-state-machine.test.mjs

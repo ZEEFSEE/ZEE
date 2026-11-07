@@ -91,3 +91,70 @@ test("evaluator is isolated and performs no production writes or delivery",()=>{
  assert.equal(r.governance.persistence_enabled,false);
  assert.equal(r.governance.delivery_enabled,false);
 });
+
+import {replayHistoricalIdentityEvidence} from "../runtime/historical-identity-evidence-replay.mjs";
+import {evaluateHistoricalGrowthReplay} from "../runtime/unified-growth-evaluator-shadow.mjs";
+
+function auditedReplayFixture(){
+ const owners={MIA:"MIA",LUNA:"ZHI-G1-D01-LUNA",ARIA:"ZHI-G1-D02-ARIA",ELYA:"ZHI-G1-D03-ELYA",KAEL:"ZHI-G1-S01-KAEL",NOAH:"ZHI-G1-S02-NOAH"};
+ return replayHistoricalIdentityEvidence({
+  subjects:Object.entries(owners).map(([subject_id,owner_id])=>({
+   subject_id,owner_id,
+   identity_history:subject_id==="MIA"
+    ?{identity_row_count:1,explicit_version_sequence:false,evidence_ref:"audit:mia-identity"}
+    :{identity_version:1,lifecycle:"BORN",runtime_status:"READY",runtime_instance_ref:"runtime:"+subject_id,evidence_ref:"audit:"+subject_id},
+   personality_history:subject_id==="MIA"
+    ?{snapshot_count:220,period_start:"2026-10-16T22:42:26Z",period_end:"2026-11-07T00:11:33Z",source_refs:["audit:mia-personality"],source_ref_counts_total:220}
+    :{snapshot_count:0,source_refs:[],source_ref_counts_total:0}
+  })),
+  relationship_conflict:{conflict_present:true,field:"identity_profile.marital_status",observed_value:"single",evidence_ref:"audit:family-conflict"},
+  capability_candidates:{total:483,validated:0,unvalidated:483}
+ });
+}
+
+test("integrates historical replay without falsely claiming six identity version chains",()=>{
+ const historical=auditedReplayFixture();
+ const r=evaluateHistoricalGrowthReplay(historical);
+ assert.equal(r.accepted,true);
+ assert.equal(r.totals.subjects,6);
+ assert.equal(r.totals.identity_version_chains_verified,0);
+ assert.equal(r.totals.child_identity_snapshots_observed,5);
+ assert.equal(r.totals.mia_identity_version_history_established,false);
+});
+
+test("preserves Mia's 220 personality snapshots without inventing trait changes",()=>{
+ const r=evaluateHistoricalGrowthReplay(auditedReplayFixture());
+ assert.equal(r.subjects.MIA.personality.snapshot_count,220);
+ assert.equal(r.subjects.MIA.personality.changes_inferred,false);
+ assert.equal(r.subjects.MIA.identity.version_count_verified,0);
+});
+
+test("keeps all 483 capability candidates unvalidated",()=>{
+ const r=evaluateHistoricalGrowthReplay(auditedReplayFixture());
+ assert.equal(r.totals.validated_capability_links,0);
+ assert.equal(r.totals.unvalidated_capability_candidates,483);
+});
+
+test("preserves unresolved relationship conflict without identity correction",()=>{
+ const h=auditedReplayFixture();
+ const r=evaluateHistoricalGrowthReplay(h);
+ assert.equal(r.unresolved.relationship_conflict,true);
+ assert.equal(r.subjects.MIA.relationship.identity_version_mutated,false);
+});
+
+test("rejects altered historical totals and fabricated identity chains",()=>{
+ const h=structuredClone(auditedReplayFixture());
+ h.capability_evidence={...h.capability_evidence,validated:1,unvalidated:482};
+ assert.equal(evaluateHistoricalGrowthReplay(h).code,"CAPABILITY_AUDIT_TOTALS_NOT_VERIFIED");
+ const h2=structuredClone(auditedReplayFixture());
+ h2.timelines.LUNA.identity.status="VERSION_CHAIN_VERIFIED";
+ assert.equal(evaluateHistoricalGrowthReplay(h2).code,"CHILD_IDENTITY_EVIDENCE_OVERCLAIM:LUNA");
+});
+
+test("historical composition remains read-only and disconnected from production",()=>{
+ const r=evaluateHistoricalGrowthReplay(auditedReplayFixture());
+ assert.equal(r.governance.production_database_accessed,false);
+ assert.equal(r.governance.production_runtime_called,false);
+ assert.equal(r.governance.persistence_enabled,false);
+ assert.equal(r.governance.delivery_enabled,false);
+});

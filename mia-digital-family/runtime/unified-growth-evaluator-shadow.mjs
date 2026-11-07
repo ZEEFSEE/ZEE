@@ -167,3 +167,121 @@ export const unifiedGrowthEvaluatorContract = Object.freeze({
   persistence_enabled:false,
   delivery_enabled:false
 });
+
+/**
+ * Composes the redacted historical audit replay into a truthful six-subject growth view.
+ * This path deliberately does not claim version chains or validated capabilities where the
+ * historical evidence only establishes snapshots and unvalidated candidates.
+ */
+export function evaluateHistoricalGrowthReplay(replay) {
+  if (!replay || replay.accepted !== true ||
+      replay.schema !== "zhi.historical_identity_evidence_replay.v1" ||
+      replay.mode !== "REDACTED_READ_ONLY_EVIDENCE_REPLAY" ||
+      replay.subject_count !== 6 || !replay.timelines ||
+      replay.safeguards?.production_database_accessed !== false ||
+      replay.safeguards?.writes_performed !== false) {
+    return reject("VALID_REDACTED_HISTORICAL_REPLAY_REQUIRED");
+  }
+  const ledgers = {};
+  for (const subject of SUBJECTS) {
+    const row = replay.timelines[subject];
+    if (!row || row.owner_id !== OWNERS[subject] || !row.identity || !row.personality_history) {
+      return reject("HISTORICAL_SUBJECT_EVIDENCE_INCOMPLETE:" + subject);
+    }
+    const id = row.identity;
+    let identity;
+    if (subject === "MIA") {
+      if (id.status !== "IDENTITY_VERSION_HISTORY_NOT_ESTABLISHED" ||
+          id.explicit_version_sequence !== false || id.version_count_claimed !== 0) {
+        return reject("MIA_IDENTITY_EVIDENCE_OVERCLAIM");
+      }
+      identity = Object.freeze({
+        state:"IDENTITY_VERSION_CHAIN_NOT_ESTABLISHED",
+        observed_identity_rows:id.identity_rows,
+        version_count_verified:0
+      });
+    } else {
+      if (id.status !== "SINGLE_VERSION_SNAPSHOT_ONLY" || id.identity_version !== 1 ||
+          id.lifecycle !== "BORN" || id.runtime_status !== "READY" ||
+          id.later_versions_observed !== 0) {
+        return reject("CHILD_IDENTITY_EVIDENCE_OVERCLAIM:" + subject);
+      }
+      identity = Object.freeze({
+        state:"SINGLE_IDENTITY_SNAPSHOT_ONLY",
+        observed_version:1,
+        version_count_verified:0
+      });
+    }
+    const p = row.personality_history;
+    if (!Number.isInteger(p.snapshot_count) || p.snapshot_count < 0 ||
+        p.trait_values_available !== false || p.personality_deltas_inferable !== false ||
+        p.synthetic_versions_created !== 0) {
+      return reject("PERSONALITY_HISTORY_MUST_REMAIN_REDACTED:" + subject);
+    }
+    ledgers[subject] = Object.freeze({
+      owner_id:OWNERS[subject],
+      identity,
+      personality:Object.freeze({
+        state:p.snapshot_count ? "SNAPSHOT_HISTORY_PRESENT_TRAIT_VALUES_UNAVAILABLE" : "NO_SNAPSHOT_HISTORY_IN_AUDIT",
+        snapshot_count:p.snapshot_count,
+        period_start:p.period_start,
+        period_end:p.period_end,
+        changes_inferred:false
+      }),
+      capability:Object.freeze({
+        state:"NO_VALIDATED_CAPABILITY_EVIDENCE",
+        validated_links:0,
+        candidate_count:replay.capability_evidence?.candidates_total ?? null,
+        candidate_promotions:0
+      }),
+      relationship:Object.freeze({
+        state:"NO_VERIFIED_RELATIONSHIP_EVENT_IN_THIS_REPLAY",
+        identity_version_mutated:false
+      }),
+      correction:Object.freeze({state:"NO_VERIFIED_CORRECTION_EVENT_IN_THIS_REPLAY"}),
+      rollback:Object.freeze({state:"NO_VERIFIED_ROLLBACK_EVENT_IN_THIS_REPLAY"})
+    });
+  }
+  const cap = replay.capability_evidence;
+  if (!cap || cap.candidates_total !== 483 || cap.validated !== 0 ||
+      cap.unvalidated !== 483 || cap.stable_capability_promotions !== 0) {
+    return reject("CAPABILITY_AUDIT_TOTALS_NOT_VERIFIED");
+  }
+  if (replay.relationship_conflict?.status !== "UNRESOLVED_CONFLICT" ||
+      replay.relationship_conflict?.auto_correction !== false) {
+    return reject("HISTORICAL_RELATIONSHIP_CONFLICT_MUST_REMAIN_UNRESOLVED");
+  }
+  return Object.freeze({
+    accepted:true,
+    schema:"zhi.unified_growth_evaluation.v1",
+    mode:"HISTORICAL_REDACTED_EVIDENCE_COMPOSITION",
+    subjects:Object.freeze(ledgers),
+    totals:Object.freeze({
+      subjects:6,
+      identity_version_chains_verified:0,
+      child_identity_snapshots_observed:5,
+      mia_identity_version_history_established:false,
+      mia_personality_snapshots:ledgers.MIA.personality.snapshot_count,
+      validated_capability_links:0,
+      unvalidated_capability_candidates:483
+    }),
+    unresolved:Object.freeze({
+      personality_trait_deltas:true,
+      all_six_longitudinal_identity_chains:true,
+      capability_validation:true,
+      relationship_conflict:true,
+      correction_and_rollback_history:true,
+      actual_runtime_behavior:true
+    }),
+    governance:Object.freeze({
+      source_tracks_mutated:false,
+      identity_versions_created:false,
+      capability_candidates_promoted:false,
+      private_memory_shared:false,
+      production_database_accessed:false,
+      production_runtime_called:false,
+      persistence_enabled:false,
+      delivery_enabled:false
+    })
+  });
+}

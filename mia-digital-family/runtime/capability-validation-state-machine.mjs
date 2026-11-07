@@ -12,7 +12,8 @@ export function evaluateCapabilityCandidate(candidate, validationRuns, policy={}
   if (!text(candidate.source_memory_id) || !text(candidate.source_event_id)) return reject("PROPOSAL_SOURCE_REQUIRED");
   if (!Array.isArray(validationRuns)) return reject("VALIDATION_RUNS_REQUIRED");
   if (policy.revoked===true) return reject("CANDIDATE_REVOKED");
-  const eligible = validationRuns.filter(run =>
+
+  const independentlySourced = validationRuns.filter(run =>
     run && run.subject_id===candidate.subject_id &&
     run.capability_key===candidate.capability_key &&
     text(run.validation_run_id) &&
@@ -20,17 +21,30 @@ export function evaluateCapabilityCandidate(candidate, validationRuns, policy={}
     run.source_event_id!==candidate.source_event_id &&
     VALID_EVIDENCE.has(run.evidence_status) &&
     EXTERNAL_KINDS.has(run.evidence_kind) &&
-    run.result==="SUCCESS" &&
+    (run.result==="SUCCESS" || run.result==="FAILURE") &&
     run.independent===true &&
     run.raw_private_content===undefined &&
     run.private_memory_payload===undefined
   );
+  const failed = independentlySourced.filter(run => run.result==="FAILURE");
+  if (failed.length) {
+    return Object.freeze({
+      accepted:false,
+      code:"CONTRADICTORY_VALIDATION_EVIDENCE",
+      state:"HUMAN_REVIEW_REQUIRED",
+      failed_runs:unique(failed.map(x=>x.validation_run_id)).length,
+      successful_runs:unique(independentlySourced.filter(x=>x.result==="SUCCESS").map(x=>x.validation_run_id)).length,
+      automatic_promotion:false
+    });
+  }
+
+  const eligible = independentlySourced.filter(run => run.result==="SUCCESS");
   const runIds=unique(eligible.map(x=>x.validation_run_id));
   const sourceIds=unique(eligible.map(x=>x.source_event_id));
   if (runIds.length<2 || sourceIds.length<2) {
     return Object.freeze({
       accepted:false,
-      code:eligible.some(x=>x.result==="FAILURE")?"INDEPENDENT_REPEAT_TEST_REQUIRED":"INDEPENDENT_REPEAT_TEST_REQUIRED",
+      code:"INDEPENDENT_REPEAT_TEST_REQUIRED",
       state:"REPEAT_TEST_REQUIRED",
       valid_runs:runIds.length,
       valid_sources:sourceIds.length,
@@ -76,7 +90,8 @@ export function evaluateCandidateBatch(candidates, validationRunMap) {
       total:results.length,
       accepted:results.filter(x=>x.state==="ACCEPTED").length,
       pending:results.filter(x=>x.state==="REPEAT_TEST_REQUIRED").length,
-      rejected:results.filter(x=>x.accepted===false && x.state!=="REPEAT_TEST_REQUIRED").length
+      review_required:results.filter(x=>x.state==="HUMAN_REVIEW_REQUIRED").length,
+      rejected:results.filter(x=>x.accepted===false && !["REPEAT_TEST_REQUIRED","HUMAN_REVIEW_REQUIRED"].includes(x.state)).length
     },
     governance:Object.freeze({production_database_written:false,source_events_modified:false,automatic_promotion:false})
   });

@@ -1,0 +1,130 @@
+{
+  "schema": "zhi.seven_brain.runtime_mapping.v1",
+  "audit_date": "2026-11-07",
+  "timezone": "Asia/Singapore",
+  "status": "read_only_audit_complete",
+  "audited_functions": [
+    {
+      "slug": "mia-chat",
+      "version": 80,
+      "status": "ACTIVE"
+    },
+    {
+      "slug": "zhi-family-child-runtime",
+      "version": 17,
+      "status": "ACTIVE"
+    },
+    {
+      "slug": "zhi-family-chat",
+      "version": 11,
+      "status": "ACTIVE"
+    },
+    {
+      "slug": "zhi-memory-consolidation-worker",
+      "version": 15,
+      "status": "ACTIVE"
+    }
+  ],
+  "dimensions": [
+    {
+      "id": "SELF_CONTINUITY",
+      "mia": "mia_identity.identity_profile; stable_personality; personality-state history",
+      "children": "child_agents; child_runtime_identities; child_personality_state",
+      "coverage": "STRONG_FOUNDATION",
+      "gap": "Common revision and provenance contract"
+    },
+    {
+      "id": "COGNITION_CONCEPTS",
+      "mia": "system prompt; contextual retrieval; scene-plan validation",
+      "children": "AGNES reflection; grounding guard",
+      "coverage": "PARTIAL",
+      "gap": "Typed concepts, claims, contradictions and reasoning provenance"
+    },
+    {
+      "id": "MEMORY_EXPERIENCE",
+      "mia": "mia_messages; mia_memories; mia_life_events; MIA-private memory_events_v2",
+      "children": "child_memory_entries; child_learning_events; CHILD-private memory_events_v2",
+      "coverage": "STRONG_FOUNDATION",
+      "gap": "Consistent eight-dimension event mapping"
+    },
+    {
+      "id": "EMOTION_VALUES",
+      "mia": "mia_emotion_events; mia_personality_state; relationship context",
+      "children": "child_emotion_state",
+      "coverage": "STRONG_FOUNDATION",
+      "gap": "Consistent estimate/evidence/uncertainty contract"
+    },
+    {
+      "id": "GOALS_MOTIVATION",
+      "mia": "identity drives; exploration; proactive expression",
+      "children": "next_focus; learning candidates; runtime controls",
+      "coverage": "PARTIAL",
+      "gap": "Typed goal lifecycle and conflict resolution"
+    },
+    {
+      "id": "WORLD_RELATIONS",
+      "mia": "relationship context; family events; family graph; scene contracts",
+      "children": "family relationship edges; child runtime state",
+      "coverage": "PARTIAL",
+      "gap": "Evidence-backed world observations; no unsupported sensory claims"
+    },
+    {
+      "id": "ACTION_EVOLUTION",
+      "mia": "chat; exploration; proactive messages; evolution candidates",
+      "children": "independent cycles; maternal messages; learning candidates",
+      "coverage": "PARTIAL",
+      "gap": "Common proposal/authorization/execution/outcome lifecycle"
+    },
+    {
+      "id": "UNIFIED_GOVERNANCE",
+      "mia": "token validation; scene-plan validation; scope filters",
+      "children": "scheduler auth; grounding guard; owner/scope filters",
+      "coverage": "PARTIAL",
+      "gap": "Shared cross-agent policy enforcement contract"
+    }
+  ],
+  "coordination_gaps": [
+    "No general typed seven-subject coordination bus",
+    "No per-recipient field allowlist for cross-agent messages",
+    "No common proposal/dissent/resolution lifecycle",
+    "No receiver-side knowledge-transfer validation contract",
+    "No general revocation/rollback contract for derived coordination state"
+  ],
+  "point_in_time_counts": {
+    "zhi_family.memory_events_v2": 7725,
+    "zhi_family.child_memory_entries": 1283,
+    "zhi_family.child_learning_events": 475,
+    "zhi_family.child_runtime_cycles": 617,
+    "zhi_family.runtime_audit": 1938,
+    "zhi_family.family_chat_messages": 142,
+    "zhi_family.memory_edges_v2": 40
+  },
+  "child_runtime": {
+    "all_five_latest_cycle_status": "SUCCEEDED",
+    "latest_completion_window_sgt": "2026-11-07 11:00–11:30",
+    "failed_cycles_last_24h": {
+      "LUNA": 12,
+      "ARIA": 11,
+      "ELYA": 7,
+      "KAEL": 12,
+      "NOAH": 3
+    },
+    "note": "Historical failures in the preceding 24-hour window; not latest-cycle failures."
+  },
+  "unresolved_data_quality_issue": {
+    "field": "public.mia_identity.identity_profile.marital_status",
+    "observed_value": "single",
+    "conflicting_family_evidence": "Family graph and FAMILY_BIRTH_AND_CONTINUITY event identify Ken and Mia as parents.",
+    "action": "flag_only_no_write"
+  },
+  "non_change_attestation": {
+    "supabase_writes": false,
+    "schema_or_rls_changes": false,
+    "edge_function_deployments": false,
+    "secrets_changes": false,
+    "prompts_changed": false,
+    "memory_modified": false,
+    "permissions_changed": false,
+    "production_shadow_adapter_enabled": false
+  }
+}

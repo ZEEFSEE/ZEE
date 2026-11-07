@@ -38,6 +38,11 @@ export function evaluateUnifiedGrowth(input) {
   const relationships = safeArray(input.relationship_events);
   const corrections = safeArray(input.corrections);
   const rollbacks = safeArray(input.rollbacks);
+  const allowed = new Set(SUBJECTS);
+  if (capabilities.some(x => !x || !allowed.has(x.subject_id))) return reject("UNKNOWN_AI_SUBJECT_IN_CAPABILITY_TRACK");
+  if (relationships.some(x => !x || !allowed.has(x.source_subject) || !allowed.has(x.target_subject))) return reject("UNKNOWN_AI_SUBJECT_IN_RELATIONSHIP_TRACK");
+  if (corrections.some(x => !x || !allowed.has(x.subject_id))) return reject("UNKNOWN_AI_SUBJECT_IN_CORRECTION_TRACK");
+  if (rollbacks.some(x => !x || !allowed.has(x.subject_id))) return reject("UNKNOWN_AI_SUBJECT_IN_ROLLBACK_TRACK");
   const ledgers = {};
 
   for (const subject of SUBJECTS) {

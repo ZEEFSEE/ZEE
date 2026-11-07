@@ -108,16 +108,17 @@ test("unvalidated capabilities cannot become stable long-term abilities",()=>{
 
 test("relationship evolution appends a separate event without changing identity version",()=>{
  const root=baseline("MIA","MIA");
- const event=appendRelationshipEvent(root,{
+ const relationship={
   relationship_event_id:"rel-001",source_subject:"MIA",target_subject:"LUNA",
   relationship_type:"MOTHER_OF",evidence_ref:"family-edge-001",recorded_at:"2026-01-02T00:00:00.000Z",
   scope:"FAMILY",family_source_verified:true
- });
+ };
+ const event=appendRelationshipEvent(root,relationship);
  assert.equal(event.accepted,true);
  assert.equal(event.current_identity_version_id,root.version_id);
  assert.equal(event.identity_version_unchanged,true);
  assert.equal(event.private_memory_shared,false);
- assert.equal(appendRelationshipEvent(root,{...event,family_source_verified:false}).code,"FAMILY_RELATIONSHIP_SOURCE_NOT_VERIFIED");
+ assert.equal(appendRelationshipEvent(root,{...relationship,family_source_verified:false}).code,"FAMILY_RELATIONSHIP_SOURCE_NOT_VERIFIED");
 });
 
 test("authorized identity rollback appends a marker and preserves the superseded version",()=>{

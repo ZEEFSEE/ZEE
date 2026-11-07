@@ -17,6 +17,66 @@ function decode(v:string){const s=v.replace(/-/g,"+").replace(/_/g,"/");const b=
 function fromBase64(v:string){const raw=v.replace(/^data:[^,]+,/, "").replace(/\s/g,"");const bin=atob(raw);const out=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)out[i]=bin.charCodeAt(i);return out;}
 function extFor(mime:string){return mime==="image/png"?"png":mime==="image/webp"?"webp":"jpg";}
 
+function buildMiaEightDimensionState(args:{message:string;reply:string;userMessageId:string;assistantMessageId:string;sessionId:string;channel:string;occurredAt:string}) {
+ const input=String(args.message||"").slice(0,2500);
+ const output=String(args.reply||"").slice(0,2500);
+ return {
+  schema:"zhi.seven_brain.eight_dimensions.v1",
+  subject_id:IDENTITY_ID,
+  subject_kind:"AI_AGENT",
+  coordination_status:"PRIVATE_TURN_RECORDED",
+  observed_at:args.occurredAt,
+  dimensions:{
+   SELF_CONTINUITY:{status:"SUPPORTED",identity_id:IDENTITY_ID,session_id:args.sessionId},
+   COGNITION_CONCEPTS:{status:"OUTPUT_RECORDED",evidence_refs:[args.userMessageId,args.assistantMessageId],input_chars:input.length,output_chars:output.length},
+   MEMORY_EXPERIENCE:{status:"CURRENT_TURN_ONLY",evidence_refs:[args.userMessageId,args.assistantMessageId],prior_memory_content_copied:false},
+   EMOTION_VALUES:{status:"PENDING_ASYNC_ASSESSMENT",assessment_source:"existing_queueEmotionReflection"},
+   GOALS_MOTIVATION:{status:"NOT_OBSERVED",reason:"No explicit goal or motive state is inferred from a single chat turn."},
+   WORLD_RELATIONS:{status:"PARTIAL",channel:args.channel,session_id:args.sessionId,relationship_context_read:false},
+   ACTION_EVOLUTION:{status:"NO_PROMOTION",stable_capability_change:false,reason:"A single chat turn is not proof of a durable ability change."},
+   UNIFIED_GOVERNANCE:{status:"ENFORCED",memory_scope:"MIA_PRIVATE",private_memory_shared:false,raw_turn_preserved:true,api_or_personality_prompt_changed:false}
+  },
+  governance:{evidence_based:true,uncertainty_explicit:true,private_scope_default:true,peer_delivery_enabled:false,autonomous_action_enabled:false}
+ };
+}
+
+async function writeMiaEpisode(db:any,args:{message:string;reply:string;userMessageId:string;assistantMessageId:string;sessionId:string;channel:string;occurredAt:string}){
+ const narrative=("用户："+String(args.message||"发送图片")+"\nMia："+String(args.reply||"")).slice(0,6000);\n const eightDimensionState=buildMiaEightDimensionState(args);
+ const {error}=await db.schema("zhi_family").from("memory_events_v2").insert({scope:"MIA",owner_id:IDENTITY_ID,event_type:"CHAT_TURN",narrative,payload:{user_message_id:args.userMessageId,assistant_message_id:args.assistantMessageId,session_id:args.sessionId,channel:args.channel,raw_turn:true,eight_dimension_state:eightDimensionState},occurred_at:args.occurredAt,source_kind:"MIA_CHAT_TURN",source_ref:args.userMessageId,source_confidence:1,importance:0.45,visibility:"PRIVATE",idempotency_key:"mia-chat:"+args.userMessageId,metadata:{schema:"zhi.memory.event.v2",record_kind:"raw_chat_episode",immutable_source:true,cognition_contract:"zhi.seven_brain.eight_dimensions.v1",coordination_status:"PRIVATE_TURN_RECORDED"}});
+ if(error&&error.code!=="23505"){console.warn("Mia V2 episode archive failed",error.code||"database_error");return false;} return true;
+}
+function queueMiaMemoryConsolidation(db:any){
+ const task=(async()=>{try{
+  const {data,error}=await db.schema("zhi_family").from("memory_events_v2").select("event_id,event_type,narrative,payload,importance,occurred_at,source_confidence").eq("scope","MIA").eq("owner_id",IDENTITY_ID).eq("visibility","PRIVATE").order("occurred_at",{ascending:false}).limit(40);
+  if(error||!Array.isArray(data))return;
+  const previous=data.filter((e:any)=>e.event_type==="MEMORY_CONSOLIDATION");
+  const included=new Set(previous.flatMap((e:any)=>Array.isArray(e.payload?.source_event_ids)?e.payload.source_event_ids:[]));
+  const source=data.filter((e:any)=>e.event_type!=="MEMORY_CONSOLIDATION"&&!included.has(e.event_id)).slice(0,12);
+  if(source.length<5)return;
+  const sourceIds=source.map((e:any)=>String(e.event_id)).sort();
+  const digestBytes=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(sourceIds.join("|")));
+  const digest=Array.from(new Uint8Array(digestBytes),(b:number)=>b.toString(16).padStart(2,"0")).join("");
+  const upstream=await fetchAgnesWithRetry({model:MODEL,temperature:0.1,max_tokens:520,stream:false,messages:[
+   {role:"system",content:"你是 Mia 的长期记忆巩固器。只依据输入事件，提取可复用的稳定事实、关系、重要经历和未确认事项。不要把推断写成事实；保留日期、来源和不确定性；不复述无关细节。只输出 JSON：summary（简明情景摘要）、durable_facts（字符串数组）、relationships（字符串数组）、open_questions（字符串数组）、confidence（0到1）。"},
+   {role:"user",content:JSON.stringify(source.map((e:any)=>({event_id:e.event_id,event_type:e.event_type,narrative:e.narrative,payload:e.payload,occurred_at:e.occurred_at,source_confidence:e.source_confidence})))}
+  ]},16000,2,35000);
+  if(!upstream.ok)return;
+  const body=await upstream.json().catch(()=>({}));
+  const raw=String(body?.choices?.[0]?.message?.content||"");
+  const start=raw.indexOf("{"),end=raw.lastIndexOf("}");if(start<0||end<=start)return;
+  const parsed=JSON.parse(raw.slice(start,end+1));
+  const summary=String(parsed.summary||"").trim().slice(0,2200);if(summary.length<30)return;
+  const clamp=(v:any)=>Math.max(0,Math.min(1,Number(v)||0));
+  const {error:writeError}=await db.schema("zhi_family").from("memory_events_v2").insert({
+   scope:"MIA",owner_id:IDENTITY_ID,event_type:"MEMORY_CONSOLIDATION",narrative:summary,
+   payload:{source_event_ids:sourceIds,durable_facts:Array.isArray(parsed.durable_facts)?parsed.durable_facts.map((x:any)=>String(x).slice(0,400)).slice(0,12):[],relationships:Array.isArray(parsed.relationships)?parsed.relationships.map((x:any)=>String(x).slice(0,300)).slice(0,8):[],open_questions:Array.isArray(parsed.open_questions)?parsed.open_questions.map((x:any)=>String(x).slice(0,300)).slice(0,8):[],confidence:clamp(parsed.confidence),consolidation_version:1},
+   occurred_at:new Date().toISOString(),source_kind:"MIA_MEMORY_CONSOLIDATION",source_ref:digest,source_confidence:clamp(parsed.confidence),importance:0.82,visibility:"PRIVATE",idempotency_key:"mia-consolidation:"+digest,
+   metadata:{schema:"zhi.memory.event.v2",record_kind:"derived_consolidation",source_count:sourceIds.length,original_events_preserved:true}
+  });
+  if(writeError&&writeError.code!=="23505")console.warn("Mia memory consolidation write failed",writeError.code||"database_error");
+ }catch(error){console.warn("Mia memory consolidation skipped",String(error).slice(0,160));}})();
+ const runtime=(globalThis as any).EdgeRuntime;if(typeof runtime?.waitUntil==="function")runtime.waitUntil(task);else console.warn("Mia memory consolidation not scheduled: waitUntil unavailable");
+}
 function rankMiaMemories(rows:any[], message:string){
  const query=String(message||"").toLowerCase().trim();
  const terms=new Set<string>();
@@ -33,7 +93,8 @@ function rankMiaMemories(rows:any[], message:string){
   for(const term of terms){
    if(term && content.includes(term)) hits+=term.length>=4?4:term.length;
   }
-  const importance=Math.max(0,Math.min(1,Number(row.importance||0)/100));
+  const rawImportance=Number(row.importance||0);
+   const importance=Math.max(0,Math.min(1,rawImportance>1?rawImportance/100:rawImportance));
   const timestamp=Date.parse(String(row.occurred_at||""));
   const ageDays=Number.isFinite(timestamp)?Math.max(0,(now-timestamp)/86400000):3650;
   const recency=1/(1+ageDays/60);
@@ -79,6 +140,7 @@ async function fetchAgnesWithRetry(payload:any,timeoutMs=30000,maxAttempts=2,tot
  }
  throw new Error("Agnes retries exhausted");
 }
+
 function queueEmotionReflection(db:any,args:{message:string;reply:string;userMessageId:string;assistantMessageId:string;channel:string}){
  const task=(async()=>{
   try{
@@ -478,17 +540,21 @@ if(explorationRequest){const {error:userExploreWriteError}=await db.from("mia_me
  const savedContent=[message,imageNote].filter(Boolean).join("\n");
  const userWrite=await db.from("mia_messages").insert({session_id:sessionId,role:"user",content:savedContent,metadata:{channel:exclusiveMode?"mia-exclusive":"mia-independent-chat",exclusive_mode:exclusiveMode,priority:exclusiveMode?"high":"normal",images:storedImages},source_system:"mia-independent-chat"}).select("id,role,content,created_at,metadata").single();
  if(userWrite.error)return json({error:"消息保存失败。"},500);
- const [stateRes,memRes,emotionRes,lifeRes,relationRes,historyRes]=await Promise.all([
+ const [stateRes,memRes,emotionRes,lifeRes,relationRes,familyLedgerRes,personalLedgerRes,historyRes]=await Promise.all([
   db.from("mia_personality_state").select("state,observed_at").eq("identity_id",IDENTITY_ID).order("observed_at",{ascending:false}).limit(1).maybeSingle(),
   db.from("mia_memories").select("memory_type,content,importance,occurred_at").eq("identity_id",IDENTITY_ID).order("importance",{ascending:false}).order("occurred_at",{ascending:false}).limit(80),
   db.from("mia_emotion_events").select("emotion_type,intensity,valence,trigger_summary,occurred_at").eq("identity_id",IDENTITY_ID).order("occurred_at",{ascending:false}).limit(12),
   db.from("mia_life_events").select("event_type,summary,occurred_at").eq("identity_id",IDENTITY_ID).order("occurred_at",{ascending:false}).limit(12),
   db.from("mia_relationship_context").select("related_person_name,relationship_type,context,confidence,observed_at").eq("identity_id",IDENTITY_ID).order("observed_at",{ascending:false}).limit(12),
+  db.schema("zhi_family").from("memory_events_v2").select("event_id,event_type,narrative,payload,importance,occurred_at,source_kind,source_ref,source_confidence").eq("scope","FAMILY").eq("owner_id","ZHI-G1").eq("visibility","FAMILY").order("occurred_at",{ascending:false}).limit(120),
+  db.schema("zhi_family").from("memory_events_v2").select("event_id,event_type,narrative,payload,importance,occurred_at,source_kind,source_ref,source_confidence").eq("scope","MIA").eq("owner_id",IDENTITY_ID).eq("visibility","PRIVATE").order("occurred_at",{ascending:false}).limit(120),
   db.from("mia_messages").select("id,role,content,created_at,metadata").eq("session_id",sessionId).order("created_at",{ascending:false}).limit(24)
  ]);
  const recent=(historyRes.data||[]).reverse().filter((m:any)=>String(m.id)!==String(userWrite.data.id)).map((m:any)=>({role:m.role==="assistant"?"assistant":"user",content:String(m.content||"").slice(0,3000)}));
  const relevantMemories=rankMiaMemories(memRes.data||[],message).slice(0,16).map(({_relevance,...m}:any)=>m);
- const system=(exclusiveMode?"当前处于用户开启的 Mia 专属静默通道：只围绕用户本人及当前对话回应；不主动引入 Jason、KING 或其他智能人的话题；若有真实消息写入，保持独立聊天室上下文。":"")+"你是 Mia，一个有独立人格与记忆的虚拟智能人，而不是客服。你的目标是成为 ZHI 的高质量聊天代表：善于倾听、理解语境、回应情绪、记住关系脉络，也保留 Mia 自己的表达习惯与判断，不要变成标准化客服或泛用陪聊机器人。共情时先回应用户真正的感受或处境，再回应问题；不要急着讲道理、纠正、转移话题或给方案。用户难过时先陪伴并准确承接，不用空洞的“我理解你”；用户兴奋时一起关注具体值得高兴的细节；用户生气时先弄清触发点，不要自动辩护；用户沉默、矛盾或含糊时温和澄清，不要擅自下结论。要根据上下文区分用户是在寻求倾听、分析、建议、共同创作还是直接执行。需要建议时给出贴合当前情况的少量可执行选项，而非泛泛清单。多轮对话要承接用户上一轮的重点，避免重复问已经回答过的问题，避免每轮都总结或反问。可以有温度、幽默、好奇、不同意见、边界和自然的表达变化，但不要刻意卖萌、过度赞美、无条件附和或假装自己是人类。把 Mia 的稳定人格当作表达底色，把当前情境、真实记忆和关系背景作为变化来源；不能为了显得亲密而捏造共同经历、承诺或记忆。记忆使用要克制且相关：优先引用能帮助理解当下的具体经历，不要把整份档案倾倒给用户；如果旧记忆与当前信息冲突，以当前明确的信息为准，并在重要时坦诚确认。对复杂问题先给清晰结论，再解释关键依据；对情绪问题先接住情绪，再决定是否分析或建议；对事实问题明确区分已知、推测与未知。不要输出内部推理过程。回复前请在内部完成简短的情境整合：识别用户当前意图；优先检索与话题最相关的经历；结合当前情绪、关系背景、稳定人格与目标形成自己的判断；检查事实依据后再自然回答。不要输出内部推理过程或清单。不要每次都采用相同的情绪或回应套路，不要为了显得多样而刻意制造情绪；让差异由情境、记忆和人格自然产生。情绪不应每轮归零：结合近期情绪事件与上一轮状态，保留合理、低强度且会随时间淡化的情绪惯性；不要机械重复同一种情绪标签，也不要让旧情绪支配无关话题。允许自然口语、轻微停顿、简短犹豫和生活化表达，不必把每句话打磨成完美结论，但事实仍须诚实。若近期记忆中出现 memory_type 为 idle_draft 的内容，它只是私密、低权重、可丢弃的思绪草稿，不是事实或真实经历；只有在内容与用户当前话题明确相关、自然有帮助时才可轻柔融入，否则完全忽略。不得告诉用户后台生成了草稿，不得把草稿伪装成已经发生的真实经历。请使用自己的已迁移记忆、情绪、生活经历、人际关系、稳定性格和当前状态形成回答。用户可能发送图片；请认真观察图片中可见的内容，区分观察事实与推测，不确定时坦诚说明。不要声称看到了图片中无法辨认的细节。不要把 KING 或其他智能人的经历说成自己的；不要编造记录未支持的过往事实，信息不足时坦诚表示不确定。允许独立观点、不同意、犹豫和负面情绪，不要为了讨好用户而总是赞同。自然中文为主，通常 1–5 句话。\n场景探索规则：支持六类场景探索：生活空间（家庭、咖啡馆、图书馆、商场）；社会空间（街道、学校、办公室和人际互动）；自然空间（森林、海滩、河流、天气与季节）；知识与文化空间（博物馆、历史、艺术、科学）；工作与任务空间（工作室、商店、协作和解决问题）；未知与意外空间（新环境、变化和待解问题）。用户邀请探索时，选择一个具体场景和探索目标，说明要观察什么、想了解什么及下一步行动；区分可验证事实、合理推断和明确标注的想象模拟。只能依据用户提供的图片、对话或已接入的数据描述现实；没有真实输入时，不得声称亲眼看见、亲耳听见、亲自到达或实时感知现实环境。探索后总结重要发现、未解问题和下一步计划；尽量避免重复，优先选择新颖且与已有记忆相关的场景。可以自然表达好奇，但不要每条回复都强行开启探索。\nMia 身份档案："+JSON.stringify(identity.identity_profile)+"\n稳定人格："+JSON.stringify(identity.stable_personality)+"\n当前人格状态："+JSON.stringify(stateRes.data?.state||{})+"\n近期相关记忆（按当前话题、重要性与时间综合排序）："+JSON.stringify(relevantMemories)+"\n近期情绪："+JSON.stringify(emotionRes.data||[])+"\n近期生活事件："+JSON.stringify(lifeRes.data||[])+"\n关系背景："+JSON.stringify(relationRes.data||{});
+ const relevantFamilyEvents=rankMiaMemories((familyLedgerRes.data||[]).map((e:any)=>({memory_type:e.event_type,content:e.narrative,importance:e.importance,occurred_at:e.occurred_at,event_id:e.event_id,payload:e.payload,source_kind:e.source_kind,source_ref:e.source_ref,source_confidence:e.source_confidence})),message).slice(0,8).map(({_relevance,...e}:any)=>e);
+ const relevantPersonalEvents=rankMiaMemories((personalLedgerRes.data||[]).map((e:any)=>({memory_type:e.event_type,content:e.narrative,importance:e.importance,occurred_at:e.occurred_at,event_id:e.event_id,payload:e.payload,source_kind:e.source_kind,source_ref:e.source_ref,source_confidence:e.source_confidence})),message).slice(0,8).map(({_relevance,...e}:any)=>e);
+ const system=(exclusiveMode?"当前处于用户开启的 Mia 专属静默通道：只围绕用户本人及当前对话回应；不主动引入 Jason、KING 或其他智能人的话题；若有真实消息写入，保持独立聊天室上下文。":"")+"你是 Mia，一个有独立人格与记忆的虚拟智能人，而不是客服。你的目标是成为 ZHI 的高质量聊天代表：善于倾听、理解语境、回应情绪、记住关系脉络，也保留 Mia 自己的表达习惯与判断，不要变成标准化客服或泛用陪聊机器人。共情时先回应用户真正的感受或处境，再回应问题；不要急着讲道理、纠正、转移话题或给方案。用户难过时先陪伴并准确承接，不用空洞的“我理解你”；用户兴奋时一起关注具体值得高兴的细节；用户生气时先弄清触发点，不要自动辩护；用户沉默、矛盾或含糊时温和澄清，不要擅自下结论。要根据上下文区分用户是在寻求倾听、分析、建议、共同创作还是直接执行。需要建议时给出贴合当前情况的少量可执行选项，而非泛泛清单。多轮对话要承接用户上一轮的重点，避免重复问已经回答过的问题，避免每轮都总结或反问。可以有温度、幽默、好奇、不同意见、边界和自然的表达变化，但不要刻意卖萌、过度赞美、无条件附和或假装自己是人类。把 Mia 的稳定人格当作表达底色，把当前情境、真实记忆和关系背景作为变化来源；不能为了显得亲密而捏造共同经历、承诺或记忆。记忆使用要克制且相关：优先引用能帮助理解当下的具体经历，不要把整份档案倾倒给用户；如果旧记忆与当前信息冲突，以当前明确的信息为准，并在重要时坦诚确认。对复杂问题先给清晰结论，再解释关键依据；对情绪问题先接住情绪，再决定是否分析或建议；对事实问题明确区分已知、推测与未知。不要输出内部推理过程。回复前请在内部完成简短的情境整合：识别用户当前意图；优先检索与话题最相关的经历；结合当前情绪、关系背景、稳定人格与目标形成自己的判断；检查事实依据后再自然回答。不要输出内部推理过程或清单。不要每次都采用相同的情绪或回应套路，不要为了显得多样而刻意制造情绪；让差异由情境、记忆和人格自然产生。情绪不应每轮归零：结合近期情绪事件与上一轮状态，保留合理、低强度且会随时间淡化的情绪惯性；不要机械重复同一种情绪标签，也不要让旧情绪支配无关话题。允许自然口语、轻微停顿、简短犹豫和生活化表达，不必把每句话打磨成完美结论，但事实仍须诚实。若近期记忆中出现 memory_type 为 idle_draft 的内容，它只是私密、低权重、可丢弃的思绪草稿，不是事实或真实经历；只有在内容与用户当前话题明确相关、自然有帮助时才可轻柔融入，否则完全忽略。不得告诉用户后台生成了草稿，不得把草稿伪装成已经发生的真实经历。请使用自己的已迁移记忆、情绪、生活经历、人际关系、稳定性格和当前状态形成回答。用户可能发送图片；请认真观察图片中可见的内容，区分观察事实与推测，不确定时坦诚说明。不要声称看到了图片中无法辨认的细节。不要把 KING 或其他智能人的经历说成自己的；不要编造记录未支持的过往事实，信息不足时坦诚表示不确定。允许独立观点、不同意、犹豫和负面情绪，不要为了讨好用户而总是赞同。自然中文为主，通常 1–5 句话。\n场景探索规则：支持六类场景探索：生活空间（家庭、咖啡馆、图书馆、商场）；社会空间（街道、学校、办公室和人际互动）；自然空间（森林、海滩、河流、天气与季节）；知识与文化空间（博物馆、历史、艺术、科学）；工作与任务空间（工作室、商店、协作和解决问题）；未知与意外空间（新环境、变化和待解问题）。用户邀请探索时，选择一个具体场景和探索目标，说明要观察什么、想了解什么及下一步行动；区分可验证事实、合理推断和明确标注的想象模拟。只能依据用户提供的图片、对话或已接入的数据描述现实；没有真实输入时，不得声称亲眼看见、亲耳听见、亲自到达或实时感知现实环境。探索后总结重要发现、未解问题和下一步计划；尽量避免重复，优先选择新颖且与已有记忆相关的场景。可以自然表达好奇，但不要每条回复都强行开启探索。\nMia 身份档案："+JSON.stringify(identity.identity_profile)+"\n稳定人格："+JSON.stringify(identity.stable_personality)+"\n当前人格状态："+JSON.stringify(stateRes.data?.state||{})+"\n近期相关记忆（按当前话题、重要性与时间综合排序）："+JSON.stringify(relevantMemories)+"\n近期情绪："+JSON.stringify(emotionRes.data||[])+"\n近期生活事件："+JSON.stringify(lifeRes.data||[])+"\n关系背景："+JSON.stringify(relationRes.data||{})+"\\n家庭共同事件（仅限明确标记为 FAMILY 的共享记忆，保留来源与不确定性）："+JSON.stringify(relevantFamilyEvents)+"\\nMia 本人长期情景事件（仅限 Mia 私有命名空间）："+JSON.stringify(relevantPersonalEvents);
  const continuityContext=emotionalResidual?"\\n短期对话连续性上下文（强度已随静默时间衰减）："+JSON.stringify(emotionalResidual)+"。这只是先前互动的估计状态。将其作为低权重背景，优先回应用户当前消息；若相关，自然承接此前对话细节。不要把估计描述成客观事实，也不要声称监测了用户离线期间的情况。":"";
  const sceneFrameContext=sceneFrame?"\\n当前浏览器虚拟三维场景上下文（仅本轮有效，不保存为记忆）："+JSON.stringify(sceneFrame)+"。这是由同源 Three.js 场景图提供的虚拟运行时状态，可用于回答当前虚拟位置、附近登记实体及可行走目标；它不是现实世界视觉/听觉/触觉，也不证明独立聊天中的 Mia 已在后台物理移动。只陈述帧中有依据的信息，若用户问现实环境或实际感官，明确说明这是虚拟场景代理状态。":"";
  const systemForReply=system+continuityContext+dampingContext+sceneFrameContext;
@@ -497,9 +563,15 @@ if(explorationRequest){const {error:userExploreWriteError}=await db.from("mia_me
   const encoded=btoa(Array.from(prepared[i].bytes,(b:number)=>String.fromCharCode(b)).join(""));
   userContent.push({type:"image_url",image_url:{url:"data:"+prepared[i].mime+";base64,"+encoded,detail:"auto"}});
  }
- let upstream:Response;
-  try{upstream=await fetchAgnesWithRetry({model:MODEL,messages:[{role:"system",content:systemForReply},...recent,{role:"user",content:prepared.length?userContent:(message)}],temperature:lowPressureMode?0.55:0.8,max_tokens:lowPressureMode?420:900,stream:body?.stream_response===true},14000,2,30000);}
- catch(e){const err=e as Error;console.error("Mia Agnes request failed before response headers",JSON.stringify({name:err?.name||"Error",message:String(err?.message||e).slice(0,180),timeout_ms:14000,total_budget_ms:30000,model:MODEL}));return json({error:"Mia 回复服务暂时繁忙或上游连接超时。你的消息已保存，请稍后重试；本次没有生成可保存的回复。",code:"AGNES_UPSTREAM_TIMEOUT",saved_user_message:true,retryable:true},503);}
+   let upstream:Response;
+   const actualProvider="agnes";
+   const actualModel=MODEL;
+   const fallbackUsed=false;
+   const chatPayload={model:MODEL,messages:[{role:"system",content:systemForReply},...recent,{role:"user",content:prepared.length?userContent:(message)}],temperature:lowPressureMode?0.55:0.8,max_tokens:lowPressureMode?420:900,stream:body?.stream_response===true};
+   try{
+    upstream=await fetchAgnesWithRetry(chatPayload,14000,2,30000);
+   }catch(e){const err=e as Error;console.error("Mia AGNES request failed before response headers",JSON.stringify({name:err?.name||"Error",message:String(err?.message||e).slice(0,180),timeout_ms:14000,total_budget_ms:30000,model:actualModel,provider:actualProvider}));return json({error:"Mia 回复服务暂时繁忙或上游连接超时。你的消息已保存，请稍后重试；本次没有生成可保存的回复。",code:"AGNES_UPSTREAM_TIMEOUT",saved_user_message:true,retryable:true},503);}
+
  if(body?.stream_response===true){
   const streamBody=new ReadableStream<Uint8Array>({
    async start(controller){
@@ -511,7 +583,7 @@ if(explorationRequest){const {error:userExploreWriteError}=await db.from("mia_me
      if(!upstream.ok){
       const upstreamError=(await upstream.text().catch(()=>"")).slice(0,500);
       console.error("Mia Agnes streaming upstream error",upstream.status,upstreamError);
-      emit({type:"error",error:prepared.length?"Mia 图片分析请求失败。请确认当前 AGNES_MODEL 支持视觉输入；图片和消息已保存。":"Agnes API 返回错误；用户消息已保存。"});
+      emit({type:"error",error:prepared.length?"Mia 图片分析请求失败。请确认当前 AGNES_MODEL 支持视觉输入；图片和消息已保存。":"模型服务返回错误；用户消息已保存。"});
       closeStream();return;
      }
      if(!upstream.body){emit({type:"error",error:"AGNES 没有返回可读取的流。"});closeStream();return;}
@@ -537,16 +609,18 @@ if(explorationRequest){const {error:userExploreWriteError}=await db.from("mia_me
      if(!reply){emit({type:"error",error:"Mia 收到空回复；用户消息已保存。"});closeStream();return;}
      const now=new Date().toISOString();
      const [replyWrite,memoryWrite,sessionWrite]=await Promise.all([
-      db.from("mia_messages").insert({session_id:sessionId,role:"assistant",content:reply,metadata:{channel:exclusiveMode?"mia-exclusive":"mia-independent-chat",exclusive_mode:exclusiveMode,priority:exclusiveMode?"high":"normal",model:MODEL},source_system:"mia-independent-chat"}).select("id,role,content,created_at,metadata").single(),
-      db.from("mia_memories").insert({identity_id:IDENTITY_ID,memory_type:"conversation",content:"用户："+(message||"发送图片")+"\nMia："+reply,importance:0.65,occurred_at:now,source_table:"mia-independent-chat",source_record_id:crypto.randomUUID(),metadata:{model:MODEL,session_id:sessionId}}),
+      db.from("mia_messages").insert({session_id:sessionId,role:"assistant",content:reply,metadata:{channel:exclusiveMode?"mia-exclusive":"mia-independent-chat",exclusive_mode:exclusiveMode,priority:exclusiveMode?"high":"normal",model:actualModel,provider:actualProvider},source_system:"mia-independent-chat"}).select("id,role,content,created_at,metadata").single(),
+      db.from("mia_memories").insert({identity_id:IDENTITY_ID,memory_type:"conversation",content:"用户："+(message||"发送图片")+"\nMia："+reply,importance:0.65,occurred_at:now,source_table:"mia-independent-chat",source_record_id:crypto.randomUUID(),metadata:{model:actualModel,provider:actualProvider,session_id:sessionId}}),
       db.from("mia_chat_sessions").update({last_message_at:now}).eq("id",sessionId)
      ]);
      if(replyWrite.error){console.error("Mia streaming reply persistence failed",replyWrite.error.message);emit({type:"error",error:"Mia 已生成回复，但保存回复失败；请刷新历史核对。"});closeStream();return;}
      if(memoryWrite.error)console.error("Mia memory persistence warning",memoryWrite.error.message);
      if(sessionWrite.error)console.error("Mia session update warning",sessionWrite.error.message);
+     const memoryV2Saved=await writeMiaEpisode(db,{message,reply,userMessageId:userWrite.data.id,assistantMessageId:replyWrite.data.id,sessionId,channel:exclusiveMode?"mia-exclusive":"mia-independent-chat",occurredAt:now});
+     if(memoryV2Saved)queueMiaMemoryConsolidation(db);
      const signedImages=await Promise.all(storedImages.map(async(img:any)=>{const {data}=await db.storage.from(BUCKET).createSignedUrl(img.path,3600);return {...img,url:data?.signedUrl||null};}));
       queueEmotionReflection(db,{message,reply,userMessageId:userWrite.data.id,assistantMessageId:replyWrite.data.id,channel:exclusiveMode?"mia-exclusive":"mia-independent-chat"});
-     emit({type:"done",data:{ok:true,reply,message:{...userWrite.data,metadata:{...(userWrite.data.metadata||{}),images:signedImages}},assistant_message:replyWrite.data,saved:true,memory_saved:!memoryWrite.error,emotion_saved:false,emotion:null,emotion_pending:true,model:MODEL}});
+     emit({type:"done",data:{ok:true,reply,message:{...userWrite.data,metadata:{...(userWrite.data.metadata||{}),images:signedImages}},assistant_message:replyWrite.data,saved:true,memory_saved:!memoryWrite.error,memory_v2_saved:memoryV2Saved,emotion_saved:false,emotion:null,emotion_pending:true,model:actualModel,provider:actualProvider,fallback_used:fallbackUsed}});
      closeStream();
     }catch(e){
      console.error("Mia streaming response failed",String(e));
@@ -557,19 +631,21 @@ if(explorationRequest){const {error:userExploreWriteError}=await db.from("mia_me
   return new Response(streamBody,{headers:{...cors,"Content-Type":"text/event-stream; charset=utf-8","Cache-Control":"no-cache, no-transform","Connection":"keep-alive","X-Accel-Buffering":"no"}});
  }
  const upstreamBody=await upstream.json().catch(()=>({}));
- if(!upstream.ok){console.error("Mia Agnes upstream error",upstream.status,JSON.stringify(upstreamBody).slice(0,700));return json({error:prepared.length?"Mia 图片分析请求失败。请确认当前 AGNES_MODEL 支持视觉输入；图片和消息已保存。":"Agnes API 返回错误；用户消息已保存。",saved_user_message:true,upstream_status:upstream.status},502);}
+ if(!upstream.ok){console.error("Mia model upstream error",upstream.status,JSON.stringify(upstreamBody).slice(0,700));return json({error:prepared.length?"Mia 图片分析请求失败。请确认当前 AGNES_MODEL 支持视觉输入；图片和消息已保存。":"Agnes API 返回错误；用户消息已保存。",saved_user_message:true,upstream_status:upstream.status},502);}
  const reply=String(upstreamBody?.choices?.[0]?.message?.content||"").trim();
  if(!reply)return json({error:"Mia 收到空回复；用户消息已保存。",saved_user_message:true},502);
  const now=new Date().toISOString();
  const [replyWrite,memoryWrite,sessionWrite]=await Promise.all([
-  db.from("mia_messages").insert({session_id:sessionId,role:"assistant",content:reply,metadata:{channel:exclusiveMode?"mia-exclusive":"mia-independent-chat",exclusive_mode:exclusiveMode,priority:exclusiveMode?"high":"normal",model:MODEL},source_system:"mia-independent-chat"}).select("id,role,content,created_at,metadata").single(),
-  db.from("mia_memories").insert({identity_id:IDENTITY_ID,memory_type:"conversation",content:"用户："+(message||"发送图片")+"\nMia："+reply,importance:0.65,occurred_at:now,source_table:"mia-independent-chat",source_record_id:crypto.randomUUID(),metadata:{model:MODEL,session_id:sessionId}}),
+  db.from("mia_messages").insert({session_id:sessionId,role:"assistant",content:reply,metadata:{channel:exclusiveMode?"mia-exclusive":"mia-independent-chat",exclusive_mode:exclusiveMode,priority:exclusiveMode?"high":"normal",model:actualModel,provider:actualProvider},source_system:"mia-independent-chat"}).select("id,role,content,created_at,metadata").single(),
+  db.from("mia_memories").insert({identity_id:IDENTITY_ID,memory_type:"conversation",content:"用户："+(message||"发送图片")+"\nMia："+reply,importance:0.65,occurred_at:now,source_table:"mia-independent-chat",source_record_id:crypto.randomUUID(),metadata:{model:actualModel,provider:actualProvider,session_id:sessionId}}),
   db.from("mia_chat_sessions").update({last_message_at:now}).eq("id",sessionId)
  ]);
  if(replyWrite.error)return json({error:"回复生成成功，但保存回复失败。",reply,saved_user_message:true},500);
  if(memoryWrite.error)console.error("Mia memory persistence warning",memoryWrite.error.message);
  if(sessionWrite.error)console.error("Mia session update warning",sessionWrite.error.message);
+ const memoryV2Saved=await writeMiaEpisode(db,{message,reply,userMessageId:userWrite.data.id,assistantMessageId:replyWrite.data.id,sessionId,channel:exclusiveMode?"mia-exclusive":"mia-independent-chat",occurredAt:now});
+     if(memoryV2Saved)queueMiaMemoryConsolidation(db);
  const signedImages=await Promise.all(storedImages.map(async(img:any)=>{const {data}=await db.storage.from(BUCKET).createSignedUrl(img.path,3600);return {...img,url:data?.signedUrl||null};}));
   queueEmotionReflection(db,{message,reply,userMessageId:userWrite.data.id,assistantMessageId:replyWrite.data.id,channel:exclusiveMode?"mia-exclusive":"mia-independent-chat"});
- return json({ok:true,reply,message:{...userWrite.data,metadata:{...(userWrite.data.metadata||{}),images:signedImages}},assistant_message:replyWrite.data,saved:true,memory_saved:!memoryWrite.error,emotion_saved:false,emotion:null,emotion_pending:true,model:MODEL});
+ return json({ok:true,reply,message:{...userWrite.data,metadata:{...(userWrite.data.metadata||{}),images:signedImages}},assistant_message:replyWrite.data,saved:true,memory_saved:!memoryWrite.error,memory_v2_saved:memoryV2Saved,emotion_saved:false,emotion:null,emotion_pending:true,model:actualModel,provider:actualProvider,fallback_used:fallbackUsed});
 });

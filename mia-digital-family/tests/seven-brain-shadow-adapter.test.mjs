@@ -47,7 +47,7 @@ test("maps all eight dimensions without changing the input", () => {
   assert.equal(snapshot.governance.writes_performed, false);
 });
 
-test("unknown dimensions remain unknown rather than receiving invented values", () => {
+test("unknown dimensions remain unknown; default PRIVATE scope alone is not evidence", () => {
   const snapshot = buildShadowCognitionSnapshot({subjectId:"ARIA",context:{}});
   for (const dimension of Object.values(snapshot.dimensions)) {
     assert.equal(dimension.status, "UNKNOWN");

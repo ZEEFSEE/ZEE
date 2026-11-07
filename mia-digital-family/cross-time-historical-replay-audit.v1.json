@@ -1,0 +1,55 @@
+{
+  "schema": "zhi.cross_time_historical_replay.audit.v1",
+  "audited_at": "2026-11-07",
+  "mode": "READ_ONLY",
+  "project_id": "dbooikzqprnqbgpfwsze",
+  "sample": {
+    "child_consolidations": 10,
+    "family_consolidations": 1,
+    "source_refs": 132,
+    "source_refs_resolved": 132,
+    "duplicate_refs": 0,
+    "missing_refs": 0,
+    "owner_scope_mismatches": 0,
+    "sources_after_consolidation": 0
+  },
+  "child_identity": {
+    "subjects": 5,
+    "distinct_runtime_instance_ids": 5,
+    "identity_version": 1,
+    "all_born_ready": true,
+    "mia_identity_history_tested": false
+  },
+  "learning_candidates": {
+    "LUNA": 107,
+    "ARIA": 101,
+    "ELYA": 111,
+    "KAEL": 65,
+    "NOAH": 99,
+    "total": 483,
+    "all_unvalidated": true,
+    "memory_refs_valid_same_owner": 483,
+    "cycle_refs_valid": 483,
+    "linked_cycles_succeeded": 483
+  },
+  "maternal_response_refs": {
+    "nonnull_refs": 62,
+    "currently_resolvable": 0,
+    "maternal_responses_table_rows": 0,
+    "maternal_messages_table_rows": 0
+  },
+  "correction_lineage": {
+    "memory_events": 7742,
+    "superseding_events": 0,
+    "production_correction_chain_proven": false
+  },
+  "governance": {
+    "production_runtime_called": false,
+    "production_db_written": false,
+    "schema_changed": false,
+    "edge_functions_deployed": false,
+    "prompts_changed": false,
+    "api_keys_or_secrets_changed": false,
+    "private_narratives_committed_to_repo": false
+  }
+}

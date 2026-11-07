@@ -153,6 +153,8 @@ export function validateExperienceCapabilityLink(experience, capability) {
     accepted:true,
     state:"SAME_SUBJECT_CAPABILITY_LINKED",
     subject_id:experience.subject_id,
+    owner_id:experience.owner_id,
+    source_subject_id:experience.subject_id,
     source_event_id:experience.source_event_id,
     private_memory_ref:experience.private_memory_ref,
     capability_candidate_id:capability.candidate_id,

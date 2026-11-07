@@ -41,7 +41,8 @@ function buildMiaEightDimensionState(args:{message:string;reply:string;userMessa
 }
 
 async function writeMiaEpisode(db:any,args:{message:string;reply:string;userMessageId:string;assistantMessageId:string;sessionId:string;channel:string;occurredAt:string}){
- const narrative=("用户："+String(args.message||"发送图片")+"\nMia："+String(args.reply||"")).slice(0,6000);\n const eightDimensionState=buildMiaEightDimensionState(args);
+ const narrative=("用户："+String(args.message||"发送图片")+"\nMia："+String(args.reply||"")).slice(0,6000);
+ const eightDimensionState=buildMiaEightDimensionState(args);
  const {error}=await db.schema("zhi_family").from("memory_events_v2").insert({scope:"MIA",owner_id:IDENTITY_ID,event_type:"CHAT_TURN",narrative,payload:{user_message_id:args.userMessageId,assistant_message_id:args.assistantMessageId,session_id:args.sessionId,channel:args.channel,raw_turn:true,eight_dimension_state:eightDimensionState},occurred_at:args.occurredAt,source_kind:"MIA_CHAT_TURN",source_ref:args.userMessageId,source_confidence:1,importance:0.45,visibility:"PRIVATE",idempotency_key:"mia-chat:"+args.userMessageId,metadata:{schema:"zhi.memory.event.v2",record_kind:"raw_chat_episode",immutable_source:true,cognition_contract:"zhi.seven_brain.eight_dimensions.v1",coordination_status:"PRIVATE_TURN_RECORDED"}});
  if(error&&error.code!=="23505"){console.warn("Mia V2 episode archive failed",error.code||"database_error");return false;} return true;
 }

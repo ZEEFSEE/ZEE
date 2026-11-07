@@ -1,7 +1,7 @@
 {
   "schema": "zhi.seven_brain.ontology.v1",
   "title": "ZHI Seven-Brain Cooperative Cognitive Ontology",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "status": "partial_production_wiring",
   "participants": [
     {
@@ -148,7 +148,11 @@
         "entities",
         "relationship_refs",
         "world_context",
-        "visibility"
+        "visibility",
+        "spatial_context",
+        "coordinate_frame",
+        "accessible_resources",
+        "perception_provenance"
       ],
       "invariants": [
         "relationship_inference_has_confidence",
@@ -181,7 +185,11 @@
         "evidence_status",
         "uncertainty",
         "audit_id",
-        "rollback_ref"
+        "rollback_ref",
+        "access_decision",
+        "permission_scope",
+        "coordinate_confidence",
+        "action_capabilities"
       ],
       "invariants": [
         "fail_closed",
@@ -243,16 +251,18 @@
     "MEMORY_TRUTHFULNESS",
     "EMOTIONAL_CONTINUITY",
     "SUBJECT_INDEPENDENCE",
-    "GOVERNANCE_RELIABILITY"
+    "GOVERNANCE_RELIABILITY",
+    "SPATIAL_ACCESS_CONSISTENCY"
   ],
   "deployment_boundary": {
     "production_runtime_wired": true,
     "production_wiring_status": "PARTIAL",
     "production_wired_functions": {
-      "child_runtime": "zhi-family-child-runtime v18; eight-dimension state written into existing CHILD_PRIVATE memory event and runtime audit",
-      "mia_private_chat": "mia-chat v81; eight-dimension metadata added to existing MIA_PRIVATE chat episode; prompt, model request, reply and API contract unchanged",
+      "child_runtime": "zhi-family-child-runtime v19; CHILD_PRIVATE eight-dimension episodes include scene-local position, authored perception provenance, and active public-destination grant snapshot",
+      "mia_private_chat": "mia-chat v82; MIA_PRIVATE episode includes latest headless semantic scene state and travel gate; prompt, model request, reply and API contract unchanged",
       "family_chat": "zhi-family-chat v12; eight-dimension metadata added to existing child reply metadata without exposing private context",
-      "growth_evidence": "zhi-seven-brain-growth-evidence v3; aggregate counts of eight-dimension events added to existing runtime audit snapshot"
+      "growth_evidence": "zhi-seven-brain-growth-evidence v3; aggregate counts of eight-dimension events added to existing runtime audit snapshot",
+      "family_world_runtime": "zhi-family-world-runtime v9; public-scene visit records carry subject-specific grant decision and explicit allowed/denied capabilities"
     },
     "production_verified_subjects": [
       "ELYA"
@@ -267,6 +277,67 @@
     "secrets_changed": false,
     "production_permissions_changed": false,
     "coordination_bus_delivery_enabled": false,
-    "autonomous_action_enabled": false
+    "autonomous_action_enabled": false,
+    "spatial_cognition_status": "PARTIAL_PRODUCTION_WIRING",
+    "spatial_verified_subjects": [],
+    "spatial_remaining_verification": "Await each subject's next natural cycle/chat/visit. Mia world transform remains uncalibrated; no cross-scene travel or physical sensor claims are enabled."
+  },
+  "spatial_access_contract": {
+    "schema": "zhi.spatial_access_governance.v1",
+    "coordinate_rules": {
+      "local_coordinates_are_not_world_coordinates": true,
+      "world_position_requires_verified_non_null_transform": true,
+      "cross_scene_distance_without_transform": "DENY",
+      "unknown_or_uncalibrated_position": "MARK_UNKNOWN_AND_BLOCK_DEPENDENT_ACTIONS",
+      "provenance_required": true
+    },
+    "capability_levels": [
+      "DISCOVER",
+      "READ",
+      "OBSERVE",
+      "ENTER",
+      "INTERACT",
+      "MODIFY"
+    ],
+    "child_public_destination_access": {
+      "authority_source": "zhi_family.destination_grants",
+      "allow_rule": "grant_status=ACTIVE AND enabled=true",
+      "permitted_capabilities": [
+        "DISCOVER",
+        "READ",
+        "OBSERVE",
+        "ENTER"
+      ],
+      "denied_capabilities": [
+        "INTERACT",
+        "MODIFY",
+        "DELETE",
+        "PRIVATE_PEER_DATA_READ"
+      ],
+      "missing_grant": "DENY",
+      "grant_scope": "PUBLIC_DESTINATION_ONLY"
+    },
+    "mia_forest_local_runtime": {
+      "provenance": "HEADLESS_SEMANTIC_STATE",
+      "local_semantic_actions_only": true,
+      "cross_scene_travel_requires_calibrated_transform_and_verified_scene_switcher": true,
+      "physical_3d_movement": false,
+      "live_camera_and_audio": false
+    },
+    "privacy_and_audit": {
+      "subject_private_memory_owner_only": true,
+      "scene_visibility_does_not_grant_peer_private_data_access": true,
+      "every_access_decision_records_basis": true,
+      "failed_or_unknown_decision": "FAIL_CLOSED"
+    },
+    "acceptance_tests": [
+      "ACTIVE_GRANT_ALLOW_ENTER",
+      "MISSING_GRANT_DENY",
+      "DISABLED_GRANT_DENY",
+      "MODIFY_DENY",
+      "UNCALIBRATED_CROSS_SCENE_TRAVEL_DENY",
+      "SCENE_LOCAL_POSITION_REMAINS_LOCAL",
+      "PRIVATE_PEER_DATA_DENY"
+    ]
   }
 }

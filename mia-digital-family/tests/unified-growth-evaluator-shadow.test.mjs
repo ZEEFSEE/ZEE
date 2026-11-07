@@ -143,10 +143,10 @@ test("preserves unresolved relationship conflict without identity correction",()
 });
 
 test("rejects altered historical totals and fabricated identity chains",()=>{
- const h=auditedReplayFixture();
+ const h=structuredClone(auditedReplayFixture());
  h.capability_evidence={...h.capability_evidence,validated:1,unvalidated:482};
  assert.equal(evaluateHistoricalGrowthReplay(h).code,"CAPABILITY_AUDIT_TOTALS_NOT_VERIFIED");
- const h2=auditedReplayFixture();
+ const h2=structuredClone(auditedReplayFixture());
  h2.timelines.LUNA.identity.status="VERSION_CHAIN_VERIFIED";
  assert.equal(evaluateHistoricalGrowthReplay(h2).code,"CHILD_IDENTITY_EVIDENCE_OVERCLAIM:LUNA");
 });

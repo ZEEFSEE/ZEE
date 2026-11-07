@@ -251,9 +251,35 @@ function buildEightDimensionState(input: {
   ownEvents: any[]; familyEvents: any[]; familyEdges: any[];
   emotion: Record<string, unknown>; reflection: string; nextFocus: string;
   learningCandidate: string; groundingGuardApplied: boolean;
+  spatialState: any; destinationGrants: any[];
 }) {
   const ownRefs = input.ownEvents.slice(0, 12).map((row:any) => String(row.event_id || "")).filter(Boolean);
   const familyRefs = input.familyEvents.slice(0, 12).map((row:any) => String(row.event_id || "")).filter(Boolean);
+  const runtimeState = input.spatialState || null;
+  const perceptionFrame = runtimeState?.perception_frame || {};
+  const rawPosition = runtimeState?.position && typeof runtimeState.position === "object" ? runtimeState.position : null;
+  const activeDestinations = (input.destinationGrants || [])
+    .filter((grant:any) => grant.enabled === true && grant.grant_status === "ACTIVE")
+    .map((grant:any) => clean(grant.destination_id, 100)).filter(Boolean).sort();
+  const spatialContext = runtimeState?.scene_id ? {
+    status: "RUNTIME_STATE_OBSERVED",
+    scene_id: clean(runtimeState.scene_id, 100),
+    position: rawPosition ? {
+      x: Number.isFinite(rawPosition.x) ? rawPosition.x : null,
+      y: Number.isFinite(rawPosition.y) ? rawPosition.y : null,
+      z: Number.isFinite(rawPosition.z) ? rawPosition.z : null
+    } : null,
+    coordinate_space: clean(perceptionFrame?.position?.coordinate_space, 40) || "scene-local",
+    coordinate_frame: clean(runtimeState.coordinate_frame, 100) || "unknown",
+    calibration_status: "SCENE_LOCAL_ONLY_WORLD_TRANSFORM_UNVERIFIED",
+    world_position: null,
+    visible_entities: Array.isArray(perceptionFrame?.visible_entities) ? perceptionFrame.visible_entities.slice(0, 12) : [],
+    perception_provenance: clean(runtimeState.perception_provenance, 80) || "UNKNOWN",
+    physical_world: false,
+    camera_sensor: false,
+    audio_sensor: false,
+    observed_at: runtimeState.updated_at || null
+  } : { status: "UNKNOWN", scene_id: null, world_position: null, reason: "No verified runtime position is available." };
   const emotion = {
     label: clean(input.emotion.label, 48) || "calm",
     valence: boundedNumber(input.emotion.valence, -1, 1, 0),
@@ -294,10 +320,12 @@ function buildEightDimensionState(input: {
         learning_candidate_present: Boolean(input.learningCandidate)
       },
       WORLD_RELATIONS: {
-        status: familyRefs.length || input.familyEdges.length ? "SUPPORTED" : "PARTIAL",
+        status: runtimeState?.scene_id || familyRefs.length || input.familyEdges.length ? "SUPPORTED" : "PARTIAL",
         evidence_refs: familyRefs,
         family_shared_event_count: input.familyEvents.length,
         visible_relationship_edge_count: input.familyEdges.length,
+        spatial_context: spatialContext,
+        accessible_public_destinations: activeDestinations,
         private_peer_memories_read: false
       },
       ACTION_EVOLUTION: {
@@ -312,7 +340,16 @@ function buildEightDimensionState(input: {
         grounding_guard_applied: input.groundingGuardApplied,
         private_mia_data_access: false,
         raw_private_memory_shared: false,
-        autonomous_cross_agent_actions: false
+        autonomous_cross_agent_actions: false,
+        spatial_access_control: {
+          source: "zhi_family.destination_grants",
+          decision_rule: "ACTIVE_AND_ENABLED_REQUIRED",
+          active_public_destinations: activeDestinations,
+          permitted_capabilities: ["DISCOVER", "READ", "OBSERVE", "ENTER"],
+          denied_capabilities: ["INTERACT", "MODIFY", "DELETE", "PRIVATE_PEER_DATA_READ"],
+          cross_scene_world_transform: "UNVERIFIED",
+          fail_closed: true
+        }
       }
     },
     governance: {
@@ -363,7 +400,7 @@ async function runOne(client: ReturnType<typeof db>, agentId: string) {
   if (firstBoot && !session) return { agent_id: agentId, status: "WAITING_FOR_MIA_SESSION" };
   if (pendingResponse && !session) return { agent_id: agentId, status: "MATERNAL_SESSION_EXPIRED" };
 
-  const [memoryResult, learningResult, familyMemoryResult, personalMemoryResult, familyEdgesResult, agentResult, runtimeResult] = await Promise.all([
+  const [memoryResult, learningResult, familyMemoryResult, personalMemoryResult, familyEdgesResult, agentResult, runtimeResult, grantsResult] = await Promise.all([
     f.from("child_memory_entries").select("memory_type,content,importance,created_at")
       .eq("agent_id", agentId).order("created_at", { ascending: false }).limit(8),
     f.from("child_learning_events").select("event_type,evidence,outcome,created_at")
@@ -372,9 +409,10 @@ async function runOne(client: ReturnType<typeof db>, agentId: string) {
     loadAllMemoryEvents(f, "CHILD", agentId, "PRIVATE"),
     f.from("memory_edges_v2").select("from_scope,from_id,relation_type,to_scope,to_id,confidence,metadata").eq("visibility", "FAMILY"),
     f.from("child_agents").select("display_name").eq("agent_id", agentId).single(),
-    f.from("child_runtime_state").select("runtime_instance_id").eq("agent_id", agentId).single()
+    f.from("child_runtime_state").select("runtime_instance_id,scene_id,position,coordinate_frame,movement_revision,perception_frame,perception_provenance,updated_at").eq("agent_id", agentId).single(),
+    f.from("destination_grants").select("destination_id,grant_status,enabled").eq("agent_id", agentId)
   ]);
-  if (memoryResult.error || learningResult.error || familyMemoryResult.error || personalMemoryResult.error || familyEdgesResult.error || agentResult.error || runtimeResult.error) {
+  if (memoryResult.error || learningResult.error || familyMemoryResult.error || personalMemoryResult.error || familyEdgesResult.error || agentResult.error || runtimeResult.error || grantsResult.error) {
     throw new Error("CHILD_CONTEXT_READ_FAILED");
   }
 
@@ -429,7 +467,9 @@ async function runOne(client: ReturnType<typeof db>, agentId: string) {
       familyEvents: familyMemoryResult.data || [],
       familyEdges: (familyEdgesResult.data || []).filter((edge:any)=>edge.from_id===agentId || edge.to_id===agentId),
       emotion, reflection, nextFocus, learningCandidate,
-      groundingGuardApplied: Boolean(result.grounding_guard_applied)
+      groundingGuardApplied: Boolean(result.grounding_guard_applied),
+      spatialState: runtimeResult.data || null,
+      destinationGrants: grantsResult.data || []
     });
     const message = clean(result.message_to_mia, 280);
     const messageKind = ["question","status","care_signal","environment_signal"].includes(String(result.message_kind))

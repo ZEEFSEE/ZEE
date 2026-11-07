@@ -53,7 +53,7 @@ export function buildShadowCognitionSnapshot(input) {
         values[key] = plural ? refs(context[key]) : scalarRef(context[key]);
       }
     }
-    const populated = Object.entries(values).some(([k,v]) => k === "memoryScope" ? true : Array.isArray(v) ? v.length > 0 : v !== null);
+    const populated = Object.entries(values).some(([k,v]) => k === "memoryScope" ? false : Array.isArray(v) ? v.length > 0 : v !== null);
     dimensions[dimensionId] = {
       status: populated ? "PRESENT" : "UNKNOWN",
       evidence_status: evidenceStatus,

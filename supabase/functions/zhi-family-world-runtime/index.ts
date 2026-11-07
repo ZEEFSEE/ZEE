@@ -84,6 +84,9 @@ async function activateGrants(c:any, selected=CHILDREN){
    grant_status:"ACTIVE",enabled:true,
    validation_evidence:{runtime:"zhi-family-server-virtual-world-v1",validated_at:new Date().toISOString(),
     validation:"registered_scene_and_bidirectional_portal_route",route:p.map(x=>x.id),
+    grant_basis:"owner_authorized_public_scene_access",
+    permitted_capabilities:["DISCOVER","READ","OBSERVE","ENTER"],
+    denied_capabilities:["INTERACT","MODIFY","DELETE","PRIVATE_PEER_DATA_READ"],
     perception_provenance:"AUTHORED_SCENE_DATA",physical_world:false,browser_renderer_required_for_visual_display:false}
   }).eq("agent_id",child.id).eq("destination_id",id);
   if(error)throw new Error("DESTINATION_GRANT_ACTIVATION_FAILED");
@@ -112,13 +115,18 @@ async function exploreOne(c:any,child:any){
  if(selected.action==="return_home")target=scene("mia-forest-corner");
  else if(selected.action==="stay")target=currentScene;
  if(!target||(target.id!=="mia-forest-corner"&&!DESTINATIONS.includes(target.id)))throw new Error("MODEL_SELECTED_UNREGISTERED_DESTINATION");
- const childGrant=target.id==="mia-forest-corner"?true:(grants.data||[]).some((g:any)=>g.destination_id===target.id&&g.enabled&&g.grant_status==="ACTIVE");
+ const grantRecord=target.id==="mia-forest-corner"?null:(grants.data||[]).find((g:any)=>g.destination_id===target.id);
+ const childGrant=target.id==="mia-forest-corner"||Boolean(grantRecord?.enabled&&grantRecord.grant_status==="ACTIVE");
  if(!childGrant)throw new Error("DESTINATION_ACCESS_NOT_ACTIVE");
+ const accessDecision=target.id==="mia-forest-corner"
+  ?{decision:"ALLOW",scope:"OWN_HOME_SCENE",permission_basis:"HOME_SCENE",permitted_capabilities:["DISCOVER","READ","OBSERVE","ENTER"],denied_capabilities:["MODIFY","DELETE","PRIVATE_PEER_DATA_READ"]}
+  :{decision:"ALLOW",scope:"PUBLIC_DESTINATION",permission_basis:"zhi_family.destination_grants",grant_status:grantRecord?.grant_status,enabled:grantRecord?.enabled,permitted_capabilities:["DISCOVER","READ","OBSERVE","ENTER"],denied_capabilities:["INTERACT","MODIFY","DELETE","PRIVATE_PEER_DATA_READ"],policy_precedence:"SUBJECT_SPECIFIC_ACTIVE_GRANT_REQUIRED"};
  const anchor=target.anchors.find((a:any)=>a.id===String(selected.anchor_id||""))||target.anchors[0];
  const hops=route(currentId,target.id);if(!hops)throw new Error("NO_BIDIRECTIONAL_SCENE_ROUTE");
  const position=anchor.approach;
  const perception=perceive(target,position);
  const frame={...perception,agent_id:child.id,route_hops:hops,anchor_id:anchor.id,anchor_name:anchor.name,
+  access_decision:accessDecision,
   movement_contract:"scene_portal_handoff_then_authored_anchor_arrival",route_provenance:"authored_virtual_scene_manifest",
   model_reflection:String(selected.reflection||"").slice(0,800)};
  const timestamp=new Date().toISOString(),revision=Number(state.data.movement_revision||0)+1;
@@ -133,15 +141,15 @@ async function exploreOne(c:any,child:any){
   agent_id:child.id,memory_type:"public_world_visit",content:reflection,importance:0.55,
   occurred_at:timestamp,metadata:{scene_id:target.id,scene_name:target.name,anchor_id:anchor.id,
    anchor_name:anchor.name,movement_revision:revision,perception_provenance:"AUTHORED_SCENE_DATA",
-   route_hops:hops,physical_world:false,private_mia_data_access:false}
+   route_hops:hops,access_decision:accessDecision,physical_world:false,private_mia_data_access:false}
  });
  if(memoryError)throw new Error("CHILD_WORLD_MEMORY_WRITE_FAILED");
  await audit(c,child.id,"FAMILY_PUBLIC_WORLD_VISIT","OK",{scene_id:target.id,destination_id:target.id,
   anchor_id:anchor.id,anchor_name:anchor.name,movement_revision:revision,route_hops:hops.map((h:any)=>h.id),
-  perception_provenance:"AUTHORED_SCENE_DATA",physical_world:false});
+  perception_provenance:"AUTHORED_SCENE_DATA",access_decision:accessDecision,physical_world:false});
  return {agent_id:child.id,status:"VISIT_RECORDED",scene_id:target.id,scene_name:target.name,
   anchor_id:anchor.id,anchor_name:anchor.name,movement_revision:revision,route_hops:hops.length,
-  perception_entities:perception.visible_entities.length,perception_provenance:"AUTHORED_SCENE_DATA"};
+  access_decision:accessDecision,perception_entities:perception.visible_entities.length,perception_provenance:"AUTHORED_SCENE_DATA"};
 }
 async function handle(req:Request){
  const origin=req.headers.get("origin")||"";

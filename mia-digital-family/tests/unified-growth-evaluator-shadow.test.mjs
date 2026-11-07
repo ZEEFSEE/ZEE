@@ -25,7 +25,7 @@ test("evaluates six independent subjects into separate growth tracks",()=>{
 });
 
 test("only accepted same-subject capability links count as stable growth",()=>{
- const good={accepted:true,state:"SAME_SUBJECT_CAPABILITY_LINKED",subject_id:"NOAH",capability_candidate_id:"cap-1",source_event_id:"event-1",private_memory_ref:"mem-ref",cross_subject_transfer:false,memory_content_transferred:false};
+ const good={accepted:true,state:"SAME_SUBJECT_CAPABILITY_LINKED",subject_id:"NOAH",owner_id:"ZHI-G1-S02-NOAH",source_subject_id:"NOAH",capability_candidate_id:"cap-1",source_event_id:"event-1",private_memory_ref:"mem-ref",cross_subject_transfer:false,memory_content_transferred:false};
  const bad={...good,subject_id:"LUNA"};
  const r=evaluateUnifiedGrowth(base({capability_links:[good,bad]}));
  assert.equal(r.totals.validated_capability_links,1);

@@ -15,6 +15,9 @@ on:
       - "mia-digital-family/runtime/capability-validation-state-machine.mjs"
       - "mia-digital-family/tests/capability-validation-state-machine.test.mjs"
       - ".github/workflows/capability-validation-state-machine.yml"
+      - "mia-digital-family/runtime/identity-evolution-shadow.mjs"
+      - "mia-digital-family/tests/identity-evolution-shadow.test.mjs"
+      - ".github/workflows/identity-evolution-shadow.yml"
   push:
     branches: ["main"]
     paths:
@@ -23,6 +26,8 @@ on:
       - ".github/workflows/seven-brain-shadow-adapter.yml"
       - "mia-digital-family/runtime/capability-validation-state-machine.mjs"
       - "mia-digital-family/tests/capability-validation-state-machine.test.mjs"
+      - "mia-digital-family/runtime/identity-evolution-shadow.mjs"
+      - "mia-digital-family/tests/identity-evolution-shadow.test.mjs"
 
 permissions:
   contents: read
@@ -43,3 +48,5 @@ jobs:
         run: node --test mia-digital-family/tests/seven-brain-deliberation-simulator.test.mjs
       - name: Verify isolated capability validation state machine
         run: node --test mia-digital-family/tests/capability-validation-state-machine.test.mjs
+      - name: Verify six-subject identity continuity and cross-time replay
+        run: node --test mia-digital-family/tests/identity-evolution-shadow.test.mjs

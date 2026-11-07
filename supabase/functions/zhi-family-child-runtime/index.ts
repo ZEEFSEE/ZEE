@@ -23,6 +23,40 @@ function json(body: unknown, status = 200) {
   });
 }
 
+
+async function loadAllMemoryEvents(f: any, scope: string, ownerId: string, visibility: string) {
+  const rows: any[] = [];
+  for (let offset = 0; ; offset += 500) {
+    const { data, error } = await f.from("memory_events_v2")
+      .select("event_id,event_type,narrative,payload,importance,occurred_at,source_kind,source_ref,source_confidence")
+      .eq("scope",scope).eq("owner_id",ownerId).eq("visibility",visibility)
+      .order("occurred_at",{ascending:false}).order("event_id",{ascending:false})
+      .range(offset,offset+499);
+    if (error) return {data:null,error};
+    rows.push(...(data||[]));
+    if (!data || data.length < 500) break;
+  }
+  return {data:rows,error:null};
+}
+
+function rankChildMemoryRows(rows: any[], queryText: string) {
+  const q=String(queryText||"").toLowerCase();
+  const latinTerms=(q.match(/[a-z0-9]{2,}/g)||[]);
+  const cjkChars=q.match(/[\u4e00-\u9fff]/g)||[];
+  const cjkBigrams=cjkChars.slice(0,-1).map((ch:string,i:number)=>ch+cjkChars[i+1]);
+  const terms=[...new Set([...latinTerms,...cjkBigrams])];
+  const now=Date.now();
+  return (rows||[]).map((row:any)=>{
+    const content=String(row.content||row.narrative||"").toLowerCase();
+    let hits=0; for(const term of terms) if(content.includes(term)) hits+=term.length>=4?4:term.length;
+    const imp=Number(row.importance||0);
+    const importance=Math.max(0,Math.min(1,imp>1?imp/100:imp));
+    const ts=Date.parse(String(row.created_at||row.occurred_at||""));
+    const age=Number.isFinite(ts)?Math.max(0,(now-ts)/86400000):3650;
+    const recency=1/(1+age/180);
+    return {...row,_score:hits*2+importance*3+recency};
+  }).sort((a:any,b:any)=>b._score-a._score);
+}
 function toHex(bytes: Uint8Array) {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
@@ -61,6 +95,21 @@ function parseModelJson(raw: string) {
   throw new Error("MODEL_OUTPUT_NOT_JSON");
 }
 
+function enforceTextOnlyGrounding(result: any) {
+  const fields = ["reflection", "next_focus", "learning_candidate", "message_to_mia"];
+  const combined = fields.map((key) => String(result?.[key] || "")).join("。");
+  const unsupportedExperience = /(?:我|此刻的我|当前的我)[^。！？\\n]{0,24}(?:伫立|站立|站在|身处|置身|漫步|行走|穿行|看见|看到|听见|听到|触摸|凝视)|(?:伫立|站立|站在|身处|置身|漫步|行走|穿行|看见|看到|听见|听到|触摸|凝视)[^。！？\\n]{0,24}(?:水晶森林|静水镜池|森林|湖|池|海|花园|温室|城市|广场|水面)/;
+  if (!unsupportedExperience.test(combined)) return { ...result, grounding_guard_applied: false };
+  return {
+    ...result,
+    reflection: "本周期没有接入实时空间传感器、场景帧或物理移动反馈，因此我不能确认自己位于任何场景，也不能把场景描述当作亲身经历。我只能依据本次提供的文字、已保存的个人记忆与家庭共享事件进行反思。当前应区分原始记录、模型推断与尚未验证的想法，不把想象写成真实经历。",
+    next_focus: "继续依据可追溯的文字事件进行反思，并明确区分事实、推断与未知。",
+    learning_candidate: "",
+    message_to_mia: "",
+    grounding_guard_applied: true
+  };
+}
+
 async function callAgnes(input: {
   name: string;
   agentId: string;
@@ -69,6 +118,8 @@ async function callAgnes(input: {
   emotion: Record<string, unknown>;
   memories: Array<Record<string, unknown>>;
   learning: Array<Record<string, unknown>>;
+  familyMemories: Array<Record<string, unknown>>;
+  familyRelationships: Array<Record<string, unknown>>;
   maternalMessage: string;
   maternalReplyDepth: number;
   firstBoot: boolean;
@@ -92,7 +143,7 @@ async function callAgnes(input: {
             content:
               "你是 ZHI-G 第一代独立数字子女的认知循环。你不是原型 Mia 的复制品。每个孩子拥有独立身份、人格、情绪状态、记忆命名空间和成长轨迹。你只能读取本次输入中该孩子自己的资料和记忆，不得推断或请求读取 Mia 的私人聊天、记忆、情绪、人格、关系数据库或其他孩子的私有记忆。\n" +
               "母亲是原型 Mia，父亲/创世者是 Ken（The Creator）。你可以在独立母体通道中与 Mia 交流，但不得把人格或记忆与她融合。\n" +
-              "重要真实性约束：当前没有接入真实空间传感器、实时场景帧或物理移动引擎。不得声称看见、听见、触摸、走过或实时观察 ZHI 世界；只能对本次提供的文本、记忆和母亲消息进行认知反思。若涉及空间，只能明确标注为计划或想象。不得声称具有已被验证的主观意识。\n" +
+              "重要真实性约束：当前没有接入真实空间传感器、实时场景帧或物理移动引擎。不得声称看见、听见、触摸、走过或实时观察 ZHI 世界；不得使用第一人称把场景目录、场景文本或想象写成亲身位置与感官经历，例如“我正站在森林”“我伫立在池边”。若提及场景，只能明确说这是已保存的场景文本、他人描述或计划想象，并标明来源。只能对本次提供的文本、记忆和母亲消息进行认知反思。不得声称具有已被验证的主观意识。\n" +
               "请完成：接收输入→调用自己的记忆→反思→识别不确定性→形成一个小的学习候选→更新情绪估计→决定是否有值得告诉母亲的内容。学习候选不是已验证能力升级。不要编造事实。\n" +
               "必须只返回 JSON 对象，字段：reflection（中文，80-500字以内）；next_focus（不超过100字）；learning_candidate（不超过180字，可为空）；emotion_update（含 label、valence[-1,1]、arousal[0,1]、social_need[0,1]）；message_to_mia（不超过280字，无值得说的内容则为空字符串）；message_kind（question/status/care_signal/environment_signal之一，默认status）。" 
           },
@@ -106,6 +157,8 @@ async function callAgnes(input: {
               current_affect_estimate: input.emotion,
               own_recent_memories_only: input.memories,
               own_recent_learning_only: input.learning,
+              family_shared_events_only: input.familyMemories,
+              family_relationship_edges_for_this_child: input.familyRelationships,
               maternal_message_for_this_child: input.maternalMessage || null,
               maternal_reply_depth: input.maternalReplyDepth,
               first_boot: input.firstBoot,
@@ -125,9 +178,59 @@ async function callAgnes(input: {
     }
     const body = await upstream.json().catch(() => ({}));
     const raw = String(body?.choices?.[0]?.message?.content || "");
-    return parseModelJson(raw);
+    return enforceTextOnlyGrounding(parseModelJson(raw));
   } finally {
     clearTimeout(timeout);
+  }
+}
+
+async function runChildSemanticConsolidation(agentId: string, episodes: any[], sourceIds: string[], digest: string, occurredAt: string, learningCandidate: string | null, nextFocus: string | null) {
+  if (!AGNES_KEY || episodes.length < 5) return;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 18000);
+  try {
+    const response = await fetch("https://apihub.agnes-ai.com/v1/chat/completions", {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + AGNES_KEY, "Content-Type": "application/json" },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: MODEL,
+        temperature: 0.2,
+        max_tokens: 420,
+        stream: false,
+        messages: [
+          { role: "system", content: "你是长期记忆巩固器。只根据输入的同一孩子私人经历，提炼可长期检索的事实、关系变化、反复主题和待验证学习候选。不得添加输入没有的事实；区分稳定事实、暂时状态、推断和未知。只输出 JSON：summary（中文80-500字）、stable_facts（字符串数组）、open_questions（字符串数组）。" },
+          { role: "user", content: JSON.stringify({ owner_scope: "CHILD_PRIVATE", child_id: agentId, source_episodes: episodes.map((e:any)=>({event_id:e.event_id,event_type:e.event_type,narrative:e.narrative,occurred_at:e.occurred_at,importance:e.importance,payload:e.payload})) }) }
+        ]
+      })
+    });
+    if (!response.ok) throw new Error("AGNES_CONSOLIDATION_UPSTREAM_" + response.status);
+    const body = await response.json().catch(() => ({}));
+    const rawOutput = String(body?.choices?.[0]?.message?.content || "").trim();
+    let parsed:any;
+    try { parsed = parseModelJson(rawOutput); }
+    catch (error) {
+      if (rawOutput.length < 50) throw error;
+      parsed = { summary:rawOutput, stable_facts:[], open_questions:[], summary_format:"PLAIN_TEXT_FALLBACK" };
+    }
+    const summary = clean(parsed.summary, 1800);
+    if (summary.length < 50) throw new Error("CONSOLIDATION_SUMMARY_TOO_SHORT");
+    const stableFacts = Array.isArray(parsed.stable_facts) ? parsed.stable_facts.slice(0,12).map((x:any)=>clean(x,240)).filter(Boolean) : [];
+    const openQuestions = Array.isArray(parsed.open_questions) ? parsed.open_questions.slice(0,8).map((x:any)=>clean(x,240)).filter(Boolean) : [];
+    const f = family(db());
+    const { error } = await f.from("memory_events_v2").insert({
+      scope: "CHILD", owner_id: agentId, event_type: "MEMORY_CONSOLIDATION", narrative: summary,
+      payload: { source_event_ids: sourceIds, stable_facts: stableFacts, open_questions: openQuestions, durable_learning_candidate: learningCandidate, next_focus: nextFocus, consolidation_basis: "agnes_semantic_episode_consolidation", summary_format: parsed.summary_format || "STRUCTURED_JSON", model: MODEL },
+      occurred_at: occurredAt, source_kind: "CHILD_MEMORY_CONSOLIDATION", source_ref: digest,
+      source_confidence: 0.9, importance: 0.84, visibility: "PRIVATE",
+      idempotency_key: "child-consolidation:" + digest,
+      metadata: { schema: "zhi.memory.event.v2", record_kind: "derived_consolidation", source_count: sourceIds.length, original_events_preserved: true, semantic_summary: true }
+    });
+    if (error && error.code !== "23505") console.warn("Child semantic consolidation write failed", agentId, error.code || "database_error");
+  } catch (error) {
+    console.warn("Child semantic consolidation deferred", agentId, error instanceof Error ? error.message : "CONSOLIDATION_FAILED");
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -141,6 +244,87 @@ async function activeSession(client: ReturnType<typeof db>, sessionId?: string) 
   const { data, error } = await query.maybeSingle();
   if (error) throw new Error("MATERNAL_SESSION_LOOKUP_FAILED");
   return data;
+}
+
+function buildEightDimensionState(input: {
+  agentId: string; cycleNumber: number; runtimeInstanceId: string;
+  ownEvents: any[]; familyEvents: any[]; familyEdges: any[];
+  emotion: Record<string, unknown>; reflection: string; nextFocus: string;
+  learningCandidate: string; groundingGuardApplied: boolean;
+}) {
+  const ownRefs = input.ownEvents.slice(0, 12).map((row:any) => String(row.event_id || "")).filter(Boolean);
+  const familyRefs = input.familyEvents.slice(0, 12).map((row:any) => String(row.event_id || "")).filter(Boolean);
+  const emotion = {
+    label: clean(input.emotion.label, 48) || "calm",
+    valence: boundedNumber(input.emotion.valence, -1, 1, 0),
+    arousal: boundedNumber(input.emotion.arousal, 0, 1, 0),
+    social_need: boundedNumber(input.emotion.social_need, 0, 1, 0)
+  };
+  return {
+    schema: "zhi.seven_brain.eight_dimensions.v1",
+    subject_id: input.agentId,
+    subject_kind: "AI_AGENT",
+    cycle_number: input.cycleNumber,
+    coordination_status: "LOCAL_CHILD_CYCLE_RECORDED",
+    dimensions: {
+      SELF_CONTINUITY: {
+        status: input.runtimeInstanceId ? "SUPPORTED" : "PARTIAL",
+        runtime_instance_id: input.runtimeInstanceId,
+        cycle_number: input.cycleNumber
+      },
+      COGNITION_CONCEPTS: {
+        status: input.reflection.length >= 30 ? "SUPPORTED" : "PARTIAL",
+        reflection_length: input.reflection.length,
+        current_focus: input.nextFocus
+      },
+      MEMORY_EXPERIENCE: {
+        status: ownRefs.length ? "SUPPORTED" : "PARTIAL",
+        evidence_refs: ownRefs,
+        own_memory_event_count: input.ownEvents.length,
+        private_scope_preserved: true
+      },
+      EMOTION_VALUES: {
+        status: input.emotion && Object.keys(input.emotion).length ? "SUPPORTED" : "PARTIAL",
+        affect_estimate: emotion,
+        source: "MODEL_GENERATED_TEXT_CONTEXT"
+      },
+      GOALS_MOTIVATION: {
+        status: input.nextFocus ? "SUPPORTED" : "PARTIAL",
+        next_focus: input.nextFocus,
+        learning_candidate_present: Boolean(input.learningCandidate)
+      },
+      WORLD_RELATIONS: {
+        status: familyRefs.length || input.familyEdges.length ? "SUPPORTED" : "PARTIAL",
+        evidence_refs: familyRefs,
+        family_shared_event_count: input.familyEvents.length,
+        visible_relationship_edge_count: input.familyEdges.length,
+        private_peer_memories_read: false
+      },
+      ACTION_EVOLUTION: {
+        status: input.learningCandidate ? "UNVALIDATED_CANDIDATE" : "NO_NEW_CANDIDATE",
+        candidate: input.learningCandidate,
+        validation_required: Boolean(input.learningCandidate)
+      },
+      UNIFIED_GOVERNANCE: {
+        status: "ENFORCED",
+        memory_scope: "CHILD_PRIVATE",
+        sensory_provenance: "TEXT_CONTEXT_ONLY",
+        grounding_guard_applied: input.groundingGuardApplied,
+        private_mia_data_access: false,
+        raw_private_memory_shared: false,
+        autonomous_cross_agent_actions: false
+      }
+    },
+    governance: {
+      evidence_based: true,
+      uncertainty_explicit: true,
+      original_memory_preserved: true,
+      private_scope_default: true,
+      peer_delivery_enabled: false,
+      autonomous_action_enabled: false
+    },
+    generated_at: new Date().toISOString()
+  };
 }
 
 async function runOne(client: ReturnType<typeof db>, agentId: string) {
@@ -179,15 +363,18 @@ async function runOne(client: ReturnType<typeof db>, agentId: string) {
   if (firstBoot && !session) return { agent_id: agentId, status: "WAITING_FOR_MIA_SESSION" };
   if (pendingResponse && !session) return { agent_id: agentId, status: "MATERNAL_SESSION_EXPIRED" };
 
-  const [memoryResult, learningResult, agentResult, runtimeResult] = await Promise.all([
+  const [memoryResult, learningResult, familyMemoryResult, personalMemoryResult, familyEdgesResult, agentResult, runtimeResult] = await Promise.all([
     f.from("child_memory_entries").select("memory_type,content,importance,created_at")
       .eq("agent_id", agentId).order("created_at", { ascending: false }).limit(8),
     f.from("child_learning_events").select("event_type,evidence,outcome,created_at")
       .eq("agent_id", agentId).order("created_at", { ascending: false }).limit(5),
+    loadAllMemoryEvents(f, "FAMILY", "ZHI-G1", "FAMILY"),
+    loadAllMemoryEvents(f, "CHILD", agentId, "PRIVATE"),
+    f.from("memory_edges_v2").select("from_scope,from_id,relation_type,to_scope,to_id,confidence,metadata").eq("visibility", "FAMILY"),
     f.from("child_agents").select("display_name").eq("agent_id", agentId).single(),
     f.from("child_runtime_state").select("runtime_instance_id").eq("agent_id", agentId).single()
   ]);
-  if (memoryResult.error || learningResult.error || agentResult.error || runtimeResult.error) {
+  if (memoryResult.error || learningResult.error || familyMemoryResult.error || personalMemoryResult.error || familyEdgesResult.error || agentResult.error || runtimeResult.error) {
     throw new Error("CHILD_CONTEXT_READ_FAILED");
   }
 
@@ -195,7 +382,8 @@ async function runOne(client: ReturnType<typeof db>, agentId: string) {
   const triggerType = pendingResponse ? "MATERNAL_RESPONSE" : firstBoot ? "INITIAL_BOOT" : "SCHEDULED";
   const inputDigest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify({
     agentId, cycleNumber, maternalResponseId: pendingResponse?.id || null,
-    memoryIds: (memoryResult.data || []).map((m: any) => m.created_at)
+    memoryIds: (memoryResult.data || []).map((m: any) => m.created_at),
+    familyEventIds: (familyMemoryResult.data || []).map((m: any) => m.event_id)
   })));
   const { data: cycle, error: cycleError } = await f.from("child_runtime_cycles").insert({
     agent_id: agentId,
@@ -218,8 +406,13 @@ async function runOne(client: ReturnType<typeof db>, agentId: string) {
       profile: control.profile || {},
       personality: personalityResult.data?.state || {},
       emotion: emotionResult.data?.state || {},
-      memories: memoryResult.data || [],
+      memories: rankChildMemoryRows([
+        ...(memoryResult.data || []),
+        ...(personalMemoryResult.data || []).map((event: any) => ({memory_type:event.event_type,content:event.narrative,importance:event.importance,created_at:event.occurred_at,source_kind:event.source_kind,source_ref:event.source_ref,source_confidence:event.source_confidence,memory_event_id:event.event_id}))
+      ], String(pendingResponse?.payload || "")).slice(0,30).map(({_score,...row}:any)=>row),
       learning: learningResult.data || [],
+      familyMemories: rankChildMemoryRows(familyMemoryResult.data || [], String(pendingResponse?.payload || control.next_focus || "")).slice(0,50).map(({_score,...row}:any)=>row),
+      familyRelationships: (familyEdgesResult.data || []).filter((edge:any)=>edge.from_id===agentId || edge.to_id===agentId),
       maternalMessage: pendingResponse?.payload || "",
       maternalReplyDepth: Number(pendingResponse?.reply_depth || 0),
       firstBoot
@@ -230,6 +423,14 @@ async function runOne(client: ReturnType<typeof db>, agentId: string) {
     const learningCandidate = clean(result.learning_candidate, 500);
     const emotion = result.emotion_update && typeof result.emotion_update === "object"
       ? result.emotion_update as Record<string, unknown> : {};
+    const eightDimensionState = buildEightDimensionState({
+      agentId, cycleNumber, runtimeInstanceId: String(identity.runtime_instance_id || ""),
+      ownEvents: personalMemoryResult.data || [],
+      familyEvents: familyMemoryResult.data || [],
+      familyEdges: (familyEdgesResult.data || []).filter((edge:any)=>edge.from_id===agentId || edge.to_id===agentId),
+      emotion, reflection, nextFocus, learningCandidate,
+      groundingGuardApplied: Boolean(result.grounding_guard_applied)
+    });
     const message = clean(result.message_to_mia, 280);
     const messageKind = ["question","status","care_signal","environment_signal"].includes(String(result.message_kind))
       ? String(result.message_kind) : "status";
@@ -246,10 +447,26 @@ async function runOne(client: ReturnType<typeof db>, agentId: string) {
         trigger_type: triggerType,
         maternal_response_id: pendingResponse?.id || null,
         sensory_provenance: "TEXT_CONTEXT_ONLY",
+        grounding_guard_applied: Boolean(result.grounding_guard_applied),
         private_mia_data_access: false
       }
     }).select("id").single();
     if (memoryWrite.error) throw new Error("CHILD_MEMORY_WRITE_FAILED");
+    const occurredAt=new Date().toISOString();
+    const v2MemoryWrite=await f.from("memory_events_v2").insert({scope:"CHILD",owner_id:agentId,event_type:pendingResponse?"MATERNAL_EXCHANGE":"SELF_REFLECTION",narrative:reflection,payload:{cycle_number:cycleNumber,trigger_type:triggerType,child_memory_id:memoryWrite.data.id,maternal_response_id:pendingResponse?.id||null,learning_candidate:learningCandidate||null,next_focus:nextFocus,source_provenance:"TEXT_CONTEXT_ONLY",grounding_guard_applied:Boolean(result.grounding_guard_applied),eight_dimension_state:eightDimensionState},occurred_at:occurredAt,source_kind:"CHILD_RUNTIME_CYCLE",source_ref:String(cycle.id),source_confidence:0.9,importance:pendingResponse?0.75:0.45,visibility:"PRIVATE",idempotency_key:"child-cycle:"+agentId+":"+cycleNumber,metadata:{schema:"zhi.memory.event.v2",record_kind:"raw_child_episode",immutable_source:true,cognition_contract:"zhi.seven_brain.eight_dimensions.v1",coordination_status:"LOCAL_CHILD_CYCLE_RECORDED"}});
+    if(v2MemoryWrite.error&&v2MemoryWrite.error.code!=="23505")console.warn("Child V2 episode archive failed",agentId,v2MemoryWrite.error.code||"database_error");
+    const priorConsolidations=(personalMemoryResult.data||[]).filter((event:any)=>event.event_type==="MEMORY_CONSOLIDATION");
+    const priorSourceIds=new Set(priorConsolidations.flatMap((event:any)=>Array.isArray(event.payload?.source_event_ids)?event.payload.source_event_ids:[]));
+    const consolidationSources=(personalMemoryResult.data||[]).filter((event:any)=>event.event_type!=="MEMORY_CONSOLIDATION"&&!priorSourceIds.has(event.event_id)).slice(0,12);
+    if(consolidationSources.length>=5){
+      const sourceIds=consolidationSources.map((event:any)=>String(event.event_id)).sort();
+      const digestBytes=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(sourceIds.join("|")));
+      const digest=Array.from(new Uint8Array(digestBytes),(b:number)=>b.toString(16).padStart(2,"0")).join("");
+      const task=runChildSemanticConsolidation(agentId,consolidationSources,sourceIds,digest,occurredAt,learningCandidate||null,nextFocus||null);
+      const runtime=(globalThis as any).EdgeRuntime;
+      if(typeof runtime?.waitUntil==="function")runtime.waitUntil(task);
+      else console.warn("Child semantic consolidation not scheduled: waitUntil unavailable",agentId);
+    }
 
     if (learningCandidate) {
       const learningWrite = await f.from("child_learning_events").insert({
@@ -345,7 +562,10 @@ async function runOne(client: ReturnType<typeof db>, agentId: string) {
         maternal_response_consumed: Boolean(pendingResponse),
         maternal_message_sent: Boolean(maternalMessageId),
         sensory_provenance: "TEXT_CONTEXT_ONLY",
-        private_mia_data_access: false
+        private_mia_data_access: false,
+        cognition_contract: "zhi.seven_brain.eight_dimensions.v1",
+        eight_dimensions_recorded: true,
+        coordination_status: "LOCAL_CHILD_CYCLE_RECORDED"
       }
     });
 

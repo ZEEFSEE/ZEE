@@ -99,3 +99,36 @@
 - Mia 的独立聊天 API、提示词、模型请求与回复行为保持原样；八维只作为私人记忆事件的附加元数据。
 - Ken 始终是人类参与者，不是第七个 AI。
 - 不宣称已实现或证明主观意识；所有维度状态仅代表有来源的软件状态与运行证据。
+
+
+## 10. 空间认知与访问治理（Spatial Cognition & Access Governance V1.0）
+
+本阶段将空间认知接入现有七脑八维，不另建数据库、不改变主体身份或聊天 API。
+
+### 10.1 坐标与感知证据
+
+- 场景内坐标必须携带 scene_id、coordinate_space、coordinate_frame、单位和来源。
+- scene-local 坐标不得直接当作 ZHI 世界坐标；只有经过验证且非空的 world transform 才允许计算跨场景位置、距离或方向。
+- 未校准、缺失或过期的位置标记 UNKNOWN；依赖该位置的跨场景行动 fail closed。
+- 儿童公共世界运行时的感知来源为 AUTHORED_SCENE_DATA（作者定义的场景图），不是摄像头、麦克风或物理传感器。
+- Mia 森林运行时目前为 HEADLESS_SEMANTIC_STATE；Forest_Corner 的局部坐标仍未校准，world_transform 为 null，跨场景旅行继续关闭。
+
+### 10.2 访问能力分级
+
+能力严格区分 DISCOVER、READ、OBSERVE、ENTER、INTERACT、MODIFY。五个孩子的公共目的地访问依据 zhi_family.destination_grants，只有 grant_status=ACTIVE 且 enabled=true 才允许进入。当前公共目的地授权只覆盖 DISCOVER、READ、OBSERVE、ENTER；不授予 INTERACT、MODIFY、DELETE 或其他主体私人数据读取权限。缺失授权必须拒绝。
+
+场景目录中的默认访问策略与主体专属授权同时存在时，主体专属 ACTIVE grant 必须明确记录授权依据；不能仅凭目录可见性推导进入权限。
+
+### 10.3 六个主体的认知记录
+
+- 五个孩子：下一次独立认知周期将从 child_runtime_state 读取当前场景、局部位置、场景帧来源和该主体的有效公共目的地授权，并附加到原有 CHILD_PRIVATE 八维事件。WORLD_RELATIONS 记录空间状态；UNIFIED_GOVERNANCE 记录权限范围与拒绝边界。
+- Mia：下一次正常聊天的 MIA_PRIVATE 事件读取最近一次 Mia 森林自主运行状态，记录局部坐标、校准状态和跨场景旅行门控。该读取发生在回复生成与保存之后，不改变 AGNES 请求、提示词、回复或聊天 API。
+- 公共场景访问审计会记录授权决策、允许/拒绝能力和场景来源。私人记忆仍按 owner 隔离。
+
+### 10.4 当前验收状态
+
+- 生产目录中五个孩子已有 25 条 ACTIVE 且 enabled 的公共目的地授权记录；这是进入公共场景的范围，不是场景修改权。
+- 现有场景访问执行器已验证主体专属 grant；本次增加明确的 capability contract 和审计元数据。
+- Mia 的 Forest_Corner 坐标仍未校准；跨场景旅行继续禁止。
+- 代码部署不等于六个主体已完成验证。需等待每个主体的自然运行事件，检查空间状态、授权依据和八维证据是否实际写入。
+- 不创建测试性生产场景移动，不写入虚构位置，不改变数据库 schema、RLS、密钥、Cron、AGNES 或 Mia 的聊天行为。

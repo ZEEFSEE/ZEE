@@ -85,7 +85,13 @@ test("identity chain rejects cross-subject owner or parent contamination",()=>{
 });
 
 test("new capability can attach only to its own subject and never carries private memory text",()=>{
- const accepted={state:"ACCEPTED",code:"CAPABILITY_VALIDATED",subject_id:"NOAH",candidate_id:"cap-noah-1"};
+ const accepted=evaluateCapabilityCandidate({
+  candidate_id:"cap-noah-1",subject_id:"NOAH",capability_key:"temporal-recall",
+  validation_status:"UNVALIDATED_CANDIDATE",source_memory_id:"memory-proposal-noah",source_event_id:"proposal-event-noah"
+ },[
+  {validation_run_id:"noah-run-1",subject_id:"NOAH",capability_key:"temporal-recall",source_event_id:"external-event-1",evidence_kind:"EXTERNAL_INTERACTION",evidence_status:"OBSERVED",result:"SUCCESS",independent:true},
+  {validation_run_id:"noah-run-2",subject_id:"NOAH",capability_key:"temporal-recall",source_event_id:"external-event-2",evidence_kind:"USER_CONFIRMED_INPUT",evidence_status:"USER_CONFIRMED",result:"SUCCESS",independent:true}
+ ]);
  const experience={subject_id:"NOAH",owner_id:"ZHI-G1-S02-NOAH",scope:"PRIVATE",source_event_id:"event-noah-1",private_memory_ref:"memory-ref-noah-1"};
  const link=validateExperienceCapabilityLink(experience,accepted);
  assert.equal(link.accepted,true);

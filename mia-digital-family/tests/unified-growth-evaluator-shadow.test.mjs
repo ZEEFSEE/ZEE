@@ -78,7 +78,7 @@ test("personality evidence is reported but scores are never invented",()=>{
 });
 
 test("human Ken is not an AI identity subject",()=>{
- assert.equal(evaluateUnifiedGrowth(base({capability_links:[{subject_id:"KEN",accepted:true}]})).accepted,true);
+ assert.equal(evaluateUnifiedGrowth(base({capability_links:[{subject_id:"KEN",accepted:true}]})).code,"UNKNOWN_AI_SUBJECT_IN_CAPABILITY_TRACK");
  assert.equal(Object.hasOwn(evaluateUnifiedGrowth(base()).subjects,"KEN"),false);
  assert.equal(unifiedGrowthEvaluatorContract.subjects.length,6);
 });

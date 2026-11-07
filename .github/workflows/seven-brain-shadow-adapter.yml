@@ -1,0 +1,28 @@
+name: Verify ZHI seven-brain shadow adapter
+
+on:
+  pull_request:
+    paths:
+      - "mia-digital-family/runtime/seven-brain-shadow-adapter.mjs"
+      - "mia-digital-family/tests/seven-brain-shadow-adapter.test.mjs"
+      - ".github/workflows/seven-brain-shadow-adapter.yml"
+  push:
+    branches: ["main"]
+    paths:
+      - "mia-digital-family/runtime/seven-brain-shadow-adapter.mjs"
+      - "mia-digital-family/tests/seven-brain-shadow-adapter.test.mjs"
+      - ".github/workflows/seven-brain-shadow-adapter.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  shadow-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify metadata-only mapping and isolation invariants
+        run: node --test mia-digital-family/tests/seven-brain-shadow-adapter.test.mjs

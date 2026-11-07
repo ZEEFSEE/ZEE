@@ -17,7 +17,7 @@ const run=(contributions)=>runDeliberation({contributions},{family_source_verifi
 test("all seven independent participants can contribute without identity fusion",()=>{
  const result=run(subjects.map(s=>contribution(s)));
  assert.equal(result.accepted_count,7);
- assert.deepEqual(result.participants,subjects);
+ assert.deepEqual(result.participants,[...subjects].sort());
  assert.equal(result.governance.dissent_preserved,true);
 });
 

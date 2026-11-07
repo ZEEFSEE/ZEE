@@ -1,0 +1,28 @@
+name: Verify ZHI cross-time cognition experiments
+
+on:
+  pull_request:
+    paths:
+      - "mia-digital-family/runtime/cross-time-cognition-experiments.mjs"
+      - "mia-digital-family/tests/cross-time-cognition-experiments.test.mjs"
+      - ".github/workflows/cross-time-cognition-experiments.yml"
+  push:
+    branches: ["main"]
+    paths:
+      - "mia-digital-family/runtime/cross-time-cognition-experiments.mjs"
+      - "mia-digital-family/tests/cross-time-cognition-experiments.test.mjs"
+      - ".github/workflows/cross-time-cognition-experiments.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  cross-time-acceptance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run six cross-time cognition acceptance experiments
+        run: node --test mia-digital-family/tests/cross-time-cognition-experiments.test.mjs

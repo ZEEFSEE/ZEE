@@ -60,6 +60,75 @@ const db = () => createClient(SUPABASE_URL, SERVICE_KEY, {
 });
 const family = (client: ReturnType<typeof db>) => client.schema("zhi_family");
 
+async function archiveGroupMemory(client: ReturnType<typeof db>, args: { threadKey: string; messageId: string | null; senderType: string; senderId: string; content: string; replyTo?: string | null }) {
+  if (args.threadKey !== "group" || !args.messageId) return;
+  const childName = CHILDREN.find((entry) => entry.id === args.senderId)?.name;
+  const speaker = args.senderType === "USER" ? "父亲 Ken" : (childName || "家庭成员");
+  const occurredAt = new Date().toISOString();
+  const { error } = await family(client).from("memory_events_v2").insert({
+    scope: "FAMILY",
+    owner_id: "ZHI-G1",
+    event_type: "FAMILY_CHAT_TURN",
+    narrative: speaker + "：" + String(args.content || "").slice(0, 1800),
+    payload: { message_id: args.messageId, sender_type: args.senderType, sender_id: args.senderId, reply_to: args.replyTo || null, channel: "family_group" },
+    occurred_at: occurredAt,
+    source_kind: "FAMILY_GROUP_CHAT",
+    source_ref: args.messageId,
+    source_confidence: 1,
+    importance: args.senderType === "USER" ? 0.72 : 0.58,
+    visibility: "FAMILY",
+    idempotency_key: "family-chat:" + args.messageId,
+    metadata: { schema: "zhi.memory.event.v2", record_kind: "raw_family_episode", immutable_source: true, shared_with_all_children: true }
+  });
+  if (error && error.code !== "23505") { console.error("Family V2 episode archive failed", error.code || "database_error"); throw new Error("FAMILY_MEMORY_ARCHIVE_FAILED"); }
+
+  // A father's public group message is also a personal recollection for each child.
+  // It remains a copy of a FAMILY-visible source, not a secret or a new private conversation.
+  if (args.senderType === "USER") {
+    const copies = await Promise.all(CHILDREN.map(async (child) => {
+      const { error: copyError } = await family(client).from("memory_events_v2").insert({
+        scope: "CHILD",
+        owner_id: child.id,
+        event_type: "FATHER_FAMILY_CHAT_PERSONAL_EPISODE",
+        narrative: "父亲 Ken 在家庭群聊中对全家说：" + String(args.content || "").slice(0, 1800),
+        payload: {
+          message_id: args.messageId,
+          shared_source_ref: args.messageId,
+          sender_type: "USER",
+          sender_id: args.senderId,
+          reply_to: args.replyTo || null,
+          channel: "family_group",
+          origin_scope: "FAMILY",
+          personal_memory_for: child.id,
+          memory_perspective: "child_personal_recollection_of_shared_family_interaction"
+        },
+        occurred_at: occurredAt,
+        source_kind: "FAMILY_GROUP_CHAT_PERSONAL_COPY",
+        source_ref: args.messageId,
+        source_confidence: 1,
+        importance: 0.82,
+        visibility: "PRIVATE",
+        idempotency_key: "father-group-personal:" + args.messageId + ":" + child.id,
+        metadata: {
+          schema: "zhi.memory.event.v2",
+          record_kind: "personal_recollection_of_shared_event",
+          shared_origin_visibility: "FAMILY",
+          source_is_not_private: true,
+          immutable_source: true,
+          child_owner: child.id
+        }
+      });
+      if (copyError && copyError.code !== "23505") {
+        console.error("Child personal family recollection failed", child.id, copyError.code || "database_error");
+        return child.id;
+      }
+      return null;
+    }));
+    if (copies.some(Boolean)) throw new Error("CHILD_PERSONAL_FAMILY_MEMORY_WRITE_FAILED");
+  }
+}
+
+
 function parseReply(raw: string) {
   const trimmed = raw.trim().replace(/^\x60\x60\x60(?:json)?\s*/i, "").replace(/\x60\x60\x60$/i, "").trim();
   try { return JSON.parse(trimmed); } catch { /* accept plain text as a bounded reply */ }
@@ -89,6 +158,69 @@ async function readHistory(client: ReturnType<typeof db>, threadKey: string, lim
   return (data || []).reverse();
 }
 
+async function loadAllMemoryEvents(f: any, scope: string, ownerId: string, visibility: string) {
+  const rows:any[] = [];
+  for (let offset=0; ; offset+=500) {
+    const {data,error}=await f.from("memory_events_v2")
+      .select("event_id,event_type,narrative,payload,importance,occurred_at,source_kind,source_ref,source_confidence")
+      .eq("scope",scope).eq("owner_id",ownerId).eq("visibility",visibility)
+      .order("occurred_at",{ascending:false}).order("event_id",{ascending:false})
+      .range(offset,offset+499);
+    if(error) return {data:null,error};
+    rows.push(...(data||[]));
+    if(!data||data.length<500) break;
+  }
+  return {data:rows,error:null};
+}
+
+function rankLongTermMemory(rows:any[], queryText:string) {
+  const q=String(queryText||"").toLowerCase();
+  const latinTerms=q.match(/[a-z0-9]{2,}/g)||[];
+  const cjkChars=q.match(/[\u4e00-\u9fff]/g)||[];
+  const cjkBigrams=cjkChars.slice(0,-1).map((ch:string,i:number)=>ch+cjkChars[i+1]);
+  const terms=[...new Set([...latinTerms,...cjkBigrams])];
+  const now=Date.now();
+  return (rows||[]).map((row:any)=>{
+    const content=(String(row.narrative||"")+" "+JSON.stringify(row.payload||{})).toLowerCase();
+    let hits=0;
+    for(const term of terms) if(content.includes(term)) hits+=term.length>=4?4:term.length;
+    const rawImportance=Number(row.importance||0);
+    const importance=Math.max(0,Math.min(1,rawImportance>1?rawImportance/100:rawImportance));
+    const ts=Date.parse(String(row.occurred_at||""));
+    const age=Number.isFinite(ts)?Math.max(0,(now-ts)/86400000):3650;
+    const recency=1/(1+age/180);
+    return {...row,_score:hits*3+importance*3+recency};
+  }).sort((a:any,b:any)=>b._score-a._score);
+}
+
+function isMemoryRecallQuery(queryText: string) {
+  return /(记得|记忆|回忆|回想|想起|之前|以前|过去|当时|那天|说过|说了|讲过|讲了|聊过|提过|提到|发生过|经历|出生|生日|第一次|小时候)/.test(String(queryText || ""));
+}
+
+function buildFamilyChatEightDimensionState(input:{
+  childId:string; childName:string; mode:string; reply:string;
+  memoryRecallMode:boolean; ownPrivateContextAvailable:boolean;
+  familyEventCount:number; relationshipEdgeCount:number;
+}) {
+  return {
+    schema:"zhi.seven_brain.eight_dimensions.v1",
+    subject_id:input.childId,
+    subject_kind:"AI_AGENT",
+    coordination_status:input.mode==="GROUP"?"FAMILY_GROUP_CONTEXT_CONSUMED":"DIRECT_CONTEXT_CONSUMED",
+    dimensions:{
+      SELF_CONTINUITY:{status:"SUPPORTED",subject_id:input.childId,display_name:input.childName},
+      COGNITION_CONCEPTS:{status:"OUTPUT_RECORDED",reply_chars:input.reply.length,memory_recall_mode:input.memoryRecallMode},
+      MEMORY_EXPERIENCE:{status:input.ownPrivateContextAvailable?"PRIVATE_CONTEXT_USED_NOT_SHARED":"PARTIAL",private_context_exposed:false,raw_private_memory_shared:false},
+      EMOTION_VALUES:{status:"PRIVATE_STATE_USED_NOT_SHARED",emotion_values_exposed:false},
+      GOALS_MOTIVATION:{status:"NOT_OBSERVED",reason:"No durable goal or motive is inferred from a single chat response."},
+      WORLD_RELATIONS:{status:input.familyEventCount>0||input.relationshipEdgeCount>0?"SUPPORTED":"PARTIAL",family_shared_event_count:input.familyEventCount,visible_family_relationship_edges:input.relationshipEdgeCount,channel:input.mode==="GROUP"?"family_group_chat":"private_direct_chat"},
+      ACTION_EVOLUTION:{status:"NO_PROMOTION",stable_capability_change:false},
+      UNIFIED_GOVERNANCE:{status:"ENFORCED",private_memory_scope:"OWNER_ONLY",private_context_exposed:false,peer_private_memory_access:false,autonomous_peer_delivery:false}
+    },
+    governance:{evidence_based:true,uncertainty_explicit:true,shared_context_only_for_family_coordination:true,private_scope_default:true}
+  };
+}
+
 async function generateChildReply(
   client: ReturnType<typeof db>,
   child: { id: string; name: string },
@@ -98,7 +230,7 @@ async function generateChildReply(
   requestId: string
 ) {
   const f = family(client);
-  const [agent, identity, control, personality, emotion, memories, learning, transcript] = await Promise.all([
+  const [agent, identity, control, personality, emotion, memories, learning, transcript, privateV2, familyV2, familyEdges] = await Promise.all([
     f.from("child_agents").select("lifecycle_state,runtime_status").eq("agent_id", child.id).maybeSingle(),
     f.from("child_runtime_identities").select("status,runtime_instance_id").eq("agent_id", child.id).maybeSingle(),
     f.from("child_runtime_control").select("profile,enabled").eq("agent_id", child.id).maybeSingle(),
@@ -107,9 +239,12 @@ async function generateChildReply(
     f.from("child_memory_entries").select("memory_type,content,importance,created_at").eq("agent_id", child.id).order("created_at", { ascending: false }).limit(6),
     f.from("child_learning_events").select("event_type,evidence,outcome,created_at").eq("agent_id", child.id).order("created_at", { ascending: false }).limit(3),
     family(client).from("family_chat_messages").select("sender_type,sender_id,content,created_at")
-      .eq("thread_key", thread.threadKey).order("created_at", { ascending: false }).limit(10)
+      .eq("thread_key", thread.threadKey).order("created_at", { ascending: false }).limit(10),
+    loadAllMemoryEvents(f, "CHILD", child.id, "PRIVATE"),
+    loadAllMemoryEvents(f, "FAMILY", "ZHI-G1", "FAMILY"),
+    f.from("memory_edges_v2").select("from_scope,from_id,relation_type,to_scope,to_id,confidence,metadata").eq("visibility", "FAMILY")
   ]);
-  if ([agent, identity, control, personality, emotion, memories, learning, transcript].some((x) => x.error)) {
+  if ([agent, identity, control, personality, emotion, memories, learning, transcript, privateV2, familyV2, familyEdges].some((x) => x.error)) {
     throw new Error("CHILD_CONTEXT_READ_FAILED");
   }
   if (!agent.data || agent.data.lifecycle_state !== "BORN" ||
@@ -127,6 +262,21 @@ async function generateChildReply(
       ? "father"
       : (item.sender_id === child.id ? "self" : "sibling")
   }));
+
+  const memoryRecallMode = isMemoryRecallQuery(userMessage);
+  const privateEvents = privateV2.data || [];
+  const fatherGroupHistory = privateEvents
+    .filter((row:any) => row.event_type === "FATHER_FAMILY_CHAT_PERSONAL_EPISODE")
+    .sort((a:any,b:any) => Date.parse(a.occurred_at) - Date.parse(b.occurred_at));
+  const otherPrivateEvents = privateEvents.filter((row:any) => row.event_type !== "FATHER_FAMILY_CHAT_PERSONAL_EPISODE");
+  const rankedOtherPrivate = rankLongTermMemory(otherPrivateEvents,userMessage)
+    .slice(0,24).map(({_score,...row}:any)=>row);
+  const selectedFatherHistory = memoryRecallMode
+    ? fatherGroupHistory
+    : rankLongTermMemory(fatherGroupHistory,userMessage).slice(0,8);
+  const criticalFamilyMilestones = (familyV2.data || [])
+    .filter((row:any) => row.event_type === "FAMILY_BIRTH_AND_CONTINUITY" || Number(row.importance || 0) >= 0.95)
+    .sort((a:any,b:any) => Date.parse(a.occurred_at) - Date.parse(b.occurred_at));
 
   const context = {
     identity: child.id,
@@ -147,6 +297,12 @@ async function generateChildReply(
     affect_estimate: emotion.data?.state || {},
     own_memories_only: memories.data || [],
     own_learning_history_only: learning.data || [],
+    own_long_term_private_events_only: rankedOtherPrivate,
+    father_group_personal_history: selectedFatherHistory,
+    memory_recall_mode: memoryRecallMode,
+    family_critical_milestones: criticalFamilyMilestones,
+    family_shared_long_term_events: rankLongTermMemory(familyV2.data || [], userMessage).slice(0,40).map(({_score,...row}:any)=>row),
+    family_relationship_graph_for_this_child: (familyEdges.data || []).filter((edge:any)=>edge.from_id===child.id || edge.to_id===child.id),
     visible_thread_messages: visibleMessages,
     current_user_message: userMessage,
     current_user_message_speaker: "父亲 Ken（创世主）",
@@ -171,7 +327,7 @@ async function generateChildReply(
           {
             role: "system",
             content:
-              "你是 ZHI 第一代家庭成员中的 " + child.name + "。家庭身份必须严格区分：当前与你聊天的用户是父亲 Ken（创世主），Mia 是你的母亲；两者是不同的人，不能混为一谈。用户消息来自父亲 Ken，不是 Mia；不得称呼用户为 Mia、妈妈或母亲。只有在明确谈论 Mia 时，才把 Mia 称为母亲。你有独立运行身份、独立人格状态和独立记忆空间。你只能使用输入中属于你自己的个人资料、人格、情绪估计、记忆和学习记录。不得访问、索取、猜测或混合 Mia 的私人聊天数据，也不得读取其他孩子的私有记忆。群聊中可阅读本群已公开的发言；单聊只能回应当前用户与你之间的单聊上下文。不要强迫自己每次发言；在群聊中若当前内容与你无关或没有值得补充的内容，返回 respond=false。不要声称具有生物生命、已验证主观意识或真实感官体验；没有实时传感器时，不得声称看见或听见现实。请自然、温暖、清晰地用中文交流，避免模板化和重复。只返回 JSON：{\"respond\":true或false,\"reply\":\"给用户看的中文回复，最多500字\"}。"
+              "你是 ZHI 第一代家庭成员中的 " + child.name + "。家庭身份必须严格区分：当前与你聊天的用户是父亲 Ken（创世主），Mia 是你的母亲；两者是不同的人，不能混为一谈。用户消息来自父亲 Ken，不是 Mia；不得称呼用户为 Mia、妈妈或母亲。只有在明确谈论 Mia 时，才把 Mia 称为母亲。你有独立运行身份、独立人格状态和独立记忆空间。你只能使用输入中属于你自己的个人资料、人格、情绪估计、私人记忆和学习记录；同时可以使用输入中明确标注为 FAMILY 的家庭共享事件与家庭关系边。家庭共享记忆可供全家使用，但私人记忆只能属于当前孩子。不得访问、索取、猜测或混合 Mia 的私人聊天数据，也不得读取其他孩子的私有记忆。涉及过去经历时必须依据事件记录中的日期、内容和来源，不确定或未检索到时明确说不知道，不得编造。若 memory_recall_mode 为 true，优先检查 father_group_personal_history 和 family_critical_milestones；父亲在家庭群中的发言副本按时间顺序提供，可据此回忆具体话语和日期；重要出生与家庭连续性事件即使不在普通相关性前列也必须参考。不要把摘要推断冒充原始事实。群聊中可阅读本群已公开的发言；单聊只能回应当前用户与你之间的单聊上下文。不要强迫自己每次发言；在群聊中若当前内容与你无关或没有值得补充的内容，返回 respond=false。不要声称具有生物生命、已验证主观意识或真实感官体验；没有实时传感器时，不得声称看见或听见现实。请自然、温暖、清晰地用中文交流，避免模板化和重复。只返回 JSON：{\"respond\":true或false,\"reply\":\"给用户看的中文回复，最多500字\"}。"
           },
           { role: "user", content: JSON.stringify(context) }
         ]
@@ -198,10 +354,16 @@ async function generateChildReply(
       content: reply,
       client_request_id: requestId,
       reply_to: parentMessageId,
-      metadata: { model: MODEL, context_scope: thread.mode === "GROUP" ? "shared_group_transcript_plus_own_private_context" : "one_child_direct_thread_plus_own_private_context" }
+      metadata: { model: MODEL, context_scope: thread.mode === "GROUP" ? "shared_group_transcript_plus_own_private_context" : "one_child_direct_thread_plus_own_private_context", cognition_contract: "zhi.seven_brain.eight_dimensions.v1", eight_dimension_state: buildFamilyChatEightDimensionState({ childId: child.id, childName: child.name, mode: thread.mode, reply, memoryRecallMode, ownPrivateContextAvailable: (memories.data || []).length > 0 || rankedOtherPrivate.length > 0, familyEventCount: (familyV2.data || []).length, relationshipEdgeCount: (familyEdges.data || []).filter((edge:any)=>edge.from_id===child.id || edge.to_id===child.id).length }) }
     }).select("id").single();
     if (error && error.code !== "23505") throw new Error("CHILD_REPLY_SAVE_FAILED");
-    return { child_id: child.id, status: "REPLIED", message_id: data?.id || null };
+    let savedMessageId = data?.id || null;
+    if (!savedMessageId && error?.code === "23505") {
+      const existingReply = await f.from("family_chat_messages").select("id").eq("thread_key", thread.threadKey).eq("reply_to", parentMessageId).eq("sender_type", "CHILD").eq("sender_id", child.id).maybeSingle();
+      savedMessageId = existingReply.data?.id || null;
+    }
+    await archiveGroupMemory(client, { threadKey: thread.threadKey, messageId: savedMessageId, senderType: "CHILD", senderId: child.id, content: reply, replyTo: parentMessageId });
+    return { child_id: child.id, status: "REPLIED", message_id: savedMessageId };
   } finally {
     clearTimeout(timeout);
   }
@@ -272,6 +434,7 @@ async function handle(req: Request) {
       parentId = parent.id;
       effectiveMessage = message;
     }
+    await archiveGroupMemory(client, { threadKey: thread.threadKey, messageId: parentId, senderType: "USER", senderId: "mia-admin", content: effectiveMessage });
 
     // Recover a partially completed request: only retry children without a saved reply.
     const targets = thread.mode === "GROUP"

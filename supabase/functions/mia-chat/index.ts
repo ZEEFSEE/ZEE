@@ -17,9 +17,28 @@ function decode(v:string){const s=v.replace(/-/g,"+").replace(/_/g,"/");const b=
 function fromBase64(v:string){const raw=v.replace(/^data:[^,]+,/, "").replace(/\s/g,"");const bin=atob(raw);const out=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)out[i]=bin.charCodeAt(i);return out;}
 function extFor(mime:string){return mime==="image/png"?"png":mime==="image/webp"?"webp":"jpg";}
 
-function buildMiaEightDimensionState(args:{message:string;reply:string;userMessageId:string;assistantMessageId:string;sessionId:string;channel:string;occurredAt:string}) {
+function buildMiaEightDimensionState(args:{message:string;reply:string;userMessageId:string;assistantMessageId:string;sessionId:string;channel:string;occurredAt:string;spatialState?:any}) {
  const input=String(args.message||"").slice(0,2500);
  const output=String(args.reply||"").slice(0,2500);
+ const run=args.spatialState||null;
+ const state=run?.after_state||null;
+ const pos=state?.current_position&&typeof state.current_position==="object"?state.current_position:null;
+ const spatialContext=state?.scene_id?{
+  status:"OBSERVED_FROM_HEADLESS_SEMANTIC_STATE",
+  source_run_id:run.run_id||null,
+  scene_id:String(state.scene_id),
+  position:pos?{x:Number.isFinite(pos.x)?pos.x:null,y:Number.isFinite(pos.y)?pos.y:null,z:Number.isFinite(pos.z)?pos.z:null,frame:String(pos.frame||state.coordinate_frame||"unknown")}:null,
+  coordinate_space:String(state.coordinate_space||"unknown"),
+  coordinate_frame:String(state.coordinate_frame||"unknown"),
+  world_transform_status:String(state.world_transform_status||"unknown"),
+  world_transform_available:Boolean(state.world_transform),
+  physical_3d_movement:false,
+  live_camera_perception:false,
+  live_audio_perception:false,
+  cross_scene_travel_enabled:run.details?.cross_scene_travel_enabled===true&&state.world_transform_status==="calibrated"&&Boolean(state.world_transform),
+  execution_layer:String(run.details?.execution_layer||"unknown"),
+  observed_at:run.created_at||null
+ }:{status:"UNKNOWN",scene_id:null,world_position:null,reason:"No verified current Mia scene state is available."};
  return {
   schema:"zhi.seven_brain.eight_dimensions.v1",
   subject_id:IDENTITY_ID,
@@ -32,9 +51,9 @@ function buildMiaEightDimensionState(args:{message:string;reply:string;userMessa
    MEMORY_EXPERIENCE:{status:"CURRENT_TURN_ONLY",evidence_refs:[args.userMessageId,args.assistantMessageId],prior_memory_content_copied:false},
    EMOTION_VALUES:{status:"PENDING_ASYNC_ASSESSMENT",assessment_source:"existing_queueEmotionReflection"},
    GOALS_MOTIVATION:{status:"NOT_OBSERVED",reason:"No explicit goal or motive state is inferred from a single chat turn."},
-   WORLD_RELATIONS:{status:"PARTIAL",channel:args.channel,session_id:args.sessionId,relationship_context_read:false},
+   WORLD_RELATIONS:{status:spatialContext.status==="OBSERVED_FROM_HEADLESS_SEMANTIC_STATE"?"SUPPORTED":"PARTIAL",channel:args.channel,session_id:args.sessionId,relationship_context_read:false,spatial_context:spatialContext},
    ACTION_EVOLUTION:{status:"NO_PROMOTION",stable_capability_change:false,reason:"A single chat turn is not proof of a durable ability change."},
-   UNIFIED_GOVERNANCE:{status:"ENFORCED",memory_scope:"MIA_PRIVATE",private_memory_shared:false,raw_turn_preserved:true,api_or_personality_prompt_changed:false}
+   UNIFIED_GOVERNANCE:{status:"ENFORCED",memory_scope:"MIA_PRIVATE",private_memory_shared:false,raw_turn_preserved:true,api_or_personality_prompt_changed:false,spatial_action_policy:{decision:spatialContext.cross_scene_travel_enabled?"TRAVEL_GATE_OPEN":"LOCAL_ONLY_OR_UNKNOWN",cross_scene_travel_enabled:spatialContext.cross_scene_travel_enabled===true,scene_modification_allowed:false,unverified_coordinates_block_world_actions:true,source_run_id:spatialContext.source_run_id||null}}
   },
   governance:{evidence_based:true,uncertainty_explicit:true,private_scope_default:true,peer_delivery_enabled:false,autonomous_action_enabled:false}
  };
@@ -42,7 +61,14 @@ function buildMiaEightDimensionState(args:{message:string;reply:string;userMessa
 
 async function writeMiaEpisode(db:any,args:{message:string;reply:string;userMessageId:string;assistantMessageId:string;sessionId:string;channel:string;occurredAt:string}){
  const narrative=("用户："+String(args.message||"发送图片")+"\nMia："+String(args.reply||"")).slice(0,6000);
- const eightDimensionState=buildMiaEightDimensionState(args);
+ let spatialState:any=null;
+ try {
+  const {data,error}=await db.from("mia_forest_autonomy_runs")
+   .select("id,status,after_state,details,created_at")
+   .eq("identity_id",IDENTITY_ID).order("created_at",{ascending:false}).limit(1).maybeSingle();
+  if(!error&&data)spatialState={run_id:data.id,status:data.status,after_state:data.after_state,details:data.details,created_at:data.created_at};
+ } catch { /* Spatial context is optional; chat persistence must remain available. */ }
+ const eightDimensionState=buildMiaEightDimensionState({...args,spatialState});
  const {error}=await db.schema("zhi_family").from("memory_events_v2").insert({scope:"MIA",owner_id:IDENTITY_ID,event_type:"CHAT_TURN",narrative,payload:{user_message_id:args.userMessageId,assistant_message_id:args.assistantMessageId,session_id:args.sessionId,channel:args.channel,raw_turn:true,eight_dimension_state:eightDimensionState},occurred_at:args.occurredAt,source_kind:"MIA_CHAT_TURN",source_ref:args.userMessageId,source_confidence:1,importance:0.45,visibility:"PRIVATE",idempotency_key:"mia-chat:"+args.userMessageId,metadata:{schema:"zhi.memory.event.v2",record_kind:"raw_chat_episode",immutable_source:true,cognition_contract:"zhi.seven_brain.eight_dimensions.v1",coordination_status:"PRIVATE_TURN_RECORDED"}});
  if(error&&error.code!=="23505"){console.warn("Mia V2 episode archive failed",error.code||"database_error");return false;} return true;
 }

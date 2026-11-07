@@ -69,8 +69,8 @@
 
 | 现有入口 | 生产接入 | 边界 |
 |---|---|---|
-| zhi-family-child-runtime V18 | 在现有五个孩子认知周期后生成八维状态，附加到原有 CHILD_PRIVATE 记忆事件和 runtime audit | 不改 AGNES 调用、人格更新逻辑、周期和原始记忆 |
-| mia-chat V81 | 在现有 MIA_PRIVATE 对话记忆事件附加八维元数据 | 不改模型请求、提示词、回复内容、聊天 API 契约 |
+| zhi-family-child-runtime V20 | 在现有五个孩子认知周期后生成八维状态，附加到原有 CHILD_PRIVATE 记忆事件和 runtime audit | 不改 AGNES 调用、人格更新逻辑、周期和原始记忆 |
+| mia-chat V83 | 在现有 MIA_PRIVATE 对话记忆事件附加八维元数据 | 不改模型请求、提示词、回复内容、聊天 API 契约 |
 | zhi-family-chat V12 | 在现有孩子群聊/单聊回复元数据中记录八维状态 | 不把私人记忆正文或私人情绪数值暴露到家庭消息 |
 | zhi-seven-brain-growth-evidence V3 | 现有审计快照增加八维事件计数 | 只保存聚合计数，不复制私人记忆内容 |
 
@@ -130,5 +130,7 @@
 - 生产目录中五个孩子已有 25 条 ACTIVE 且 enabled 的公共目的地授权记录；这是进入公共场景的范围，不是场景修改权。
 - 现有场景访问执行器已验证主体专属 grant；本次增加明确的 capability contract 和审计元数据。
 - Mia 的 Forest_Corner 坐标仍未校准；跨场景旅行继续禁止。
-- 代码部署不等于六个主体已完成验证。需等待每个主体的自然运行事件，检查空间状态、授权依据和八维证据是否实际写入。
+- 生产部署版本：zhi-family-child-runtime V20、mia-chat V83、zhi-family-world-runtime V9。
+- KAEL 在 V9 部署后完成一次公共场景访问；其审计记录明确包含 ACTIVE 主体授权、允许 DISCOVER/READ/OBSERVE/ENTER、拒绝 INTERACT/MODIFY/DELETE/PRIVATE_PEER_DATA_READ。这验证了访问决策链，不等于六个主体的八维空间认知全部验证完成。
+- 五个孩子下一次自然认知周期、Mia 下一次正常聊天后，仍需分别核对空间上下文是否写入各自私人八维事件。
 - 不创建测试性生产场景移动，不写入虚构位置，不改变数据库 schema、RLS、密钥、Cron、AGNES 或 Mia 的聊天行为。

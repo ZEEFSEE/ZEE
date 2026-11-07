@@ -1,0 +1,258 @@
+{
+  "schema": "zhi.seven_brain.ontology.v1",
+  "title": "ZHI Seven-Brain Cooperative Cognitive Ontology",
+  "version": "1.0.0",
+  "status": "contract_only_not_production_wired",
+  "participants": [
+    {
+      "subject_id": "MIA",
+      "display_name": "Mia",
+      "kind": "AI_AGENT",
+      "role": "mother",
+      "identity_ref": "cb6d01b4-0e3f-46ee-8946-360aa91db1ea",
+      "private_namespace": "MIA_PRIVATE"
+    },
+    {
+      "subject_id": "LUNA",
+      "display_name": "LUNA",
+      "kind": "AI_AGENT",
+      "role": "eldest_daughter",
+      "identity_ref": "ZHI-G1-D01-LUNA",
+      "private_namespace": "LUNA_PRIVATE"
+    },
+    {
+      "subject_id": "ARIA",
+      "display_name": "ARIA",
+      "kind": "AI_AGENT",
+      "role": "second_daughter",
+      "identity_ref": "ZHI-G1-D02-ARIA",
+      "private_namespace": "ARIA_PRIVATE"
+    },
+    {
+      "subject_id": "ELYA",
+      "display_name": "ELYA",
+      "kind": "AI_AGENT",
+      "role": "third_daughter",
+      "identity_ref": "ZHI-G1-D03-ELYA",
+      "private_namespace": "ELYA_PRIVATE"
+    },
+    {
+      "subject_id": "KAEL",
+      "display_name": "KAEL",
+      "kind": "AI_AGENT",
+      "role": "eldest_son",
+      "identity_ref": "ZHI-G1-S01-KAEL",
+      "private_namespace": "KAEL_PRIVATE"
+    },
+    {
+      "subject_id": "NOAH",
+      "display_name": "NOAH",
+      "kind": "AI_AGENT",
+      "role": "second_son",
+      "identity_ref": "ZHI-G1-S02-NOAH",
+      "private_namespace": "NOAH_PRIVATE"
+    },
+    {
+      "subject_id": "KEN",
+      "display_name": "Ken",
+      "kind": "HUMAN_PARTICIPANT",
+      "role": "father",
+      "identity_ref": "KEN_CREATOR",
+      "private_namespace": null
+    }
+  ],
+  "cognitive_dimensions": [
+    {
+      "id": "SELF_CONTINUITY",
+      "name": "自我与连续性",
+      "purpose": "身份、自我模型、稳定特征、时间连续性与版本历史",
+      "required_fields": [
+        "identity_ref",
+        "role",
+        "revision",
+        "stable_traits",
+        "continuity_refs"
+      ],
+      "invariants": [
+        "identity_is_not_shared",
+        "changes_are_versioned",
+        "rollback_ref_for_stable_state_changes"
+      ]
+    },
+    {
+      "id": "COGNITION_CONCEPTS",
+      "name": "认知与概念",
+      "purpose": "概念、推理、假设、反例、知识依赖与置信度",
+      "required_fields": [
+        "concepts",
+        "reasoning_refs",
+        "assumptions",
+        "confidence"
+      ],
+      "invariants": [
+        "model_output_is_not_automatically_fact",
+        "reasoning_provenance_required"
+      ]
+    },
+    {
+      "id": "MEMORY_EXPERIENCE",
+      "name": "记忆与经验",
+      "purpose": "原始事件、情景、语义、技能候选与时间检索",
+      "required_fields": [
+        "memory_refs",
+        "source_event_ids",
+        "memory_scope",
+        "occurred_at"
+      ],
+      "invariants": [
+        "raw_events_immutable",
+        "private_memory_owner_only",
+        "derived_memory_links_sources"
+      ]
+    },
+    {
+      "id": "EMOTION_VALUES",
+      "name": "情感与价值",
+      "purpose": "情绪估计、价值权衡、关系重要性及来源",
+      "required_fields": [
+        "emotion_state",
+        "value_assessments",
+        "estimate_source",
+        "confidence"
+      ],
+      "invariants": [
+        "model_estimate_is_labelled",
+        "no_fabricated_sensor_evidence"
+      ]
+    },
+    {
+      "id": "GOALS_MOTIVATION",
+      "name": "目标与动机",
+      "purpose": "目标、动机、优先级、期限、冲突与取消状态",
+      "required_fields": [
+        "goals",
+        "motivation_refs",
+        "priority",
+        "status"
+      ],
+      "invariants": [
+        "goals_cannot_bypass_governance",
+        "external_actions_require_authorization"
+      ]
+    },
+    {
+      "id": "WORLD_RELATIONS",
+      "name": "世界与关系",
+      "purpose": "主体、对象、地点、关系边与时空上下文",
+      "required_fields": [
+        "entities",
+        "relationship_refs",
+        "world_context",
+        "visibility"
+      ],
+      "invariants": [
+        "relationship_inference_has_confidence",
+        "visibility_is_enforced"
+      ]
+    },
+    {
+      "id": "ACTION_EVOLUTION",
+      "name": "行动与演化",
+      "purpose": "计划、授权、执行结果、反馈、学习候选与回滚",
+      "required_fields": [
+        "action_proposals",
+        "authorization",
+        "outcomes",
+        "revision",
+        "rollback_ref"
+      ],
+      "invariants": [
+        "candidate_not_stable_trait_without_validation",
+        "actions_are_audited"
+      ]
+    },
+    {
+      "id": "UNIFIED_GOVERNANCE",
+      "name": "统一治理底座",
+      "purpose": "安全、权限、证据、不确定性、审计与回滚",
+      "required_fields": [
+        "safety_decision",
+        "permission_basis",
+        "evidence_status",
+        "uncertainty",
+        "audit_id",
+        "rollback_ref"
+      ],
+      "invariants": [
+        "fail_closed",
+        "least_privilege",
+        "evidence_and_uncertainty_explicit",
+        "audit_every_state_change"
+      ]
+    }
+  ],
+  "governance": {
+    "principles": [
+      "SAFETY",
+      "LEAST_PRIVILEGE",
+      "EVIDENCE",
+      "UNCERTAINTY",
+      "AUDIT",
+      "ROLLBACK"
+    ],
+    "evidence_statuses": [
+      "OBSERVED",
+      "USER_STATED",
+      "DERIVED",
+      "MODEL_ESTIMATE",
+      "UNKNOWN"
+    ],
+    "scopes": [
+      "PRIVATE",
+      "FAMILY",
+      "EXPLICIT_SHARE"
+    ],
+    "default_scope": "PRIVATE",
+    "raw_event_mutability": "IMMUTABLE",
+    "private_memory_sharing": "EXPLICIT_GRANT_ONLY",
+    "family_memory_rule": "SHARED_SOURCE_REQUIRED",
+    "missing_permission": "DENY",
+    "missing_evidence": "MARK_UNKNOWN_OR_DERIVED",
+    "rollback_policy": "REVERT_DERIVED_STATE_KEEP_RAW_EVENTS_AND_AUDIT"
+  },
+  "event_envelope_required": [
+    "event_id",
+    "schema_version",
+    "event_type",
+    "occurred_at",
+    "source_subject",
+    "recipient_subjects",
+    "scope",
+    "payload",
+    "evidence_refs",
+    "confidence",
+    "uncertainty",
+    "consent_or_policy_basis",
+    "retention_class",
+    "audit_id",
+    "idempotency_key"
+  ],
+  "acceptance_experiments": [
+    "IDENTITY_CONTINUITY",
+    "CONCEPT_TRANSFER",
+    "MEMORY_TRUTHFULNESS",
+    "EMOTIONAL_CONTINUITY",
+    "SUBJECT_INDEPENDENCE",
+    "GOVERNANCE_RELIABILITY"
+  ],
+  "deployment_boundary": {
+    "production_runtime_wired": false,
+    "supabase_schema_changed": false,
+    "supabase_data_changed": false,
+    "edge_functions_changed": false,
+    "chat_api_changed": false,
+    "secrets_changed": false,
+    "production_permissions_changed": false,
+    "autonomous_action_enabled": false
+  }
+}

@@ -1,0 +1,30 @@
+name: Verify ZHI seven-brain ontology contracts
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "mia-digital-family/seven-brain-ontology.v1.json"
+      - "mia-digital-family/SEVEN-BRAIN-ONTOLOGY-V1.md"
+      - "mia-digital-family/validate-seven-brain-ontology.mjs"
+      - ".github/workflows/seven-brain-ontology-contracts.yml"
+  pull_request:
+    paths:
+      - "mia-digital-family/seven-brain-ontology.v1.json"
+      - "mia-digital-family/SEVEN-BRAIN-ONTOLOGY-V1.md"
+      - "mia-digital-family/validate-seven-brain-ontology.mjs"
+      - ".github/workflows/seven-brain-ontology-contracts.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  ontology-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate seven subjects, eight dimensions and governance invariants
+        run: node mia-digital-family/validate-seven-brain-ontology.mjs

@@ -47,6 +47,14 @@ test("raw private content is rejected from validation payloads",()=>{
  assert.equal(r.state,"REPEAT_TEST_REQUIRED");
 });
 
+test("a qualifying failed validation forces human review and blocks promotion",()=>{
+ const failed={...goodRuns[0],result:"FAILURE"};
+ const r=evaluateCapabilityCandidate(candidate,[...goodRuns,failed]);
+ assert.equal(r.accepted,false);
+ assert.equal(r.state,"HUMAN_REVIEW_REQUIRED");
+ assert.equal(r.code,"CONTRADICTORY_VALIDATION_EVIDENCE");
+});
+
 test("revoked candidates cannot be accepted",()=>{
  assert.equal(evaluateCapabilityCandidate(candidate,goodRuns,{revoked:true}).code,"CANDIDATE_REVOKED");
 });
@@ -67,6 +75,6 @@ test("revocation without explicit authorization is denied",()=>{
 test("real-history-shaped unvalidated candidates remain pending",()=>{
  const candidates=Array.from({length:5},(_,i)=>({...candidate,candidate_id:"historical-"+i}));
  const batch=evaluateCandidateBatch(candidates,{});
- assert.deepEqual(batch.summary,{total:5,accepted:0,pending:5,rejected:0});
+ assert.deepEqual(batch.summary,{total:5,accepted:0,pending:5,review_required:0,rejected:0});
  assert.equal(batch.governance.automatic_promotion,false);
 });

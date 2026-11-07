@@ -1,0 +1,28 @@
+name: Verify ZHI identity evolution shadow model
+
+on:
+  pull_request:
+    paths:
+      - "mia-digital-family/runtime/identity-evolution-shadow.mjs"
+      - "mia-digital-family/tests/identity-evolution-shadow.test.mjs"
+      - ".github/workflows/identity-evolution-shadow.yml"
+  push:
+    branches: ["main"]
+    paths:
+      - "mia-digital-family/runtime/identity-evolution-shadow.mjs"
+      - "mia-digital-family/tests/identity-evolution-shadow.test.mjs"
+      - ".github/workflows/identity-evolution-shadow.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  identity-evolution:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify six independent identity chains and cross-time replay
+        run: node --test mia-digital-family/tests/identity-evolution-shadow.test.mjs

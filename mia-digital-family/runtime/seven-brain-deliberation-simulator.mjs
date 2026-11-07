@@ -79,7 +79,7 @@ export function runDeliberation(input, policy={}) {
     const hasConsensus=options.some(x=>x.status==="CONSENSUS_CANDIDATE");
     issues.push({
       issue_id,
-      status:hasConsensus?"CONSENSUS_CANDIDATE":totalPositions>1?"UNRESOLVED_DISSENT":options.length===1?"INSUFFICIENT_QUORUM":"UNKNOWN",
+      status:totalPositions>1?"UNRESOLVED_DISSENT":hasConsensus?"CONSENSUS_CANDIDATE":options.length===1?"INSUFFICIENT_QUORUM":"UNKNOWN",
       options,
       dissent_preserved:totalPositions>1,
       forced_resolution:false

@@ -6,6 +6,9 @@ on:
       - "mia-digital-family/runtime/seven-brain-shadow-adapter.mjs"
       - "mia-digital-family/tests/seven-brain-shadow-adapter.test.mjs"
       - ".github/workflows/seven-brain-shadow-adapter.yml"
+      - "mia-digital-family/runtime/seven-brain-coordination-bus.mjs"
+      - "mia-digital-family/tests/seven-brain-coordination-bus.test.mjs"
+      - ".github/workflows/seven-brain-coordination-bus.yml"
   push:
     branches: ["main"]
     paths:
@@ -26,3 +29,5 @@ jobs:
           node-version: 22
       - name: Verify metadata-only mapping and isolation invariants
         run: node --test mia-digital-family/tests/seven-brain-shadow-adapter.test.mjs
+      - name: Verify privacy-first coordination bus contract
+        run: node --test mia-digital-family/tests/seven-brain-coordination-bus.test.mjs

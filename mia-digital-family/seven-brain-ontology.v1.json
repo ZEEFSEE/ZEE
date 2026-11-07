@@ -258,8 +258,8 @@
     "production_runtime_wired": true,
     "production_wiring_status": "PARTIAL",
     "production_wired_functions": {
-      "child_runtime": "zhi-family-child-runtime v19; CHILD_PRIVATE eight-dimension episodes include scene-local position, authored perception provenance, and active public-destination grant snapshot",
-      "mia_private_chat": "mia-chat v82; MIA_PRIVATE episode includes latest headless semantic scene state and travel gate; prompt, model request, reply and API contract unchanged",
+      "child_runtime": "zhi-family-child-runtime v20; CHILD_PRIVATE eight-dimension episodes include scene-local position, authored perception provenance, and active public-destination grant snapshot",
+      "mia_private_chat": "mia-chat v83; MIA_PRIVATE episode includes latest headless semantic scene state and travel gate; prompt, model request, reply and API contract unchanged",
       "family_chat": "zhi-family-chat v12; eight-dimension metadata added to existing child reply metadata without exposing private context",
       "growth_evidence": "zhi-seven-brain-growth-evidence v3; aggregate counts of eight-dimension events added to existing runtime audit snapshot",
       "family_world_runtime": "zhi-family-world-runtime v9; public-scene visit records carry subject-specific grant decision and explicit allowed/denied capabilities"
@@ -280,7 +280,11 @@
     "autonomous_action_enabled": false,
     "spatial_cognition_status": "PARTIAL_PRODUCTION_WIRING",
     "spatial_verified_subjects": [],
-    "spatial_remaining_verification": "Await each subject's next natural cycle/chat/visit. Mia world transform remains uncalibrated; no cross-scene travel or physical sensor claims are enabled."
+    "spatial_remaining_verification": "KAEL's post-deployment public-scene visit recorded an ACTIVE subject-specific grant decision. Await the next natural cognitive cycle for all five children and the next normal Mia chat turn to verify spatial context in their private eight-dimension episodes. Mia world transform remains uncalibrated; no cross-scene travel or physical sensor claims are enabled.",
+    "spatial_access_verified_subjects": [
+      "KAEL"
+    ],
+    "spatial_eight_dimension_verified_subjects": []
   },
   "spatial_access_contract": {
     "schema": "zhi.spatial_access_governance.v1",

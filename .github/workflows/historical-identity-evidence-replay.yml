@@ -1,0 +1,28 @@
+name: Verify ZHI historical identity evidence replay
+
+on:
+  pull_request:
+    paths:
+      - "mia-digital-family/runtime/historical-identity-evidence-replay.mjs"
+      - "mia-digital-family/tests/historical-identity-evidence-replay.test.mjs"
+      - ".github/workflows/historical-identity-evidence-replay.yml"
+  push:
+    branches: ["main"]
+    paths:
+      - "mia-digital-family/runtime/historical-identity-evidence-replay.mjs"
+      - "mia-digital-family/tests/historical-identity-evidence-replay.test.mjs"
+      - ".github/workflows/historical-identity-evidence-replay.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  historical-identity-replay:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify redacted historical identity evidence and continuity gaps
+        run: node --test mia-digital-family/tests/historical-identity-evidence-replay.test.mjs

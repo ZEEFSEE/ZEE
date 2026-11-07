@@ -1,0 +1,28 @@
+name: Verify ZHI seven-brain coordination bus contract
+
+on:
+  pull_request:
+    paths:
+      - "mia-digital-family/runtime/seven-brain-coordination-bus.mjs"
+      - "mia-digital-family/tests/seven-brain-coordination-bus.test.mjs"
+      - ".github/workflows/seven-brain-coordination-bus.yml"
+  push:
+    branches: ["main"]
+    paths:
+      - "mia-digital-family/runtime/seven-brain-coordination-bus.mjs"
+      - "mia-digital-family/tests/seven-brain-coordination-bus.test.mjs"
+      - ".github/workflows/seven-brain-coordination-bus.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  coordination-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify privacy, consent, provenance and replay guards
+        run: node --test mia-digital-family/tests/seven-brain-coordination-bus.test.mjs

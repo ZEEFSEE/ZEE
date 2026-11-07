@@ -24,3 +24,9 @@ node --test mia-digital-family/tests/unified-growth-evaluator-shadow.test.mjs
 ```
 
 This is a shadow contract test, not proof of actual production behavior or real-world capability. It deliberately consumes only supplied redacted metadata and previously validated result objects.
+
+## Historical evidence composition (added 2026-11-07)
+
+The unified evaluator now accepts the redacted historical replay as a distinct evidence mode. It reports what the audit actually establishes: Mia has 220 personality-state snapshots but no verified identity-version sequence or trait deltas; each child has one BORN/READY identity snapshot at version 1, not a verified longitudinal chain; all 483 learning candidates remain unvalidated; the marital-status conflict remains unresolved. It explicitly reports zero verified identity version chains and does not manufacture growth from incomplete records.
+
+This composition is a read-only report over already-redacted audit output. It is not a fresh production audit, memory recall test, or live seven-agent runtime connection.

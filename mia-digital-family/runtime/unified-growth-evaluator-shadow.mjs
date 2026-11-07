@@ -50,6 +50,7 @@ export function evaluateUnifiedGrowth(input) {
     const ownCapabilities = capabilities.filter(x => x && x.subject_id === subject);
     const acceptedCapabilities = ownCapabilities.filter(x =>
       x.accepted === true && x.state === "SAME_SUBJECT_CAPABILITY_LINKED" &&
+      x.owner_id === OWNERS[subject] && x.source_subject_id === subject &&
       x.cross_subject_transfer === false && x.memory_content_transferred === false &&
       text(x.capability_candidate_id) && text(x.source_event_id) && text(x.private_memory_ref)
     );

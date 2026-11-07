@@ -1,0 +1,32 @@
+name: Verify ZHI unified growth evaluator shadow
+
+on:
+  pull_request:
+    paths:
+      - "mia-digital-family/runtime/unified-growth-evaluator-shadow.mjs"
+      - "mia-digital-family/tests/unified-growth-evaluator-shadow.test.mjs"
+      - "mia-digital-family/UNIFIED-GROWTH-EVALUATOR-SHADOW-V1.md"
+      - ".github/workflows/unified-growth-evaluator-shadow.yml"
+      - ".github/workflows/seven-brain-shadow-adapter.yml"
+  push:
+    branches: ["main"]
+    paths:
+      - "mia-digital-family/runtime/unified-growth-evaluator-shadow.mjs"
+      - "mia-digital-family/tests/unified-growth-evaluator-shadow.test.mjs"
+      - "mia-digital-family/UNIFIED-GROWTH-EVALUATOR-SHADOW-V1.md"
+      - ".github/workflows/unified-growth-evaluator-shadow.yml"
+      - ".github/workflows/seven-brain-shadow-adapter.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  unified-growth-shadow:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify unified six-subject growth evaluator
+        run: node --test mia-digital-family/tests/unified-growth-evaluator-shadow.test.mjs

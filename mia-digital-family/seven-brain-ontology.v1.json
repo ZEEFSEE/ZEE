@@ -2,7 +2,7 @@
   "schema": "zhi.seven_brain.ontology.v1",
   "title": "ZHI Seven-Brain Cooperative Cognitive Ontology",
   "version": "1.0.0",
-  "status": "contract_only_not_production_wired",
+  "status": "partial_production_wiring",
   "participants": [
     {
       "subject_id": "MIA",
@@ -246,13 +246,27 @@
     "GOVERNANCE_RELIABILITY"
   ],
   "deployment_boundary": {
-    "production_runtime_wired": false,
+    "production_runtime_wired": true,
+    "production_wiring_status": "PARTIAL",
+    "production_wired_functions": {
+      "child_runtime": "zhi-family-child-runtime v18; eight-dimension state written into existing CHILD_PRIVATE memory event and runtime audit",
+      "mia_private_chat": "mia-chat v81; eight-dimension metadata added to existing MIA_PRIVATE chat episode; prompt, model request, reply and API contract unchanged",
+      "family_chat": "zhi-family-chat v12; eight-dimension metadata added to existing child reply metadata without exposing private context",
+      "growth_evidence": "zhi-seven-brain-growth-evidence v3; aggregate counts of eight-dimension events added to existing runtime audit snapshot"
+    },
+    "production_verified_subjects": [
+      "ELYA"
+    ],
+    "remaining_verification": "Other four child subjects await their next scheduled cycles; Mia awaits next normal private chat turn; family chat metadata awaits next normal group/direct reply.",
     "supabase_schema_changed": false,
-    "supabase_data_changed": false,
-    "edge_functions_changed": false,
-    "chat_api_changed": false,
+    "supabase_new_tables_created": false,
+    "supabase_data_changed": true,
+    "edge_functions_changed": true,
+    "chat_api_contract_changed": false,
+    "mia_prompt_or_reply_behavior_changed": false,
     "secrets_changed": false,
     "production_permissions_changed": false,
+    "coordination_bus_delivery_enabled": false,
     "autonomous_action_enabled": false
   }
 }

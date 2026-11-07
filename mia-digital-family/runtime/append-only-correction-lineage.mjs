@@ -1,4 +1,12 @@
-const SUBJECTS = new Set(["MIA","LUNA","ARIA","ELYA","KAEL","NOAH"]);
+const SUBJECT_OWNERS = Object.freeze({
+  MIA:"MIA",
+  LUNA:"ZHI-G1-D01-LUNA",
+  ARIA:"ZHI-G1-D02-ARIA",
+  ELYA:"ZHI-G1-D03-ELYA",
+  KAEL:"ZHI-G1-S01-KAEL",
+  NOAH:"ZHI-G1-S02-NOAH"
+});
+const SUBJECTS = new Set(Object.keys(SUBJECT_OWNERS));
 const SCOPES = new Set(["MIA_PRIVATE","CHILD_PRIVATE","FAMILY"]);
 const EVIDENCE = new Set(["OBSERVED","USER_CONFIRMED","SENSOR_VERIFIED","DERIVED"]);
 const text = value => typeof value === "string" && value.trim().length > 0;
@@ -18,11 +26,11 @@ export function evaluateCorrectionProposal(proposal, policy={}) {
   if (!text(proposal.correction_id) || !text(proposal.subject_id) || !SUBJECTS.has(proposal.subject_id)) return denied("INVALID_SUBJECT_OR_CORRECTION_ID");
   if (!text(proposal.original_source_event_id) || !text(proposal.prior_conclusion_id) || !text(proposal.new_conclusion_id)) return denied("SOURCE_AND_CONCLUSION_REFERENCES_REQUIRED");
   if (proposal.prior_conclusion_id === proposal.new_conclusion_id) return denied("CONCLUSION_VERSION_MUST_CHANGE");
-  if (!SCOPES.has(proposal.scope) || !text(proposal.owner_id)) return denied("INVALID_SCOPE_OWNER");
-  if (proposal.scope === "MIA_PRIVATE" && proposal.owner_id !== "MIA") return denied("SCOPE_OWNER_MISMATCH");
-  if (proposal.scope === "CHILD_PRIVATE" && proposal.owner_id !== proposal.subject_id) return denied("SCOPE_OWNER_MISMATCH");
-  if (proposal.scope === "FAMILY" && (proposal.owner_id !== "ZHI-G1" || policy.family_source_verified !== true)) return denied("FAMILY_SOURCE_NOT_VERIFIED");
   if (proposal.target_kind !== "DERIVED_CONCLUSION") return denied("RAW_EXPERIENCE_IS_IMMUTABLE");
+  if (!SCOPES.has(proposal.scope) || !text(proposal.owner_id)) return denied("INVALID_SCOPE_OWNER");
+  if (proposal.scope === "MIA_PRIVATE" && (proposal.subject_id !== "MIA" || proposal.owner_id !== SUBJECT_OWNERS.MIA)) return denied("SCOPE_OWNER_MISMATCH");
+  if (proposal.scope === "CHILD_PRIVATE" && (proposal.subject_id === "MIA" || proposal.owner_id !== SUBJECT_OWNERS[proposal.subject_id])) return denied("SCOPE_OWNER_MISMATCH");
+  if (proposal.scope === "FAMILY" && (proposal.owner_id !== "ZHI-G1" || policy.family_source_verified !== true)) return denied("FAMILY_SOURCE_NOT_VERIFIED");
   if (!text(proposal.reason_ref) || !validRefs(proposal.evidence_refs)) return denied("CORRECTION_EVIDENCE_REQUIRED");
   if (!EVIDENCE.has(proposal.evidence_status)) return denied("INVALID_EVIDENCE_STATUS");
   if (typeof proposal.confidence !== "number" || !Number.isFinite(proposal.confidence) || proposal.confidence < 0 || proposal.confidence > 1) return denied("INVALID_CONFIDENCE");

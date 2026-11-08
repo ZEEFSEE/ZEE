@@ -10,6 +10,9 @@ on:
       - "mia-digital-family/tests/identity-capability-evidence.test.mjs"
       - "mia-digital-family/IDENTITY-CAPABILITY-EVIDENCE-V1.md"
       - "mia-digital-family/runtime/learning-candidate-integrity.mjs"
+      - "supabase/functions/zhi-family-child-runtime/index.ts"
+      - "supabase/functions/zhi-family-chat/index.ts"
+      - "mia-digital-family/tests/family-edge-evidence-contract.test.mjs"
       - "mia-digital-family/tests/learning-candidate-integrity.test.mjs"
       - "mia-digital-family/audits/learning-candidate-integrity.snapshot.json"
       - "mia-digital-family/audits/learning-candidate-integrity-readonly.sql"
@@ -50,3 +53,5 @@ jobs:
         run: node --test mia-digital-family/tests/identity-capability-evidence.test.mjs
       - name: Audit production learning candidate integrity snapshot
         run: node --test mia-digital-family/tests/learning-candidate-integrity.test.mjs
+      - name: Verify family Edge Function evidence contracts
+        run: node --test mia-digital-family/tests/family-edge-evidence-contract.test.mjs

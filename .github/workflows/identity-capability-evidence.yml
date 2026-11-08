@@ -1,0 +1,30 @@
+name: Verify ZHI identity and capability evidence
+
+on:
+  pull_request:
+    paths:
+      - "mia-digital-family/runtime/identity-capability-evidence.mjs"
+      - "mia-digital-family/tests/identity-capability-evidence.test.mjs"
+      - "mia-digital-family/IDENTITY-CAPABILITY-EVIDENCE-V1.md"
+      - ".github/workflows/identity-capability-evidence.yml"
+  push:
+    branches: ["main"]
+    paths:
+      - "mia-digital-family/runtime/identity-capability-evidence.mjs"
+      - "mia-digital-family/tests/identity-capability-evidence.test.mjs"
+      - "mia-digital-family/IDENTITY-CAPABILITY-EVIDENCE-V1.md"
+      - ".github/workflows/identity-capability-evidence.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  identity-capability-evidence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify append-only identity and capability evidence
+        run: node --test mia-digital-family/tests/identity-capability-evidence.test.mjs

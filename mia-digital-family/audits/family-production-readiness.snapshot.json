@@ -1,11 +1,15 @@
 {
   "schema": "zhi.family_production_readiness.v1",
   "mode": "REDACTED_READ_ONLY_PRODUCTION_SNAPSHOT",
-  "as_of": "2026-11-08T09:11:51.835443Z",
+  "as_of": "2026-11-08T09:17:30Z",
   "mia": {
     "identity_rows": 1,
     "memory_rows": 3696,
-    "life_event_rows": 2560
+    "life_event_rows": 2560,
+    "growth_state_version_rows": 164,
+    "growth_state_distinct_source_runs": 164,
+    "growth_state_active_versions": 1,
+    "growth_state_superseded_versions": 163
   },
   "children": {
     "ARIA": {

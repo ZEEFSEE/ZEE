@@ -1,12 +1,12 @@
 # ZHI Family Production Readiness Audit V1
 
 ## Latest captured production snapshot
-As of **2026-11-08 09:17:30 UTC**:
+As of **2026-11-08 09:18:43 UTC**:
 - MIA: 1 identity row, 3,696 memory rows, 2,560 life-event rows.
 - MIA also has **164 growth-state versions across 164 source runs** (1 active, 163 superseded), spanning 2026-10-23 through 2026-11-08. This is concrete growth-state history; it is not automatically equivalent to a separately verified identity-version chain.
 - Five children: runtime identity rows are `READY`, `identity_version=1`; none has a verified multi-version chain.
-- 761 child learning candidates; all remain `UNVALIDATED_CANDIDATE`.
-- Four new-format candidates (one each for LUNA, ARIA, ELYA, NOAH) contain both `memory_event_id` and `runtime_cycle_id`. KAEL's 117 historical candidates predate those references. This is a historical coverage gap, not evidence the deployed writer is still failing.
+- **762 child learning candidates; all 762 remain `UNVALIDATED_CANDIDATE`.**
+- Five new-format candidates (one each for LUNA, ARIA, ELYA, KAEL, NOAH) contain both `memory_event_id` and `runtime_cycle_id`. KAEL now has a new-format candidate; its previous 117 candidates remain historical legacy records without the newer references. Across all children, 757 historical candidates remain in that legacy gap.
 - No post-deployment group child message had arrived at snapshot time. The `agent_id` fix is deployed but not yet exercised by a natural message.
 - Zero capability promotions are recorded.
 

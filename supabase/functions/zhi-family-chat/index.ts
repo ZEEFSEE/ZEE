@@ -348,7 +348,7 @@ async function generateChildReply(
     const { data, error } = await f.from("family_chat_messages").insert({
       thread_key: thread.threadKey,
       mode: thread.mode,
-      agent_id: thread.agentId,
+      agent_id: child.id,
       sender_type: "CHILD",
       sender_id: child.id,
       content: reply,

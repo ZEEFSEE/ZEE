@@ -8,7 +8,8 @@
     "zhi_family.child_runtime_cycles",
     "zhi_family.child_runtime_identities",
     "zhi_family.maternal_responses",
-    "zhi_family.family_chat_messages"
+    "zhi_family.family_chat_messages",
+    "zhi_family.memory_events_v2"
   ],
   "subjects": {
     "LUNA": {

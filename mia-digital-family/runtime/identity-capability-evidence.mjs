@@ -66,12 +66,11 @@ export function evaluateFamilyIdentityCapabilityEvidence(input){
   const row=input.subjects[subject];
   if(!isRecord(row)||!isRecord(row.identity))return result("REJECTED","IDENTITY_CHAIN_REQUIRED:"+subject);
   if(row.identity.subject_id!==subject)return result("REJECTED","SUBJECT_IDENTITY_MISMATCH:"+subject);
+  if(!nonBlank(row.identity.identity_anchor_ref))return result("REJECTED","IDENTITY_ANCHOR_REQUIRED:"+subject);
+  if(anchors.has(row.identity.identity_anchor_ref))return result("REJECTED","IDENTITY_ANCHOR_REUSED:"+subject);
+  anchors.add(row.identity.identity_anchor_ref);
   const identity=evaluateIdentityVersionChain(row.identity);
   if(identity.status==="REJECTED")return result("REJECTED",identity.code);
-  if(identity.identity_anchor_ref){
-   if(anchors.has(identity.identity_anchor_ref))return result("REJECTED","IDENTITY_ANCHOR_REUSED:"+subject);
-   anchors.add(identity.identity_anchor_ref);
-  }
   if(identity.status==="VERIFIED")verified++;
   identityResults[subject]=identity;
   const capabilities=row.capabilities??[];

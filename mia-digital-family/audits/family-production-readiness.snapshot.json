@@ -1,7 +1,7 @@
 {
   "schema": "zhi.family_production_readiness.v1",
   "mode": "REDACTED_READ_ONLY_PRODUCTION_SNAPSHOT",
-  "as_of": "2026-11-08T09:17:30Z",
+  "as_of": "2026-11-08T09:18:43.057629Z",
   "mia": {
     "identity_rows": 1,
     "memory_rows": 3696,
@@ -30,11 +30,11 @@
     },
     "KAEL": {
       "agent_id": "ZHI-G1-S01-KAEL",
-      "candidate_count": 117,
-      "unvalidated_count": 117,
+      "candidate_count": 118,
+      "unvalidated_count": 118,
       "identity_version": 1,
       "identity_status": "READY",
-      "both_refs_present": 0
+      "both_refs_present": 1
     },
     "LUNA": {
       "agent_id": "ZHI-G1-D01-LUNA",
@@ -58,8 +58,8 @@
     "agent_id_null": 0,
     "agent_matches_sender": 0
   },
-  "candidate_total": 761,
-  "candidate_unvalidated": 761,
+  "candidate_total": 762,
+  "candidate_unvalidated": 762,
   "capability_promotions": 0,
   "production_writes_performed": false
 }

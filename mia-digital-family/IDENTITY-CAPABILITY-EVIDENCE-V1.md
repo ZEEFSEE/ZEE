@@ -40,3 +40,14 @@ Any failure, non-reproducible result, or failed regression check blocks validati
 - Run tests: \`node --test mia-digital-family/tests/identity-capability-evidence.test.mjs\`
 
 This package validates evidence structure. It does not prove consciousness, subjective experience, physical perception, or autonomous agency.
+
+
+## Family-level identity gate
+
+The family aggregate evaluator accepts exactly six AI subjects: MIA, LUNA, ARIA, ELYA, KAEL, and NOAH. It requires each identity chain to belong to its named subject and every subject to use a distinct stable identity anchor. It reports how many chains are verified or incomplete without inventing missing versions.
+
+A change in belief, disagreement with another subject, or independent questioning is explicitly not a continuity failure. Identity continuity is based on stable subject identity and traceable version lineage, not agreement or behavioral conformity.
+
+Capability evidence is evaluated per subject. Even when a capability reaches `VALIDATION_READY`, this only permits a separate governed review; family aggregation never promotes a capability. The evaluator is offline and redacted, with no database access or production writes.
+
+Run: `node --test mia-digital-family/tests/identity-capability-evidence.test.mjs`

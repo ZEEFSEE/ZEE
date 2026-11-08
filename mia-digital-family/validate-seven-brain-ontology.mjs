@@ -11,7 +11,6 @@ const expectedDimensions = [
 const expectedSubjects = ["MIA", "LUNA", "ARIA", "ELYA", "KAEL", "NOAH", "KEN"];
 
 assert.equal(ontology.schema, "zhi.seven_brain.ontology.v1");
-// The ontology document is on additive revision 1.1.0 while retaining the v1 schema contract.
 assert.equal(ontology.version, "1.1.0");
 assert.deepEqual(ontology.cognitive_dimensions.map(x => x.id), expectedDimensions);
 assert.deepEqual(ontology.participants.map(x => x.subject_id), expectedSubjects);
@@ -34,9 +33,22 @@ assert.equal(ontology.event_envelope_required.includes("evidence_refs"), true);
 assert.equal(ontology.event_envelope_required.includes("idempotency_key"), true);
 assert.equal(ontology.acceptance_experiments.length, 7);
 
-for (const [key, value] of Object.entries(ontology.deployment_boundary)) {
-  if (key === "production_wiring_status" || key.endsWith("_status") || key === "remaining_verification" || key === "spatial_remaining_verification") continue;
-  if (typeof value === "boolean") assert.equal(value, false, `deployment boundary must remain isolated: ${key}`);
+const boundary = ontology.deployment_boundary;
+assert.equal(boundary.production_runtime_wired, true);
+assert.equal(boundary.production_wiring_status, "PARTIAL");
+for (const key of [
+  "supabase_schema_changed",
+  "supabase_new_tables_created",
+  "chat_api_contract_changed",
+  "mia_prompt_or_reply_behavior_changed",
+  "secrets_changed",
+  "production_permissions_changed",
+  "coordination_bus_delivery_enabled",
+  "autonomous_action_enabled"
+]) {
+  assert.equal(boundary[key], false, `deployment safety invariant must remain false: ${key}`);
 }
+assert.ok(Array.isArray(boundary.production_verified_subjects));
+assert.ok(Array.isArray(boundary.spatial_verified_subjects));
 
 console.log("ZHI seven-brain ontology contract: PASS");

@@ -8,6 +8,7 @@ on:
       - "mia-digital-family/PRODUCTION-EVIDENCE-GATE-V1.md"
       - "mia-digital-family/runtime/identity-capability-evidence.mjs"
       - "mia-digital-family/tests/identity-capability-evidence.test.mjs"
+      - "mia-digital-family/runtime/identity-capability-evidence.mjs"
       - "mia-digital-family/IDENTITY-CAPABILITY-EVIDENCE-V1.md"
       - "mia-digital-family/runtime/learning-candidate-integrity.mjs"
       - "supabase/functions/zhi-family-child-runtime/index.ts"
@@ -27,6 +28,7 @@ on:
       - "mia-digital-family/PRODUCTION-EVIDENCE-GATE-V1.md"
       - "mia-digital-family/runtime/identity-capability-evidence.mjs"
       - "mia-digital-family/tests/identity-capability-evidence.test.mjs"
+      - "mia-digital-family/runtime/identity-capability-evidence.mjs"
       - "mia-digital-family/IDENTITY-CAPABILITY-EVIDENCE-V1.md"
       - "mia-digital-family/runtime/learning-candidate-integrity.mjs"
       - "supabase/functions/zhi-family-child-runtime/index.ts"
@@ -53,6 +55,8 @@ jobs:
       - name: Validate redacted production evidence
         run: node --test mia-digital-family/tests/production-evidence-gate.test.mjs
       - name: Verify identity continuity and capability evidence
+        run: node --test mia-digital-family/tests/identity-capability-evidence.test.mjs
+      - name: Verify six-subject family identity and capability evidence
         run: node --test mia-digital-family/tests/identity-capability-evidence.test.mjs
       - name: Audit production learning candidate integrity snapshot
         run: node --test mia-digital-family/tests/learning-candidate-integrity.test.mjs

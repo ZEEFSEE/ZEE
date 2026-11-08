@@ -1,14 +1,15 @@
 {
   "schema": "zhi.learning_candidate_integrity.v1",
   "mode": "REDACTED_READ_ONLY_AUDIT",
-  "as_of": "2026-11-08T08:37:23.641472Z",
+  "as_of": "2026-11-08T08:46:56.701151Z",
   "source_tables": [
     "zhi_family.child_learning_events",
     "zhi_family.child_memory_entries",
     "zhi_family.child_runtime_cycles",
     "zhi_family.child_runtime_identities",
     "zhi_family.maternal_responses",
-    "zhi_family.family_chat_messages"
+    "zhi_family.family_chat_messages",
+    "zhi_family.memory_events_v2"
   ],
   "subjects": {
     "LUNA": {
@@ -26,24 +27,26 @@
       "identity_status": "READY",
       "runtime_cycles_total": 200,
       "runtime_cycles_succeeded": 170,
-      "runtime_cycles_failed": 30
+      "runtime_cycles_failed": 30,
+      "maternal_response_ref_durable_memory_event": 15
     },
     "ARIA": {
       "agent_id": "ZHI-G1-D02-ARIA",
-      "candidate_count": 154,
-      "unvalidated_count": 154,
-      "memory_ref_present": 154,
-      "memory_ref_exists": 154,
-      "memory_owner_matches": 154,
-      "cycle_ref_exists": 154,
-      "cycle_succeeded": 154,
+      "candidate_count": 155,
+      "unvalidated_count": 155,
+      "memory_ref_present": 155,
+      "memory_ref_exists": 155,
+      "memory_owner_matches": 155,
+      "cycle_ref_exists": 155,
+      "cycle_succeeded": 155,
       "maternal_response_ref_present": 13,
       "maternal_response_exists": 0,
       "identity_version": 1,
       "identity_status": "READY",
-      "runtime_cycles_total": 197,
-      "runtime_cycles_succeeded": 155,
-      "runtime_cycles_failed": 42
+      "runtime_cycles_total": 198,
+      "runtime_cycles_succeeded": 156,
+      "runtime_cycles_failed": 42,
+      "maternal_response_ref_durable_memory_event": 4
     },
     "ELYA": {
       "agent_id": "ZHI-G1-D03-ELYA",
@@ -60,24 +63,26 @@
       "identity_status": "READY",
       "runtime_cycles_total": 195,
       "runtime_cycles_succeeded": 170,
-      "runtime_cycles_failed": 25
+      "runtime_cycles_failed": 25,
+      "maternal_response_ref_durable_memory_event": 12
     },
     "KAEL": {
       "agent_id": "ZHI-G1-S01-KAEL",
-      "candidate_count": 116,
-      "unvalidated_count": 116,
-      "memory_ref_present": 116,
-      "memory_ref_exists": 116,
-      "memory_owner_matches": 116,
-      "cycle_ref_exists": 116,
-      "cycle_succeeded": 116,
+      "candidate_count": 117,
+      "unvalidated_count": 117,
+      "memory_ref_present": 117,
+      "memory_ref_exists": 117,
+      "memory_owner_matches": 117,
+      "cycle_ref_exists": 117,
+      "cycle_succeeded": 117,
       "maternal_response_ref_present": 8,
       "maternal_response_exists": 0,
       "identity_version": 1,
       "identity_status": "READY",
-      "runtime_cycles_total": 187,
-      "runtime_cycles_succeeded": 152,
-      "runtime_cycles_failed": 35
+      "runtime_cycles_total": 188,
+      "runtime_cycles_succeeded": 153,
+      "runtime_cycles_failed": 35,
+      "maternal_response_ref_durable_memory_event": 7
     },
     "NOAH": {
       "agent_id": "ZHI-G1-S02-NOAH",
@@ -94,7 +99,8 @@
       "identity_status": "READY",
       "runtime_cycles_total": 173,
       "runtime_cycles_succeeded": 157,
-      "runtime_cycles_failed": 16
+      "runtime_cycles_failed": 16,
+      "maternal_response_ref_durable_memory_event": 3
     }
   },
   "family_chat_group_child_messages": {

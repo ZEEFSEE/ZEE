@@ -493,8 +493,16 @@ async function runOne(client: ReturnType<typeof db>, agentId: string) {
     }).select("id").single();
     if (memoryWrite.error) throw new Error("CHILD_MEMORY_WRITE_FAILED");
     const occurredAt=new Date().toISOString();
-    const v2MemoryWrite=await f.from("memory_events_v2").insert({scope:"CHILD",owner_id:agentId,event_type:pendingResponse?"MATERNAL_EXCHANGE":"SELF_REFLECTION",narrative:reflection,payload:{cycle_number:cycleNumber,trigger_type:triggerType,child_memory_id:memoryWrite.data.id,maternal_response_id:pendingResponse?.id||null,learning_candidate:learningCandidate||null,next_focus:nextFocus,source_provenance:"TEXT_CONTEXT_ONLY",grounding_guard_applied:Boolean(result.grounding_guard_applied),eight_dimension_state:eightDimensionState},occurred_at:occurredAt,source_kind:"CHILD_RUNTIME_CYCLE",source_ref:String(cycle.id),source_confidence:0.9,importance:pendingResponse?0.75:0.45,visibility:"PRIVATE",idempotency_key:"child-cycle:"+agentId+":"+cycleNumber,metadata:{schema:"zhi.memory.event.v2",record_kind:"raw_child_episode",immutable_source:true,cognition_contract:"zhi.seven_brain.eight_dimensions.v1",coordination_status:"LOCAL_CHILD_CYCLE_RECORDED"}});
-    if(v2MemoryWrite.error&&v2MemoryWrite.error.code!=="23505")console.warn("Child V2 episode archive failed",agentId,v2MemoryWrite.error.code||"database_error");
+    const episodeIdempotencyKey="child-cycle:"+agentId+":"+cycleNumber;
+    const v2MemoryWrite=await f.from("memory_events_v2").insert({scope:"CHILD",owner_id:agentId,event_type:pendingResponse?"MATERNAL_EXCHANGE":"SELF_REFLECTION",narrative:reflection,payload:{cycle_number:cycleNumber,trigger_type:triggerType,child_memory_id:memoryWrite.data.id,maternal_response_id:pendingResponse?.id||null,maternal_response_event_id:pendingResponse?.event_id||null,learning_candidate:learningCandidate||null,next_focus:nextFocus,source_provenance:"TEXT_CONTEXT_ONLY",grounding_guard_applied:Boolean(result.grounding_guard_applied),eight_dimension_state:eightDimensionState},occurred_at:occurredAt,source_kind:"CHILD_RUNTIME_CYCLE",source_ref:String(cycle.id),source_confidence:0.9,importance:pendingResponse?0.75:0.45,visibility:"PRIVATE",idempotency_key:episodeIdempotencyKey,metadata:{schema:"zhi.memory.event.v2",record_kind:"raw_child_episode",immutable_source:true,cognition_contract:"zhi.seven_brain.eight_dimensions.v1",coordination_status:"LOCAL_CHILD_CYCLE_RECORDED"}}).select("event_id").single();
+    let durableMemoryEventId=v2MemoryWrite.data?.event_id||null;
+    if(v2MemoryWrite.error?.code==="23505"){
+      const existingEpisode=await f.from("memory_events_v2").select("event_id").eq("scope","CHILD").eq("owner_id",agentId).eq("idempotency_key",episodeIdempotencyKey).maybeSingle();
+      if(existingEpisode.error)throw new Error("CHILD_V2_EPISODE_LOOKUP_FAILED");
+      durableMemoryEventId=existingEpisode.data?.event_id||null;
+    }else if(v2MemoryWrite.error){
+      console.warn("Child V2 episode archive failed",agentId,v2MemoryWrite.error.code||"database_error");
+    }
     const priorConsolidations=(personalMemoryResult.data||[]).filter((event:any)=>event.event_type==="MEMORY_CONSOLIDATION");
     const priorSourceIds=new Set(priorConsolidations.flatMap((event:any)=>Array.isArray(event.payload?.source_event_ids)?event.payload.source_event_ids:[]));
     const consolidationSources=(personalMemoryResult.data||[]).filter((event:any)=>event.event_type!=="MEMORY_CONSOLIDATION"&&!priorSourceIds.has(event.event_id)).slice(0,12);
@@ -508,19 +516,24 @@ async function runOne(client: ReturnType<typeof db>, agentId: string) {
       else console.warn("Child semantic consolidation not scheduled: waitUntil unavailable",agentId);
     }
 
-    if (learningCandidate) {
+    if (learningCandidate && durableMemoryEventId) {
       const learningWrite = await f.from("child_learning_events").insert({
         agent_id: agentId,
         event_type: "REFLECTION_LEARNING_CANDIDATE",
         evidence: {
           cycle_number: cycleNumber,
+          runtime_cycle_id: String(cycle.id),
           trigger_type: triggerType,
           memory_id: memoryWrite.data.id,
-          maternal_response_id: pendingResponse?.id || null
+          memory_event_id: durableMemoryEventId,
+          maternal_response_id: pendingResponse?.id || null,
+          maternal_response_event_id: pendingResponse?.event_id || null
         },
         outcome: { candidate: learningCandidate, next_focus: nextFocus, validation_status: "UNVALIDATED_CANDIDATE" }
       });
       if (learningWrite.error) throw new Error("CHILD_LEARNING_WRITE_FAILED");
+    } else if (learningCandidate) {
+      console.warn("Learning candidate skipped: durable episode reference unavailable",agentId,cycleNumber);
     }
 
     const previousPersonality = personalityResult.data?.state || {};

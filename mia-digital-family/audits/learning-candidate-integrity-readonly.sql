@@ -11,11 +11,11 @@ with candidates as (
  (m.id is not null and m.agent_id=c.agent_id) memory_owner_matches,
  rc.id is not null cycle_exists,
  (rc.id is not null and rc.status='SUCCEEDED') cycle_succeeded,
- mr.id is not null maternal_response_exists
+ mr.id is not null maternal_response_exists,\n (me.event_id is not null and me.payload->>'maternal_response_id'=c.maternal_response_id) durable_maternal_response_match
  from candidates c
  left join zhi_family.child_memory_entries m on m.id::text=c.memory_id
  left join zhi_family.child_runtime_cycles rc on rc.agent_id=c.agent_id and rc.cycle_number::text=c.cycle_number
- left join zhi_family.maternal_responses mr on mr.id::text=c.maternal_response_id
+ left join zhi_family.maternal_responses mr on mr.id::text=c.maternal_response_id\n left join lateral (select x.event_id,x.payload from zhi_family.memory_events_v2 x where x.scope='CHILD' and x.owner_id=c.agent_id and x.source_ref=rc.id::text and x.event_type in ('MATERNAL_EXCHANGE','SELF_REFLECTION') order by x.recorded_at desc limit 1) me on true
 ), summary as (
  select agent_id,count(*) candidate_count,
  count(*) filter(where validation_status='UNVALIDATED_CANDIDATE') unvalidated_count,
@@ -25,7 +25,7 @@ with candidates as (
  count(*) filter(where cycle_exists) cycle_ref_exists,
  count(*) filter(where cycle_succeeded) cycle_succeeded,
  count(*) filter(where maternal_response_id is not null) maternal_response_ref_present,
- count(*) filter(where maternal_response_exists) maternal_response_exists
+ count(*) filter(where maternal_response_exists) maternal_response_exists,\n count(*) filter(where durable_maternal_response_match) maternal_response_ref_durable_memory_event
  from checked group by agent_id
 ), cycles as (
  select agent_id,count(*) runtime_cycles_total,

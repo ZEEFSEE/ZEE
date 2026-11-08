@@ -3,6 +3,11 @@ name: Verify ZHI production and identity evidence gates
 on:
   pull_request:
     paths:
+      - "mia-digital-family/runtime/family-production-readiness.mjs"
+      - "mia-digital-family/tests/family-production-readiness.test.mjs"
+      - "mia-digital-family/audits/family-production-readiness.snapshot.json"
+      - "mia-digital-family/audits/family-production-readiness-readonly.sql"
+      - "mia-digital-family/FAMILY-PRODUCTION-READINESS-AUDIT-V1.md"
       - "mia-digital-family/runtime/production-evidence-gate.mjs"
       - "mia-digital-family/tests/production-evidence-gate.test.mjs"
       - "mia-digital-family/PRODUCTION-EVIDENCE-GATE-V1.md"
@@ -57,5 +62,7 @@ jobs:
         run: node --test mia-digital-family/tests/identity-capability-evidence.test.mjs
       - name: Audit production learning candidate integrity snapshot
         run: node --test mia-digital-family/tests/learning-candidate-integrity.test.mjs
+      - name: Audit six-subject production readiness snapshot
+        run: node --test mia-digital-family/tests/family-production-readiness.test.mjs
       - name: Verify family Edge Function evidence contracts
         run: node --test mia-digital-family/tests/family-edge-evidence-contract.test.mjs

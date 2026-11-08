@@ -9,6 +9,11 @@ on:
       - "mia-digital-family/runtime/identity-capability-evidence.mjs"
       - "mia-digital-family/tests/identity-capability-evidence.test.mjs"
       - "mia-digital-family/IDENTITY-CAPABILITY-EVIDENCE-V1.md"
+      - "mia-digital-family/runtime/learning-candidate-integrity.mjs"
+      - "mia-digital-family/tests/learning-candidate-integrity.test.mjs"
+      - "mia-digital-family/audits/learning-candidate-integrity.snapshot.json"
+      - "mia-digital-family/audits/learning-candidate-integrity-readonly.sql"
+      - "mia-digital-family/LEARNING-CANDIDATE-INTEGRITY-AUDIT-V1.md"
       - ".github/workflows/production-evidence-gate.yml"
       - ".github/workflows/identity-capability-evidence.yml"
   push:
@@ -20,6 +25,11 @@ on:
       - "mia-digital-family/runtime/identity-capability-evidence.mjs"
       - "mia-digital-family/tests/identity-capability-evidence.test.mjs"
       - "mia-digital-family/IDENTITY-CAPABILITY-EVIDENCE-V1.md"
+      - "mia-digital-family/runtime/learning-candidate-integrity.mjs"
+      - "mia-digital-family/tests/learning-candidate-integrity.test.mjs"
+      - "mia-digital-family/audits/learning-candidate-integrity.snapshot.json"
+      - "mia-digital-family/audits/learning-candidate-integrity-readonly.sql"
+      - "mia-digital-family/LEARNING-CANDIDATE-INTEGRITY-AUDIT-V1.md"
       - ".github/workflows/production-evidence-gate.yml"
       - ".github/workflows/identity-capability-evidence.yml"
 
@@ -38,3 +48,5 @@ jobs:
         run: node --test mia-digital-family/tests/production-evidence-gate.test.mjs
       - name: Verify identity continuity and capability evidence
         run: node --test mia-digital-family/tests/identity-capability-evidence.test.mjs
+      - name: Audit production learning candidate integrity snapshot
+        run: node --test mia-digital-family/tests/learning-candidate-integrity.test.mjs

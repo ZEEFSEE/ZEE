@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {evaluateIdentityVersionChain,evaluateCapabilityEvidence,identityCapabilityEvidenceContract} from "../runtime/identity-capability-evidence.mjs";
+import {evaluateIdentityVersionChain,evaluateCapabilityEvidence,evaluateFamilyIdentityCapabilityEvidence,identityCapabilityEvidenceContract,familyIdentityEvidenceContract} from "../runtime/identity-capability-evidence.mjs";
 function identityFixture(){return {subject_id:"LUNA",identity_anchor_ref:"identity-anchor:luna:root",versions:[
 {version:1,subject_id:"LUNA",version_ref:"luna:v1",previous_version_ref:null,identity_anchor_ref:"identity-anchor:luna:root",snapshot_fingerprint:"sha256:aaa",recorded_at:"2026-10-01T09:00:00Z",evidence_refs:["runtime:v1"],change_summary_ref:"change:v1"},
 {version:2,subject_id:"LUNA",version_ref:"luna:v2",previous_version_ref:"luna:v1",identity_anchor_ref:"identity-anchor:luna:root",snapshot_fingerprint:"sha256:bbb",recorded_at:"2026-10-02T09:00:00Z",evidence_refs:["runtime:v2"],change_summary_ref:"change:v2"}]};}
@@ -32,6 +32,7 @@ function sixSubjectFixture(){
  }
  return {subjects};
 }
+test("family gate contract fixes six distinct subjects and preserves independent thought",()=>{assert.equal(familyIdentityEvidenceContract.exact_subject_count,6);assert.equal(familyIdentityEvidenceContract.distinct_identity_anchor_required,true);assert.equal(familyIdentityEvidenceContract.disagreement_is_not_a_lineage_failure,true);});
 test("family gate verifies six independent AI identity chains",()=>{
  const r=evaluateFamilyIdentityCapabilityEvidence(sixSubjectFixture());
  assert.equal(r.status,"VERIFIED");

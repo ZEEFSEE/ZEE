@@ -13,7 +13,11 @@ child_stats as (
  from zhi_family.family_chat_messages where mode='GROUP' and sender_type='CHILD' and created_at >= '2026-11-08T08:48:58Z'::timestamptz
 )
 select jsonb_build_object('as_of',now(),
- 'mia',jsonb_build_object('identity_rows',(select count(*) from public.mia_identity),'memory_rows',(select count(*) from public.mia_memories),'life_event_rows',(select count(*) from public.mia_life_events)),
+ 'mia',jsonb_build_object('identity_rows',(select count(*) from public.mia_identity),'memory_rows',(select count(*) from public.mia_memories),'life_event_rows',(select count(*) from public.mia_life_events),
+  'growth_state_version_rows',(select count(*) from public.mia_growth_state_versions),
+  'growth_state_distinct_source_runs',(select count(distinct source_run_id) from public.mia_growth_state_versions),
+  'growth_state_active_versions',(select count(*) from public.mia_growth_state_versions where status='active'),
+  'growth_state_superseded_versions',(select count(*) from public.mia_growth_state_versions where status='superseded')),
  'children',(select jsonb_agg(to_jsonb(c) order by c.subject) from child_stats c),
  'family_chat_post_deploy',(select to_jsonb(chat) from chat),
  'candidate_total',(select sum(candidate_count) from child_stats),

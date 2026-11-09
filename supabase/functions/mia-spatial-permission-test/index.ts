@@ -86,7 +86,7 @@ Deno.serve(async (req: Request) => {
             and k.enabled is true and k.revoked_at is null
             and k.valid_from <= now() and (k.valid_until is null or k.valid_until > now())
             and m.validation_status='verified' and m.test_only is true
-            and f.calibration_status='calibrated' and f.test_only is true
+            and f.calibration_status='calibrated' and f.test_only is true and f.scene_id=${sceneId}
           for share of po,pi,s,k,m,f
         `;
         if (!observationRows.length) return { ok: false, prepared: false, reason: "observation_not_actionable" };
@@ -95,7 +95,7 @@ Deno.serve(async (req: Request) => {
           where test_run_id=${body.test_run_id}::uuid
             and action_scope in ('interact','*') and scene_scope in (${sceneId},'*')
             and revoked_at is null and expires_at > now()
-          order by granted_at desc limit 1
+          order by granted_at desc limit 1 for share
         `;
         if (!grants.length) return { ok: false, prepared: false, reason: "executor_permission_missing" };
         const authorizedBy = typeof body.authorized_by === "string" ? body.authorized_by.slice(0,120) : "test_operator";
@@ -257,6 +257,8 @@ Deno.serve(async (req: Request) => {
             join mia_test.coordinate_frame_mappings m on m.mapping_id=po.mapping_id
             join mia_test.scene_frames f on f.frame_id=po.mapped_frame_id
             where po.observation_id=${observationId}::uuid
+              and m.validation_status='verified' and m.test_only is true
+              and f.calibration_status='calibrated' and f.test_only is true and f.scene_id=${sceneId}
             for share of po,pi,s,k,m,f
           `;
           const evidence = evidenceRows[0];
@@ -282,7 +284,7 @@ Deno.serve(async (req: Request) => {
             and action_scope in ('interact','*')
             and scene_scope in (${sceneId}, '*')
             and revoked_at is null and expires_at > now()
-          order by granted_at desc limit 1
+          order by granted_at desc limit 1 for share
         `;
         if (!perceptionGatePassed) {
           outcome = "blocked";
@@ -307,7 +309,9 @@ Deno.serve(async (req: Request) => {
             set environment_state=${tx.json(nextEnvironment)}, state_version=${afterVersion}, updated_at=now()
             where test_run_id=${body.test_run_id}::uuid
           `;
-          execution = { executed: true, state_changed: true, permission_grant_id: grants[0].grant_id };
+          execution = { executed: true, state_changed: true, permission_grant_id: grants[0].grant_id,
+            perception_authorization_id: perceptionAuthorization && "authorization_id" in perceptionAuthorization ? perceptionAuthorization.authorization_id : null,
+            perception_evidence_valid: perceptionEvidenceValid };
         }
       } else if (intent === "revoke_interact") {
         action = "revoke_permission";

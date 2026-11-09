@@ -74,6 +74,79 @@ Deno.serve(async (req: Request) => {
   }
   if (body.test_only !== true) return reply(400, { ok: false, error: "test_only_true_required" });
 
+  // CI-only source lifecycle controls. These require the same test-project secret
+  // as ingestion and never create permissions or invoke an action executor.
+  if (body.intent === "register_test_source" || body.intent === "revoke_test_source") {
+    const fixtureSourceId = typeof body.source_id === "string" ? body.source_id : "";
+    const fixtureKeyId = typeof body.key_id === "string" ? body.key_id : "";
+    if (!isUuid(fixtureSourceId) || !/^[A-Za-z0-9._-]{1,80}$/.test(fixtureKeyId)) {
+      return reply(400, { ok: false, error: "fixture_source_fields_invalid" });
+    }
+    const fixtureDbUrl = Deno.env.get("SUPABASE_DB_URL");
+    if (!fixtureDbUrl) return reply(503, { ok: false, error: "test_database_unavailable" });
+    const fixtureSql = postgres(fixtureDbUrl, { max: 1, idle_timeout: 5, connect_timeout: 8, prepare: false });
+    try {
+      if (body.intent === "register_test_source") {
+        const publicKey = typeof body.public_key_b64url === "string" ? body.public_key_b64url : "";
+        let publicKeyBytes: Uint8Array<ArrayBuffer>;
+        try { publicKeyBytes = decodeB64Url(publicKey); } catch {
+          return reply(400, { ok: false, error: "fixture_public_key_invalid" });
+        }
+        if (publicKeyBytes.byteLength !== 32 || publicKey.length !== 43) {
+          return reply(400, { ok: false, error: "fixture_public_key_invalid" });
+        }
+        await fixtureSql.begin(async (tx: any) => {
+          await tx`
+            insert into mia_test.perception_source_registry
+              (source_id,source_key,source_kind,auth_scheme,verification_key_ref,enabled,
+               max_age_seconds,max_clock_skew_seconds,allowed_frame_ids,metadata,test_only)
+            values
+              (${fixtureSourceId}::uuid,${"ci-perception-" + fixtureSourceId},
+               'simulator','ed25519',${fixtureKeyId},true,120,30,
+               array['ci-perception-frame']::text[],
+               ${tx.json({ test_fixture: true, physical_sensor: false } as any)},true)
+          `;
+          await tx`
+            insert into mia_test.perception_source_keys
+              (source_id,key_id,algorithm,public_key_b64url,enabled,valid_from)
+            values (${fixtureSourceId}::uuid,${fixtureKeyId},'ed25519',${publicKey},true,now())
+          `;
+          await tx`
+            insert into mia_test.coordinate_frame_mappings
+              (source_id,source_frame_id,target_frame_id,transform_2d,evidence_ref,
+               validation_status,verified_by,verified_at,test_only)
+            values
+              (${fixtureSourceId},'ci-perception-frame','ci-fixture-calibrated-frame',
+               ${tx.json([[1,0,10],[0,1,20],[0,0,1]] as any)},
+               ${"fixture-only:synthetic-transform:" + fixtureSourceId},
+               'verified','github-actions-fixture',now(),true)
+          `;
+        });
+        return reply(201, { ok: true, test_only: true, source_id: fixtureSourceId, key_id: fixtureKeyId,
+          fixture_only: true, physical_sensor: false, action_authorized: false });
+      }
+      await fixtureSql.begin(async (tx: any) => {
+        await tx`
+          update mia_test.perception_source_keys
+          set enabled=false,revoked_at=coalesce(revoked_at,now())
+          where source_id=${fixtureSourceId}::uuid and key_id=${fixtureKeyId}
+        `;
+        await tx`
+          update mia_test.perception_source_registry
+          set enabled=false,revoked_at=coalesce(revoked_at,now())
+          where source_id=${fixtureSourceId}::uuid
+        `;
+      });
+      return reply(200, { ok: true, test_only: true, source_id: fixtureSourceId,
+        key_id: fixtureKeyId, revoked: true });
+    } catch (error) {
+      console.error("mia_perception_fixture_lifecycle_failed", error);
+      return reply(500, { ok: false, error: "fixture_lifecycle_failed" });
+    } finally {
+      await fixtureSql.end({ timeout: 2 });
+    }
+  }
+
   const sourceId = typeof body.source_id === "string" ? body.source_id : "";
   const keyId = typeof body.key_id === "string" ? body.key_id : "";
   const eventId = typeof body.event_id === "string" ? body.event_id : "";

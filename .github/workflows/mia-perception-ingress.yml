@@ -9,7 +9,7 @@ on:
       - "supabase/migrations/**"
       - ".github/workflows/mia-perception-ingress.yml"
   pull_request:
-    branches: [main]
+    branches: [mia/spatial-permission-http-test-v1]
     paths:
       - "supabase/functions/mia-perception-ingress-test/**"
       - "supabase/migrations/**"

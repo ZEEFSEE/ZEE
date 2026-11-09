@@ -68,7 +68,7 @@ Deno.serve(async (req: Request) => {
   const nonce = typeof body.nonce === "string" ? body.nonce : "";
   const payloadB64 = typeof body.payload_b64url === "string" ? body.payload_b64url : "";
   const signatureB64 = typeof body.signature_b64url === "string" ? body.signature_b64url : "";
-  if (!sourceId || !keyId || !eventId || !observedAt || nonce.length < 16 ||
+  if (!isUuid(sourceId) || !keyId || !eventId || !observedAt || nonce.length < 16 ||
       !payloadB64 || !signatureB64) {
     return reply(400, { ok: false, error: "signed_envelope_fields_required" });
   }
@@ -81,16 +81,26 @@ Deno.serve(async (req: Request) => {
 
   try {
     const sourceRows = await sql`
-      select public_key_jwk, enabled, valid_from, valid_until, revoked_at
+      select source_id, enabled, revoked_at, max_age_seconds, max_clock_skew_seconds, allowed_frame_ids
       from mia_test.perception_source_registry
-      where source_id = ${sourceId} and key_id = ${keyId}
+      where source_id = ${sourceId}::uuid and auth_scheme = 'ed25519' and test_only is true
     `;
-    if (!sourceRows.length) return reply(401, { ok: false, error: "unknown_source_key" });
+    if (!sourceRows.length) return reply(401, { ok: false, error: "unknown_source" });
     const source = sourceRows[0];
+    if (!source.enabled || source.revoked_at) {
+      return reply(401, { ok: false, error: "source_inactive" });
+    }
+    const keyRows = await sql`
+      select public_key_b64url, enabled, valid_from, valid_until, revoked_at
+      from mia_test.perception_source_keys
+      where source_id = ${sourceId}::uuid and key_id = ${keyId} and algorithm = 'ed25519'
+    `;
+    if (!keyRows.length) return reply(401, { ok: false, error: "unknown_source_key" });
+    const sourceKey = keyRows[0];
     const now = Date.now();
-    if (!source.enabled || source.revoked_at ||
-        new Date(source.valid_from).getTime() > now ||
-        (source.valid_until && new Date(source.valid_until).getTime() <= now)) {
+    if (!sourceKey.enabled || sourceKey.revoked_at ||
+        new Date(sourceKey.valid_from).getTime() > now ||
+        (sourceKey.valid_until && new Date(sourceKey.valid_until).getTime() <= now)) {
       return reply(401, { ok: false, error: "source_key_inactive" });
     }
 
@@ -103,14 +113,15 @@ Deno.serve(async (req: Request) => {
     const envelope = [
       "ZHI-MIA-PERCEPTION-V1", sourceId, keyId, eventId, observedAt, nonce, payloadHash,
     ].join("\n");
+
     let signatureValid = false;
     try {
-      const key = await crypto.subtle.importKey(
-        "jwk", source.public_key_jwk,
-        { name: "ECDSA", namedCurve: "P-256" }, false, ["verify"],
+      const publicKey = await crypto.subtle.importKey(
+        "raw", decodeB64Url(sourceKey.public_key_b64url),
+        { name: "Ed25519" }, false, ["verify"],
       );
       signatureValid = await crypto.subtle.verify(
-        { name: "ECDSA", hash: "SHA-256" }, key, decodeB64Url(signatureB64), encoder.encode(envelope),
+        { name: "Ed25519" }, publicKey, decodeB64Url(signatureB64), encoder.encode(envelope),
       );
     } catch { signatureValid = false; }
 
@@ -122,79 +133,107 @@ Deno.serve(async (req: Request) => {
         payload = parsed as Record<string, unknown> | unknown[];
         payloadValid = true;
       }
-    } catch { /* raw bytes remain retained; malformed JSON is rejected */ }
+    } catch { /* retain the exact raw bytes even when the JSON payload is invalid */ }
 
-    const stale = Math.abs(now - observedMs) > 120_000;
-    const rejection = !signatureValid ? "signature_invalid"
-      : !payloadValid ? "payload_not_json_object_or_array"
-      : stale ? "observation_timestamp_outside_120s_window" : null;
-    const inserted = await sql.begin(async (tx) => {
-      const rows = await tx`
-        insert into mia_test.perception_ingress_events
-          (source_id,key_id,source_event_id,observed_at,nonce,payload_sha256,
-           signature_b64url,raw_payload,payload,verification_status,rejection_reason,test_only)
-        values
-          (${sourceId},${keyId},${eventId},${new Date(observedMs)},
-           ${nonce},${payloadHash},${signatureB64},${rawPayload},
-           ${tx.json(payload)},${rejection ? "rejected" : "verified"},${rejection},true)
-        returning ingress_id, verification_status, rejection_reason
+    const skewMs = source.max_clock_skew_seconds * 1000;
+    const ageMs = source.max_age_seconds * 1000;
+    const freshness = observedMs > now + skewMs ? "clock_skew"
+      : observedMs < now - ageMs ? "stale" : "fresh";
+    const signatureStatus = signatureValid ? "verified" : "invalid";
+    const p = payload as Record<string, unknown>;
+    const frameId = typeof p.frame_id === "string" ? p.frame_id : "";
+    const coords = p.coordinates as Record<string, unknown> | undefined;
+    const x = coords?.x;
+    const y = coords?.y;
+    const frameAllowed = !!frameId && source.allowed_frame_ids.includes(frameId);
+    const coordinatesValid = typeof x === "number" && Number.isFinite(x) &&
+      typeof y === "number" && Number.isFinite(y);
+
+    const result = await sql.begin(async (tx) => {
+      await tx`select pg_advisory_xact_lock(hashtext(${sourceId + ":" + nonce}))`;
+      const prior = await tx`
+        select ingress_id from mia_test.perception_ingress_events
+        where source_id=${sourceId}::uuid and nonce=${nonce}
+        order by received_at asc limit 1
       `;
-      if (rejection) return { ingress: rows[0], observation: null, mapping: "not_attempted" };
+      const replayOf = prior[0]?.ingress_id ?? null;
 
-      const p = payload as Record<string, unknown>;
-      const frameId = typeof p.frame_id === "string" ? p.frame_id : "";
-      const coords = p.coordinates as Record<string, unknown> | undefined;
-      const x = coords?.x;
-      const y = coords?.y;
-      if (!frameId || typeof x !== "number" || !Number.isFinite(x) ||
-          typeof y !== "number" || !Number.isFinite(y)) {
-        return { ingress: rows[0], observation: null, mapping: "rejected_missing_frame_or_coordinates" };
-      }
-
-      const mappings = await tx`
-        select m.mapping_id,m.target_frame_id,m.transform_2d,f.calibration_status
-        from mia_test.coordinate_frame_mappings m
-        join mia_test.scene_frames f on f.frame_id=m.target_frame_id
-        where m.source_id=${sourceId} and m.source_frame_id=${frameId}
-          and m.validation_status='verified'
-          and f.calibration_status='calibrated'
-        order by m.verified_at desc limit 1
-      `;
-      let mappingStatus = "unmapped";
-      let mappingId: string | null = null;
-      let mappedFrame: string | null = null;
-      let mappedCoords: { x: number; y: number } | null = null;
-      if (mappings.length) {
-        const point = mapPoint(mappings[0].transform_2d, x, y);
-        if (point) {
-          mappingStatus = "mapped";
-          mappingId = mappings[0].mapping_id;
-          mappedFrame = mappings[0].target_frame_id;
-          mappedCoords = point;
-        } else {
-          mappingStatus = "rejected";
+      let mapping: Record<string, unknown> | null = null;
+      let mapped: { x: number; y: number } | null = null;
+      if (signatureValid && freshness === "fresh" && payloadValid && frameAllowed && coordinatesValid) {
+        const mappingRows = await tx`
+          select m.mapping_id,m.target_frame_id,m.transform_2d,m.evidence_ref
+          from mia_test.coordinate_frame_mappings m
+          join mia_test.scene_frames f on f.frame_id=m.target_frame_id
+          where m.source_id=${sourceId} and m.source_frame_id=${frameId}
+            and m.validation_status='verified' and f.calibration_status='calibrated'
+          order by m.verified_at desc limit 1
+        `;
+        if (mappingRows.length) {
+          const point = mapPoint(mappingRows[0].transform_2d, x as number, y as number);
+          if (point) { mapping = mappingRows[0]; mapped = point; }
         }
       }
-      const observations = await tx`
-        insert into mia_test.perception_observations
-          (ingress_id,source_frame_id,source_coordinates,mapping_id,mapped_frame_id,
-           mapped_coordinates,mapping_status,observed_at,normalized_payload,
-           confidence_basis,world_truth_claim,live_perception,physical_measurement,test_only)
+
+      const replay = replayOf !== null;
+      const reason = replay ? "nonce_replay"
+        : !signatureValid ? "signature_invalid"
+        : !payloadValid ? "payload_not_json_object_or_array"
+        : freshness !== "fresh" ? freshness
+        : !frameAllowed ? "source_frame_not_allowlisted"
+        : !coordinatesValid ? "coordinates_invalid"
+        : !mapping ? "verified_calibrated_frame_mapping_missing"
+        : null;
+      const disposition = replay ? "replay" : reason ? (freshness === "stale" ? "stale" : "rejected") : "accepted";
+      const normalized = payloadValid ? {
+        frame_id: frameId,
+        source_coordinates: { x, y },
+        mapped_frame_id: mapping?.target_frame_id ?? null,
+        mapped_coordinates: mapped,
+        payload: p,
+      } : null;
+      const ingressRows = await tx`
+        insert into mia_test.perception_ingress_events
+          (source_id,key_id,source_event_id,nonce,observed_at,payload_sha256,signature,
+           signature_status,freshness_status,frame_id,calibration_evidence_ref,raw_payload,
+           raw_payload_bytes,normalized_observation,disposition,decision_reason,
+           replay_of_ingress_id,world_truth_claim,auto_action_authorized,test_only)
         values
-          (${rows[0].ingress_id},${frameId},${tx.json({x,y})},
-           ${mappingId},${mappedFrame},${mappedCoords ? tx.json(mappedCoords) : null},
-           ${mappingStatus},${new Date(observedMs)},${tx.json(p)},
-           'cryptographic_integrity',false,false,false,true)
-        returning observation_id,mapping_status,mapped_frame_id,mapped_coordinates
+          (${sourceId}::uuid,${keyId},${eventId},${nonce},${new Date(observedMs)},
+           ${payloadHash},${signatureB64},${signatureStatus},${freshness},${frameId || "unknown"},
+           ${mapping?.evidence_ref ?? null},${tx.json(payload)},${rawPayload},
+           ${normalized ? tx.json(normalized) : null},${disposition},${reason},
+           ${replayOf},false,false,true)
+        returning ingress_id,signature_status,freshness_status,disposition,decision_reason
       `;
-      return { ingress: rows[0], observation: observations[0], mapping: mappingStatus };
+
+      let observation: Record<string, unknown> | null = null;
+      if (!replay && signatureValid && freshness === "fresh" && payloadValid &&
+          frameId && coordinatesValid) {
+        const obsRows = await tx`
+          insert into mia_test.perception_observations
+            (ingress_id,source_frame_id,source_coordinates,mapping_id,mapped_frame_id,
+             mapped_coordinates,mapping_status,observed_at,normalized_payload,
+             confidence_basis,world_truth_claim,live_perception,physical_measurement,test_only)
+          values
+            (${ingressRows[0].ingress_id},${frameId},${tx.json({x,y})},
+             ${mapping?.mapping_id ?? null},${mapping?.target_frame_id ?? null},
+             ${mapped ? tx.json(mapped) : null},${mapping ? "mapped" : "unmapped"},
+             ${new Date(observedMs)},${tx.json(p)},'cryptographic_integrity',
+             false,false,false,true)
+          returning observation_id,mapping_status,mapped_frame_id,mapped_coordinates
+        `;
+        observation = obsRows[0];
+      }
+      return { ingress: ingressRows[0], observation, mapping_status: mapping ? "mapped" : "unmapped" };
     });
-    return reply(rejection ? 422 : 200, {
-      ok: !rejection,
+
+    return reply(result.ingress.disposition === "accepted" ? 200 : 422, {
+      ok: result.ingress.disposition === "accepted",
       test_only: true,
-      ingress: inserted.ingress,
-      observation: inserted.observation,
-      mapping: inserted.mapping,
+      ingress: result.ingress,
+      observation: result.observation,
+      mapping_status: result.mapping_status,
       evidence_semantics: {
         signature_authenticates_source_and_envelope_only: true,
         payload_integrity_checked: true,
@@ -208,7 +247,7 @@ Deno.serve(async (req: Request) => {
   } catch (error) {
     const message = String(error);
     if (message.includes("unique") || message.includes("duplicate")) {
-      return reply(409, { ok: false, error: "replay_or_duplicate_event" });
+      return reply(409, { ok: false, error: "duplicate_source_event_id" });
     }
     console.error("mia_perception_ingress_test_failed", error);
     return reply(500, { ok: false, error: "perception_ingress_failed" });

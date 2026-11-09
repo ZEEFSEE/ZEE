@@ -109,6 +109,10 @@ Deno.serve(async (req: Request) => {
           epistemics: {
             source: "mia_test.scene_frames_and_scene_anchors",
             coordinate_semantics: "test_fixture_only",
+            confidence_basis: "database_record_integrity",
+            confidence_scope: "database_record_retrieval_only",
+            world_truth_claim: false,
+            external_sensor_connection: "not_configured",
             frame_calibrated: frame?.calibration_status === "calibrated",
             live_perception: false,
             physical_measurement: false,
@@ -270,7 +274,14 @@ Deno.serve(async (req: Request) => {
         intent, outcome, execution, permission, spatial,
         world_state: { before_version: beforeVersion, after_version: afterVersion, state_changed: afterVersion !== beforeVersion, event_id: eventRows[0].event_id, state: afterState },
         receipt: { finalized: true, status: outcome, receipt_id: receipts[0].id, sequence_no: receipts[0].sequence_no },
-        epistemics: { source: "mia_test", live_perception: false, physical_measurement: false, physical_movement: false, cross_scene_travel: false },
+        epistemics: {
+          source: "mia_test",
+          confidence_basis: "database_record_integrity",
+          confidence_scope: "database_record_retrieval_only",
+          world_truth_claim: false,
+          external_sensor_connection: "not_configured",
+          live_perception: false, physical_measurement: false, physical_movement: false, cross_scene_travel: false
+        },
       };
     });
     return reply(200, result);

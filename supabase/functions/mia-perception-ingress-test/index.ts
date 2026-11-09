@@ -318,12 +318,14 @@ Deno.serve(async (req: Request) => {
       }
 
       const replay = replayOf !== null;
+      const cameraFrameIntent = p.capture_mode === "user_initiated_single_frame";
       const reason = replay ? "nonce_replay"
         : !signatureValid ? "signature_invalid"
         : !payloadValid ? "payload_not_json_object"
         : freshness !== "fresh" ? freshness
         : !frameAllowed ? "source_frame_not_allowlisted"
         : !coordinatesValid ? "coordinates_invalid"
+        : cameraFrameIntent && !cameraStillValid ? "camera_still_invalid"
         : cameraStillValid ? null
         : !mapping ? "verified_calibrated_frame_mapping_missing"
         : null;

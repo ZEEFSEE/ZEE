@@ -452,7 +452,7 @@ crossSequence.addEventListener("click",async()=>{
       signedAt,
       nonce,
       ...sequenceIds
-    ].join("\\n");
+    ].join("\n");
     const signature=await crypto.subtle.sign({name:"Ed25519"},pair.privateKey,new TextEncoder().encode(canonical));
     status.textContent="MIA 正在通过 AGNES 比较两次已完成序列的视觉证据；不会重新开启摄像头或上传私钥……";
     const response=await fetch(CROSS_SEQUENCE_URL,{

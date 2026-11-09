@@ -1,7 +1,6 @@
 import postgres from "npm:postgres@3.4.5";
 
 const headers = {
-  "Access-Control-Allow-Origin": "https://supabase.com",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Content-Type": "application/json",
@@ -34,10 +33,13 @@ function mapPoint(matrix: unknown, x: number, y: number): { x: number; y: number
   const m = matrix as number[][];
   if (Math.abs(m[2][0]) > 1e-9 || Math.abs(m[2][1]) > 1e-9 ||
       Math.abs(m[2][2] - 1) > 1e-9) return null;
-  return {
+  const determinant = m[0][0] * m[1][1] - m[0][1] * m[1][0];
+  if (!Number.isFinite(determinant) || Math.abs(determinant) < 1e-12) return null;
+  const mapped = {
     x: m[0][0] * x + m[0][1] * y + m[0][2],
     y: m[1][0] * x + m[1][1] * y + m[1][2],
   };
+  return Number.isFinite(mapped.x) && Number.isFinite(mapped.y) ? mapped : null;
 }
 
 Deno.serve(async (req: Request) => {
@@ -59,8 +61,16 @@ Deno.serve(async (req: Request) => {
   if (!authorized) return reply(401, { ok: false, error: "test_project_secret_required" });
 
   let body: Record<string, unknown>;
-  try { body = await req.json(); } catch {
-    return reply(400, { ok: false, error: "invalid_json" });
+  let requestText: string;
+  try {
+    requestText = await req.text();
+    if (encoder.encode(requestText).byteLength > 96 * 1024) {
+      return reply(413, { ok: false, error: "request_too_large" });
+    }
+    body = JSON.parse(requestText);
+    if (!body || typeof body !== "object" || Array.isArray(body)) throw new Error("invalid_object");
+  } catch {
+    return reply(400, { ok: false, error: "invalid_json_object" });
   }
   if (body.test_only !== true) return reply(400, { ok: false, error: "test_only_true_required" });
 
@@ -71,8 +81,10 @@ Deno.serve(async (req: Request) => {
   const nonce = typeof body.nonce === "string" ? body.nonce : "";
   const payloadB64 = typeof body.payload_b64url === "string" ? body.payload_b64url : "";
   const signatureB64 = typeof body.signature_b64url === "string" ? body.signature_b64url : "";
-  if (!isUuid(sourceId) || !keyId || !eventId || !observedAt || nonce.length < 16 ||
-      !payloadB64 || !signatureB64) {
+  if (!isUuid(sourceId) || !/^[A-Za-z0-9._-]{1,80}$/.test(keyId) ||
+      !/^[A-Za-z0-9._:-]{1,160}$/.test(eventId) || !observedAt ||
+      !/^[A-Za-z0-9_-]{16,128}$/.test(nonce) || !payloadB64 || !signatureB64 ||
+      payloadB64.length > 90000 || signatureB64.length > 128) {
     return reply(400, { ok: false, error: "signed_envelope_fields_required" });
   }
   const observedMs = Date.parse(observedAt);
@@ -109,6 +121,9 @@ Deno.serve(async (req: Request) => {
     try { rawPayload = decodeB64Url(payloadB64); } catch {
       return reply(400, { ok: false, error: "invalid_payload_encoding" });
     }
+    if (rawPayload.byteLength > 64 * 1024) {
+      return reply(413, { ok: false, error: "payload_too_large" });
+    }
     const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", rawPayload));
     const payloadHash = toHex(digest);
     const envelope = [
@@ -116,12 +131,16 @@ Deno.serve(async (req: Request) => {
     ].join("\n");
     let signatureValid = false;
     try {
+      const publicKeyBytes = decodeB64Url(sourceKey.public_key_b64url);
+      const signatureBytes = decodeB64Url(signatureB64);
+      if (publicKeyBytes.byteLength !== 32 || signatureBytes.byteLength !== 64) {
+        throw new Error("invalid_ed25519_key_or_signature_length");
+      }
       const publicKey = await crypto.subtle.importKey(
-        "raw", decodeB64Url(sourceKey.public_key_b64url),
-        ed25519, false, ["verify"],
+        "raw", publicKeyBytes, ed25519, false, ["verify"],
       );
       signatureValid = await crypto.subtle.verify(
-        ed25519, publicKey, decodeB64Url(signatureB64), encoder.encode(envelope),
+        ed25519, publicKey, signatureBytes, encoder.encode(envelope),
       );
     } catch { signatureValid = false; }
 
@@ -150,6 +169,21 @@ Deno.serve(async (req: Request) => {
       typeof y === "number" && Number.isFinite(y);
 
     const result = await sql.begin(async (tx: any) => {
+      const lockedRows = await tx`
+        select s.enabled as source_enabled,s.revoked_at as source_revoked_at,
+               s.allowed_frame_ids,k.enabled as key_enabled,k.revoked_at as key_revoked_at,
+               k.valid_from,k.valid_until
+        from mia_test.perception_source_registry s
+        join mia_test.perception_source_keys k on k.source_id=s.source_id
+        where s.source_id=${sourceId}::uuid and k.key_id=${keyId} and s.auth_scheme='ed25519'
+        for share of s,k
+      `;
+      if (!lockedRows.length || !lockedRows[0].source_enabled || lockedRows[0].source_revoked_at ||
+          !lockedRows[0].key_enabled || lockedRows[0].key_revoked_at ||
+          new Date(lockedRows[0].valid_from).getTime() > Date.now() ||
+          (lockedRows[0].valid_until && new Date(lockedRows[0].valid_until).getTime() <= Date.now())) {
+        throw new Error("source_or_key_revoked_during_verification");
+      }
       await tx`select pg_advisory_xact_lock(hashtext(${sourceId + ":" + nonce}))`;
       const prior = await tx`
         select ingress_id from mia_test.perception_ingress_events
@@ -167,7 +201,8 @@ Deno.serve(async (req: Request) => {
           from mia_test.coordinate_frame_mappings m
           join mia_test.scene_frames f on f.frame_id=m.target_frame_id
           where m.source_id=${sourceId} and m.source_frame_id=${frameId}
-            and m.validation_status='verified' and f.calibration_status='calibrated'
+            and m.validation_status='verified' and m.test_only is true
+            and f.calibration_status='calibrated' and f.test_only is true
           order by m.verified_at desc limit 1
         `;
         if (mappingRows.length) {
@@ -213,7 +248,7 @@ Deno.serve(async (req: Request) => {
 
       let observation: any = null;
       if (!replay && signatureValid && freshness === "fresh" && payloadValid &&
-          frameId && coordinatesValid) {
+          frameAllowed && frameId && coordinatesValid) {
         const obsRows = await tx`
           insert into mia_test.perception_observations
             (ingress_id,source_frame_id,source_coordinates,mapping_id,mapped_frame_id,
@@ -251,6 +286,9 @@ Deno.serve(async (req: Request) => {
     });
   } catch (error) {
     const message = String(error);
+    if (message.includes("source_or_key_revoked_during_verification")) {
+      return reply(401, { ok: false, error: "source_or_key_inactive" });
+    }
     if (message.includes("unique") || message.includes("duplicate")) {
       return reply(409, { ok: false, error: "duplicate_source_event_id" });
     }

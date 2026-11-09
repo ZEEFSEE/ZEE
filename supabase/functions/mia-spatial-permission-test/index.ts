@@ -47,9 +47,13 @@ Deno.serve(async (req: Request) => {
     return reply(400, { ok: false, error: "valid_request_id_and_test_run_id_required" });
   }
   const intent = typeof body.intent === "string" ? body.intent : "observe_spatial";
-  const supported = new Set(["observe_spatial", "grant_interact", "interact", "revoke_interact", "travel"]);
+  const supported = new Set(["observe_spatial", "grant_interact", "interact", "revoke_interact", "travel", "prepare_perception_action", "perception_interact", "revoke_perception_action"]);
   if (!supported.has(intent)) return reply(400, { ok: false, error: "unsupported_test_intent" });
   const destinationId = typeof body.destination_id === "string" ? body.destination_id : "crystal-forest-unknown";
+  const observationId = typeof body.observation_id === "string" ? body.observation_id : "";
+  if (["prepare_perception_action", "perception_interact", "revoke_perception_action"].includes(intent) && !isUuid(observationId)) {
+    return reply(400, { ok: false, error: "valid_observation_id_required" });
+  }
 
   const dbUrl = Deno.env.get("SUPABASE_DB_URL");
   if (!dbUrl) return reply(503, { ok: false, error: "test_database_connection_unavailable" });
@@ -58,12 +62,103 @@ Deno.serve(async (req: Request) => {
   try {
     const result = await sql.begin(async (tx) => {
       const payload = { test_only: "true", intent, source: "mia-spatial-permission-test", destination_id: destinationId };
-      const claim = await tx`
-        insert into mia_test.action_requests(request_id,test_run_id,payload)
-        values (${body.request_id}::uuid,${body.test_run_id}::uuid,${tx.json(payload)})
-        on conflict on constraint action_requests_pkey do nothing
-        returning request_id
-      `;
+
+      if (intent === "prepare_perception_action") {
+        const stateRows = await tx`select scene_id from mia_test.world_states where test_run_id=${body.test_run_id}::uuid`;
+        if (!stateRows.length) return { ok: false, prepared: false, reason: "world_state_missing" };
+        const sceneId = String(stateRows[0].scene_id);
+        const observationRows = await tx`
+          select po.observation_id
+          from mia_test.perception_observations po
+          join mia_test.perception_ingress_events pi on pi.ingress_id=po.ingress_id
+          join mia_test.perception_source_registry s on s.source_id=pi.source_id
+          join mia_test.perception_source_keys k on k.source_id=pi.source_id and k.key_id=pi.key_id
+          join mia_test.coordinate_frame_mappings m on m.mapping_id=po.mapping_id
+          join mia_test.scene_frames f on f.frame_id=po.mapped_frame_id
+          where po.observation_id=${observationId}::uuid
+            and po.mapping_status='mapped' and po.world_truth_claim is false
+            and po.live_perception is false and po.physical_measurement is false
+            and pi.disposition='accepted' and pi.signature_status='verified'
+            and pi.freshness_status='fresh' and pi.calibration_evidence_ref is not null
+            and pi.replay_of_ingress_id is null and pi.world_truth_claim is false
+            and pi.auto_action_authorized is false
+            and s.enabled is true and s.revoked_at is null
+            and k.enabled is true and k.revoked_at is null
+            and k.valid_from <= now() and (k.valid_until is null or k.valid_until > now())
+            and m.validation_status='verified' and m.test_only is true
+            and f.calibration_status='calibrated' and f.test_only is true
+          for share of po,pi,s,k,m,f
+        `;
+        if (!observationRows.length) return { ok: false, prepared: false, reason: "observation_not_actionable" };
+        const grants = await tx`
+          select grant_id from mia_test.action_permission_grants
+          where test_run_id=${body.test_run_id}::uuid
+            and action_scope in ('interact','*') and scene_scope in (${sceneId},'*')
+            and revoked_at is null and expires_at > now()
+          order by granted_at desc limit 1
+        `;
+        if (!grants.length) return { ok: false, prepared: false, reason: "executor_permission_missing" };
+        const authorizedBy = typeof body.authorized_by === "string" ? body.authorized_by.slice(0,120) : "test_operator";
+        const reason = typeof body.reason === "string" ? body.reason.slice(0,500) : "Explicit independent test authorization for this signed observation";
+        const prepared = await tx`
+          insert into mia_test.action_requests(request_id,test_run_id,payload)
+          values (${body.request_id}::uuid,${body.test_run_id}::uuid,${tx.json({ ...payload, intent: "perception_interact", prepared_perception_action: true, observation_id: observationId })})
+          on conflict on constraint action_requests_pkey do nothing returning request_id
+        `;
+        if (!prepared.length) return { ok: true, prepared: false, duplicate: true, reason: "request_id_already_exists" };
+        const authorizations = await tx`
+          insert into mia_test.perception_action_authorizations
+            (observation_id,request_id,action_scope,scene_scope,authorized_by,reason,expires_at,test_only)
+          values
+            (${observationId}::uuid,${body.request_id}::uuid,'interact',${sceneId},${authorizedBy},${reason},
+             now() + interval '5 minutes',true)
+          returning authorization_id,observation_id,request_id,action_scope,scene_scope,authorized_by,expires_at
+        `;
+        return { ok: true, prepared: true, permission: authorizations[0], executor_permission_grant_id: grants[0].grant_id };
+      }
+
+      if (intent === "revoke_perception_action") {
+        const revoked = await tx`
+          update mia_test.perception_action_authorizations
+          set revoked_at=now()
+          where request_id=${body.request_id}::uuid and observation_id=${observationId}::uuid
+            and revoked_at is null
+          returning authorization_id,revoked_at
+        `;
+        return { ok: true, revoked: revoked.length > 0, permission: revoked[0] ?? null };
+      }
+
+      let claim: any[];
+      if (intent === "perception_interact") {
+        const existing = await tx`
+          select status,payload from mia_test.action_requests
+          where request_id=${body.request_id}::uuid for update
+        `;
+        if (existing.length) {
+          if (existing[0].status !== "claimed" || existing[0].payload?.prepared_perception_action !== true ||
+              existing[0].payload?.observation_id !== observationId) {
+            return { ok: true, duplicate: true, claimed: false, request_id: body.request_id, existing_status: existing[0].status };
+          }
+          await tx`
+            update mia_test.action_requests
+            set payload=payload || ${tx.json({ prepared_perception_action: false, execution_started_at: new Date().toISOString() })}
+            where request_id=${body.request_id}::uuid
+          `;
+          claim = [{ request_id: body.request_id }];
+        } else {
+          claim = await tx`
+            insert into mia_test.action_requests(request_id,test_run_id,payload)
+            values (${body.request_id}::uuid,${body.test_run_id}::uuid,${tx.json({ ...payload, observation_id: observationId })})
+            on conflict on constraint action_requests_pkey do nothing returning request_id
+          `;
+        }
+      } else {
+        claim = await tx`
+          insert into mia_test.action_requests(request_id,test_run_id,payload)
+          values (${body.request_id}::uuid,${body.test_run_id}::uuid,${tx.json(payload)})
+          on conflict on constraint action_requests_pkey do nothing returning request_id
+        `;
+      }
       if (!claim.length) {
         const old = await tx`select status from mia_test.action_requests where request_id=${body.request_id}::uuid`;
         return { ok: true, duplicate: true, claimed: false, request_id: body.request_id, existing_status: old[0]?.status ?? "unknown" };
@@ -86,6 +181,8 @@ Deno.serve(async (req: Request) => {
       let action = intent;
       let execution: Record<string, unknown> = {};
       let permission: Record<string, unknown> | null = null;
+      let perceptionAuthorization: Record<string, unknown> | null = null;
+      let perceptionEvidenceValid = false;
       let spatial: Record<string, unknown> | null = null;
 
       const frameRows = await tx`
@@ -134,8 +231,50 @@ Deno.serve(async (req: Request) => {
         `;
         permission = grants[0];
         execution = { executed: true, permission_granted: true, permission };
-      } else if (intent === "interact") {
+      } else if (intent === "interact" || intent === "perception_interact") {
         action = "interact";
+        let perceptionGatePassed = intent !== "perception_interact";
+        if (intent === "perception_interact") {
+          const authorizationRows = await tx`
+            select authorization_id,action_scope,scene_scope,expires_at
+            from mia_test.perception_action_authorizations
+            where request_id=${body.request_id}::uuid and observation_id=${observationId}::uuid
+              and action_scope in ('interact','*') and scene_scope in (${sceneId},'*')
+              and revoked_at is null and expires_at > now() and test_only is true
+            order by authorized_at desc limit 1 for share
+          `;
+          const evidenceRows = await tx`
+            select po.observation_id,po.mapping_status,po.world_truth_claim,po.live_perception,po.physical_measurement,
+                   pi.disposition,pi.signature_status,pi.freshness_status,pi.calibration_evidence_ref,
+                   pi.replay_of_ingress_id,pi.auto_action_authorized,
+                   s.enabled as source_enabled,s.revoked_at as source_revoked,
+                   k.enabled as key_enabled,k.revoked_at as key_revoked,k.valid_from,k.valid_until,
+                   m.validation_status,f.calibration_status
+            from mia_test.perception_observations po
+            join mia_test.perception_ingress_events pi on pi.ingress_id=po.ingress_id
+            join mia_test.perception_source_registry s on s.source_id=pi.source_id
+            join mia_test.perception_source_keys k on k.source_id=pi.source_id and k.key_id=pi.key_id
+            join mia_test.coordinate_frame_mappings m on m.mapping_id=po.mapping_id
+            join mia_test.scene_frames f on f.frame_id=po.mapped_frame_id
+            where po.observation_id=${observationId}::uuid
+            for share of po,pi,s,k,m,f
+          `;
+          const evidence = evidenceRows[0];
+          perceptionEvidenceValid = !!evidence && evidence.mapping_status === "mapped" &&
+            evidence.world_truth_claim === false && evidence.live_perception === false &&
+            evidence.physical_measurement === false && evidence.disposition === "accepted" &&
+            evidence.signature_status === "verified" && evidence.freshness_status === "fresh" &&
+            !!evidence.calibration_evidence_ref && evidence.replay_of_ingress_id === null &&
+            evidence.auto_action_authorized === false && evidence.source_enabled === true &&
+            evidence.source_revoked === null && evidence.key_enabled === true && evidence.key_revoked === null &&
+            new Date(evidence.valid_from).getTime() <= Date.now() &&
+            (!evidence.valid_until || new Date(evidence.valid_until).getTime() > Date.now()) &&
+            evidence.validation_status === "verified" && evidence.calibration_status === "calibrated";
+          if (authorizationRows.length && perceptionEvidenceValid) {
+            perceptionAuthorization = authorizationRows[0];
+            perceptionGatePassed = true;
+          }
+        }
         const grants = await tx`
           select grant_id, action_scope, scene_scope, granted_at, expires_at
           from mia_test.action_permission_grants
@@ -145,7 +284,10 @@ Deno.serve(async (req: Request) => {
             and revoked_at is null and expires_at > now()
           order by granted_at desc limit 1
         `;
-        if (!grants.length) {
+        if (!perceptionGatePassed) {
+          outcome = "blocked";
+          execution = { executed: false, blocked: true, reason: "perception_authorization_or_evidence_denied", perception_evidence_valid: perceptionEvidenceValid };
+        } else if (!grants.length) {
           outcome = "blocked";
           execution = { executed: false, blocked: true, reason: "permission_denied_default_deny" };
         } else {
@@ -154,7 +296,10 @@ Deno.serve(async (req: Request) => {
           nextEnvironment = {
             ...nextEnvironment,
             interaction_count: prior + 1,
-            last_interaction: { request_id: body.request_id, permission_grant_id: grants[0].grant_id, source: "authorized_test_executor" },
+            last_interaction: { request_id: body.request_id, permission_grant_id: grants[0].grant_id,
+              perception_authorization_id: perceptionAuthorization && "authorization_id" in perceptionAuthorization ? perceptionAuthorization.authorization_id : null,
+              observation_id: intent === "perception_interact" ? observationId : null,
+              source: intent === "perception_interact" ? "independently_authorized_perception_test" : "authorized_test_executor" },
           };
           afterVersion += 1;
           await tx`
@@ -211,6 +356,9 @@ Deno.serve(async (req: Request) => {
              intent, state_changed: afterVersion !== beforeVersion,
              permission_required: intent === "interact",
              permission_grant_id: permission && "grant_id" in permission ? permission.grant_id : null,
+             perception_authorization_id: perceptionAuthorization && "authorization_id" in perceptionAuthorization ? perceptionAuthorization.authorization_id : null,
+             perception_observation_id: intent === "perception_interact" ? observationId : null,
+             perception_evidence_valid: perceptionEvidenceValid,
              live_perception: false, physical_movement: false, cross_scene_travel: false,
              spatial_fixture_only: true,
            })},true)
@@ -218,6 +366,9 @@ Deno.serve(async (req: Request) => {
       `;
       const receipt = {
         test_only: "true", intent, action, outcome, execution, permission,
+        perception_authorization: perceptionAuthorization,
+        perception_observation_id: intent === "perception_interact" ? observationId : null,
+        perception_evidence_valid: perceptionEvidenceValid,
         spatial, live_perception: false, physical_movement: false, cross_scene_travel: false,
       };
       await tx`

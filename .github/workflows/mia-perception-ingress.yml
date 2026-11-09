@@ -6,13 +6,13 @@ on:
       - mia/spatial-permission-http-test-v1
     paths:
       - "supabase/functions/mia-perception-ingress-test/**"
-      - "supabase/migrations/*mia_test_perception_ingress*"
+      - "supabase/migrations/**"
       - ".github/workflows/mia-perception-ingress.yml"
   pull_request:
     branches: [main]
     paths:
       - "supabase/functions/mia-perception-ingress-test/**"
-      - "supabase/migrations/*mia_test_perception_ingress*"
+      - "supabase/migrations/**"
       - ".github/workflows/mia-perception-ingress.yml"
 
 permissions:

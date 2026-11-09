@@ -60,3 +60,16 @@ Do not drop these columns while function V4+ is serving requests. The full spati
 ## Re-enable
 
 Re-deploy the exact reviewed migration and Edge Function version from this branch/PR, then rerun the isolated HTTP workflow. Do not infer successful restoration from the SQL rollback alone.
+
+## Roll back the external perception ingress contract
+
+This section is optional and applies only if the perception ingress migration has been applied in `zee-prediction`.
+
+```sql
+begin;
+drop table if exists mia_test.perception_ingress_events;
+drop table if exists mia_test.perception_source_registry;
+commit;
+```
+
+The ingress tables are independent of the spatial/permission runtime. Dropping them does not remove spatial fixtures or action-loop evidence. No external source was registered or enabled by the initial migration.

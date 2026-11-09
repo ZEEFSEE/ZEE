@@ -4,7 +4,17 @@ import {
   classifyPlannerFailure,
   decideIdempotency,
 } from "../_shared/mia-semantic-evidence.ts";
-import { assertEquals, assertThrows } from "https://deno.land/std@0.224.0/assert/mod.ts";
+function assertEquals(actual: unknown, expected: unknown): void {
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+    throw new Error(`assertEquals failed: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+  }
+}
+
+function assertThrows(fn: () => unknown): void {
+  let threw = false;
+  try { fn(); } catch { threw = true; }
+  if (!threw) throw new Error("assertThrows failed: function did not throw");
+}
 
 Deno.test("classifies missing AGNES configuration without exposing a secret", () => {
   assertEquals(

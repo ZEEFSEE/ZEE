@@ -225,17 +225,45 @@ Deno.serve(async (req: Request) => {
         values (${body.request_id}::uuid,1,${outcome},${tx.json(receipt)})
         returning id,sequence_no
       `;
+      const observationProvenance = {
+        source_kind: "headless_semantic_state",
+        origin_table: "mia_test.world_states",
+        origin_frame_table: "mia_test.scene_frames",
+        origin_anchor_table: "mia_test.scene_anchors",
+        acquisition: "server_side_database_read",
+        confidence_basis: "database_record_integrity",
+        world_truth_claim: false,
+        live_perception: false,
+        physical_measurement: false,
+        physical_movement: false,
+        cross_scene_travel: false,
+        external_sensor_connection: "not_configured",
+        test_only: true,
+      };
       const observed = {
         scene_id: sceneId, position: current.position, environment_state: nextEnvironment,
-        state_version: afterVersion, action, outcome, spatial, provenance: "mia_test",
+        state_version: afterVersion, action, outcome, spatial,
+        epistemics: {
+          source_kind: "headless_semantic_state",
+          confidence_basis: "database_record_integrity",
+          confidence_scope: "database_record_retrieval_only",
+          world_truth_claim: false,
+          external_sensor_connection: "not_configured",
+          live_perception: false,
+          physical_measurement: false,
+          physical_movement: false,
+          cross_scene_travel: false,
+        },
       };
       await tx`
         insert into mia_test.observation_snapshots
-          (test_run_id,source_kind,source_ref,observed_state,confidence,live_perception,physical_movement,cross_scene_travel,read_only,test_only)
+          (test_run_id,source_kind,source_ref,observed_state,confidence,confidence_basis,provenance,
+           live_perception,physical_movement,cross_scene_travel,read_only,test_only)
         values
           (${body.test_run_id}::uuid,'headless_semantic_state',
            ${"test://" + body.test_run_id + "/" + body.request_id},
-           ${tx.json(observed)},0.99,false,false,false,true,true)
+           ${tx.json(observed)},1.0,'database_record_integrity',${tx.json(observationProvenance)},
+           false,false,false,true,true)
       `;
       return {
         ok: true, claimed: true, duplicate: false, request_id: body.request_id,

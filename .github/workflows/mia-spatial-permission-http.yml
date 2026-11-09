@@ -1,6 +1,11 @@
 name: Mia spatial and permission HTTP test
 
 on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/mia-spatial-permission-http.yml
   push:
     branches:
       - mia/spatial-permission-http-test-v1

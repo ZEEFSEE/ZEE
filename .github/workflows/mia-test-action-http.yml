@@ -115,6 +115,26 @@ jobs:
             http: invalid.status, error: invalid.data.error,
           });
 
+          const recoveryBody = {
+            test_only: true, request_id: uuid(), test_run_id: uuid(), intent: "simulate_transaction_abort",
+          };
+          const aborted = await call(recoveryBody);
+          const recovered = await call({ ...recoveryBody, intent: "wait" });
+          record("transaction-rollback-recovery",
+            aborted.status === 500 && aborted.data.error === "test_pipeline_failed" &&
+            recovered.status === 200 && recovered.data.claimed === true &&
+            recovered.data.duplicate === false &&
+            recovered.data.receipt?.status === "completed" &&
+            recovered.data.world_state?.state_changed === false, {
+              aborted_http: aborted.status,
+              aborted_error: aborted.data.error,
+              retry_http: recovered.status,
+              retry_claimed: recovered.data.claimed,
+              retry_outcome: recovered.data.receipt?.status,
+              retry_world_state: recovered.data.world_state,
+              request_id: recoveryBody.request_id,
+            });
+
           const unauth = await call({
             test_only: true, request_id: uuid(), test_run_id: uuid(), intent: "wait",
           }, false);

@@ -259,7 +259,7 @@ Deno.serve(async (req: Request) => {
           cross_scene_travel: false,
         },
       };
-      await tx`
+      const snapshotRows = await tx`
         insert into mia_test.observation_snapshots
           (test_run_id,source_kind,source_ref,observed_state,confidence,confidence_basis,provenance,
            live_perception,physical_movement,cross_scene_travel,read_only,test_only)
@@ -268,12 +268,15 @@ Deno.serve(async (req: Request) => {
            ${"test://" + body.test_run_id + "/" + body.request_id},
            ${tx.json(observed)},1.0,'database_record_integrity',${tx.json(observationProvenance)},
            false,false,false,true,true)
+        returning id
       `;
+      const observationSnapshotId = snapshotRows[0].id;
       return {
         ok: true, claimed: true, duplicate: false, request_id: body.request_id,
         intent, outcome, execution, permission, spatial,
         world_state: { before_version: beforeVersion, after_version: afterVersion, state_changed: afterVersion !== beforeVersion, event_id: eventRows[0].event_id, state: afterState },
         receipt: { finalized: true, status: outcome, receipt_id: receipts[0].id, sequence_no: receipts[0].sequence_no },
+        observation_snapshot_id: observationSnapshotId,
         epistemics: {
           source: "mia_test",
           confidence_basis: "database_record_integrity",

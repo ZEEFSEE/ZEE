@@ -145,3 +145,30 @@ Important limitations:
 - The write-target guard is a unit-level policy check, not proof of database-level write isolation.
 - No disposable Supabase test project has been connected, so no database integration test has run.
 - No production function, database object, secret, cron schedule, or Mia chat path was changed.
+
+
+## Implementation checkpoint — isolated contract layer
+
+The branch now contains a pure TypeScript contract module at
+`supabase/functions/_shared/mia-semantic-evidence.ts` and 11 focused tests at
+`supabase/functions/mia-semantic-evidence-test/index_test.ts`.
+
+The module currently provides:
+- structured planner error classification without persisting provider payloads or credentials;
+- a versioned semantic execution receipt that rejects false success, blocked-as-executed,
+  failed-but-persisted, and unpersisted sequence claims;
+- a fail-closed idempotency decision: a read-before-write check without an atomic claim is
+  indeterminate, not exactly-once;
+- observation provenance with explicit false capability flags for live perception,
+  physical movement, and cross-scene travel.
+
+A GitHub Actions workflow runs the isolated tests. These contracts are not yet wired into
+`mia-forest-autonomy` or `mia-forest-observation`. No production Edge Function, database
+schema/data, secret, cron schedule, autonomy control, chat path, personality, memory, or
+AGNES configuration has been changed. A green contract test is not a staging integration
+test and does not establish production readiness.
+
+Next gate: obtain an explicitly designated non-production Supabase project (or user
+authorization to create one), then integrate the contract additively in that isolated
+environment and test persistence, concurrency, provenance, and rollback before proposing
+any production deployment.

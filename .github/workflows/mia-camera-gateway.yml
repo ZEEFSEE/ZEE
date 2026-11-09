@@ -1,0 +1,30 @@
+name: MIA local camera gateway contract
+
+on:
+  push:
+    branches:
+      - mia/local-camera-capture-test-v1
+    paths:
+      - "tools/mia-camera-gateway/**"
+      - ".github/workflows/mia-camera-gateway.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "tools/mia-camera-gateway/**"
+      - ".github/workflows/mia-camera-gateway.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  node-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Syntax check
+        run: node --check tools/mia-camera-gateway/server.mjs
+      - name: Gateway cryptographic and payload tests
+        run: node --test tools/mia-camera-gateway/server.test.mjs

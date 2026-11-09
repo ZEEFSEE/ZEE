@@ -100,6 +100,17 @@ jobs:
               grant: grant.data.permission, authorized: authorized.data
             });
 
+          const revoke = await call({ test_only: true, request_id: uuid(), test_run_id: runId, intent: "revoke_interact" });
+          const afterRevoke = await call({ test_only: true, request_id: uuid(), test_run_id: runId, intent: "interact" });
+          check("revoked-permission-blocks-next-action", revoke.status === 200 &&
+            revoke.data.outcome === "completed" &&
+            revoke.data.execution?.permission_revoked === true &&
+            afterRevoke.status === 200 && afterRevoke.data.outcome === "blocked" &&
+            afterRevoke.data.execution?.reason === "permission_denied_default_deny" &&
+            afterRevoke.data.world_state?.state_changed === false, {
+              revoke: revoke.data.execution, after_revoke: afterRevoke.data
+            });
+
           const concurrentRun = uuid();
           const concurrentGrant = await call({ test_only: true, request_id: uuid(), test_run_id: concurrentRun, intent: "grant_interact" });
           const sameRequest = { test_only: true, request_id: uuid(), test_run_id: concurrentRun, intent: "interact" };

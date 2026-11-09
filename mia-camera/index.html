@@ -183,10 +183,14 @@ ingress.addEventListener("click",async()=>{
     if(!stream||!video.videoWidth)throw new Error("请先开启摄像头");
     still.width=320;still.height=240;
     still.getContext("2d",{alpha:false}).drawImage(video,0,0,320,240);
-    const blob=await new Promise((resolve,reject)=>{
-      still.toBlob(value=>value?resolve(value):reject(new Error("JPEG 编码失败")),"image/jpeg",0.78);
-    });
-    if(blob.size>40*1024)throw new Error("单帧 JPEG 超过 40 KB，请调整光线后重试");
+    let blob=null;
+    for(const quality of [0.78,0.68,0.58,0.48]){
+      blob=await new Promise((resolve,reject)=>{
+        still.toBlob(value=>value?resolve(value):reject(new Error("JPEG 编码失败")),"image/jpeg",quality);
+      });
+      if(blob.size<=40*1024)break;
+    }
+    if(!blob||blob.size>40*1024)throw new Error("单帧 JPEG 无法压缩到 40 KB 以下，请调整光线后重试");
     const imageBytes=new Uint8Array(await blob.arrayBuffer());
     const imageHashBytes=new Uint8Array(await crypto.subtle.digest("SHA-256",imageBytes));
     const imageSha256=Array.from(imageHashBytes,b=>b.toString(16).padStart(2,"0")).join("");
@@ -209,7 +213,7 @@ ingress.addEventListener("click",async()=>{
       CAMERA_SOURCE,
       "user_initiated_single_frame",
       "image_pixel_center_not_world_coordinates"
-    ].join("\\n");
+    ].join("\n");
     const signature=await crypto.subtle.sign(
       {name:"Ed25519"},pair.privateKey,new TextEncoder().encode(canonical)
     );

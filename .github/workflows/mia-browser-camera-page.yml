@@ -1,0 +1,27 @@
+name: MIA browser camera page contract
+
+on:
+  push:
+    branches: [mia/local-camera-capture-test-v1]
+    paths:
+      - "mia-camera/**"
+      - ".github/workflows/mia-browser-camera-page.yml"
+  pull_request:
+    branches: [mia/spatial-permission-http-test-v1]
+    paths:
+      - "mia-camera/**"
+      - ".github/workflows/mia-browser-camera-page.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  browser-page-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate browser camera privacy and key handling
+        run: node --test mia-camera/camera-page.test.mjs

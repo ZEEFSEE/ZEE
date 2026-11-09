@@ -21,7 +21,7 @@ jobs:
     timeout-minutes: 5
     env:
       SUPABASE_URL: https://boaiqnkhrytxwdpgkxti.supabase.co
-      SERVICE_ROLE_JWT: ${{ secrets.ZEE_PREDICTION_SERVICE_ROLE_JWT }}
+      SUPABASE_SECRET_KEY: ${{ secrets.ZEE_PREDICTION_SECRET_KEY }}
     steps:
       - name: Run isolated HTTP contract tests
         shell: bash
@@ -29,15 +29,15 @@ jobs:
           set -euo pipefail
           node <<'NODE'
           const base = process.env.SUPABASE_URL + "/functions/v1/mia-semantic-evidence-test";
-          const token = process.env.SERVICE_ROLE_JWT;
-          if (!token) {
-            throw new Error("Missing GitHub Actions secret ZEE_PREDICTION_SERVICE_ROLE_JWT. Add the zee-prediction service_role JWT under repository Actions secrets, then rerun this workflow. Never put the key in source code or logs.");
+          import { appendFileSync } from "node:fs";
+          const secretKey = process.env.SUPABASE_SECRET_KEY;
+          if (!secretKey) {
+            throw new Error("Missing GitHub Actions secret ZEE_PREDICTION_SECRET_KEY. Add the zee-prediction service_role JWT under repository Actions secrets, then rerun this workflow. Never put the key in source code or logs.");
           }
 
           const uuid = () => crypto.randomUUID();
           const headers = {
-            apikey: token,
-            authorization: `Bearer ${token}`,
+            apikey: secretKey,
             "content-type": "application/json",
           };
           async function call(body, auth = true) {
@@ -124,6 +124,6 @@ jobs:
             "Target: zee-prediction / mia-semantic-evidence-test. No production project is called.",
             "All execution is deterministic semantic test runtime; live perception, physical movement, and cross-scene travel remain false.",
           ].join("\n");
-          require("node:fs").appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary + "\n");
+          appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary + "\n");
           if (results.some(x => !x.pass)) process.exitCode = 1;
           NODE

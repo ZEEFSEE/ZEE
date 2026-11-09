@@ -36,6 +36,7 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#0d151b;padding:12px;
 <button id="understand" class="secondary" disabled>让 MIA 理解最近一帧</button>
 <button id="compare" class="secondary" disabled>比较最近两帧</button>
 <button id="sequence" class="secondary" disabled>分析最近 3–6 帧</button>
+<button id="crossSequence" class="secondary" disabled>关联最近两次序列</button>
 </div>
 <canvas id="still" hidden></canvas>
 <p id="status" role="status">等待你的操作。</p>
@@ -55,6 +56,7 @@ const ingress=document.querySelector("#ingress");
 const understand=document.querySelector("#understand");
 const compare=document.querySelector("#compare");
 const sequence=document.querySelector("#sequence");
+const crossSequence=document.querySelector("#crossSequence");
 const status=document.querySelector("#status");
 const deviceBox=document.querySelector("#device");
 const PROOF_URL="https://boaiqnkhrytxwdpgkxti.supabase.co/functions/v1/mia-camera-key-proof-test";
@@ -62,18 +64,27 @@ const INGRESS_URL="https://boaiqnkhrytxwdpgkxti.supabase.co/functions/v1/mia-cam
 const UNDERSTAND_URL="https://boaiqnkhrytxwdpgkxti.supabase.co/functions/v1/mia-vision-understanding-test";
 const PAIR_URL="https://boaiqnkhrytxwdpgkxti.supabase.co/functions/v1/mia-vision-pair-test";
 const SEQUENCE_URL="https://boaiqnkhrytxwdpgkxti.supabase.co/functions/v1/mia-vision-sequence-test";
+const CROSS_SEQUENCE_URL="https://boaiqnkhrytxwdpgkxti.supabase.co/functions/v1/mia-vision-cross-sequence-test";
 const VISION_STORAGE_KEY="mia-camera-last-accepted-observation-v1";
 const VISION_HISTORY_KEY="mia-camera-accepted-observation-history-v1";
+const CROSS_SEQUENCE_HISTORY_KEY="mia-camera-completed-sequence-history-v1";
 const FRAME_ID="windows-camera-image-plane-v1";
 const CAMERA_SOURCE="browser_getusermedia_builtin_webcam";
 let stream=null;
 let keyReady=false;
 let lastAcceptedFrame=null;
 let acceptedFrames=[];
+let completedSequences=[];
 try{lastAcceptedFrame=JSON.parse(localStorage.getItem(VISION_STORAGE_KEY)||"null");}catch{lastAcceptedFrame=null;}
 try{acceptedFrames=JSON.parse(localStorage.getItem(VISION_HISTORY_KEY)||"[]");if(!Array.isArray(acceptedFrames))acceptedFrames=[];}catch{acceptedFrames=[];}
+try{completedSequences=JSON.parse(localStorage.getItem(CROSS_SEQUENCE_HISTORY_KEY)||"[]");if(!Array.isArray(completedSequences))completedSequences=[];}catch{completedSequences=[];}
+if(!completedSequences.some(x=>x?.sequence_id==="ca2d87ed-8f43-4419-80d9-e82e2ff8132f")){
+  completedSequences.push({sequence_id:"ca2d87ed-8f43-4419-80d9-e82e2ff8132f",frame_count:3,source:"previously_verified_test_sequence"});
+  completedSequences=completedSequences.slice(-10);
+  localStorage.setItem(CROSS_SEQUENCE_HISTORY_KEY,JSON.stringify(completedSequences));
+}
 if(!acceptedFrames.length&&lastAcceptedFrame?.observation_id){acceptedFrames=[lastAcceptedFrame];localStorage.setItem(VISION_HISTORY_KEY,JSON.stringify(acceptedFrames));}
-function updatePairButton(){compare.disabled=!(keyReady&&acceptedFrames.length>=2);sequence.disabled=!(keyReady&&acceptedFrames.length>=3);}
+function updatePairButton(){compare.disabled=!(keyReady&&acceptedFrames.length>=2);sequence.disabled=!(keyReady&&acceptedFrames.length>=3);crossSequence.disabled=!(keyReady&&completedSequences.length>=2);}
 understand.disabled=!(keyReady&&lastAcceptedFrame?.observation_id&&lastAcceptedFrame?.image_sha256);
 updatePairButton();
 
@@ -410,12 +421,57 @@ sequence.addEventListener("click",async()=>{
       if(result.error==="agnes_sequence_unavailable"||result.error==="agnes_sequence_rate_limited")throw new Error("AGNES 当前繁忙或限流；原始图像仍已保存，可稍后重新发起序列分析。");
       throw new Error((result.error||"sequence_request_failed")+(result.upstream_status?"（上游 HTTP "+result.upstream_status+"）":""));
     }
+    completedSequences=completedSequences.filter(x=>x?.sequence_id!==sequenceId);
+    completedSequences.push({sequence_id:sequenceId,frame_count:result.frame_count||frames.length,created_at:new Date().toISOString()});
+    completedSequences=completedSequences.slice(-10);
+    localStorage.setItem(CROSS_SEQUENCE_HISTORY_KEY,JSON.stringify(completedSequences));
+    updatePairButton();
     status.textContent=result.duplicate
       ?"AGNES 多帧分析结果已从 mia_test.subject_inferences 恢复，无需重复推理。"
       :"AGNES 多帧分析完成："+result.frame_count+" 张静态帧的时间序列推断已独立保存到 mia_test.subject_inferences。结果仅描述图像平面可见证据，不代表实时感知、真实移动或世界坐标。";
     deviceBox.textContent=JSON.stringify(result,null,2);
   }catch(e){
     status.textContent="多帧分析未通过："+(e?.message||String(e));
+  }finally{updatePairButton();}
+});
+
+crossSequence.addEventListener("click",async()=>{
+  crossSequence.disabled=true;
+  try{
+    const pair=await loadKeyPair();
+    if(!pair?.privateKey||!pair?.metadata?.source_id)throw new Error("本机设备密钥不存在，请先读取");
+    const recent=completedSequences.slice(-2).map(x=>x?.sequence_id).filter(Boolean);
+    if(recent.length!==2||recent[0]===recent[1])throw new Error("需要两次不同的已完成多帧序列；请先完成第二次序列分析");
+    const sequenceIds=recent.sort((a,b)=>a.localeCompare(b));
+    const signedAt=new Date().toISOString();
+    const nonce=b64url(crypto.getRandomValues(new Uint8Array(24)));
+    const canonical=[
+      "ZHI-MIA-VISION-CROSS-SEQUENCE-V1",
+      pair.metadata.source_id,
+      pair.metadata.key_id,
+      signedAt,
+      nonce,
+      ...sequenceIds
+    ].join("\\n");
+    const signature=await crypto.subtle.sign({name:"Ed25519"},pair.privateKey,new TextEncoder().encode(canonical));
+    status.textContent="MIA 正在通过 AGNES 比较两次已完成序列的视觉证据；不会重新开启摄像头或上传私钥……";
+    const response=await fetch(CROSS_SEQUENCE_URL,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({sequence_ids:sequenceIds,signed_at:signedAt,nonce,signature_b64url:b64url(new Uint8Array(signature))}),
+      cache:"no-store"
+    });
+    const result=await response.json().catch(()=>({error:"invalid_server_response"}));
+    if(!response.ok||result.ok!==true){
+      if(result.error==="completed_test_sequence_not_found")throw new Error("找不到已完成的测试序列，请确认本机使用的是已登记的测试设备");
+      if(result.error==="sequence_inference_missing")throw new Error("其中一组序列尚无 AGNES 推理结果，请先完成序列分析");
+      if(result.error==="agnes_rate_limited")throw new Error("AGNES 当前繁忙或限流；已保存的序列无需重新采集，稍后可重试");
+      throw new Error((result.error||"cross_sequence_request_failed")+(result.upstream_status?"（上游 HTTP "+result.upstream_status+"）":""));
+    }
+    status.textContent="AGNES 跨序列比较完成："+result.association_count+" 条候选关联已追加保存。它们是视觉假设，不代表现实身份或永久实体连续性。";
+    deviceBox.textContent=JSON.stringify(result,null,2);
+  }catch(e){
+    status.textContent="跨序列关联未通过："+(e?.message||String(e));
   }finally{updatePairButton();}
 });
 

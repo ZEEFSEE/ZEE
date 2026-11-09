@@ -65,9 +65,15 @@ jobs:
             lounge?.verification_status === "fixture_known" &&
             unknown?.verification_status === "unknown" && unknown?.coordinates === null &&
             observed.data.epistemics?.live_perception === false &&
-            observed.data.epistemics?.physical_movement === false, {
+            observed.data.epistemics?.physical_movement === false &&
+            observed.data.epistemics?.confidence_basis === "database_record_integrity" &&
+            observed.data.epistemics?.confidence_scope === "database_record_retrieval_only" &&
+            observed.data.epistemics?.world_truth_claim === false &&
+            observed.data.epistemics?.external_sensor_connection === "not_configured" &&
+            typeof observed.data.observation_snapshot_id === "number", {
               http: observed.status, frame: observed.data.spatial?.current_frame,
-              lounge, unknown, epistemics: observed.data.epistemics
+              lounge, unknown, epistemics: observed.data.epistemics,
+              observation_snapshot_id: observed.data.observation_snapshot_id
             });
 
           const travelBody = { test_only: true, request_id: uuid(), test_run_id: uuid(), intent: "travel", destination_id: "crystal-forest-unknown" };

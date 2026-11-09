@@ -55,6 +55,15 @@ jobs:
             let data = {}; try { data = await response.json(); } catch {}
             return { status: response.status, data };
           }
+          const spatialEndpoint = process.env.SUPABASE_URL + "/functions/v1/mia-spatial-permission-test";
+          async function spatialCall(body) {
+            const response = await fetch(spatialEndpoint, {
+              method: "POST", headers: { "content-type": "application/json", apikey: secret },
+              body: JSON.stringify(body)
+            });
+            let data = {}; try { data = await response.json(); } catch {}
+            return { status: response.status, data };
+          }
           function check(name, pass, detail) {
             results.push({ name, pass, detail });
             console.log(`${pass ? "PASS" : "FAIL"} ${name}: ${JSON.stringify(detail)}`);
@@ -100,6 +109,67 @@ jobs:
             { http: valid.status, ingress: valid.data.ingress, observation: valid.data.observation,
               semantics: valid.data.evidence_semantics });
 
+          const observationId = valid.data.observation?.observation_id;
+          check("accepted-observation-id-present-for-action-gate", typeof observationId === "string" &&
+            /^[0-9a-f-]{36}$/i.test(observationId), { observation_id: observationId });
+
+          const actionRunId = randomUUID();
+          const baseGrant = await spatialCall({ test_only: true, request_id: randomUUID(),
+            test_run_id: actionRunId, intent: "grant_interact" });
+          const actionRequestId = randomUUID();
+          const preparedAction = await spatialCall({ test_only: true, request_id: actionRequestId,
+            test_run_id: actionRunId, intent: "prepare_perception_action", observation_id: observationId,
+            authorized_by: "github-actions-test-runner", reason: "Independent permission gate integration test" });
+          const perceptionAction = await spatialCall({ test_only: true, request_id: actionRequestId,
+            test_run_id: actionRunId, intent: "perception_interact", observation_id: observationId });
+          check("independent-perception-authorization-enters-existing-executor", baseGrant.status === 200 &&
+            preparedAction.status === 200 && preparedAction.data.prepared === true &&
+            preparedAction.data.permission?.authorization_id != null &&
+            perceptionAction.status === 200 && perceptionAction.data.outcome === "completed" &&
+            perceptionAction.data.execution?.executed === true &&
+            perceptionAction.data.execution?.perception_evidence_valid === true &&
+            perceptionAction.data.execution?.perception_authorization_id === preparedAction.data.permission.authorization_id &&
+            perceptionAction.data.world_state?.state_changed === true &&
+            perceptionAction.data.world_state?.state?.environment_state?.last_interaction?.observation_id === observationId,
+            { grant: baseGrant.data.permission, prepared: preparedAction.data,
+              execution: perceptionAction.data.execution, world_state: perceptionAction.data.world_state });
+
+          const noAuthRunId = randomUUID();
+          const noAuthGrant = await spatialCall({ test_only: true, request_id: randomUUID(),
+            test_run_id: noAuthRunId, intent: "grant_interact" });
+          const noAuthAction = await spatialCall({ test_only: true, request_id: randomUUID(),
+            test_run_id: noAuthRunId, intent: "perception_interact", observation_id: observationId });
+          check("ordinary-executor-grant-alone-does-not-authorize-perception-action", noAuthGrant.status === 200 &&
+            noAuthAction.status === 200 && noAuthAction.data.outcome === "blocked" &&
+            noAuthAction.data.execution?.reason === "perception_authorization_or_evidence_denied" &&
+            noAuthAction.data.world_state?.state_changed === false,
+            { grant: noAuthGrant.data.permission, denied: noAuthAction.data });
+
+          const revokedAuthRunId = randomUUID();
+          const revokedAuthGrant = await spatialCall({ test_only: true, request_id: randomUUID(),
+            test_run_id: revokedAuthRunId, intent: "grant_interact" });
+          const revokedAuthRequestId = randomUUID();
+          const revokedAuthPrepare = await spatialCall({ test_only: true, request_id: revokedAuthRequestId,
+            test_run_id: revokedAuthRunId, intent: "prepare_perception_action", observation_id: observationId });
+          const revokedAuth = await spatialCall({ test_only: true, request_id: revokedAuthRequestId,
+            test_run_id: revokedAuthRunId, intent: "revoke_perception_action", observation_id: observationId });
+          const afterAuthRevoke = await spatialCall({ test_only: true, request_id: revokedAuthRequestId,
+            test_run_id: revokedAuthRunId, intent: "perception_interact", observation_id: observationId });
+          check("revoked-perception-authorization-blocks-action", revokedAuthGrant.status === 200 &&
+            revokedAuthPrepare.data.prepared === true && revokedAuth.status === 200 &&
+            revokedAuth.data.revoked === true && afterAuthRevoke.status === 200 &&
+            afterAuthRevoke.data.outcome === "blocked" &&
+            afterAuthRevoke.data.execution?.reason === "perception_authorization_or_evidence_denied" &&
+            afterAuthRevoke.data.world_state?.state_changed === false,
+            { prepared: revokedAuthPrepare.data, revoked: revokedAuth.data, denied: afterAuthRevoke.data });
+
+          const postSourceRevokeRunId = randomUUID();
+          const postSourceRevokeGrant = await spatialCall({ test_only: true, request_id: randomUUID(),
+            test_run_id: postSourceRevokeRunId, intent: "grant_interact" });
+          const postSourceRevokeRequestId = randomUUID();
+          const postSourceRevokePrepare = await spatialCall({ test_only: true, request_id: postSourceRevokeRequestId,
+            test_run_id: postSourceRevokeRunId, intent: "prepare_perception_action", observation_id: observationId });
+
           const tampered = signed({ frame_id: frameId, coordinates: { x: 4, y: 5 } });
           tampered.payload_b64url = Buffer.from(JSON.stringify({
             frame_id: frameId, coordinates: { x: 400, y: 500 }
@@ -137,10 +207,17 @@ jobs:
             { http: unknownFrame.status, ingress: unknownFrame.data.ingress, observation: unknownFrame.data.observation });
 
           const revoked = await call({ test_only: true, intent: "revoke_test_source", source_id: sourceId, key_id: keyId });
+          const afterSourceRevokeAction = await spatialCall({ test_only: true, request_id: postSourceRevokeRequestId,
+            test_run_id: postSourceRevokeRunId, intent: "perception_interact", observation_id: observationId });
           const afterRevoke = await call(signed({ frame_id: frameId, coordinates: { x: 1, y: 2 } }));
-          check("revoked-source-rejected", revoked.status === 200 && revoked.data.revoked === true &&
+          check("revoked-source-key-blocks-prepared-action-and-new-ingress", postSourceRevokeGrant.status === 200 &&
+            postSourceRevokePrepare.data.prepared === true && revoked.status === 200 && revoked.data.revoked === true &&
+            afterSourceRevokeAction.status === 200 && afterSourceRevokeAction.data.outcome === "blocked" &&
+            afterSourceRevokeAction.data.execution?.reason === "perception_authorization_or_evidence_denied" &&
+            afterSourceRevokeAction.data.world_state?.state_changed === false &&
             afterRevoke.status === 401 && afterRevoke.data.error === "source_inactive",
-            { revoke: revoked.data, after_revoke: afterRevoke.data });
+            { prepared: postSourceRevokePrepare.data, source_revoke: revoked.data,
+              action_after_revoke: afterSourceRevokeAction.data, ingress_after_revoke: afterRevoke.data });
 
           const summary = [
             "# MIA perception ingress HTTP test",

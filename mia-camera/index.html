@@ -279,7 +279,7 @@ understand.addEventListener("click",async()=>{
       signedAt,
       nonce,
       lastAcceptedFrame.image_sha256
-    ].join("\\n");
+    ].join("\n");
     const signature=await crypto.subtle.sign({name:"Ed25519"},pair.privateKey,new TextEncoder().encode(canonical));
     status.textContent="MIA 正在通过 AGNES 分析已保存的静态图像；不会重新开启摄像头……";
     const response=await fetch(UNDERSTAND_URL,{

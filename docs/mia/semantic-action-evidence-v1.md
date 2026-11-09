@@ -172,3 +172,12 @@ Next gate: obtain an explicitly designated non-production Supabase project (or u
 authorization to create one), then integrate the contract additively in that isolated
 environment and test persistence, concurrency, provenance, and rollback before proposing
 any production deployment.
+
+
+### CI verification
+
+GitHub Actions run `42579156427` completed successfully on the contract-test commit.
+The Node built-in test runner reported **11 tests passed, 0 failed** (duration about
+103 ms). This verifies the pure contract module only; it does not verify a live Supabase
+write, concurrent claims, the deployed Edge Function integration, or physical-world
+behavior.

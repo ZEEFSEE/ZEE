@@ -33,6 +33,7 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#0d151b;padding:12px;
 <button id="keygen" class="secondary">读取/生成本机设备密钥</button>
 <button id="prove" class="secondary" disabled>验证本机密钥</button>
 <button id="ingress" disabled>采集并安全接入单帧</button>
+<button id="understand" class="secondary" disabled>让 MIA 理解最近一帧</button>
 </div>
 <canvas id="still" hidden></canvas>
 <p id="status" role="status">等待你的操作。</p>
@@ -49,14 +50,20 @@ const stop=document.querySelector("#stop");
 const keygen=document.querySelector("#keygen");
 const prove=document.querySelector("#prove");
 const ingress=document.querySelector("#ingress");
+const understand=document.querySelector("#understand");
 const status=document.querySelector("#status");
 const deviceBox=document.querySelector("#device");
 const PROOF_URL="https://boaiqnkhrytxwdpgkxti.supabase.co/functions/v1/mia-camera-key-proof-test";
 const INGRESS_URL="https://boaiqnkhrytxwdpgkxti.supabase.co/functions/v1/mia-camera-frame-ingress-test";
+const UNDERSTAND_URL="https://boaiqnkhrytxwdpgkxti.supabase.co/functions/v1/mia-vision-understanding-test";
+const VISION_STORAGE_KEY="mia-camera-last-accepted-observation-v1";
 const FRAME_ID="windows-camera-image-plane-v1";
 const CAMERA_SOURCE="browser_getusermedia_builtin_webcam";
 let stream=null;
 let keyReady=false;
+let lastAcceptedFrame=null;
+try{lastAcceptedFrame=JSON.parse(localStorage.getItem(VISION_STORAGE_KEY)||"null");}catch{lastAcceptedFrame=null;}
+understand.disabled=!(keyReady&&lastAcceptedFrame?.observation_id&&lastAcceptedFrame?.image_sha256);
 
 function b64url(bytes){
   let binary="";
@@ -95,6 +102,7 @@ async function renderDevice(){
   const raw=await crypto.subtle.exportKey("raw",existing.publicKey);
   deviceBox.textContent=JSON.stringify({...existing.metadata,public_key_b64url:b64url(new Uint8Array(raw)),private_key:"仅保存在本浏览器 IndexedDB，不可导出"},null,2);
   keyReady=true;prove.disabled=false;ingress.disabled=!(stream&&video.videoWidth);
+understand.disabled=!(lastAcceptedFrame?.observation_id&&lastAcceptedFrame?.image_sha256);
   return existing;
 }
 start.addEventListener("click",async()=>{
@@ -243,12 +251,55 @@ ingress.addEventListener("click",async()=>{
     const result=await response.json().catch(()=>({error:"invalid_server_response"}));
     if(!response.ok||result.ok!==true)throw new Error(result.error||("HTTP "+response.status));
     status.textContent="单帧安全接入成功：图像哈希与设备签名均已验证，事件已写入 mia_test。设备与密钥仍禁用；未启用实时感知、物理测量或行动权限。";
+    lastAcceptedFrame={observation_id:result.observation_id,image_sha256:imageSha256,ingress_id:result.ingress_id};
+    localStorage.setItem(VISION_STORAGE_KEY,JSON.stringify(lastAcceptedFrame));
+    understand.disabled=!keyReady;
     deviceBox.textContent=JSON.stringify(result,null,2);
   }catch(e){
     status.textContent="单帧接入未通过："+(e?.message||String(e));
   }finally{
     ingress.disabled=!(keyReady&&stream&&video.videoWidth);
   }
+});
+
+
+understand.addEventListener("click",async()=>{
+  understand.disabled=true;
+  try{
+    const pair=await loadKeyPair();
+    if(!pair?.privateKey||!pair?.metadata?.source_id)throw new Error("本机设备密钥不存在，请先读取");
+    if(!lastAcceptedFrame?.observation_id||!lastAcceptedFrame?.image_sha256)throw new Error("尚无已接入的单帧，请先采集并安全接入");
+    const signedAt=new Date().toISOString();
+    const nonce=b64url(crypto.getRandomValues(new Uint8Array(24)));
+    const canonical=[
+      "ZHI-MIA-VISION-UNDERSTANDING-V1",
+      pair.metadata.source_id,
+      pair.metadata.key_id,
+      lastAcceptedFrame.observation_id,
+      signedAt,
+      nonce,
+      lastAcceptedFrame.image_sha256
+    ].join("\\n");
+    const signature=await crypto.subtle.sign({name:"Ed25519"},pair.privateKey,new TextEncoder().encode(canonical));
+    status.textContent="MIA 正在通过 AGNES 分析已保存的静态图像；不会重新开启摄像头……";
+    const response=await fetch(UNDERSTAND_URL,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        observation_id:lastAcceptedFrame.observation_id,
+        signed_at:signedAt,
+        nonce,
+        signature_b64url:b64url(new Uint8Array(signature))
+      }),
+      cache:"no-store"
+    });
+    const result=await response.json().catch(()=>({error:"invalid_server_response"}));
+    if(!response.ok||result.ok!==true)throw new Error(result.error||("HTTP "+response.status));
+    status.textContent="AGNES 视觉理解完成：推断已单独保存到 mia_test.subject_inferences。结果仅描述静态图像，不代表实时感知或世界坐标。";
+    deviceBox.textContent=JSON.stringify(result,null,2);
+  }catch(e){
+    status.textContent="视觉理解未通过："+(e?.message||String(e));
+  }finally{understand.disabled=!(keyReady&&lastAcceptedFrame?.observation_id&&lastAcceptedFrame?.image_sha256);}
 });
 
 window.addEventListener("pagehide",()=>{if(stream)stream.getTracks().forEach(track=>track.stop());});

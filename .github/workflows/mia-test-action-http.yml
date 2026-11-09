@@ -75,11 +75,17 @@ jobs:
               r.data.receipt?.sequence_no === 1 &&
               r.data.observation?.live_perception === false &&
               r.data.observation?.physical_movement === false &&
-              r.data.observation?.cross_scene_travel === false;
+              r.data.observation?.cross_scene_travel === false &&
+              r.data.world_state?.state_changed === (intent === "interact") &&
+              (intent === "interact"
+                ? r.data.world_state?.after_version === r.data.world_state?.before_version + 1
+                : r.data.world_state?.after_version === r.data.world_state?.before_version) &&
+              r.data.world_state?.event_id != null;
             record(intent, pass, {
               http: r.status, claimed: r.data.claimed, duplicate: r.data.duplicate,
               outcome: r.data.receipt?.status, sequence: r.data.receipt?.sequence_no,
               epistemics: r.data.observation,
+              world_state: r.data.world_state,
               request_id: r.data.request_id,
             });
           }

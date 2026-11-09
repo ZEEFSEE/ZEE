@@ -305,13 +305,12 @@ Deno.serve(async (req: Request) => {
 
       const ingressRows = await tx`
         insert into mia_test.perception_ingress_events
-          (id,source_id,key_id,source_event_id,nonce,observed_at,payload_sha256,signature,
+          (source_id,key_id,source_event_id,nonce,observed_at,payload_sha256,signature,
            signature_status,freshness_status,frame_id,calibration_evidence_ref,raw_payload,
            raw_payload_bytes,normalized_observation,disposition,decision_reason,
            replay_of_ingress_id,world_truth_claim,auto_action_authorized,test_only)
         values
-          (nextval('mia_test.perception_ingress_events_id_seq'),
-           ${sourceId}::uuid,${keyId},${eventId},${nonce},${new Date(observedMs)},
+          (${sourceId}::uuid,${keyId},${eventId},${nonce},${new Date(observedMs)},
            ${payloadHash},${signatureB64},${signatureStatus},${freshness},${frameId || "unknown"},
            ${mapping?.evidence_ref ?? null},${tx.json(payload as any)},${rawPayload},
            ${normalized ? tx.json(normalized as any) : null},${disposition},${reason},

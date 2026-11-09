@@ -32,12 +32,13 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#0d151b;padding:12px;
 <button id="stop" class="secondary" disabled>关闭摄像头</button>
 <button id="keygen" class="secondary">读取/生成本机设备密钥</button>
 <button id="prove" class="secondary" disabled>验证本机密钥</button>
+<button id="ingress" disabled>采集并安全接入单帧</button>
 </div>
 <canvas id="still" hidden></canvas>
 <p id="status" role="status">等待你的操作。</p>
 <p class="small">设备登记公钥（可分享）；私钥只保存在本浏览器的 IndexedDB 中：</p>
 <pre id="device">尚未生成</pre>
-<p class="small notice">隐私边界：不录音、不连续录像、不上传图像、不进行人脸识别。持钥证明只发送设备 ID、密钥 ID、短时随机数、时间戳和数字签名。私钥不会离开浏览器。关闭页面或点击关闭摄像头即可停止采集。</p>
+<p class="small notice">隐私边界：不录音、不连续录像、不进行人脸识别。持钥证明不上传图像；只有你主动点击“采集并安全接入单帧”时，才会将一张 320×240 JPEG、图像哈希和签名发送到 zee-prediction 的 mia_test 隔离环境。私钥不会离开浏览器。设备与密钥保持禁用，不授予行动权限。</p>
 </main>
 <script>
 const video=document.querySelector("#video");
@@ -47,9 +48,13 @@ const capture=document.querySelector("#capture");
 const stop=document.querySelector("#stop");
 const keygen=document.querySelector("#keygen");
 const prove=document.querySelector("#prove");
+const ingress=document.querySelector("#ingress");
 const status=document.querySelector("#status");
 const deviceBox=document.querySelector("#device");
 const PROOF_URL="https://boaiqnkhrytxwdpgkxti.supabase.co/functions/v1/mia-camera-key-proof-test";
+const INGRESS_URL="https://boaiqnkhrytxwdpgkxti.supabase.co/functions/v1/mia-camera-frame-ingress-test";
+const FRAME_ID="windows-camera-image-plane-v1";
+const CAMERA_SOURCE="browser_getusermedia_builtin_webcam";
 let stream=null;
 let keyReady=false;
 
@@ -89,7 +94,7 @@ async function renderDevice(){
   if(!existing){keyReady=false;prove.disabled=true;return null;}
   const raw=await crypto.subtle.exportKey("raw",existing.publicKey);
   deviceBox.textContent=JSON.stringify({...existing.metadata,public_key_b64url:b64url(new Uint8Array(raw)),private_key:"仅保存在本浏览器 IndexedDB，不可导出"},null,2);
-  keyReady=true;prove.disabled=false;
+  keyReady=true;prove.disabled=false;ingress.disabled=!(stream&&video.videoWidth);
   return existing;
 }
 start.addEventListener("click",async()=>{
@@ -97,7 +102,7 @@ start.addEventListener("click",async()=>{
     if(!navigator.mediaDevices?.getUserMedia)throw new Error("需要 HTTPS 或 localhost，并使用支持摄像头的浏览器");
     stream=await navigator.mediaDevices.getUserMedia({video:{width:{ideal:640},height:{ideal:480}},audio:false});
     video.srcObject=stream;
-    capture.disabled=false;stop.disabled=false;
+    capture.disabled=false;stop.disabled=false;ingress.disabled=!keyReady;
     status.textContent="摄像头已开启。画面只在本机预览。";
   }catch(e){status.textContent="无法开启摄像头："+(e?.message||String(e));}
 });
@@ -109,7 +114,7 @@ capture.addEventListener("click",()=>{
 });
 stop.addEventListener("click",()=>{
   if(stream)stream.getTracks().forEach(track=>track.stop());
-  stream=null;video.srcObject=null;capture.disabled=true;stop.disabled=true;
+  stream=null;video.srcObject=null;capture.disabled=true;stop.disabled=true;ingress.disabled=true;
   status.textContent="摄像头已关闭。";
 });
 keygen.addEventListener("click",async()=>{
@@ -169,6 +174,83 @@ prove.addEventListener("click",async()=>{
     status.textContent="持钥验证未通过："+(e?.message||String(e));
   }finally{prove.disabled=!keyReady;}
 });
+
+ingress.addEventListener("click",async()=>{
+  ingress.disabled=true;
+  try{
+    const pair=await loadKeyPair();
+    if(!pair?.privateKey||!pair?.metadata?.source_id)throw new Error("本机设备密钥不存在，请先读取或生成");
+    if(!stream||!video.videoWidth)throw new Error("请先开启摄像头");
+    still.width=320;still.height=240;
+    still.getContext("2d",{alpha:false}).drawImage(video,0,0,320,240);
+    let blob=null;
+    for(const quality of [0.78,0.68,0.58,0.48]){
+      blob=await new Promise((resolve,reject)=>{
+        still.toBlob(value=>value?resolve(value):reject(new Error("JPEG 编码失败")),"image/jpeg",quality);
+      });
+      if(blob.size<=40*1024)break;
+    }
+    if(!blob||blob.size>40*1024)throw new Error("单帧 JPEG 无法压缩到 40 KB 以下，请调整光线后重试");
+    const imageBytes=new Uint8Array(await blob.arrayBuffer());
+    const imageHashBytes=new Uint8Array(await crypto.subtle.digest("SHA-256",imageBytes));
+    const imageSha256=Array.from(imageHashBytes,b=>b.toString(16).padStart(2,"0")).join("");
+    const imageB64url=b64url(imageBytes);
+    const observedAt=new Date().toISOString();
+    const nonce=b64url(crypto.getRandomValues(new Uint8Array(24)));
+    const eventId=crypto.randomUUID();
+    const canonical=[
+      "ZHI-MIA-CAMERA-FRAME-V1",
+      pair.metadata.source_id,
+      pair.metadata.key_id,
+      eventId,
+      observedAt,
+      nonce,
+      imageSha256,
+      "image/jpeg",
+      "320",
+      "240",
+      FRAME_ID,
+      CAMERA_SOURCE,
+      "user_initiated_single_frame",
+      "image_pixel_center_not_world_coordinates"
+    ].join("\n");
+    const signature=await crypto.subtle.sign(
+      {name:"Ed25519"},pair.privateKey,new TextEncoder().encode(canonical)
+    );
+    status.textContent="正在将这一张 JPEG、哈希和签名发送到 mia_test 隔离环境……";
+    const response=await fetch(INGRESS_URL,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        source_id:pair.metadata.source_id,
+        key_id:pair.metadata.key_id,
+        event_id:eventId,
+        observed_at:observedAt,
+        nonce,
+        image_b64url:imageB64url,
+        image_sha256:imageSha256,
+        media_type:"image/jpeg",
+        width:320,
+        height:240,
+        frame_id:FRAME_ID,
+        camera_source:CAMERA_SOURCE,
+        capture_mode:"user_initiated_single_frame",
+        coordinate_semantics:"image_pixel_center_not_world_coordinates",
+        signature_b64url:b64url(new Uint8Array(signature))
+      }),
+      cache:"no-store"
+    });
+    const result=await response.json().catch(()=>({error:"invalid_server_response"}));
+    if(!response.ok||result.ok!==true)throw new Error(result.error||("HTTP "+response.status));
+    status.textContent="单帧安全接入成功：图像哈希与设备签名均已验证，事件已写入 mia_test。设备与密钥仍禁用；未启用实时感知、物理测量或行动权限。";
+    deviceBox.textContent=JSON.stringify(result,null,2);
+  }catch(e){
+    status.textContent="单帧接入未通过："+(e?.message||String(e));
+  }finally{
+    ingress.disabled=!(keyReady&&stream&&video.videoWidth);
+  }
+});
+
 window.addEventListener("pagehide",()=>{if(stream)stream.getTracks().forEach(track=>track.stop());});
 renderDevice().catch(e=>{status.textContent="无法读取本机密钥："+(e?.message||String(e));});
 </script>

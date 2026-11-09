@@ -91,16 +91,20 @@ jobs:
           }
 
           const duplicateBody = {
-            test_only: true, request_id: uuid(), test_run_id: uuid(), intent: "wait",
+            test_only: true, request_id: uuid(), test_run_id: uuid(), intent: "interact",
           };
           const duplicatePair = await Promise.all([
             call(duplicateBody),
             call(duplicateBody),
           ]);
-          const claimedCount = duplicatePair.filter(x => x.status === 200 && x.data.claimed === true && x.data.duplicate === false).length;
+          const claimedResponses = duplicatePair.filter(x => x.status === 200 && x.data.claimed === true && x.data.duplicate === false);
           const duplicateCount = duplicatePair.filter(x => x.status === 200 && x.data.claimed === false && x.data.duplicate === true).length;
-          record("concurrent-idempotency", claimedCount === 1 && duplicateCount === 1, {
-            claimed_responses: claimedCount, duplicate_responses: duplicateCount,
+          const winner = claimedResponses[0]?.data;
+          record("concurrent-interact-idempotency", claimedResponses.length === 1 && duplicateCount === 1 &&
+            winner?.world_state?.state_changed === true &&
+            winner?.world_state?.after_version === winner?.world_state?.before_version + 1, {
+            claimed_responses: claimedResponses.length, duplicate_responses: duplicateCount,
+            single_state_transition: winner?.world_state ?? null,
             request_id: duplicateBody.request_id,
           });
 

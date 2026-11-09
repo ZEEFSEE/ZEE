@@ -64,7 +64,7 @@ jobs:
             observedAt = new Date().toISOString() } = {}) {
             const payload = Buffer.from(JSON.stringify(payloadObject));
             const hash = createHash("sha256").update(payload).digest("hex");
-            const envelope = ["ZHI-MIA-PERCEPTION-V1", sourceId, keyId, eventId, observedAt, nonce, hash].join("\\n");
+            const envelope = ["ZHI-MIA-PERCEPTION-V1", sourceId, keyId, eventId, observedAt, nonce, hash].join("\n");
             const signature = sign(null, Buffer.from(envelope), privateKey).toString("base64url");
             return {
               test_only: true, source_id: sourceId, key_id: keyId, event_id: eventId,
@@ -149,12 +149,12 @@ jobs:
             "",
             "| Test | Result | Detail |",
             "|---|---|---|",
-            ...results.map(x => `| ${x.name} | ${x.pass ? "PASS" : "FAIL"} | \`${JSON.stringify(x.detail).replaceAll("|", "\\\\|")}\` |`),
+            ...results.map(x => `| ${x.name} | ${x.pass ? "PASS" : "FAIL"} | \`${JSON.stringify(x.detail).replaceAll("|", "\\|")}\` |`),
             "",
             "Target: zee-prediction / mia-perception-ingress-test. The Ed25519 private key is generated in-memory and never stored.",
             "The coordinate frame and affine transform are synthetic CI fixtures, not physical calibration or real-world perception.",
             "No action authorization is granted and no action executor is called."
-          ].join("\\n");
+          ].join("\n");
           fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary + "\\n");
           if (results.some(x => !x.pass)) process.exitCode = 1;
           NODE

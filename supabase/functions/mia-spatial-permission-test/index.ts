@@ -358,7 +358,7 @@ Deno.serve(async (req: Request) => {
            ${beforeVersion},${afterVersion},${tx.json(beforeState)},${tx.json(afterState)},
            ${tx.json({
              intent, state_changed: afterVersion !== beforeVersion,
-             permission_required: intent === "interact",
+             permission_required: intent === "interact" || intent === "perception_interact",
              permission_grant_id: permission && "grant_id" in permission ? permission.grant_id : null,
              perception_authorization_id: perceptionAuthorization && "authorization_id" in perceptionAuthorization ? perceptionAuthorization.authorization_id : null,
              perception_observation_id: intent === "perception_interact" ? observationId : null,

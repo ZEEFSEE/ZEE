@@ -5,6 +5,7 @@ on:
     branches: [mia/spatial-permission-http-test-v1]
     paths:
       - "supabase/functions/mia-perception-ingress-test/**"
+      - "supabase/migrations/**"
       - ".github/workflows/mia-camera-ingress-http.yml"
   push:
     branches: [mia/local-camera-capture-test-v1]

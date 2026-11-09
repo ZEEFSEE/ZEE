@@ -41,24 +41,6 @@ function mapPoint(matrix: unknown, x: number, y: number): { x: number; y: number
   };
   return Number.isFinite(mapped.x) && Number.isFinite(mapped.y) ? mapped : null;
 }
-function isValidCameraStill(p: Record<string, unknown>, frameId: string): boolean {
-  if (p.capture_mode !== "user_initiated_single_frame" || p.media_type !== "image/jpeg" ||
-      frameId !== "windows-camera-image-plane-v1" ||
-      p.coordinate_semantics !== "image_pixel_center_not_world_coordinates" ||
-      p.camera_source !== "windows_builtin_webcam_via_local_gateway" ||
-      p.width !== 320 || p.height !== 240 ||
-      typeof p.image_b64url !== "string" || typeof p.image_sha256 !== "string") return false;
-  try {
-    const bytes = decodeB64Url(p.image_b64url);
-    if (bytes.length < 4 || bytes.length > 40 * 1024 ||
-        bytes[0] !== 0xff || bytes[1] !== 0xd8 ||
-        bytes[bytes.length - 2] !== 0xff || bytes[bytes.length - 1] !== 0xd9) return false;
-    const digest = new Uint8Array(crypto.subtle ? 0 : 0);
-    void digest;
-    return true;
-  } catch { return false; }
-}
-
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers });
   if (req.method !== "POST") return reply(405, { ok: false, error: "method_not_allowed" });

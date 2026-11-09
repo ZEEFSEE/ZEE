@@ -6,6 +6,11 @@ on:
       - mia/test-action-http-runner-v1
     paths:
       - .github/workflows/mia-test-action-http.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/mia-test-action-http.yml
   workflow_dispatch:
 
 permissions:

@@ -70,7 +70,7 @@ jobs:
             observed.data.epistemics?.confidence_scope === "database_record_retrieval_only" &&
             observed.data.epistemics?.world_truth_claim === false &&
             observed.data.epistemics?.external_sensor_connection === "not_configured" &&
-            (typeof observed.data.observation_snapshot_id === "number" || /^\\d+$/.test(String(observed.data.observation_snapshot_id))), {
+            (typeof observed.data.observation_snapshot_id === "number" || /^[0-9]+$/.test(String(observed.data.observation_snapshot_id))), {
               http: observed.status, frame: observed.data.spatial?.current_frame,
               lounge, unknown, epistemics: observed.data.epistemics,
               observation_snapshot_id: observed.data.observation_snapshot_id

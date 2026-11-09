@@ -22,7 +22,7 @@ On first run, the gateway creates `tools/mia-camera-gateway/device.local.json` w
 
 Before capture, register the printed public key in the **test** project's private `mia_test` schema. Use the SQL template in `docs/mia-windows-camera-enrollment.sql`, replacing only the three clearly marked values with the locally printed source ID, key ID, and public key. Register only this test device and allow only `windows-camera-image-plane-v1`. Do not add a coordinate-frame mapping: the first image is intentionally uncalibrated.
 
-After registration, stop the gateway and restart it with this PowerShell session variable set:
+After registration, stop the gateway and restart it with these PowerShell session variables set:
 
 ```powershell
 $secure = Read-Host "zee-prediction test API secret key" -AsSecureString

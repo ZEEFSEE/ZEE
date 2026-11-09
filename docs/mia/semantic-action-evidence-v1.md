@@ -181,3 +181,16 @@ The Node built-in test runner reported **11 tests passed, 0 failed** (duration a
 103 ms). This verifies the pure contract module only; it does not verify a live Supabase
 write, concurrent claims, the deployed Edge Function integration, or physical-world
 behavior.
+
+
+### Read-only production schema finding
+
+A read-only inspection of `public.mia_forest_autonomy_runs` found the existing
+`runtime_request_id` column is nullable text. The table has a primary key on `id`
+and a timeline index on `(identity_id, created_at DESC)`, but no unique index or
+constraint on `runtime_request_id`. Therefore the current schema cannot provide a
+database-enforced idempotency claim for that field. Application-level read-before-write
+would remain race-prone under concurrent invocations. The contract intentionally returns
+`indeterminate` and refuses execution when no atomic claim is available; adding a unique
+constraint is a separate schema change that must first be tested in an isolated project.
+No production schema change was made.

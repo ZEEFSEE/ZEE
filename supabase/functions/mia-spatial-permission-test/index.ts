@@ -60,7 +60,7 @@ Deno.serve(async (req: Request) => {
   const sql: any = postgres(dbUrl, { max: 1, idle_timeout: 5, connect_timeout: 8, prepare: false });
 
   try {
-    const result = await sql.begin(async (tx) => {
+    const result = await sql.begin(async (tx: any) => {
       const payload = { test_only: "true", intent, source: "mia-spatial-permission-test", destination_id: destinationId };
 
       if (intent === "prepare_perception_action") {

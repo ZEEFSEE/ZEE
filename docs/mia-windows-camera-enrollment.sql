@@ -11,7 +11,7 @@ insert into mia_test.perception_source_registry
 values
   ('REPLACE_SOURCE_UUID'::uuid,
    'windows-webcam-gateway-REPLACE_SOURCE_UUID',
-   'camera_gateway','ed25519','windows-webcam-ed25519-v1',true,
+   'camera','ed25519','windows-webcam-ed25519-v1',true,
    120,30,array['windows-camera-image-plane-v1']::text[],
    jsonb_build_object(
      'test_fixture',false,

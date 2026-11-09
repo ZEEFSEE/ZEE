@@ -37,7 +37,7 @@ jobs:
           const keyId = "ci-camera-" + randomUUID();
           const frameId = "windows-camera-image-plane-v1";
           const { publicKey, privateKey } = generateKeyPairSync("ed25519");
-          const publicDer = publicKey.export({ type: "der", format: "spki" });
+          const publicDer = publicKey.export({ format: "der", type: "spki" });
           const publicKeyB64 = publicDer.subarray(-32).toString("base64url");
           const results = [];
 

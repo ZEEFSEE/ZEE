@@ -69,6 +69,7 @@ This section is optional and applies only if the perception ingress migration ha
 begin;
 drop table if exists mia_test.perception_ingress_events;
 drop table if exists mia_test.perception_source_registry;
+drop function if exists mia_test.guard_perception_ingress_acceptance();
 commit;
 ```
 

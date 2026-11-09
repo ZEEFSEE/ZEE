@@ -1,0 +1,30 @@
+name: MIA perception ingress contract
+
+on:
+  push:
+    branches:
+      - mia/spatial-permission-http-test-v1
+    paths:
+      - "supabase/functions/mia-perception-ingress-test/**"
+      - "supabase/migrations/*mia_test_perception_ingress*"
+      - ".github/workflows/mia-perception-ingress.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "supabase/functions/mia-perception-ingress-test/**"
+      - "supabase/migrations/*mia_test_perception_ingress*"
+      - ".github/workflows/mia-perception-ingress.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check perception ingress
+        run: deno check supabase/functions/mia-perception-ingress-test/index.ts

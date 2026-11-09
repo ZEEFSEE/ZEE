@@ -351,8 +351,14 @@ compare.addEventListener("click",async()=>{
       cache:"no-store"
     });
     const result=await response.json().catch(()=>({error:"invalid_server_response"}));
-    if(!response.ok||result.ok!==true)throw new Error(result.error||("HTTP "+response.status));
-    status.textContent="AGNES 双帧比较完成：跨帧推断已独立保存到 mia_test.subject_inferences。它只描述两张静态图像的可见差异，不证明物体真实移动或实时感知。";
+    if(!response.ok||result.ok!==true){
+      if(result.error==="agnes_pair_queue_full")throw new Error("AGNES 当前排队已满（HTTP 503）。两张图像仍已保存；等待几秒后可直接重试，无需重新采集。");
+      if(result.error==="agnes_pair_rate_limited")throw new Error("AGNES 请求频率受限（HTTP 429）。请稍后直接重试，无需重新采集。");
+      throw new Error((result.error||"request_failed")+(result.upstream_status?"（上游 HTTP "+result.upstream_status+"）":""));
+    }
+    status.textContent=result.duplicate
+      ?"AGNES 双帧比较结果已从 mia_test.subject_inferences 恢复：此前已成功保存，无需重复推理。"
+      :"AGNES 双帧比较完成：跨帧推断已独立保存到 mia_test.subject_inferences。它只描述两张静态图像的可见差异，不证明物体真实移动或实时感知。";
     deviceBox.textContent=JSON.stringify(result,null,2);
   }catch(e){
     status.textContent="双帧比较未通过："+(e?.message||String(e));

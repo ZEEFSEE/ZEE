@@ -1,3 +1,5 @@
+import test from "node:test";
+import assert from "node:assert/strict";
 import {
   buildExecutionReceipt,
   buildObservationEpistemics,
@@ -5,25 +7,21 @@ import {
   decideIdempotency,
 } from "../_shared/mia-semantic-evidence.ts";
 function assertEquals(actual: unknown, expected: unknown): void {
-  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
-    throw new Error(`assertEquals failed: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
-  }
+  assert.deepStrictEqual(actual, expected);
 }
 
 function assertThrows(fn: () => unknown): void {
-  let threw = false;
-  try { fn(); } catch { threw = true; }
-  if (!threw) throw new Error("assertThrows failed: function did not throw");
+  assert.throws(fn);
 }
 
-Deno.test("classifies missing AGNES configuration without exposing a secret", () => {
+test("classifies missing AGNES configuration without exposing a secret", () => {
   assertEquals(
     classifyPlannerFailure({ missingConfig: true, message: "key absent" }),
     "missing_config",
   );
 });
 
-Deno.test("classifies timeout, HTTP, invalid JSON, network, and unknown failures", () => {
+test("classifies timeout, HTTP, invalid JSON, network, and unknown failures", () => {
   assertEquals(classifyPlannerFailure({ name: "AbortError" }), "timeout");
   assertEquals(classifyPlannerFailure({ status: 502 }), "http_error");
   assertEquals(classifyPlannerFailure({ message: "JSON parse failed" }), "invalid_json");
@@ -31,7 +29,7 @@ Deno.test("classifies timeout, HTTP, invalid JSON, network, and unknown failures
   assertEquals(classifyPlannerFailure({ message: "unexpected condition" }), "unknown");
 });
 
-Deno.test("creates a persisted semantic interaction receipt with explicit capability limits", () => {
+test("creates a persisted semantic interaction receipt with explicit capability limits", () => {
   const receipt = buildExecutionReceipt({
     requestId: "req-001",
     requestedAction: "interact",
@@ -52,7 +50,7 @@ Deno.test("creates a persisted semantic interaction receipt with explicit capabi
   assertEquals(receipt.execution.cross_scene_travel, false);
 });
 
-Deno.test("blocked travel cannot be reported as executed even when mapped to wait", () => {
+test("blocked travel cannot be reported as executed even when mapped to wait", () => {
   assertThrows(() => buildExecutionReceipt({
     requestId: "req-travel",
     requestedAction: "travel",
@@ -68,7 +66,7 @@ Deno.test("blocked travel cannot be reported as executed even when mapped to wai
   }));
 });
 
-Deno.test("unpersisted work cannot claim a new sequence", () => {
+test("unpersisted work cannot claim a new sequence", () => {
   assertThrows(() => buildExecutionReceipt({
     requestId: "req-unpersisted",
     requestedAction: "interact",
@@ -84,7 +82,7 @@ Deno.test("unpersisted work cannot claim a new sequence", () => {
   }));
 });
 
-Deno.test("a failed receipt cannot claim persistence", () => {
+test("a failed receipt cannot claim persistence", () => {
   assertThrows(() => buildExecutionReceipt({
     requestId: "req-failed",
     requestedAction: "interact",
@@ -100,28 +98,28 @@ Deno.test("a failed receipt cannot claim persistence", () => {
   }));
 });
 
-Deno.test("duplicate request IDs are rejected", () => {
+test("duplicate request IDs are rejected", () => {
   assertEquals(
     decideIdempotency("req-1", ["req-1"], true),
     { decision: "duplicate", mayExecute: false },
   );
 });
 
-Deno.test("read-before-write without atomic claim fails closed", () => {
+test("read-before-write without atomic claim fails closed", () => {
   assertEquals(
     decideIdempotency("req-2", [], false),
     { decision: "indeterminate", mayExecute: false },
   );
 });
 
-Deno.test("new request can proceed only when atomic claim is available", () => {
+test("new request can proceed only when atomic claim is available", () => {
   assertEquals(
     decideIdempotency("req-3", [], true),
     { decision: "new_request", mayExecute: true },
   );
 });
 
-Deno.test("observation provenance is explicit and cannot imply physical perception", () => {
+test("observation provenance is explicit and cannot imply physical perception", () => {
   const evidence = buildObservationEpistemics("mia_forest_autonomy_runs:run-42", 0.85);
   assertEquals(evidence.status, "observed_semantic_state");
   assertEquals(evidence.source_ref, "mia_forest_autonomy_runs:run-42");
@@ -130,6 +128,6 @@ Deno.test("observation provenance is explicit and cannot imply physical percepti
   assertEquals(evidence.capabilities.cross_scene_travel, false);
 });
 
-Deno.test("observation confidence must be bounded", () => {
+test("observation confidence must be bounded", () => {
   assertThrows(() => buildObservationEpistemics("run-42", 1.2));
 });

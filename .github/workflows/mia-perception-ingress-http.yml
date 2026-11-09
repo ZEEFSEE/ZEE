@@ -2,7 +2,7 @@ name: MIA perception ingress HTTP test
 
 on:
   pull_request:
-    branches: [main]
+    branches: [mia/spatial-permission-http-test-v1]
     paths:
       - "supabase/functions/mia-perception-ingress-test/**"
       - ".github/workflows/mia-perception-ingress-http.yml"

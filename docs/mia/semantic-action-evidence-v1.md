@@ -124,3 +124,24 @@ Release gate: all tests pass in isolation; API compatibility diff reviewed; logs
 - No automatic promotion of evolution candidates.
 - No schema migration.
 - No production deployment in this branch.
+
+## Implementation checkpoint — isolated contract harness
+
+Added:
+- `tests/mia-semantic-action/contract.ts`: pure action evaluator, bounded planner-error classifier, persistence-success gate, epistemic projection, and write-target allow-list.
+- `tests/mia-semantic-action/contract_test.ts`: 10 isolated Deno tests.
+- `.github/workflows/mia-semantic-action-contract.yml`: pull-request/push CI with Deno type-check and test steps.
+
+Verified GitHub Actions run:
+- Run ID: `42578007346`
+- Workflow: `Mia Semantic Action Contract`
+- Job: `deno-contract-tests`
+- Result: `success`
+- Both `deno check` and `deno test` completed successfully.
+
+Important limitations:
+- This harness is not yet wired into the deployed V14 Edge Function.
+- The action-ID duplicate guard is only process-local in this pure harness; it does not establish cross-instance or concurrent exactly-once semantics.
+- The write-target guard is a unit-level policy check, not proof of database-level write isolation.
+- No disposable Supabase test project has been connected, so no database integration test has run.
+- No production function, database object, secret, cron schedule, or Mia chat path was changed.

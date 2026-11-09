@@ -24,19 +24,20 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#0d151b;padding:12px;
 <body>
 <main>
 <h1>MIA · 浏览器摄像头第一步</h1>
-<p>本页第一阶段只测试本机摄像头权限、单帧预览和本地设备密钥生成。<strong>不会上传图像，也不会连接 Supabase。</strong></p>
+<p>本页测试本机摄像头权限、单帧本地预览、设备密钥和 Ed25519 持钥证明。<strong>持钥证明不会上传图像、不会启用设备，也不会授予行动权限。</strong></p>
 <video id="video" autoplay muted playsinline></video>
 <div class="controls">
 <button id="start">允许并开启摄像头</button>
 <button id="capture" disabled>本地采集单帧</button>
 <button id="stop" class="secondary" disabled>关闭摄像头</button>
-<button id="keygen" class="secondary">生成本机设备密钥</button>
+<button id="keygen" class="secondary">读取/生成本机设备密钥</button>
+<button id="prove" class="secondary" disabled>验证本机密钥</button>
 </div>
 <canvas id="still" hidden></canvas>
 <p id="status" role="status">等待你的操作。</p>
 <p class="small">设备登记公钥（可分享）；私钥只保存在本浏览器的 IndexedDB 中：</p>
 <pre id="device">尚未生成</pre>
-<p class="small notice">隐私边界：不录音、不连续录像、不上传图像、不进行人脸识别。关闭页面或点击关闭摄像头即可停止采集。请只在你信任的设备上生成密钥。</p>
+<p class="small notice">隐私边界：不录音、不连续录像、不上传图像、不进行人脸识别。持钥证明只发送设备 ID、密钥 ID、短时随机数、时间戳和数字签名。私钥不会离开浏览器。关闭页面或点击关闭摄像头即可停止采集。</p>
 </main>
 <script>
 const video=document.querySelector("#video");
@@ -45,9 +46,12 @@ const start=document.querySelector("#start");
 const capture=document.querySelector("#capture");
 const stop=document.querySelector("#stop");
 const keygen=document.querySelector("#keygen");
+const prove=document.querySelector("#prove");
 const status=document.querySelector("#status");
 const deviceBox=document.querySelector("#device");
+const PROOF_URL="https://boaiqnkhrytxwdpgkxti.supabase.co/functions/v1/mia-camera-key-proof-test";
 let stream=null;
+let keyReady=false;
 
 function b64url(bytes){
   let binary="";
@@ -80,6 +84,14 @@ async function loadKeyPair(){
   });
   db.close();return value;
 }
+async function renderDevice(){
+  const existing=await loadKeyPair();
+  if(!existing){keyReady=false;prove.disabled=true;return null;}
+  const raw=await crypto.subtle.exportKey("raw",existing.publicKey);
+  deviceBox.textContent=JSON.stringify({...existing.metadata,public_key_b64url:b64url(new Uint8Array(raw)),private_key:"仅保存在本浏览器 IndexedDB，不可导出"},null,2);
+  keyReady=true;prove.disabled=false;
+  return existing;
+}
 start.addEventListener("click",async()=>{
   try{
     if(!navigator.mediaDevices?.getUserMedia)throw new Error("需要 HTTPS 或 localhost，并使用支持摄像头的浏览器");
@@ -106,8 +118,7 @@ keygen.addEventListener("click",async()=>{
     if(!crypto.subtle)throw new Error("当前页面环境不支持 Web Crypto");
     const existing=await loadKeyPair();
     if(existing){
-      const raw=await crypto.subtle.exportKey("raw",existing.publicKey);
-      deviceBox.textContent=JSON.stringify({...existing.metadata,public_key_b64url:b64url(new Uint8Array(raw)),private_key:"仅保存在本浏览器 IndexedDB，不可导出"},null,2);
+      await renderDevice();
       status.textContent="已读取本机现有设备密钥，没有重新生成。";
       return;
     }
@@ -115,12 +126,51 @@ keygen.addEventListener("click",async()=>{
     const raw=await crypto.subtle.exportKey("raw",pair.publicKey);
     const metadata={source_id:crypto.randomUUID(),key_id:"browser-ed25519-v1",algorithm:"Ed25519",created_at:new Date().toISOString()};
     await saveKeyPair(pair,metadata);
-    deviceBox.textContent=JSON.stringify({...metadata,public_key_b64url:b64url(new Uint8Array(raw)),private_key:"不可导出；仅保存在本浏览器 IndexedDB"},null,2);
-    status.textContent="本机设备密钥已生成。当前仅保存公钥登记资料，尚未登记到测试数据库。";
-  }catch(e){status.textContent="密钥生成失败："+(e?.message||String(e));}
+    await renderDevice();
+    status.textContent="本机设备密钥已生成。公钥已登记在隔离测试数据库；设备和密钥仍保持禁用。";
+  }catch(e){status.textContent="密钥读取/生成失败："+(e?.message||String(e));}
   finally{keygen.disabled=false;}
 });
+prove.addEventListener("click",async()=>{
+  prove.disabled=true;
+  try{
+    const pair=await loadKeyPair();
+    if(!pair?.privateKey||!pair?.metadata?.source_id)throw new Error("本机设备密钥不存在，请先读取或生成");
+    const observedAt=new Date().toISOString();
+    const nonceBytes=crypto.getRandomValues(new Uint8Array(24));
+    const nonce=b64url(nonceBytes);
+    const message=[
+      "ZHI-MIA-CAMERA-KEY-PROOF-V1",
+      pair.metadata.source_id,
+      pair.metadata.key_id,
+      observedAt,
+      nonce
+    ].join("\n");
+    const signature=await crypto.subtle.sign({name:"Ed25519"},pair.privateKey,new TextEncoder().encode(message));
+    const signature_b64url=b64url(new Uint8Array(signature));
+    status.textContent="正在向隔离测试接口提交签名证明（不含图像和私钥）……";
+    const response=await fetch(PROOF_URL,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        source_id:pair.metadata.source_id,
+        key_id:pair.metadata.key_id,
+        observed_at:observedAt,
+        nonce,
+        signature_b64url
+      }),
+      cache:"no-store"
+    });
+    const result=await response.json().catch(()=>({error:"invalid_server_response"}));
+    if(!response.ok||result.ok!==true)throw new Error(result.error||("HTTP "+response.status));
+    status.textContent="成功：服务器已用登记公钥验证本机私钥签名。设备与密钥仍保持禁用；没有上传图像或写入感知事件。";
+    deviceBox.textContent=JSON.stringify({...result,source_id:pair.metadata.source_id,key_id:pair.metadata.key_id},null,2);
+  }catch(e){
+    status.textContent="持钥验证未通过："+(e?.message||String(e));
+  }finally{prove.disabled=!keyReady;}
+});
 window.addEventListener("pagehide",()=>{if(stream)stream.getTracks().forEach(track=>track.stop());});
+renderDevice().catch(e=>{status.textContent="无法读取本机密钥："+(e?.message||String(e));});
 </script>
 </body>
 </html>

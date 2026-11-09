@@ -1,0 +1,134 @@
+name: MIA camera frame ingress HTTP test
+
+on:
+  pull_request:
+    branches: [mia/spatial-permission-http-test-v1]
+    paths:
+      - "supabase/functions/mia-perception-ingress-test/**"
+      - "supabase/migrations/**"
+      - ".github/workflows/mia-camera-ingress-http.yml"
+  push:
+    branches: [mia/local-camera-capture-test-v1]
+    paths:
+      - "supabase/functions/mia-perception-ingress-test/**"
+      - ".github/workflows/mia-camera-ingress-http.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  camera-ingress:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SUPABASE_URL: https://boaiqnkhrytxwdpgkxti.supabase.co
+      SUPABASE_SECRET_KEY: ${{ secrets.ZEE_PREDICTION_SECRET_KEY }}
+    steps:
+      - name: Verify signed uncalibrated camera still ingress
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import { createHash, generateKeyPairSync, randomBytes, randomUUID, sign } from "node:crypto";
+
+          const endpoint = process.env.SUPABASE_URL + "/functions/v1/mia-perception-ingress-test";
+          const secret = process.env.SUPABASE_SECRET_KEY;
+          if (!secret) throw new Error("Missing ZEE_PREDICTION_SECRET_KEY.");
+          const sourceId = randomUUID();
+          const keyId = "ci-camera-" + randomUUID();
+          const frameId = "windows-camera-image-plane-v1";
+          const { publicKey, privateKey } = generateKeyPairSync("ed25519");
+          const publicDer = publicKey.export({ format: "der", type: "spki" });
+          const publicKeyB64 = publicDer.subarray(-32).toString("base64url");
+          const results = [];
+
+          function check(name, pass, detail) {
+            results.push({ name, pass, detail });
+            console.log(`${pass ? "PASS" : "FAIL"} ${name}: ${JSON.stringify(detail)}`);
+            if (!pass) process.exitCode = 1;
+          }
+          async function call(body) {
+            const response = await fetch(endpoint, {
+              method: "POST",
+              headers: { "content-type": "application/json", apikey: secret },
+              body: JSON.stringify(body)
+            });
+            let data = {}; try { data = await response.json(); } catch {}
+            return { status: response.status, data };
+          }
+          function signed(payloadObject, eventId = "camera-" + randomUUID()) {
+            const observedAt = new Date().toISOString();
+            const nonce = randomBytes(24).toString("base64url");
+            const raw = Buffer.from(JSON.stringify(payloadObject));
+            const hash = createHash("sha256").update(raw).digest("hex");
+            const envelope = ["ZHI-MIA-PERCEPTION-V1", sourceId, keyId, eventId, observedAt, nonce, hash].join("\n");
+            return {
+              test_only: true, source_id: sourceId, key_id: keyId, event_id: eventId,
+              observed_at: observedAt, nonce, payload_b64url: raw.toString("base64url"),
+              signature_b64url: sign(null, Buffer.from(envelope), privateKey).toString("base64url")
+            };
+          }
+
+          const registered = await call({
+            test_only: true, intent: "register_test_camera_source", source_id: sourceId,
+            key_id: keyId, public_key_b64url: publicKeyB64
+          });
+          check("camera-source-fixture-registered-without-coordinate-map",
+            registered.status === 201 && registered.data.source_kind === "camera" &&
+            registered.data.frame_id === frameId && registered.data.calibrated_mapping_created === false,
+            { status: registered.status, data: registered.data });
+
+          // Four-byte JPEG marker fixture is used only to test the byte/hash contract, not image decoding.
+          const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xd9]);
+          const imageHash = createHash("sha256").update(jpeg).digest("hex");
+          const payload = {
+            capture_mode: "user_initiated_single_frame", media_type: "image/jpeg",
+            image_b64url: jpeg.toString("base64url"), image_sha256: imageHash,
+            width: 320, height: 240, frame_id: frameId,
+            coordinates: { x: 160, y: 120 },
+            coordinate_semantics: "image_pixel_center_not_world_coordinates",
+            camera_source: "windows_builtin_webcam_via_local_gateway"
+          };
+          const accepted = await call(signed(payload));
+          check("signed-camera-frame-accepted-as-unmapped-image-plane-observation",
+            accepted.status === 200 && accepted.data.ingress?.signature_status === "verified" &&
+            accepted.data.ingress?.disposition === "accepted" &&
+            accepted.data.observation?.mapping_status === "unmapped" &&
+            accepted.data.observation?.mapped_coordinates === null &&
+            accepted.data.evidence_semantics?.camera_image_hash_checked === true &&
+            accepted.data.evidence_semantics?.physical_measurement === false &&
+            accepted.data.evidence_semantics?.action_authorized === false &&
+            accepted.data.evidence_semantics?.action_executor_called === false,
+            { status: accepted.status, ingress: accepted.data.ingress,
+              observation: accepted.data.observation, semantics: accepted.data.evidence_semantics });
+
+          const tamperedPayload = { ...payload, image_sha256: "0".repeat(64) };
+          const tampered = await call(signed(tamperedPayload));
+          check("signed-camera-frame-with-wrong-image-hash-rejected",
+            tampered.status === 422 && tampered.data.ingress?.disposition === "rejected" &&
+            tampered.data.ingress?.decision_reason === "camera_still_invalid" &&
+            tampered.data.observation === null,
+            { status: tampered.status, ingress: tampered.data.ingress });
+
+          const revoked = await call({
+            test_only: true, intent: "revoke_test_source", source_id: sourceId, key_id: keyId
+          });
+          check("camera-fixture-source-and-key-revoked",
+            revoked.status === 200 && revoked.data.revoked === true,
+            { status: revoked.status, data: revoked.data });
+
+          const summary = [
+            "# MIA camera frame ingress HTTP test", "",
+            `Result: ${results.every(x => x.pass) ? "PASS" : "FAIL"}`, "",
+            "| Test | Result | Detail |", "|---|---|---|",
+            ...results.map(x => `| ${x.name} | ${x.pass ? "PASS" : "FAIL"} | \`${JSON.stringify(x.detail).replaceAll("|", "\\|")}\` |`),
+            "", "Target: zee-prediction / mia_test only.",
+            "The JPEG is a synthetic marker fixture; this verifies signature/hash/uncalibrated-frame handling, not webcam access or image recognition.",
+            "No action permission is granted and no executor is called."
+          ].join("\n");
+          if (process.env.GITHUB_STEP_SUMMARY) {
+            const fs = await import("node:fs");
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary + "\n");
+          }
+          if (results.some(x => !x.pass)) process.exitCode = 1;
+          NODE

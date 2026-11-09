@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>MIA · 浏览器摄像头测试</title>
+<style>
+:root{color-scheme:dark;font:16px system-ui,"Segoe UI",sans-serif;background:#101820;color:#edf3f6}
+body{max-width:780px;margin:28px auto;padding:0 16px}
+main{background:#192630;border:1px solid #314653;border-radius:16px;padding:22px}
+h1{margin:0 0 8px}p{color:#bdcbd3;line-height:1.55}
+video{display:block;width:100%;max-height:440px;min-height:180px;background:#05090c;border-radius:12px;object-fit:contain}
+.controls{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
+button{border:0;border-radius:9px;padding:11px 16px;font-weight:650;cursor:pointer;background:#8ad8bc;color:#10221c}
+button.secondary{background:#314653;color:#edf3f6}
+button:disabled{opacity:.45;cursor:not-allowed}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#0d151b;padding:12px;border-radius:9px;color:#c8e7dc}
+#status{min-height:2em;color:#b8e9d5}
+.small{font-size:.88rem}
+.notice{border-left:3px solid #d6b56c;padding-left:12px}
+</style>
+</head>
+<body>
+<main>
+<h1>MIA · 浏览器摄像头第一步</h1>
+<p>本页第一阶段只测试本机摄像头权限、单帧预览和本地设备密钥生成。<strong>不会上传图像，也不会连接 Supabase。</strong></p>
+<video id="video" autoplay muted playsinline></video>
+<div class="controls">
+<button id="start">允许并开启摄像头</button>
+<button id="capture" disabled>本地采集单帧</button>
+<button id="stop" class="secondary" disabled>关闭摄像头</button>
+<button id="keygen" class="secondary">生成本机设备密钥</button>
+</div>
+<canvas id="still" hidden></canvas>
+<p id="status" role="status">等待你的操作。</p>
+<p class="small">设备登记公钥（可分享）；私钥只保存在本浏览器的 IndexedDB 中：</p>
+<pre id="device">尚未生成</pre>
+<p class="small notice">隐私边界：不录音、不连续录像、不上传图像、不进行人脸识别。关闭页面或点击关闭摄像头即可停止采集。请只在你信任的设备上生成密钥。</p>
+</main>
+<script>
+const video=document.querySelector("#video");
+const still=document.querySelector("#still");
+const start=document.querySelector("#start");
+const capture=document.querySelector("#capture");
+const stop=document.querySelector("#stop");
+const keygen=document.querySelector("#keygen");
+const status=document.querySelector("#status");
+const deviceBox=document.querySelector("#device");
+let stream=null;
+
+function b64url(bytes){
+  let binary="";
+  for(const b of bytes) binary+=String.fromCharCode(b);
+  return btoa(binary).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+}
+function openKeyDb(){
+  return new Promise((resolve,reject)=>{
+    const request=indexedDB.open("mia-camera-device-v1",1);
+    request.onupgradeneeded=()=>request.result.createObjectStore("keys");
+    request.onsuccess=()=>resolve(request.result);
+    request.onerror=()=>reject(request.error);
+  });
+}
+async function saveKeyPair(pair,metadata){
+  const db=await openKeyDb();
+  await new Promise((resolve,reject)=>{
+    const tx=db.transaction("keys","readwrite");
+    tx.objectStore("keys").put({privateKey:pair.privateKey,publicKey:pair.publicKey,metadata},"device");
+    tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);
+  });
+  db.close();
+}
+async function loadKeyPair(){
+  const db=await openKeyDb();
+  const value=await new Promise((resolve,reject)=>{
+    const request=db.transaction("keys","readonly").objectStore("keys").get("device");
+    request.onsuccess=()=>resolve(request.result||null);
+    request.onerror=()=>reject(request.error);
+  });
+  db.close();return value;
+}
+start.addEventListener("click",async()=>{
+  try{
+    if(!navigator.mediaDevices?.getUserMedia)throw new Error("需要 HTTPS 或 localhost，并使用支持摄像头的浏览器");
+    stream=await navigator.mediaDevices.getUserMedia({video:{width:{ideal:640},height:{ideal:480}},audio:false});
+    video.srcObject=stream;
+    capture.disabled=false;stop.disabled=false;
+    status.textContent="摄像头已开启。画面只在本机预览。";
+  }catch(e){status.textContent="无法开启摄像头："+(e?.message||String(e));}
+});
+capture.addEventListener("click",()=>{
+  if(!stream||!video.videoWidth)return;
+  still.width=video.videoWidth;still.height=video.videoHeight;
+  still.getContext("2d",{alpha:false}).drawImage(video,0,0);
+  status.textContent="单帧已在本机采集，尚未上传。";
+});
+stop.addEventListener("click",()=>{
+  if(stream)stream.getTracks().forEach(track=>track.stop());
+  stream=null;video.srcObject=null;capture.disabled=true;stop.disabled=true;
+  status.textContent="摄像头已关闭。";
+});
+keygen.addEventListener("click",async()=>{
+  keygen.disabled=true;
+  try{
+    if(!crypto.subtle)throw new Error("当前页面环境不支持 Web Crypto");
+    const existing=await loadKeyPair();
+    if(existing){
+      const raw=await crypto.subtle.exportKey("raw",existing.publicKey);
+      deviceBox.textContent=JSON.stringify({...existing.metadata,public_key_b64url:b64url(new Uint8Array(raw)),private_key:"仅保存在本浏览器 IndexedDB，不可导出"},null,2);
+      status.textContent="已读取本机现有设备密钥，没有重新生成。";
+      return;
+    }
+    const pair=await crypto.subtle.generateKey({name:"Ed25519"},false,["sign","verify"]);
+    const raw=await crypto.subtle.exportKey("raw",pair.publicKey);
+    const metadata={source_id:crypto.randomUUID(),key_id:"browser-ed25519-v1",algorithm:"Ed25519",created_at:new Date().toISOString()};
+    await saveKeyPair(pair,metadata);
+    deviceBox.textContent=JSON.stringify({...metadata,public_key_b64url:b64url(new Uint8Array(raw)),private_key:"不可导出；仅保存在本浏览器 IndexedDB"},null,2);
+    status.textContent="本机设备密钥已生成。当前仅保存公钥登记资料，尚未登记到测试数据库。";
+  }catch(e){status.textContent="密钥生成失败："+(e?.message||String(e));}
+  finally{keygen.disabled=false;}
+});
+window.addEventListener("pagehide",()=>{if(stream)stream.getTracks().forEach(track=>track.stop());});
+</script>
+</body>
+</html>

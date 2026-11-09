@@ -41,11 +41,13 @@ function mapPoint(matrix: unknown, x: number, y: number): { x: number; y: number
   };
   return Number.isFinite(mapped.x) && Number.isFinite(mapped.y) ? mapped : null;
 }
-
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers });
   if (req.method !== "POST") return reply(405, { ok: false, error: "method_not_allowed" });
 
+  // This test endpoint is deployed with verify_jwt=false, but still requires the
+  // zee-prediction project API secret. Source signatures independently authenticate
+  // every sensor envelope. The browser never receives this API secret.
   const projectSecret = Deno.env.get("SUPABASE_SECRET_KEYS");
   const legacySecret = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const apikey = req.headers.get("apikey");
@@ -74,9 +76,11 @@ Deno.serve(async (req: Request) => {
   }
   if (body.test_only !== true) return reply(400, { ok: false, error: "test_only_true_required" });
 
-  // CI-only source lifecycle controls. These require the same test-project secret
-  // as ingestion and never create permissions or invoke an action executor.
-  if (body.intent === "register_test_source" || body.intent === "revoke_test_source") {
+  // CI-only source lifecycle controls. They require the project API secret and
+  // never create permissions or invoke an action executor.
+  if (body.intent === "register_test_source" ||
+      body.intent === "register_test_camera_source" ||
+      body.intent === "revoke_test_source") {
     const fixtureSourceId = typeof body.source_id === "string" ? body.source_id : "";
     const fixtureKeyId = typeof body.key_id === "string" ? body.key_id : "";
     if (!isUuid(fixtureSourceId) || !/^[A-Za-z0-9._-]{1,80}$/.test(fixtureKeyId)) {
@@ -86,7 +90,13 @@ Deno.serve(async (req: Request) => {
     if (!fixtureDbUrl) return reply(503, { ok: false, error: "test_database_unavailable" });
     const fixtureSql = postgres(fixtureDbUrl, { max: 1, idle_timeout: 5, connect_timeout: 8, prepare: false });
     try {
-      if (body.intent === "register_test_source") {
+      if (body.intent === "register_test_source" || body.intent === "register_test_camera_source") {
+        const cameraFixture = body.intent === "register_test_camera_source";
+        const fixtureFrameId = cameraFixture ? "windows-camera-image-plane-v1" : "ci-perception-frame";
+        const fixtureSourceKind = cameraFixture ? "camera" : "simulator";
+        const fixtureMetadata = cameraFixture
+          ? { test_fixture: true, physical_sensor: false, camera_payload_contract: true }
+          : { test_fixture: true, physical_sensor: false };
         const publicKey = typeof body.public_key_b64url === "string" ? body.public_key_b64url : "";
         let publicKeyBytes: Uint8Array<ArrayBuffer>;
         try { publicKeyBytes = decodeB64Url(publicKey); } catch {
@@ -102,28 +112,32 @@ Deno.serve(async (req: Request) => {
                max_age_seconds,max_clock_skew_seconds,allowed_frame_ids,metadata,test_only)
             values
               (${fixtureSourceId}::uuid,${"ci-perception-" + fixtureSourceId},
-               'simulator','ed25519',${fixtureKeyId},true,120,30,
-               array['ci-perception-frame']::text[],
-               ${tx.json({ test_fixture: true, physical_sensor: false } as any)},true)
+               ${fixtureSourceKind},'ed25519',${fixtureKeyId},true,120,30,
+               array[${fixtureFrameId}]::text[],
+               ${tx.json(fixtureMetadata as any)},true)
           `;
           await tx`
             insert into mia_test.perception_source_keys
               (source_id,key_id,algorithm,public_key_b64url,enabled,valid_from)
             values (${fixtureSourceId}::uuid,${fixtureKeyId},'ed25519',${publicKey},true,now())
           `;
-          await tx`
-            insert into mia_test.coordinate_frame_mappings
-              (source_id,source_frame_id,target_frame_id,transform_2d,evidence_ref,
-               validation_status,verified_by,verified_at,test_only)
-            values
-              (${fixtureSourceId},'ci-perception-frame','ci-fixture-calibrated-frame',
-               ${tx.json([[1,0,10],[0,1,20],[0,0,1]] as any)},
-               ${"fixture-only:synthetic-transform:" + fixtureSourceId},
-               'verified','github-actions-fixture',now(),true)
-          `;
+          if (!cameraFixture) {
+            await tx`
+              insert into mia_test.coordinate_frame_mappings
+                (source_id,source_frame_id,target_frame_id,transform_2d,evidence_ref,
+                 validation_status,verified_by,verified_at,test_only)
+              values
+                (${fixtureSourceId},'ci-perception-frame','ci-fixture-calibrated-frame',
+                 ${tx.json([[1,0,10],[0,1,20],[0,0,1]] as any)},
+                 ${"fixture-only:synthetic-transform:" + fixtureSourceId},
+                 'verified','github-actions-fixture',now(),true)
+            `;
+          }
         });
         return reply(201, { ok: true, test_only: true, source_id: fixtureSourceId, key_id: fixtureKeyId,
-          fixture_only: true, physical_sensor: false, action_authorized: false });
+          fixture_only: true, physical_sensor: false, action_authorized: false,
+          source_kind: fixtureSourceKind, frame_id: fixtureFrameId,
+          calibrated_mapping_created: !cameraFixture });
       }
       await fixtureSql.begin(async (tx: any) => {
         await tx`
@@ -221,8 +235,8 @@ Deno.serve(async (req: Request) => {
     let payloadValid = false;
     try {
       const parsed = JSON.parse(new TextDecoder().decode(rawPayload));
-      if (parsed && typeof parsed === "object") {
-        payload = parsed as Record<string, unknown> | unknown[];
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        payload = parsed as Record<string, unknown>;
         payloadValid = true;
       }
     } catch { /* exact raw bytes remain retained */ }
@@ -240,6 +254,25 @@ Deno.serve(async (req: Request) => {
     const frameAllowed = !!frameId && source.allowed_frame_ids.includes(frameId);
     const coordinatesValid = typeof x === "number" && Number.isFinite(x) &&
       typeof y === "number" && Number.isFinite(y);
+
+    let cameraStillValid = false;
+    if (payloadValid && p.capture_mode === "user_initiated_single_frame" &&
+        p.media_type === "image/jpeg" && frameId === "windows-camera-image-plane-v1" &&
+        p.coordinate_semantics === "image_pixel_center_not_world_coordinates" &&
+        p.camera_source === "windows_builtin_webcam_via_local_gateway" &&
+        p.width === 320 && p.height === 240 &&
+        typeof p.image_b64url === "string" && typeof p.image_sha256 === "string") {
+      try {
+        const imageBytes = decodeB64Url(p.image_b64url);
+        if (imageBytes.length >= 4 && imageBytes.length <= 40 * 1024 &&
+            imageBytes[0] === 0xff && imageBytes[1] === 0xd8 &&
+            imageBytes[imageBytes.length - 2] === 0xff &&
+            imageBytes[imageBytes.length - 1] === 0xd9) {
+          const imageDigest = new Uint8Array(await crypto.subtle.digest("SHA-256", imageBytes));
+          cameraStillValid = toHex(imageDigest) === p.image_sha256;
+        }
+      } catch { cameraStillValid = false; }
+    }
 
     const result = await sql.begin(async (tx: any) => {
       const lockedRows = await tx`
@@ -285,12 +318,15 @@ Deno.serve(async (req: Request) => {
       }
 
       const replay = replayOf !== null;
+      const cameraFrameIntent = p.capture_mode === "user_initiated_single_frame";
       const reason = replay ? "nonce_replay"
         : !signatureValid ? "signature_invalid"
-        : !payloadValid ? "payload_not_json_object_or_array"
+        : !payloadValid ? "payload_not_json_object"
         : freshness !== "fresh" ? freshness
         : !frameAllowed ? "source_frame_not_allowlisted"
         : !coordinatesValid ? "coordinates_invalid"
+        : cameraFrameIntent && !cameraStillValid ? "camera_still_invalid"
+        : cameraStillValid ? null
         : !mapping ? "verified_calibrated_frame_mapping_missing"
         : null;
       const disposition = replay ? "replay"
@@ -300,6 +336,7 @@ Deno.serve(async (req: Request) => {
         source_coordinates: { x, y },
         mapped_frame_id: mapping?.target_frame_id ?? null,
         mapped_coordinates: mapped,
+        coordinate_semantics: cameraStillValid ? "image_pixel_center_not_world_coordinates" : null,
         payload: p,
       } : null;
 
@@ -320,7 +357,7 @@ Deno.serve(async (req: Request) => {
 
       let observation: any = null;
       if (!replay && signatureValid && freshness === "fresh" && payloadValid &&
-          frameAllowed && frameId && coordinatesValid) {
+          frameAllowed && frameId && coordinatesValid && (mapping || cameraStillValid)) {
         const obsRows = await tx`
           insert into mia_test.perception_observations
             (ingress_id,source_frame_id,source_coordinates,mapping_id,mapped_frame_id,
@@ -347,8 +384,10 @@ Deno.serve(async (req: Request) => {
       observation: result.observation,
       mapping_status: result.mapping_status,
       evidence_semantics: {
-        signature_authenticates_source_and_envelope_only: true,
+        signature_authenticates_gateway_and_envelope_only: true,
         payload_integrity_checked: true,
+        camera_image_hash_checked: cameraStillValid,
+        coordinate_semantics: cameraStillValid ? "image_pixel_center_not_world_coordinates" : "source_frame_coordinates",
         world_truth_claim: false,
         physical_measurement: false,
         live_perception: false,

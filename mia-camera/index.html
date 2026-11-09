@@ -35,6 +35,7 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#0d151b;padding:12px;
 <button id="ingress" disabled>采集并安全接入单帧</button>
 <button id="understand" class="secondary" disabled>让 MIA 理解最近一帧</button>
 <button id="compare" class="secondary" disabled>比较最近两帧</button>
+<button id="sequence" class="secondary" disabled>分析最近 3–6 帧</button>
 </div>
 <canvas id="still" hidden></canvas>
 <p id="status" role="status">等待你的操作。</p>
@@ -53,12 +54,14 @@ const prove=document.querySelector("#prove");
 const ingress=document.querySelector("#ingress");
 const understand=document.querySelector("#understand");
 const compare=document.querySelector("#compare");
+const sequence=document.querySelector("#sequence");
 const status=document.querySelector("#status");
 const deviceBox=document.querySelector("#device");
 const PROOF_URL="https://boaiqnkhrytxwdpgkxti.supabase.co/functions/v1/mia-camera-key-proof-test";
 const INGRESS_URL="https://boaiqnkhrytxwdpgkxti.supabase.co/functions/v1/mia-camera-frame-ingress-test";
 const UNDERSTAND_URL="https://boaiqnkhrytxwdpgkxti.supabase.co/functions/v1/mia-vision-understanding-test";
 const PAIR_URL="https://boaiqnkhrytxwdpgkxti.supabase.co/functions/v1/mia-vision-pair-test";
+const SEQUENCE_URL="https://boaiqnkhrytxwdpgkxti.supabase.co/functions/v1/mia-vision-sequence-test";
 const VISION_STORAGE_KEY="mia-camera-last-accepted-observation-v1";
 const VISION_HISTORY_KEY="mia-camera-accepted-observation-history-v1";
 const FRAME_ID="windows-camera-image-plane-v1";
@@ -70,7 +73,7 @@ let acceptedFrames=[];
 try{lastAcceptedFrame=JSON.parse(localStorage.getItem(VISION_STORAGE_KEY)||"null");}catch{lastAcceptedFrame=null;}
 try{acceptedFrames=JSON.parse(localStorage.getItem(VISION_HISTORY_KEY)||"[]");if(!Array.isArray(acceptedFrames))acceptedFrames=[];}catch{acceptedFrames=[];}
 if(!acceptedFrames.length&&lastAcceptedFrame?.observation_id){acceptedFrames=[lastAcceptedFrame];localStorage.setItem(VISION_HISTORY_KEY,JSON.stringify(acceptedFrames));}
-function updatePairButton(){compare.disabled=!(keyReady&&acceptedFrames.length>=2);}
+function updatePairButton(){compare.disabled=!(keyReady&&acceptedFrames.length>=2);sequence.disabled=!(keyReady&&acceptedFrames.length>=3);}
 understand.disabled=!(keyReady&&lastAcceptedFrame?.observation_id&&lastAcceptedFrame?.image_sha256);
 updatePairButton();
 
@@ -362,6 +365,57 @@ compare.addEventListener("click",async()=>{
     deviceBox.textContent=JSON.stringify(result,null,2);
   }catch(e){
     status.textContent="双帧比较未通过："+(e?.message||String(e));
+  }finally{updatePairButton();}
+});
+
+
+sequence.addEventListener("click",async()=>{
+  sequence.disabled=true;
+  try{
+    const pair=await loadKeyPair();
+    if(!pair?.privateKey||!pair?.metadata?.source_id)throw new Error("本机设备密钥不存在，请先读取");
+    const frames=acceptedFrames.slice(-6).filter(x=>x?.observation_id&&x?.image_sha256&&x?.observed_at);
+    frames.sort((a,b)=>new Date(a.observed_at).getTime()-new Date(b.observed_at).getTime());
+    while(frames.length>=3&&new Date(frames[frames.length-1].observed_at).getTime()-new Date(frames[0].observed_at).getTime()>15*60*1000)frames.shift();
+    if(frames.length<3)throw new Error("需要至少 3 张时间跨度不超过 15 分钟的已安全接入图像；请再采集静态帧");
+    const signedAt=new Date().toISOString();
+    const nonce=b64url(crypto.getRandomValues(new Uint8Array(24)));
+    const sequenceId=crypto.randomUUID();
+    const canonical=[
+      "ZHI-MIA-VISION-SEQUENCE-V1",
+      pair.metadata.source_id,
+      pair.metadata.key_id,
+      sequenceId,
+      signedAt,
+      nonce,
+      String(frames.length),
+      ...frames.flatMap(frame=>[frame.observation_id,frame.image_sha256])
+    ].join("\n");
+    const signature=await crypto.subtle.sign({name:"Ed25519"},pair.privateKey,new TextEncoder().encode(canonical));
+    status.textContent="MIA 正在通过 AGNES 分析 "+frames.length+" 张已保存的静态图像；不会重新开启摄像头……";
+    const response=await fetch(SEQUENCE_URL,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        sequence_id:sequenceId,
+        observation_ids:frames.map(frame=>frame.observation_id),
+        signed_at:signedAt,
+        nonce,
+        signature_b64url:b64url(new Uint8Array(signature))
+      }),
+      cache:"no-store"
+    });
+    const result=await response.json().catch(()=>({error:"invalid_server_response"}));
+    if(!response.ok||result.ok!==true){
+      if(result.error==="agnes_sequence_unavailable"||result.error==="agnes_sequence_rate_limited")throw new Error("AGNES 当前繁忙或限流；原始图像仍已保存，可稍后重新发起序列分析。");
+      throw new Error((result.error||"sequence_request_failed")+(result.upstream_status?"（上游 HTTP "+result.upstream_status+"）":""));
+    }
+    status.textContent=result.duplicate
+      ?"AGNES 多帧分析结果已从 mia_test.subject_inferences 恢复，无需重复推理。"
+      :"AGNES 多帧分析完成："+result.frame_count+" 张静态帧的时间序列推断已独立保存到 mia_test.subject_inferences。结果仅描述图像平面可见证据，不代表实时感知、真实移动或世界坐标。";
+    deviceBox.textContent=JSON.stringify(result,null,2);
+  }catch(e){
+    status.textContent="多帧分析未通过："+(e?.message||String(e));
   }finally{updatePairButton();}
 });
 

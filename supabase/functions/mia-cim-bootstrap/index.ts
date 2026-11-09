@@ -53,6 +53,28 @@ Deno.serve(async(req:Request)=>{
   identity_id:IDENTITY_ID,device_id:device.device_id,session_id:session.id,event_type:"DEVICE_BOOTSTRAP",idempotency_key:"device-bootstrap:"+device.device_id+":"+new Date().toISOString().slice(0,10),occurred_at:now,payload:{platform,session_status:session.status,identity_version:root.current_identity_version,snapshot_id:latestSnapshot?.snapshot_id||null},source_refs:{source:"mia-cim-bootstrap"}
  },{onConflict:"identity_id,idempotency_key"});
  if(eventError)return json({error:"设备同步事件记录失败。"},503);
+ // Record the actual recovery boundary: this bootstrap restores metadata only, not message or memory bodies.
+ const {error:recoveryAuditError}=await db.schema("zhi_family").from("cim_recovery_audit").insert({
+  identity_id:IDENTITY_ID,
+  device_id:device.device_id,
+  session_id:session.id,
+  recovery_status:"PARTIAL",
+  recovered_from_snapshot_id:latestSnapshot?.snapshot_id||null,
+  started_at:now,
+  completed_at:new Date().toISOString(),
+  details:{
+   recovery_mode:"metadata_bootstrap_only",
+   identity_version:root.current_identity_version,
+   snapshot_no:latestSnapshot?.snapshot_no||null,
+   device_sync_cursor:Number(device.last_sync_cursor||0),
+   latest_event_seq:cursor,
+   memory_content_restored:false,
+   message_content_restored:false,
+   original_memory_modified:false,
+   next_step:"chat_history_and_memory_context_are_loaded_by_existing_mia_chat_flow"
+  }
+ });
+ if(recoveryAuditError)console.warn("[CIM] recovery audit insert failed",recoveryAuditError.message);
  // Bootstrap is not a sync acknowledgement: keep the durable cursor unchanged until the client confirms history refresh.
  return json({ok:true,cim:{schema:"CIM.v1",identity_id:IDENTITY_ID,identity_version:root.current_identity_version,continuity_status:root.continuity_status,snapshot:latestSnapshot?{id:latestSnapshot.snapshot_id,number:latestSnapshot.snapshot_no,kind:latestSnapshot.snapshot_kind,created_at:latestSnapshot.created_at}:null,device_id:device.device_id,sync_cursor:Number(device.last_sync_cursor||0),latest_event_seq:cursor,session:{id:session.id,status:session.status,last_message_at:session.last_message_at},memory_source_of_truth:"existing_mia_memory_tables",existing_memory_copied:false,personality_changed:false,agnes_configuration_changed:false,restore_mode:"metadata_bootstrap_only",cross_device_sync:"device_registered; incremental event replication pending"}});
 });

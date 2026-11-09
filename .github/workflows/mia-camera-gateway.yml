@@ -8,7 +8,7 @@ on:
       - "tools/mia-camera-gateway/**"
       - ".github/workflows/mia-camera-gateway.yml"
   pull_request:
-    branches: [main]
+    branches: [mia/spatial-permission-http-test-v1]
     paths:
       - "tools/mia-camera-gateway/**"
       - ".github/workflows/mia-camera-gateway.yml"

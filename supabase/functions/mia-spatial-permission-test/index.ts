@@ -57,7 +57,7 @@ Deno.serve(async (req: Request) => {
 
   const dbUrl = Deno.env.get("SUPABASE_DB_URL");
   if (!dbUrl) return reply(503, { ok: false, error: "test_database_connection_unavailable" });
-  const sql = postgres(dbUrl, { max: 1, idle_timeout: 5, connect_timeout: 8, prepare: false });
+  const sql: any = postgres(dbUrl, { max: 1, idle_timeout: 5, connect_timeout: 8, prepare: false });
 
   try {
     const result = await sql.begin(async (tx) => {

@@ -1,11 +1,6 @@
 name: Mia isolated semantic action HTTP test
 
 on:
-  push:
-    branches:
-      - mia/test-action-http-runner-v1
-    paths:
-      - .github/workflows/mia-test-action-http.yml
   workflow_dispatch:
 
 permissions:
@@ -27,12 +22,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          node <<'NODE'
-          const base = process.env.SUPABASE_URL + "/functions/v1/mia-semantic-evidence-test";
+          node --input-type=module <<'NODE'
           import { appendFileSync } from "node:fs";
+          const base = process.env.SUPABASE_URL + "/functions/v1/mia-semantic-evidence-test";
           const secretKey = process.env.SUPABASE_SECRET_KEY;
           if (!secretKey) {
-            throw new Error("Missing GitHub Actions secret ZEE_PREDICTION_SECRET_KEY. Add the zee-prediction service_role JWT under repository Actions secrets, then rerun this workflow. Never put the key in source code or logs.");
+            throw new Error("Missing GitHub Actions secret ZEE_PREDICTION_SECRET_KEY. Add the zee-prediction sb_secret key under repository Actions secrets, then rerun this workflow. Never put the key in source code or logs.");
           }
 
           const uuid = () => crypto.randomUUID();

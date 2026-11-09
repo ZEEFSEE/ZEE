@@ -47,7 +47,7 @@ Deno.serve(async (req: Request) => {
     return reply(400, { ok: false, error: "valid_request_id_and_test_run_id_required" });
   }
   const intent = typeof body.intent === "string" ? body.intent : "observe_spatial";
-  const supported = new Set(["observe_spatial", "grant_interact", "interact", "travel"]);
+  const supported = new Set(["observe_spatial", "grant_interact", "interact", "revoke_interact", "travel"]);
   if (!supported.has(intent)) return reply(400, { ok: false, error: "unsupported_test_intent" });
   const destinationId = typeof body.destination_id === "string" ? body.destination_id : "crystal-forest-unknown";
 
@@ -159,6 +159,24 @@ Deno.serve(async (req: Request) => {
             where test_run_id=${body.test_run_id}::uuid
           `;
           execution = { executed: true, state_changed: true, permission_grant_id: grants[0].grant_id };
+        }
+      } else if (intent === "revoke_interact") {
+        action = "revoke_permission";
+        const revoked = await tx`
+          update mia_test.action_permission_grants
+          set revoked_at = now()
+          where test_run_id = ${body.test_run_id}::uuid
+            and action_scope in ('interact','*')
+            and scene_scope in (${sceneId}, '*')
+            and revoked_at is null and expires_at > now()
+          returning grant_id, action_scope, scene_scope, revoked_at
+        `;
+        if (!revoked.length) {
+          outcome = "blocked";
+          execution = { executed: false, blocked: true, reason: "no_active_permission_to_revoke" };
+        } else {
+          permission = revoked[0];
+          execution = { executed: true, permission_revoked: true, permission };
         }
       } else if (intent === "travel") {
         action = "travel";

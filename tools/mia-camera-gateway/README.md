@@ -29,6 +29,7 @@ $secure = Read-Host "zee-prediction test API secret key" -AsSecureString
 $ptr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
 try { $env:MIA_TEST_SUPABASE_API_KEY = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr) }
 finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr) }
+$env:MIA_CAMERA_ENROLLED = "true"
 node .\tools\mia-camera-gateway\server.mjs
 ```
 

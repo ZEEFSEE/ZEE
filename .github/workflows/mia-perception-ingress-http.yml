@@ -155,6 +155,6 @@ jobs:
             "The coordinate frame and affine transform are synthetic CI fixtures, not physical calibration or real-world perception.",
             "No action authorization is granted and no action executor is called."
           ].join("\n");
-          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary + "\\n");
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary + "\n");
           if (results.some(x => !x.pass)) process.exitCode = 1;
           NODE

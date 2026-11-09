@@ -197,12 +197,13 @@ Deno.serve(async (req: Request) => {
 
       const ingressRows = await tx`
         insert into mia_test.perception_ingress_events
-          (source_id,key_id,source_event_id,nonce,observed_at,payload_sha256,signature,
+          (id,source_id,key_id,source_event_id,nonce,observed_at,payload_sha256,signature,
            signature_status,freshness_status,frame_id,calibration_evidence_ref,raw_payload,
            raw_payload_bytes,normalized_observation,disposition,decision_reason,
            replay_of_ingress_id,world_truth_claim,auto_action_authorized,test_only)
         values
-          (${sourceId}::uuid,${keyId},${eventId},${nonce},${new Date(observedMs)},
+          (nextval('mia_test.perception_ingress_events_id_seq'),
+           ${sourceId}::uuid,${keyId},${eventId},${nonce},${new Date(observedMs)},
            ${payloadHash},${signatureB64},${signatureStatus},${freshness},${frameId || "unknown"},
            ${mapping?.evidence_ref ?? null},${tx.json(payload as any)},${rawPayload},
            ${normalized ? tx.json(normalized as any) : null},${disposition},${reason},
@@ -222,7 +223,8 @@ Deno.serve(async (req: Request) => {
             (${ingressRows[0].ingress_id},${frameId},${tx.json({x,y} as any)},
              ${mapping?.mapping_id ?? null},${mapping?.target_frame_id ?? null},
              ${mapped ? tx.json(mapped as any) : null},${mapping ? "mapped" : "unmapped"},
-             ${new Date(observedMs)},${tx.json(p as any)},'cryptographic_integrity',
+             ${new Date(observedMs)},${tx.json(p as any)},
+             ${mapping ? "calibrated_transform" : "cryptographic_integrity"},
              false,false,false,true)
           returning observation_id,mapping_status,mapped_frame_id,mapped_coordinates
         `;

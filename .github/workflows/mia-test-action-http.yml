@@ -1,6 +1,11 @@
 name: Mia isolated semantic action HTTP test
 
 on:
+  push:
+    branches:
+      - mia/test-action-http-runner-v1
+    paths:
+      - .github/workflows/mia-test-action-http.yml
   workflow_dispatch:
 
 permissions:

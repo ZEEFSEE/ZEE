@@ -36,3 +36,8 @@ jobs:
         run: node echo-mailbox/tests/validate-preview.mjs
       - name: Run publication gate adversarial tests
         run: node --test echo-mailbox/tests/echo-gate.test.mjs echo-mailbox/tests/echo-schema.test.mjs echo-mailbox/tests/agnes-adapter.test.mjs echo-mailbox/tests/echo-pipeline.test.mjs echo-mailbox/tests/echo-persistence.test.mjs
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check gated Edge Function
+        run: deno check supabase/functions/echo-submit/index.ts

@@ -55,7 +55,7 @@ test("database exposes only server-only RPC operations for writes", () => {
     assert.match(sql, new RegExp(`grant execute on function public\\.${fn}.*to service_role`, "i"));
   }
   assert.match(sql, /p_body_sha256/);
-  assert.match(sql, /request_count > 5/);
+  assert.match(sql, /v_count > 5/);
   assert.match(sql, /p_evidence->>'consentCoversQuestionAndAnswer'/);
   assert.match(sql, /p_evidence->>'privateMemoryAccessed'/);
   assert.match(sql, /echo_original_submission_mismatch/);

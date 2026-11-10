@@ -36,7 +36,13 @@ assert.match(endpoint, /outcome: result.status/, "Pipeline outcome must be obser
 assert.match(endpoint, /rate_limit_exceeded/, "Rate limits must not be misreported as accepted submissions");
 assert.match(endpoint, /duplicate_or_replayed/, "Idempotency replays must have an explicit outcome");
 assert.match(endpoint, /outcome: "no_reply"/, "Mia's explicit silence must be distinguishable from system failure");
-assert.match(html, /Mia has chosen not to reply this time/, "Frontend must explain an explicit no-reply outcome");
+assert.match(endpoint, /result.status === "refused"/, "Mia's refusal must have its own terminal response");
+assert.match(endpoint, /outcome: "mia_declined"/, "Mia's refusal must not be merged with silence");
+assert.match(endpoint, /result.status === "discarded"/, "Moderation rejection must have its own terminal response");
+assert.match(endpoint, /safety_review_not_passed/, "Moderation rejection must not be reported as an accepted submission");
+assert.match(html, /result.outcome==='mia_declined'/, "Frontend must distinguish Mia's refusal");
+assert.match(html, /result.outcome==='safety_review_not_passed'/, "Frontend must distinguish automated safety rejection");
+assert.match(html, /Mia has chosen to remain silent this time/, "Frontend must explain an explicit no-reply outcome");
 assert.match(html, /没有形成可公开的回声/, "Frontend must distinguish receipt from public publication");
 
 const activationIndex = endpoint.indexOf("if (!deploymentActivationApproved()");

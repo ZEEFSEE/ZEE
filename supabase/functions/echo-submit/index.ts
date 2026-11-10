@@ -165,11 +165,19 @@ Deno.serve(async (req: Request) => {
       }
       return response({ status: "not_published" }, 503, origin);
     }
-    // Only Mia's explicit silence is surfaced as no_reply. Moderation details stay private.
+    // A 202 is reserved for an explicit Mia choice, never a generic failure.
     if (result.status === "no_answer") {
       return response({ status: "received", outcome: "no_reply" }, 202, origin);
     }
-    return response({ status: "received", outcome: "not_published" }, 202, origin);
+    if (result.status === "refused") {
+      return response({ status: "received", outcome: "mia_declined" }, 202, origin);
+    }
+    // Keep moderation details private while giving the visitor an honest terminal state.
+    if (result.status === "discarded") {
+      return response({ status: "not_published", outcome: "safety_review_not_passed" }, 422, origin);
+    }
+    // Unknown pipeline states must never be represented as an accepted submission.
+    return response({ status: "not_published" }, 503, origin);
   } catch (error) {
     const candidate = (error as { code?: unknown })?.code;
     const code = typeof candidate === "string" && /^[a-z0-9_]{1,48}$/.test(candidate)

@@ -5,6 +5,7 @@ const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const endpoint = readFileSync(new URL("../../supabase/functions/echo-submit/index.ts", import.meta.url), "utf8");
 const gate = readFileSync(new URL("../../supabase/functions/_shared/echo-publication-gate.mjs", import.meta.url), "utf8");
 const agnesAdapter = readFileSync(new URL("../../supabase/functions/_shared/agnes-mailbox-adapter.mjs", import.meta.url), "utf8");
+const pipeline = readFileSync(new URL("../../supabase/functions/_shared/echo-pipeline.mjs", import.meta.url), "utf8");
 const schema = readFileSync(new URL("../../supabase/design/echo-mailbox-v2-schema.draft.sql", import.meta.url), "utf8");
 
 assert.match(html, /data-lang="zh"/, "Chinese language toggle must exist");
@@ -39,5 +40,12 @@ assert.match(schema, /echo_authorization_replay/, "Database gate must reject aut
 assert.match(agnesAdapter, /agnes_zero_cost_not_confirmed/, "AGNES calls must be blocked without explicit zero-cost confirmation");
 assert.match(agnesAdapter, /apihub\.agnes-ai\.com\/v1\/chat\/completions/, "Only the AGNES API endpoint may be used");
 assert.doesNotMatch(agnesAdapter, /groq|GROQ/i, "No Groq fallback may exist");
+assert.match(pipeline, /INPUT_REVIEW_PROMPT/, "Pipeline must run automated input review");
+assert.match(pipeline, /SELECTION_PROMPT/, "Mia must explicitly choose whether to answer");
+assert.match(pipeline, /OUTPUT_REVIEW_PROMPT/, "Pipeline must review generated output");
+assert.match(pipeline, /PAIR_REVIEW_PROMPT/, "Pipeline must review the question and answer together");
+assert.match(pipeline, /publishAtomically/, "Publication must use an atomic database operation");
+assert.match(pipeline, /safeRevoke/, "Unused publication authorizations must be revoked");
+assert.doesNotMatch(pipeline, /mia_messages|mia_memories|mia_identity|mia_personality_state/i, "Pipeline must not query private Mia tables");
 
 console.log("Echo Mailbox frontend and fail-closed backend checks passed.");

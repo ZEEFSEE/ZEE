@@ -57,7 +57,7 @@ test("service role has RPC execution only, not direct mailbox table access", () 
 test("database exposes only server-only RPC operations for writes", () => {
   for (const fn of [
     "echo_register_submission", "echo_issue_authorization", "echo_publish",
-    "echo_discard_submission", "echo_revoke_authorization",
+    "echo_discard_submission", "echo_revoke_authorization", "echo_withdraw_publication",
   ]) {
     assert.match(sql, new RegExp(`create or replace function public\\.${fn}`, "i"));
     assert.match(sql, new RegExp(`revoke all on function public\\.${fn}`, "i"));
@@ -68,4 +68,6 @@ test("database exposes only server-only RPC operations for writes", () => {
   assert.match(sql, /p_evidence->>'consentCoversQuestionAndAnswer'/);
   assert.match(sql, /p_evidence->>'privateMemoryAccessed'/);
   assert.match(sql, /echo_original_submission_mismatch/);
+  assert.match(sql, /reason_code/);
+  assert.match(sql, /echo_withdraw_publication/);
 });

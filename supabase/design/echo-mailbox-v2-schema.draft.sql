@@ -153,7 +153,7 @@ create or replace function echo_private.enforce_echo_publication_gate()
 returns trigger
 language plpgsql
 security definer
-set search_path = pg_catalog, echo_private, public, extensions
+set search_path = pg_catalog, echo_private, extensions
 as $$
 declare
   v_auth echo_private.publication_authorizations%rowtype;
@@ -281,7 +281,7 @@ create or replace function echo_private.guard_echo_publication_update()
 returns trigger
 language plpgsql
 security definer
-set search_path = pg_catalog, echo_private, public
+set search_path = pg_catalog, echo_private
 as $$
 begin
   if new.original_question is distinct from old.original_question

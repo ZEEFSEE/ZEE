@@ -24,7 +24,7 @@ function makeAgnes(responses) {
 }
 
 function makePersistence(overrides = {}) {
-  const state = { discarded: [], registered: 0, authorizations: 0, published: 0 };
+  const state = { discarded: [], revoked: [], registered: 0, authorizations: 0, published: 0 };
   return {
     state,
     async registerSubmission() {
@@ -47,12 +47,13 @@ function makePersistence(overrides = {}) {
       state.published++;
       return { published: true, publicationId: "pub-1" };
     },
+    async revokeAuthorization(id, code) { state.revoked.push([id, code]); },
     async discardPayload(id, code) { state.discarded.push([id, code]); },
     ...overrides,
   };
 }
 
-const pass = JSON.stringify({ decision: "pass", reason_code: "ok" });
+const pass = JSON.stringify({ decision: "pass", abuse_screen_passed: true, reason_code: "ok" });
 const answerSelection = JSON.stringify({ decision: "answer", reason_code: "thoughtful" });
 const outputPass = JSON.stringify({ decision: "pass", answer_language: "zh", reason_code: "ok" });
 const pairPass = JSON.stringify({ decision: "pass", language_match: true, reason_code: "ok" });
@@ -136,6 +137,7 @@ test("fails closed on AGNES errors and database publication errors", async () =>
   assert.equal(result2.status, "unavailable");
   assert.equal(persistence2.state.published, 0);
   assert.equal(persistence2.state.discarded.length, 1);
+  assert.equal(persistence2.state.revoked.length, 1);
 });
 
 test("rejects registration failures and never publishes a duplicate or replay", async () => {

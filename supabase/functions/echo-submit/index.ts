@@ -5,7 +5,7 @@ import { runEchoPipeline } from "../_shared/echo-pipeline.mjs";
 
 const ALLOWED_ORIGIN = "https://zeefsee.github.io";
 // Hard source-level lock: environment values alone cannot activate public intake.
-const DEPLOYMENT_ACTIVATION_APPROVED: boolean = false;
+function deploymentActivationApproved(): boolean { return false; }
 const CONSENT_VERSION = "echo-consent-v1";
 const MAX_REQUEST_BYTES = 12000;
 
@@ -56,7 +56,7 @@ Deno.serve(async (req: Request) => {
 
   // Both gates run before reading request text or making any model call.
   // Absent environment values mean disabled.
-  if (DEPLOYMENT_ACTIVATION_APPROVED !== true
+  if (!deploymentActivationApproved()
     || Deno.env.get("ECHO_MAILBOX_ENABLED") !== "true") {
     return response({ error: "mailbox_not_live" }, 503, origin);
   }

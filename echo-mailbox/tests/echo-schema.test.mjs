@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const sql = readFileSync(new URL("../../supabase/design/echo-mailbox-v2-schema.draft.sql", import.meta.url), "utf8");
+const hardening = readFileSync(new URL("../../supabase/design/echo-mailbox-v2-rpc-hardening.applied.sql", import.meta.url), "utf8");
 
 test("draft keeps visitor payloads in a dedicated private schema", () => {
   assert.match(sql, /create schema if not exists echo_private/i);
@@ -77,4 +78,19 @@ test("SQL draft has balanced dollar-quoted function bodies", () => {
   assert.equal(tokens.length % 2, 0, "Every dollar-quoted SQL body must close");
   assert.doesNotMatch(sql, /^\s*as \$\s*$/m, "No incomplete function delimiter");
   assert.doesNotMatch(sql, /^\s*\$;\s*$/m, "No incomplete closing delimiter");
+});
+
+test("applied hardening keeps public RPCs invoker-only and private implementations server-only", () => {
+  for (const fn of [
+    "echo_register_submission", "echo_issue_authorization", "echo_publish",
+    "echo_discard_submission", "echo_revoke_authorization", "echo_withdraw_publication",
+  ]) {
+    assert.match(hardening, new RegExp(`create or replace function public\\.${fn}`, "i"));
+    assert.match(hardening, new RegExp(`security invoker[\\s\\S]*?select echo_private\\.${fn}_impl`, "i"));
+    assert.match(hardening, new RegExp(`create or replace function echo_private\\.${fn}_impl`, "i"));
+    assert.match(hardening, new RegExp(`auth\\.jwt\\(\\)->>'role'.*service_role`, "i"));
+  }
+  assert.match(hardening, /grant usage on schema echo_private to service_role/i);
+  assert.match(hardening, /revoke all on all tables in schema echo_private from public, anon, authenticated, service_role/i);
+  assert.doesNotMatch(hardening, /create or replace function public\\.echo_[\\s\\S]*?security definer/i);
 });

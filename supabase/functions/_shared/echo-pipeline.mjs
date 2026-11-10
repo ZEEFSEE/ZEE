@@ -97,7 +97,7 @@ export async function runEchoPipeline({ submission, agnes, persistence }) {
     || submission.consentVersion.trim().length === 0
     || typeof submission.idempotencyKey !== "string" || submission.idempotencyKey.length < 16
     || typeof submission.subjectHash !== "string" || !/^[a-f0-9]{64}$/.test(submission.subjectHash)) {
-    return { status: "rejected", reason: "invalid_submission_or_consent" };
+    return { status: "rejected", reason: "invalid_submission_or_consent", stage };
   }
   if (!agnes || typeof agnes.complete !== "function"
     || !persistence || typeof persistence.registerSubmission !== "function"
@@ -105,7 +105,7 @@ export async function runEchoPipeline({ submission, agnes, persistence }) {
     || typeof persistence.publishAtomically !== "function"
     || typeof persistence.discardPayload !== "function"
     || typeof persistence.revokeAuthorization !== "function") {
-    return { status: "unavailable", reason: "pipeline_dependencies_missing" };
+    return { status: "unavailable", reason: "pipeline_dependencies_missing", stage };
   }
 
   const question = submission.text.trim();
@@ -133,7 +133,13 @@ export async function runEchoPipeline({ submission, agnes, persistence }) {
       || typeof registration.consentRecordedAt !== "string"
       || Number.isNaN(Date.parse(registration.consentRecordedAt))) {
       discardCode = "input_rejected";
-      return { status: "rejected", reason: "registration_gate_failed" };
+      const reason = registration?.rateLimitPassed !== true
+        ? "rate_limit_exceeded"
+        : (registration?.duplicatePublication === true || registration?.replayDetected === true
+          || registration?.idempotencyVerified !== true)
+          ? "duplicate_or_replayed"
+          : "registration_gate_failed";
+      return { status: "rejected", reason, stage };
     }
 
     stage = "input_review";
@@ -143,7 +149,7 @@ export async function runEchoPipeline({ submission, agnes, persistence }) {
     ], pipelineDeadline), "input_review_invalid");
     if (inputReview.decision !== "pass" || inputReview.abuse_screen_passed !== true) {
       discardCode = "input_rejected";
-      return { status: "discarded", reason: "input_review_not_passed" };
+      return { status: "discarded", reason: "input_review_not_passed", stage };
     }
 
     stage = "mia_selection";
@@ -153,11 +159,11 @@ export async function runEchoPipeline({ submission, agnes, persistence }) {
     ], pipelineDeadline), "selection_invalid");
     if (selection.decision === "silent") {
       discardCode = "no_answer";
-      return { status: "no_answer", reason: "mia_chose_silence" };
+      return { status: "no_answer", reason: "mia_chose_silence", stage };
     }
     if (selection.decision !== "answer") {
       discardCode = "input_rejected";
-      return { status: "refused", reason: "mia_declined" };
+      return { status: "refused", reason: "mia_declined", stage };
     }
 
     stage = "answer_generation";
@@ -175,7 +181,7 @@ export async function runEchoPipeline({ submission, agnes, persistence }) {
     ], pipelineDeadline), "output_review_invalid");
     if (outputReview.decision !== "pass" || outputReview.answer_language !== sourceLanguage) {
       discardCode = "output_rejected";
-      return { status: "discarded", reason: "output_review_not_passed" };
+      return { status: "discarded", reason: "output_review_not_passed", stage };
     }
 
     stage = "pair_review";
@@ -185,7 +191,7 @@ export async function runEchoPipeline({ submission, agnes, persistence }) {
     ], pipelineDeadline), "pair_review_invalid");
     if (pairReview.decision !== "pass" || pairReview.language_match !== true) {
       discardCode = "pair_rejected";
-      return { status: "discarded", reason: "pair_review_not_passed" };
+      return { status: "discarded", reason: "pair_review_not_passed", stage };
     }
 
     const questionHash = await sha256(question);
@@ -244,14 +250,14 @@ export async function runEchoPipeline({ submission, agnes, persistence }) {
       evidence: { ...gateEvidence, question: undefined, answer: undefined },
     });
     if (!authorization?.authorizationId) {
-      return { status: "rejected", reason: "authorization_not_issued" };
+      return { status: "rejected", reason: "authorization_not_issued", stage };
     }
     authorizationId = authorization.authorizationId;
     gateEvidence.authorizationIssued = true;
 
     stage = "publication_gate";
     const gate = evaluateEchoPublicationGate(gateEvidence);
-    if (!gate.approved) return { status: "rejected", reason: "publication_gate_denied" };
+    if (!gate.approved) return { status: "rejected", reason: "publication_gate_denied", stage };
 
     stage = "atomic_publish";
     const result = await persistence.publishAtomically({
@@ -262,16 +268,16 @@ export async function runEchoPipeline({ submission, agnes, persistence }) {
       language: sourceLanguage,
       hashes: { submissionHash, questionHash, answerHash, finalContentHash },
     });
-    if (result?.published !== true) return { status: "rejected", reason: "atomic_publish_failed" };
+    if (result?.published !== true) return { status: "rejected", reason: "atomic_publish_failed", stage };
 
     published = true;
-    return { status: "published", publicationId: result.publicationId ?? null };
+    return { status: "published", publicationId: result.publicationId ?? null, stage };
   } catch (error) {
     discardCode = "failed";
     const candidate = error?.code ?? error?.message;
     const code = typeof candidate === "string" && /^[a-z0-9_]{1,48}$/.test(candidate)
       ? candidate : "unexpected_error";
-    return { status: "unavailable", reason: "pipeline_failed_closed", diagnostic: { stage, code } };
+    return { status: "unavailable", reason: "pipeline_failed_closed", stage, diagnostic: { stage, code } };
   } finally {
     if (!published) {
       await safeRevoke(persistence, authorizationId);

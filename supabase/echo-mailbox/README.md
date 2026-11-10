@@ -1,60 +1,56 @@
 # Echo Mailbox backend status
 
-## Current implementation boundary
+## Deployment state
 
-The public website is live, but public submissions remain **disabled**.
+<badge>Public intake disabled</badge>
 
-- `supabase/functions/echo-submit/index.ts` is wired to the automated pipeline but has a source-level `DEPLOYMENT_ACTIVATION_APPROVED = false` lock. It returns `503 mailbox_not_live` before reading the request body; environment flags alone cannot activate it.
-- `supabase/functions/_shared/echo-publication-gate.mjs` is a pure deterministic gate helper. It has no network, Supabase, or AGNES dependencies.
-- `supabase/functions/_shared/echo-persistence.mjs` exposes only dedicated server-side RPC operations; it never queries arbitrary tables. The live database exposes only SECURITY INVOKER public wrappers to `service_role`; their SECURITY DEFINER implementations live in the unexposed `echo_private` schema and verify the JWT role. The service role has no direct table access to the mailbox schema.
-- `supabase/functions/_shared/echo-pipeline.mjs` contains the dependency-injected automated sequence: input review, Mia's answer/silence choice, reply generation, output review, combined-pair review, hash-bound authorization, and atomic publish call. It is not yet wired to the live database.
-- `supabase/functions/_shared/agnes-mailbox-adapter.mjs` is a server-only AGNES adapter. It refuses all network calls unless `zeroCostConfirmed === true`, uses the fixed AGNES endpoint, and has no Groq fallback. It is not yet wired into a live submission flow.
-- `echo-mailbox/tests/echo-gate.test.mjs` exercises missing checks, explicit consent, language matching, tampering, duplicate/replay states, private-memory isolation, and uncertainty.
-- The helper is **not yet wired into a live publication worker or database transaction**. The unit tests do not prove production publication safety by themselves.
-- The SQL files under `supabase/design/` are design-only and have not been applied. The V2 draft is `echo-mailbox-v2-schema.draft.sql`.
+- The bilingual website is deployed at `https://zeefsee.github.io/ZEE/echo-mailbox/`.
+- The isolated V2 schema and RPC hardening are applied to Supabase project `dbooikzqprnqbgpfwsze`.
+- The `echo-submit` Edge Function is deployed and ACTIVE (version 1) with `verify_jwt=true`.
+- A source-level lock, `deploymentActivationApproved(): boolean { return false; }`, keeps the function disabled. It returns `503 mailbox_not_live` before reading the request body. Environment variables alone cannot activate it.
+- The visitor form remains preview-only and does not submit content.
+- Verification after migration found zero rows in submissions, short-lived payloads, and public publications. No visitor content has been collected.
 
-## Required publication conditions
+## Backend architecture
 
-The helper denies publication unless all conditions are explicitly true:
+- `supabase/functions/_shared/echo-publication-gate.mjs` is the deterministic publication gate. Missing, false, unknown, mismatched, or incomplete evidence denies publication.
+- `supabase/functions/_shared/echo-pipeline.mjs` orchestrates input review, Mia's answer/silence/refusal choice, answer generation, output review, combined question/answer review, hash-bound authorization, and atomic publication.
+- `supabase/functions/_shared/echo-persistence.mjs` uses only dedicated mailbox RPC calls. It never queries arbitrary tables or Mia's private tables.
+- `supabase/functions/_shared/agnes-mailbox-adapter.mjs` is server-only, has bounded timeouts, and refuses all network calls unless `zeroCostConfirmed === true`. AGNES is the only model provider.
+- The pipeline code is connected to the deployed Edge Function, but it has not been exercised end-to-end because the source-level activation lock is still false.
 
-1. Visitor consent is recorded and specifically covers publication of the original question together with Mia's answer.
-2. Input privacy/safety and abuse checks pass.
-3. Mia's selection stage explicitly chooses to answer.
-4. Output review and combined question/answer review pass.
-5. The answer preserves the submission language (Chinese or English).
-6. Rate-limit and idempotency checks pass.
-7. Publication scope is limited to the public mailbox.
-8. All source, reviewed, and final content hashes match.
-9. The authorization is present, unconsumed, and not revoked.
-10. No uncertainty, replay, duplicate publication, or private-memory access is present.
+## Database isolation and permissions
 
-Missing, false, unknown, mismatched, or incomplete evidence denies publication. A successful pure-helper result is not a transaction: the eventual worker must atomically consume a one-time authorization and insert the publication in the database.
+- `echo_private` contains the submission queue, short-lived payloads, metadata-only audit, rate-limit buckets, and one-time publication authorizations.
+- The service role has schema usage and execution rights on narrowly scoped RPC implementations, but **no direct table privileges** on the mailbox tables.
+- Public RPC entry points are `SECURITY INVOKER` and executable only by `service_role`. Their `SECURITY DEFINER` implementations live in `echo_private` and verify the JWT role.
+- Anonymous/authenticated users cannot use the private schema or call write RPCs.
+- `public.echo_publications` has RLS enabled. Anonymous users can read only the published question, answer, language, ID, and publication time. They cannot read hashes or authorization IDs, and cannot insert or update.
+- Publication is guarded by a one-time authorization, original-question equality, consent version/time, source/answer language, and matching SHA-256 hashes. The database transaction consumes authorization, publishes the pair, marks the submission published, deletes the temporary payload, and writes metadata audit.
+- Automatic withdrawal is available through a server-only RPC. Withdrawal is irreversible and records a reason code without retaining the submission body in the audit.
+- A 15-minute expiry job removes unselected/expired payloads and revokes unused authorizations.
+
+The applied SQL sequence is recorded in:
+1. `supabase/design/echo-mailbox-v2-schema.draft.sql` — base schema migration reference.
+2. `supabase/design/echo-mailbox-v2-rpc-hardening.applied.sql` — hardened RPC boundary.
+
+Do not reapply the base schema file by itself after the hardening migration.
 
 ## AGNES and cost boundary
 
-- AGNES is the only intended model provider; there is no Groq fallback.
-- No AGNES API request is made by the current preview or gate helper.
+- No AGNES API request has been made.
+- The endpoint requires both the source-level activation lock and explicit environment flags. The source lock is currently false.
 - Do not enable model calls until the existing AGNES API allowance is confirmed to be zero-cost for this use.
-- The Supabase organization is on the Free plan. Free-plan quotas are shared across the organization; current consumption has not been verified. If any quota or provider allowance is uncertain, keep submissions disabled.
-- No new Supabase project, branch, paid add-on, or external paid service is part of this work.
+- The Supabase organization is on the Free plan. Current shared quota consumption has not been verified; if any quota or provider allowance is uncertain, keep submissions disabled.
+- No new Supabase project/branch, paid add-on, or external paid service has been created. No API key or service-role secret was read, added, or changed.
 
-## Isolation boundary
+## Remaining before public submissions
 
-Never read or write Mia's private identity, chat, memory, emotion, relationship, life-event, or personality tables. The eventual mailbox backend must use only its dedicated schema and public publication table, with no direct browser access to the private queue or moderation metadata.
+1. Verify the existing AGNES allowance and current free-plan quotas.
+2. Wire the bilingual form to the deployed endpoint only after the zero-cost condition is confirmed.
+3. Add the public archive read path to the page, exposing only approved question/answer pairs.
+4. Add/verify automatic post-publication risk rechecks that call the withdrawal RPC when required.
+5. Run an end-to-end test in a controlled, isolated way, then perform the final security review.
+6. Only after all checks pass, deliberately change the source-level activation function and configure the required server-side secrets.
 
-## Before enabling submissions
-
-Implement and verify, in order:
-
-1. A dedicated schema with non-exposed private queue, short retention, minimal metadata-only audit, and public read-only publication table.
-2. A server-only AGNES adapter with bounded timeouts and a strict no-call path when the zero-cost allowance is not confirmed.
-3. Automated input safety/privacy checks and abuse throttling.
-4. AGNES semantic selection with a valid no-answer outcome.
-5. Mia reply generation only after selection.
-6. Automated output review and combined question/answer review.
-7. A content-hash-bound, one-time publication authorization enforced by the database transaction.
-8. Expiry and withdrawal behavior.
-9. Adversarial tests for bypass, replay, duplicate publication, content replacement after review, prompt injection, PII, minors, unsafe content, timeouts, and private-data isolation.
-10. A final security review before any public submission endpoint is enabled.
-
-All errors, timeouts, missing checks, and uncertain moderation outcomes must fail closed. Individual submissions are not sent to a human moderator; uncertain items are rejected or discarded automatically.
+No individual submission is sent to a human moderator. Mia may answer, remain silent, or refuse. All uncertain, failed, timed-out, or incomplete checks fail closed. Independent thought, criticism, and disagreement are not themselves safety violations.

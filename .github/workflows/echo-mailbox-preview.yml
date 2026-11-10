@@ -1,4 +1,5 @@
 name: Echo Mailbox Preview Safety
+# Runs offline safety and regression checks for Echo's gated AGNES pipeline.
 
 on:
   pull_request:

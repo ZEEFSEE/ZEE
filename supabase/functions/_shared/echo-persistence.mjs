@@ -127,5 +127,14 @@ export function createEchoPersistence(client) {
         p_reason: safeReason,
       });
     },
+
+    async withdrawPublication(publicationId, reasonCode) {
+      const allowed = ["privacy_risk", "safety_risk", "content_issue", "moderation_uncertain", "user_request"];
+      if (!allowed.includes(reasonCode)) throw new EchoPersistenceError("echo_withdrawal_reason_invalid");
+      return await rpc(client, "echo_withdraw_publication", {
+        p_publication_id: publicationId,
+        p_reason_code: reasonCode,
+      });
+    },
   };
 }

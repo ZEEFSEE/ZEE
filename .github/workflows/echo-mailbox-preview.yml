@@ -4,12 +4,20 @@ on:
   pull_request:
     paths:
       - "echo-mailbox/**"
+      - "supabase/functions/echo-submit/**"
+      - "supabase/design/**"
+      - "supabase/echo-mailbox/**"
       - ".github/workflows/echo-mailbox-preview.yml"
+      - ".github/workflows/pages.yml"
   push:
     branches: ["feature/echo-mailbox-bilingual-mvp"]
     paths:
       - "echo-mailbox/**"
+      - "supabase/functions/echo-submit/**"
+      - "supabase/design/**"
+      - "supabase/echo-mailbox/**"
       - ".github/workflows/echo-mailbox-preview.yml"
+      - ".github/workflows/pages.yml"
 
 permissions:
   contents: read
@@ -22,5 +30,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Validate bilingual preview and no-transmission boundary
+      - name: Validate bilingual preview and fail-closed backend
         run: node echo-mailbox/tests/validate-preview.mjs

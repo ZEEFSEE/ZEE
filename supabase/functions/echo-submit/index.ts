@@ -1,93 +1,38 @@
-// Echo Mailbox submission intake — scaffold, not deployed.
-// This endpoint only validates and queues a submission. It does NOT call AGNES
-// and does NOT publish anything until the AGNES adapter and review workflow
-// are configured and separately tested.
+// THE ECHO MAILBOX — fail-closed endpoint placeholder.
+// This endpoint intentionally does not accept or persist visitor content.
+// It must not be enabled until the isolated schema, AGNES selection flow,
+// input/output moderation, publication gate, retention worker and tests exist.
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "https://miadigitallife.github.io",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+const ALLOWED_ORIGIN = "https://zeefsee.github.io";
+const headers = {
+  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
+  "Access-Control-Allow-Headers": "content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Vary": "Origin",
+  "Cache-Control": "no-store",
 };
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json; charset=utf-8" },
+    headers: { ...headers, "Content-Type": "application/json; charset=utf-8" },
   });
 }
 
-function detectLanguage(text: string): "zh" | "en" | "other" {
-  if (/[\u3400-\u9fff]/.test(text)) return "zh";
-  if (/[A-Za-z]/.test(text)) return "en";
-  return "other";
-}
-
-Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+Deno.serve((req: Request) => {
+  if (req.method === "OPTIONS") {
+    const origin = req.headers.get("origin");
+    if (origin !== ALLOWED_ORIGIN) return new Response(null, { status: 403 });
+    return new Response(null, { status: 204, headers });
+  }
   if (req.method !== "POST") return json(405, { error: "method_not_allowed" });
-
-  const origin = req.headers.get("origin");
-  if (origin !== "https://zeefsee.github.io") return json(403, { error: "origin_not_allowed" });
-
-  const contentType = req.headers.get("content-type") || "";
-  if (!contentType.toLowerCase().includes("application/json")) {
-    return json(415, { error: "json_required" });
+  if (req.headers.get("origin") !== ALLOWED_ORIGIN) {
+    return json(403, { error: "origin_not_allowed" });
   }
 
-  let payload: unknown;
-  try { payload = await req.json(); } catch { return json(400, { error: "invalid_json" }); }
-  if (!payload || typeof payload !== "object") return json(400, { error: "invalid_payload" });
-
-  const input = payload as Record<string, unknown>;
-  const body = typeof input.body === "string" ? input.body.trim() : "";
-  const consent = input.consentToPublication === true;
-  if (!body || body.length > 3000 || !consent) {
-    return json(400, { error: "invalid_submission" });
-  }
-
-  // Conservative first-pass abuse screening. This is not a substitute for
-  // semantic moderation; flagged content is not sent to AGNES automatically.
-  const suspicious = [
-    /-----BEGIN (?:RSA |OPENSSH )?PRIVATE KEY-----/i,
-    /\b(?:password|passwd|api[_ -]?key|secret)\s*[:=]\s*\S+/i,
-    /\b(?:kill myself|suicide plan|how to make a bomb)\b/i,
-  ];
-  if (suspicious.some((pattern) => pattern.test(body))) {
-    return json(202, { accepted: false, status: "not_accepted_for_processing" });
-  }
-
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const secretKey = Deno.env.get("SUPABASE_SECRET_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!supabaseUrl || !secretKey) {
-    return json(503, { error: "mailbox_backend_not_configured" });
-  }
-
-  const insertResponse = await fetch(`${supabaseUrl}/rest/v1/submissions`, {
-    method: "POST",
-    headers: {
-      "apikey": secretKey,
-      "Authorization": `Bearer ${secretKey}`,
-      "Content-Type": "application/json",
-      "Content-Profile": "echo_private",
-      "Prefer": "return=minimal",
-    },
-    body: JSON.stringify({
-      body,
-      source_language: detectLanguage(body),
-      consent_to_publication: true,
-      status: "pending",
-    }),
-  });
-
-  if (!insertResponse.ok) {
-    // Do not echo database errors or submitted content to the visitor/log.
-    return json(503, { error: "submission_temporarily_unavailable" });
-  }
-
-  return json(202, {
-    accepted: true,
-    status: "received_for_review",
-    message: "A reply is not guaranteed. Selected exchanges may be published.",
+  // Fail closed: no parsing, logging, forwarding, or persistence of the body.
+  return json(503, {
+    error: "mailbox_not_live",
+    message: "The mailbox is not accepting submissions yet.",
   });
 });

@@ -5,7 +5,7 @@ import { runEchoPipeline } from "../_shared/echo-pipeline.mjs";
 
 const ALLOWED_ORIGIN = "https://zeefsee.github.io";
 // Hard source-level lock: environment values alone cannot activate public intake.
-const DEPLOYMENT_ACTIVATION_APPROVED = false;
+const DEPLOYMENT_ACTIVATION_APPROVED: boolean = false;
 const CONSENT_VERSION = "echo-consent-v1";
 const MAX_REQUEST_BYTES = 12000;
 
@@ -48,7 +48,10 @@ Deno.serve(async (req: Request) => {
   const origin = req.headers.get("origin") ?? undefined;
   if (origin !== ALLOWED_ORIGIN) return response({ error: "origin_not_allowed" }, 403);
 
-  if (req.method === "OPTIONS") return response({ ok: true }, 204, origin);
+  if (req.method === "OPTIONS") {
+    const preflight = response({ ok: true }, 200, origin);
+    return new Response(null, { status: 204, headers: preflight.headers });
+  }
   if (req.method !== "POST") return response({ error: "method_not_allowed" }, 405, origin);
 
   // Both gates run before reading request text or making any model call.

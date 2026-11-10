@@ -575,7 +575,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = pg_catalog, echo_private, extensions
-as $
+as $$
 declare
   v_content_hash text;
 begin

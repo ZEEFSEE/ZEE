@@ -23,6 +23,9 @@ assert.match(html, /Mia's Echoes|Mia 的回声/, "Public archive section must ex
 
 assert.match(endpoint, /function deploymentActivationApproved\(\): boolean \{ return true; \}/, "Activation approval must be explicit in source");
 assert.match(endpoint, /ECHO_AGNES_ZERO_COST_CONFIRMED/, "AGNES calls require explicit zero-cost confirmation");
+assert.match(endpoint, /ECHO_MAILBOX_ENABLED/, "Mailbox retains an explicit emergency stop");
+assert.match(endpoint, /agnes-3.0-flash/, "Echo reuses the existing AGNES model default");
+assert.match(endpoint, /ECHO_RATE_LIMIT_SECRET.*serviceRoleKey/s, "Rate limiting reuses the server key if no dedicated secret exists");
 assert.match(endpoint, /mailbox_not_live/, "Endpoint must remain disabled by default");
 assert.match(endpoint, /runEchoPipeline/, "Endpoint must use the tested automated pipeline");
 assert.match(endpoint, /createEchoPersistence/, "Endpoint must use the narrow mailbox RPC adapter");

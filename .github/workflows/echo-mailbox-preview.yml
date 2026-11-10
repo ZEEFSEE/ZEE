@@ -5,15 +5,17 @@ on:
     paths:
       - "echo-mailbox/**"
       - "supabase/functions/echo-submit/**"
+      - "supabase/functions/_shared/**"
       - "supabase/design/**"
       - "supabase/echo-mailbox/**"
       - ".github/workflows/echo-mailbox-preview.yml"
       - ".github/workflows/pages.yml"
   push:
-    branches: ["feature/echo-mailbox-bilingual-mvp"]
+    branches: ["feature/echo-mailbox-bilingual-mvp", "feature/echo-mailbox-backend-hardening"]
     paths:
       - "echo-mailbox/**"
       - "supabase/functions/echo-submit/**"
+      - "supabase/functions/_shared/**"
       - "supabase/design/**"
       - "supabase/echo-mailbox/**"
       - ".github/workflows/echo-mailbox-preview.yml"
@@ -32,3 +34,5 @@ jobs:
           node-version: 22
       - name: Validate bilingual preview and fail-closed backend
         run: node echo-mailbox/tests/validate-preview.mjs
+      - name: Run publication gate adversarial tests
+        run: node --test echo-mailbox/tests/echo-gate.test.mjs

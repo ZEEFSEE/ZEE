@@ -15,7 +15,7 @@ test("draft keeps visitor payloads in a dedicated private schema", () => {
 
 test("public archive grants read-only access to selected public columns", () => {
   assert.match(sql, /grant select \(id, original_question, mia_answer, source_language, answer_language, published_at\)\s+on public\.echo_publications to anon, authenticated/i);
-  assert.match(sql, /revoke delete on public\.echo_publications from service_role/i);
+  assert.match(sql, /revoke all on public\.echo_publications from public, anon, authenticated, service_role/i);
   assert.match(sql, /using \(is_published is true and withdrawn_at is null\)/i);
   assert.doesNotMatch(sql, /grant (insert|update|delete)[^;]*public\.echo_publications[^;]*to anon/i);
 });

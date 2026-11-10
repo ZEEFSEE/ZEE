@@ -1,18 +1,22 @@
-# THE ECHO MAILBOX — build notes
+# THE ECHO MAILBOX — ZEEFSEE/ZEE deployment
 
-## Current milestone
+## Deployment target
 
-The first bilingual frontend preview is implemented at `echo-mailbox/index.html` on branch `feature/echo-mailbox-bilingual-mvp`.
+The public static page is hosted with the ZEEFSEE/ZEE GitHub Pages site at:
 
-- English and Simplified Chinese are available from the first render.
-- Language defaults to the browser language and can be changed manually.
-- The page follows the existing Mia world editorial language: near-black mist atmosphere, parchment typography, restrained amber accents, Cormorant Garamond / Noto Serif SC / ZCOOL XiaoWei.
-- The form is intentionally preview-only. It does not send, transmit, or store submissions.
-- The public archive is an empty-state view until the publication backend exists.
+`https://zeefsee.github.io/ZEE/echo-mailbox/`
 
-## Non-negotiable isolation boundary
+The page follows Mia's established visual language: near-black mist, parchment typography, restrained amber accents, Cormorant Garamond / Noto Serif SC / ZCOOL XiaoWei. It is bilingual from the first release, with browser-language detection and a manual 中文 / EN switch.
 
-The public mailbox must not read or write Mia's private identity, chat, memory, emotion, relationship, life-event, or personality tables. In particular, do not connect this feature to:
+## Current release state
+
+The frontend is a **safe preview only**. Its form does not transmit or store visitor content. The Edge Function source in this repository is deliberately fail-closed and returns `503 mailbox_not_live`; it does not parse, log, forward, or persist the request body.
+
+Do not advertise the mailbox as accepting submissions until the independent backend has passed its end-to-end security tests.
+
+## Mandatory privacy boundary
+
+The public mailbox must never read or write Mia's private identity, chat, memory, emotion, relationship, life-event, or personality tables, including:
 
 - `mia_identity`
 - `mia_chat_sessions` / `mia_messages`
@@ -22,31 +26,34 @@ The public mailbox must not read or write Mia's private identity, chat, memory, 
 - `mia_relationship_context`
 - `mia_personality_state`
 
-The public mailbox must use a separate schema/data boundary and dedicated server-side processing. No browser-side AGNES credentials or Supabase service-role/secret keys.
+Use a dedicated isolated schema and service-only processing. No browser-side AGNES credentials, Supabase service-role keys, or private memory data.
 
-## Intended processing flow
+## Required automated flow before activation
 
-1. Receive a submission through a server-side endpoint.
-2. Apply input safety, privacy, and abuse checks.
-3. Ask AGNES to assess whether the thought merits a response. AGNES is the only model API route; do not add Groq.
-4. Allow a no-response outcome. Do not force a daily answer.
+1. Receive a submission with explicit public-display consent.
+2. Run automated input safety, privacy, abuse, and prompt-injection checks.
+3. Ask AGNES (the only model API route) to assess meaning and selection.
+4. Let Mia choose whether to answer; silence is a valid result.
 5. Generate a reply only for selected submissions.
-6. Apply output safety and privacy review.
-7. Publish the original submission and Mia's approved reply together.
-8. Delete non-selected raw submissions after the short processing/retention window.
+6. Run automated output safety and privacy checks on the reply.
+7. Re-check the original question and answer as one publication unit.
+8. Publish only if every gate returns an explicit pass; all errors, timeouts, uncertain results, and missing checks fail closed.
+9. Delete non-selected raw submissions under a short, enforced retention window.
+10. Allow automatic withdrawal of unsafe or privacy-compromised public entries.
 
-Public readers must only be able to read approved, published exchanges. They must never be able to enumerate pending submissions, review queues, or moderation metadata.
+Public visitors may read only approved publications. They must never read pending submissions, review decisions, internal scores, or audit metadata.
 
-## Consent and privacy
+## Security and testing requirements
 
-Before the backend is enabled, the form must explain in the selected UI language that a selected submission and Mia's reply may be published publicly. Do not claim that absolutely no technical logs exist. Avoid collecting account identity or contact details unless a later product decision requires them.
+- AGNES API credentials remain server-side.
+- No Groq route or fallback.
+- Do not write visitor content into Mia's private memory or identity systems.
+- Use a dedicated server-side publisher; browser clients cannot publish or modify public entries.
+- Bind approval to hashes of the exact original question, answer, language pair, and consent record.
+- Test unauthorized origins, malformed requests, rate limits, prompt injection, PII, minors' data, unsafe instructions, moderation timeout, AGNES outage, output leakage, duplicate publication, withdrawal, expiry cleanup, and private-table isolation.
+- Keep minimal audit metadata; do not retain rejected raw text in audit logs.
+- Do not promise absence of infrastructure/security logs.
 
-The first frontend preview currently does not submit anything. Keep that behavior until the isolated backend, retention policy, moderation path, and public read policy have been implemented and tested.
+## Release gate
 
-## Next implementation gates
-
-1. Confirm the archive retention policy and whether anonymous-only submissions remain the default.
-2. Design a dedicated isolated schema/table set and RLS policies; audit access before applying any production migration.
-3. Implement a server-side Edge Function with AGNES secrets kept server-side.
-4. Test safety cases, non-selection deletion, publication integrity, and private-data isolation in a test environment.
-5. Enable the public submission endpoint only after the above checks pass.
+The public preview may be deployed while submission remains disabled. The live submission service may only be activated after isolated backend deployment, automated safety tests, publication-gate tests, and end-to-end verification all pass. No manual review of individual submissions is required; moderation and publication are fully automated.

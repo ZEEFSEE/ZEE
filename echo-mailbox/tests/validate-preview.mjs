@@ -4,6 +4,7 @@ import { strict as assert } from "node:assert";
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const endpoint = readFileSync(new URL("../../supabase/functions/echo-submit/index.ts", import.meta.url), "utf8");
 const gate = readFileSync(new URL("../../supabase/functions/_shared/echo-publication-gate.mjs", import.meta.url), "utf8");
+const schema = readFileSync(new URL("../../supabase/design/echo-mailbox-v2-schema.draft.sql", import.meta.url), "utf8");
 
 assert.match(html, /data-lang="zh"/, "Chinese language toggle must exist");
 assert.match(html, /data-lang="en"/, "English language toggle must exist");
@@ -28,5 +29,10 @@ for (const required of [
 ]) {
   assert.ok(gate.includes(required), `Publication gate must enforce ${required}`);
 }
+
+assert.match(schema, /create schema if not exists echo_private/i, "Dedicated private schema draft must exist");
+assert.match(schema, /alter table public\.echo_publications enable row level security/i, "Public archive must use RLS");
+assert.match(schema, /before insert on public\.echo_publications/i, "Database publication gate trigger must exist");
+assert.match(schema, /echo_authorization_replay/, "Database gate must reject authorization replay");
 
 console.log("Echo Mailbox frontend and fail-closed backend checks passed.");

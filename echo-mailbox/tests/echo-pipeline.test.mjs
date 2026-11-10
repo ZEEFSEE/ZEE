@@ -7,8 +7,8 @@ const submission = {
   language: "zh",
   consentGranted: true,
   consentVersion: "echo-consent-v1",
-  consentRecordedAt: "2026-11-10T00:00:00.000Z",
-  idempotencyKey: "request-1",
+  idempotencyKey: "request-1-unique-idempotency",
+  subjectHash: "c".repeat(64),
 };
 
 function makeAgnes(responses) {
@@ -31,6 +31,8 @@ function makePersistence(overrides = {}) {
       state.registered++;
       return {
         submissionId: "sub-1",
+        consentVersion: "echo-consent-v1",
+        consentRecordedAt: "2026-11-10T00:00:00.000Z",
         rateLimitPassed: true,
         idempotencyVerified: true,
         publicationScopeIsPublicOnly: true,
@@ -146,6 +148,8 @@ test("rejects registration failures and never publishes a duplicate or replay", 
     async registerSubmission() {
       return {
         submissionId: "sub-1",
+        consentVersion: "echo-consent-v1",
+        consentRecordedAt: "2026-11-10T00:00:00.000Z",
         rateLimitPassed: false,
         idempotencyVerified: false,
         publicationScopeIsPublicOnly: true,

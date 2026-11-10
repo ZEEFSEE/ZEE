@@ -11,7 +11,7 @@ on:
       - ".github/workflows/echo-mailbox-preview.yml"
       - ".github/workflows/pages.yml"
   push:
-    branches: ["feature/echo-mailbox-bilingual-mvp", "feature/echo-mailbox-backend-hardening"]
+    branches: ["main", "feature/echo-mailbox-bilingual-mvp", "feature/echo-mailbox-backend-hardening"]
     paths:
       - "echo-mailbox/**"
       - "supabase/functions/echo-submit/**"

@@ -128,6 +128,8 @@ test("fails closed on AGNES errors and database publication errors", async () =>
   const persistence = makePersistence();
   const result = await runEchoPipeline({ submission, agnes, persistence });
   assert.equal(result.status, "unavailable");
+  assert.equal(result.diagnostic.stage, "input_review");
+  assert.equal(result.diagnostic.code, "unexpected_error");
   assert.equal(persistence.state.published, 0);
   assert.equal(persistence.state.discarded.length, 1);
 

@@ -132,18 +132,44 @@ Deno.serve(async (req: Request) => {
     });
 
     if (result.status === "published") {
+      console.info("echo_pipeline_completed", {
+        stage: result.stage ?? "atomic_publish",
+        outcome: "published",
+        code: "published",
+      });
       return response({ status: "published", publicationId: result.publicationId }, 201, origin);
     }
+
+    const outcomeCode = typeof result.reason === "string"
+      && /^[a-z0-9_]{1,48}$/.test(result.reason) ? result.reason : "unknown_outcome";
+    console.info("echo_pipeline_completed", {
+      stage: result.stage ?? "unknown",
+      outcome: result.status,
+      code: outcomeCode,
+    });
+
     if (result.status === "unavailable") {
-      const diagnostic = result.diagnostic ?? { stage: "unknown", code: "unknown_error" };
+      const diagnostic = result.diagnostic ?? { stage: result.stage ?? "unknown", code: outcomeCode };
       console.warn("echo_pipeline_failed_closed", {
         stage: diagnostic.stage,
         code: diagnostic.code,
       });
       return response({ status: "not_published" }, 503, origin);
     }
-    // Do not disclose moderation decisions or echo submitted content to the caller.
-    return response({ status: "received" }, 202, origin);
+    if (result.status === "rejected") {
+      if (result.reason === "rate_limit_exceeded") {
+        return response({ status: "not_published", code: "rate_limited" }, 429, origin);
+      }
+      if (result.reason === "duplicate_or_replayed") {
+        return response({ status: "not_published", code: "duplicate_submission" }, 409, origin);
+      }
+      return response({ status: "not_published" }, 503, origin);
+    }
+    // Only Mia's explicit silence is surfaced as no_reply. Moderation details stay private.
+    if (result.status === "no_answer") {
+      return response({ status: "received", outcome: "no_reply" }, 202, origin);
+    }
+    return response({ status: "received", outcome: "not_published" }, 202, origin);
   } catch (error) {
     const candidate = (error as { code?: unknown })?.code;
     const code = typeof candidate === "string" && /^[a-z0-9_]{1,48}$/.test(candidate)

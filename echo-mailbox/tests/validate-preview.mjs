@@ -31,6 +31,14 @@ assert.match(endpoint, /runEchoPipeline/, "Endpoint must use the tested automate
 assert.match(endpoint, /createEchoPersistence/, "Endpoint must use the narrow mailbox RPC adapter");
 assert.match(endpoint, /hmacHex/, "Rate-limit identity must be HMAC hashed server-side");
 assert.match(endpoint, /origin_not_allowed/, "Endpoint must enforce the exact allowed origin");
+assert.match(endpoint, /echo_pipeline_completed/, "Every completed pipeline outcome must be logged without content");
+assert.match(endpoint, /outcome: result.status/, "Pipeline outcome must be observable in sanitized logs");
+assert.match(endpoint, /rate_limit_exceeded/, "Rate limits must not be misreported as accepted submissions");
+assert.match(endpoint, /duplicate_or_replayed/, "Idempotency replays must have an explicit outcome");
+assert.match(endpoint, /outcome: "no_reply"/, "Mia's explicit silence must be distinguishable from system failure");
+assert.match(html, /Mia has chosen not to reply this time/, "Frontend must explain an explicit no-reply outcome");
+assert.match(html, /没有形成可公开的回声/, "Frontend must distinguish receipt from public publication");
+
 const activationIndex = endpoint.indexOf("if (!deploymentActivationApproved()");
 const costIndex = endpoint.indexOf("ECHO_AGNES_ZERO_COST_CONFIRMED");
 const bodyReadIndex = endpoint.indexOf("await req.text()");

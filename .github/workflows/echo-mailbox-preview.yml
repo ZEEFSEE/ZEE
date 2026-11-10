@@ -35,4 +35,4 @@ jobs:
       - name: Validate bilingual preview and fail-closed backend
         run: node echo-mailbox/tests/validate-preview.mjs
       - name: Run publication gate adversarial tests
-        run: node --test echo-mailbox/tests/echo-gate.test.mjs echo-mailbox/tests/echo-schema.test.mjs
+        run: node --test echo-mailbox/tests/echo-gate.test.mjs echo-mailbox/tests/echo-schema.test.mjs echo-mailbox/tests/agnes-adapter.test.mjs

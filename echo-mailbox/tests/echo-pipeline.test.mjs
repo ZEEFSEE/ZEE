@@ -76,6 +76,8 @@ test("Mia may choose silence; no publication is attempted and payload is discard
   const persistence = makePersistence();
   const result = await runEchoPipeline({ submission, agnes, persistence });
   assert.equal(result.status, "no_answer");
+  assert.equal(result.stage, "mia_selection");
+  assert.equal(result.reason, "mia_chose_silence");
   assert.equal(persistence.state.published, 0);
   assert.equal(persistence.state.discarded.length, 1);
 });
@@ -163,6 +165,8 @@ test("rejects registration failures and never publishes a duplicate or replay", 
   });
   const result = await runEchoPipeline({ submission, agnes, persistence });
   assert.equal(result.status, "rejected");
+  assert.equal(result.stage, "registration");
+  assert.equal(result.reason, "rate_limit_exceeded");
   assert.equal(agnes.calls(), 0);
   assert.equal(persistence.state.published, 0);
   assert.equal(persistence.state.discarded.length, 1);

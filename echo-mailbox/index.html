@@ -143,7 +143,7 @@ main{width:min(1000px,calc(100% - 40px));margin:auto}.eyebrow{font:500 11px var(
    const thought=document.getElementById('thought').value.trim();
    const consent=document.getElementById('publish-consent').checked;
    if(!thought||!consent){setNotice(copy[lang].invalid,'error');return;}
-   const han=(thought.match(/\\p{Script=Han}/gu)||[]).length;
+   const han=(thought.match(/[\u4E00-\u9FFF]/g)||[]).length;
    const latin=(thought.match(/[A-Za-z]/g)||[]).length;
    const language=han>latin?'zh':latin>han?'en':lang;
    if(!uncertainAttempt||uncertainAttempt.text!==thought)uncertainAttempt={text:thought,key:crypto.randomUUID()};

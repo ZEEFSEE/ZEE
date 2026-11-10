@@ -49,7 +49,7 @@ test("uses only the fixed AGNES endpoint and server-side bearer key", async () =
 test("upstream errors and malformed responses never produce fallback output", async () => {
   const upstreamError = createAgnesMailboxClient({
     apiKey: "k", model: "m", zeroCostConfirmed: true,
-    fetchImpl: async () => ({ ok: false, status: 429 }),
+    fetchImpl: async () => ({ ok: false, status: 503 }),
   });
   await assert.rejects(upstreamError.complete(messages), { code: "agnes_upstream_unavailable" });
 

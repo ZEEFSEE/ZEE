@@ -49,7 +49,7 @@ test("uses only the fixed AGNES endpoint and server-side bearer key", async () =
 test("upstream errors and malformed responses never produce fallback output", async () => {
   const upstreamError = createAgnesMailboxClient({
     apiKey: "k", model: "m", zeroCostConfirmed: true,
-    fetchImpl: async () => ({ ok: false, status: 429 }),
+    fetchImpl: async () => ({ ok: false, status: 503 }),
   });
   await assert.rejects(upstreamError.complete(messages), { code: "agnes_upstream_unavailable" });
 
@@ -68,4 +68,14 @@ test("rejects oversized or malformed message input before network access", async
   });
   await assert.rejects(client.complete([{ role: "system", content: "x".repeat(12001) }]), { code: "invalid_message_shape" });
   assert.equal(calls, 0);
+});
+
+test("classifies AGNES authentication and throttling failures without exposing upstream bodies", async () => {
+  for (const [status, code] of [[401, "agnes_auth_rejected"], [403, "agnes_auth_rejected"], [429, "agnes_rate_limited"], [503, "agnes_upstream_unavailable"]]) {
+    const client = createAgnesMailboxClient({
+      apiKey: "k", model: "m", zeroCostConfirmed: true,
+      fetchImpl: async () => ({ ok: false, status, text: async () => "sensitive upstream detail" }),
+    });
+    await assert.rejects(client.complete(messages), { code });
+  }
 });

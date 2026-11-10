@@ -19,7 +19,7 @@ export function createAgnesMailboxClient({
   fetchImpl = globalThis.fetch,
 }) {
   return {
-    async complete(messages, { timeoutMs = 20000, maxTokens = 900 } = {}) {
+    async complete(messages, { timeoutMs = 27000, maxTokens = 900 } = {}) {
       if (zeroCostConfirmed !== true) throw new AgnesMailboxError("agnes_zero_cost_not_confirmed");
       if (typeof apiKey !== "string" || apiKey.trim().length === 0) throw new AgnesMailboxError("agnes_api_key_missing");
       if (typeof model !== "string" || model.trim().length === 0) throw new AgnesMailboxError("agnes_model_missing");
@@ -33,7 +33,7 @@ export function createAgnesMailboxClient({
       }
 
       const controller = new AbortController();
-      const boundedTimeout = Math.min(Math.max(Number(timeoutMs) || 20000, 1000), 25000);
+      const boundedTimeout = Math.min(Math.max(Number(timeoutMs) || 27000, 1000), 28000);
       const timer = setTimeout(() => controller.abort(), boundedTimeout);
       try {
         const response = await fetchImpl(AGNES_MAILBOX_ENDPOINT, {
@@ -51,7 +51,13 @@ export function createAgnesMailboxClient({
           }),
           signal: controller.signal,
         });
-        if (!response || !response.ok) throw new AgnesMailboxError("agnes_upstream_unavailable");
+        if (!response || !response.ok) {
+          const status = Number(response?.status || 0);
+          if (status === 401 || status === 403) throw new AgnesMailboxError("agnes_auth_rejected");
+          if (status === 429) throw new AgnesMailboxError("agnes_rate_limited");
+          if (status >= 500) throw new AgnesMailboxError("agnes_upstream_unavailable");
+          throw new AgnesMailboxError("agnes_upstream_rejected");
+        }
         let payload;
         try { payload = await response.json(); }
         catch { throw new AgnesMailboxError("agnes_invalid_response"); }

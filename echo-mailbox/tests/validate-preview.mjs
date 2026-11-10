@@ -57,6 +57,12 @@ assert.match(schema, /before insert on public\.echo_publications/i, "Database pu
 assert.match(schema, /echo_authorization_replay/, "Database gate must reject authorization replay");
 
 assert.match(agnesAdapter, /agnes_zero_cost_not_confirmed/, "AGNES calls must be blocked without explicit zero-cost confirmation");
+assert.match(agnesAdapter, /timeoutMs = 27000/, "AGNES calls must use a bounded extended timeout");
+assert.match(agnesAdapter, /agnes_auth_rejected/, "AGNES authentication failures must be distinguishable");
+assert.match(agnesAdapter, /agnes_rate_limited/, "AGNES throttling failures must be distinguishable");
+assert.match(pipeline, /completeWithinBudget/, "Pipeline must enforce a total processing budget");
+assert.match(pipeline, /diagnostic: \{ stage, code \}/, "Pipeline failures must return sanitized stage diagnostics");
+assert.match(endpoint, /echo_pipeline_failed_closed/, "Server logs must identify failure stage without logging visitor content");
 assert.match(agnesAdapter, /apihub\.agnes-ai\.com\/v1\/chat\/completions/, "Only the AGNES API endpoint may be used");
 assert.doesNotMatch(agnesAdapter, /groq|GROQ/i, "No Groq fallback may exist");
 assert.match(pipeline, /INPUT_REVIEW_PROMPT/, "Pipeline must run automated input review");

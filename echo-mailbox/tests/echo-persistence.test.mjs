@@ -16,6 +16,7 @@ function mockClient() {
       }, error: null };
       if (name === "echo_issue_authorization") return { data: { authorizationId: "auth-1" }, error: null };
       if (name === "echo_publish") return { data: { published: true, publicationId: "pub-1" }, error: null };
+      if (name === "echo_withdraw_publication") return { data: { withdrawn: true }, error: null };
       return { data: { ok: true }, error: null };
     },
   };
@@ -81,8 +82,9 @@ test("publish, discard, and revoke use only the dedicated mailbox RPCs", async (
   });
   await persistence.discardPayload("sub-2", "no_answer");
   await persistence.revokeAuthorization("auth-2", "not_published");
+  await persistence.withdrawPublication("pub-2", "privacy_risk");
   assert.deepEqual(client.calls.map(x => x.name), [
-    "echo_publish", "echo_discard_submission", "echo_revoke_authorization",
+    "echo_publish", "echo_discard_submission", "echo_revoke_authorization", "echo_withdraw_publication",
   ]);
 });
 

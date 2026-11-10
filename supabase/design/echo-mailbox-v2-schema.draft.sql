@@ -520,6 +520,9 @@ begin
   )
   returning id into v_authorization_id;
 
+  insert into echo_private.processing_audit (submission_id, event_code, content_sha256)
+    values (p_submission_id, 'selected', p_hashes->>'submissionHash');
+
   return jsonb_build_object('authorizationId', v_authorization_id);
 end;
 $$;
@@ -564,6 +567,9 @@ begin
   update echo_private.submissions
     set status = 'rejected', processed_at = now(), lease_until = null
     where id = p_submission_id and status in ('pending','processing','selected');
+  if not found then
+    return jsonb_build_object('discarded', false);
+  end if;
   delete from echo_private.submission_payloads where submission_id = p_submission_id;
   insert into echo_private.processing_audit (submission_id, event_code)
     values (p_submission_id, p_event_code);

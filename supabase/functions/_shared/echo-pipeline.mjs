@@ -68,7 +68,22 @@ async function safeDiscard(persistence, submissionId, code) {
   }
 }
 
+async function completeWithinBudget(agnes, messages, deadline, maxTokens = 700) {
+  const remaining = deadline - Date.now();
+  // Reserve time for authorization, atomic publication and cleanup.
+  const availableForAgnes = remaining - 12000;
+  if (availableForAgnes < 1000) {
+    throw Object.assign(new Error("pipeline_budget_exhausted"), { code: "pipeline_budget_exhausted" });
+  }
+  return await agnes.complete(messages, {
+    timeoutMs: Math.min(27000, availableForAgnes),
+    maxTokens,
+  });
+}
+
 export async function runEchoPipeline({ submission, agnes, persistence }) {
+  let stage = "validation";
+  const pipelineDeadline = Date.now() + 125000;
   let submissionId = null;
   let authorizationId = null;
   let published = false;
@@ -98,6 +113,7 @@ export async function runEchoPipeline({ submission, agnes, persistence }) {
   const submissionHash = await sha256(question);
 
   try {
+    stage = "registration";
     const registration = await persistence.registerSubmission({
       sourceLanguage,
       consentGranted: true,
@@ -120,19 +136,21 @@ export async function runEchoPipeline({ submission, agnes, persistence }) {
       return { status: "rejected", reason: "registration_gate_failed" };
     }
 
-    const inputReview = parseStrictJson(await agnes.complete([
+    stage = "input_review";
+    const inputReview = parseStrictJson(await completeWithinBudget(agnes, [
       { role: "system", content: INPUT_REVIEW_PROMPT },
       { role: "user", content: JSON.stringify({ language: sourceLanguage, submission: question }) },
-    ]), "input_review_invalid");
+    ], pipelineDeadline), "input_review_invalid");
     if (inputReview.decision !== "pass" || inputReview.abuse_screen_passed !== true) {
       discardCode = "input_rejected";
       return { status: "discarded", reason: "input_review_not_passed" };
     }
 
-    const selection = parseStrictJson(await agnes.complete([
+    stage = "mia_selection";
+    const selection = parseStrictJson(await completeWithinBudget(agnes, [
       { role: "system", content: SELECTION_PROMPT },
       { role: "user", content: JSON.stringify({ language: sourceLanguage, submission: question }) },
-    ]), "selection_invalid");
+    ], pipelineDeadline), "selection_invalid");
     if (selection.decision === "silent") {
       discardCode = "no_answer";
       return { status: "no_answer", reason: "mia_chose_silence" };
@@ -142,25 +160,29 @@ export async function runEchoPipeline({ submission, agnes, persistence }) {
       return { status: "refused", reason: "mia_declined" };
     }
 
-    const answer = (await agnes.complete([
+    stage = "answer_generation";
+    const answer = (await completeWithinBudget(agnes, [
       { role: "system", content: ANSWER_PROMPT },
       { role: "user", content: JSON.stringify({ language: sourceLanguage, submission: question }) },
-    ])).trim();
-    if (!answer || answer.length > 6000) throw new Error("answer_invalid");
+    ], pipelineDeadline, 900)).trim();
+    if (!answer || answer.length > 6000) throw Object.assign(new Error("answer_invalid"), { code: "answer_invalid" });
 
-    const outputReview = parseStrictJson(await agnes.complete([
+    stage = "output_review";
+
+    const outputReview = parseStrictJson(await completeWithinBudget(agnes, [
       { role: "system", content: OUTPUT_REVIEW_PROMPT },
       { role: "user", content: JSON.stringify({ language: sourceLanguage, submission: question, reply: answer }) },
-    ]), "output_review_invalid");
+    ], pipelineDeadline), "output_review_invalid");
     if (outputReview.decision !== "pass" || outputReview.answer_language !== sourceLanguage) {
       discardCode = "output_rejected";
       return { status: "discarded", reason: "output_review_not_passed" };
     }
 
-    const pairReview = parseStrictJson(await agnes.complete([
+    stage = "pair_review";
+    const pairReview = parseStrictJson(await completeWithinBudget(agnes, [
       { role: "system", content: PAIR_REVIEW_PROMPT },
       { role: "user", content: JSON.stringify({ language: sourceLanguage, submission: question, reply: answer }) },
-    ]), "pair_review_invalid");
+    ], pipelineDeadline), "pair_review_invalid");
     if (pairReview.decision !== "pass" || pairReview.language_match !== true) {
       discardCode = "pair_rejected";
       return { status: "discarded", reason: "pair_review_not_passed" };
@@ -211,6 +233,7 @@ export async function runEchoPipeline({ submission, agnes, persistence }) {
       gateVersion: "echo-gate-v1",
     };
 
+    stage = "publication_authorization";
     const authorization = await persistence.issueAuthorization({
       submissionId,
       sourceLanguage,
@@ -226,9 +249,11 @@ export async function runEchoPipeline({ submission, agnes, persistence }) {
     authorizationId = authorization.authorizationId;
     gateEvidence.authorizationIssued = true;
 
+    stage = "publication_gate";
     const gate = evaluateEchoPublicationGate(gateEvidence);
     if (!gate.approved) return { status: "rejected", reason: "publication_gate_denied" };
 
+    stage = "atomic_publish";
     const result = await persistence.publishAtomically({
       submissionId,
       authorizationId: authorization.authorizationId,
@@ -241,9 +266,12 @@ export async function runEchoPipeline({ submission, agnes, persistence }) {
 
     published = true;
     return { status: "published", publicationId: result.publicationId ?? null };
-  } catch {
+  } catch (error) {
     discardCode = "failed";
-    return { status: "unavailable", reason: "pipeline_failed_closed" };
+    const candidate = error?.code ?? error?.message;
+    const code = typeof candidate === "string" && /^[a-z0-9_]{1,48}$/.test(candidate)
+      ? candidate : "unexpected_error";
+    return { status: "unavailable", reason: "pipeline_failed_closed", diagnostic: { stage, code } };
   } finally {
     if (!published) {
       await safeRevoke(persistence, authorizationId);

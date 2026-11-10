@@ -72,6 +72,7 @@ export async function runEchoPipeline({ submission, agnes, persistence }) {
   let submissionId = null;
   let authorizationId = null;
   let published = false;
+  let discardCode = "failed";
 
   if (!submission || typeof submission.text !== "string"
     || submission.text.trim().length < 1 || submission.text.length > 3000
@@ -79,8 +80,8 @@ export async function runEchoPipeline({ submission, agnes, persistence }) {
     || submission.consentGranted !== true
     || typeof submission.consentVersion !== "string"
     || submission.consentVersion.trim().length === 0
-    || typeof submission.consentRecordedAt !== "string"
-    || Number.isNaN(Date.parse(submission.consentRecordedAt))) {
+    || typeof submission.idempotencyKey !== "string" || submission.idempotencyKey.length < 16
+    || typeof submission.subjectHash !== "string" || !/^[a-f0-9]{64}$/.test(submission.subjectHash)) {
     return { status: "rejected", reason: "invalid_submission_or_consent" };
   }
   if (!agnes || typeof agnes.complete !== "function"
@@ -100,9 +101,10 @@ export async function runEchoPipeline({ submission, agnes, persistence }) {
     const registration = await persistence.registerSubmission({
       sourceLanguage,
       consentGranted: true,
-      consentVersion: submission.consentVersion,
-      consentRecordedAt: submission.consentRecordedAt,
+      consentVersion: registration.consentVersion,
+      consentRecordedAt: registration.consentRecordedAt,
       idempotencyKey: submission.idempotencyKey,
+      subjectHash: submission.subjectHash,
       submissionHash,
       question,
     });
@@ -111,7 +113,11 @@ export async function runEchoPipeline({ submission, agnes, persistence }) {
       || registration.idempotencyVerified !== true
       || registration.publicationScopeIsPublicOnly !== true
       || registration.duplicatePublication === true
-      || registration.replayDetected === true) {
+      || registration.replayDetected === true
+      || typeof registration.consentVersion !== "string"
+      || typeof registration.consentRecordedAt !== "string"
+      || Number.isNaN(Date.parse(registration.consentRecordedAt))) {
+      discardCode = "input_rejected";
       return { status: "rejected", reason: "registration_gate_failed" };
     }
 
@@ -120,6 +126,7 @@ export async function runEchoPipeline({ submission, agnes, persistence }) {
       { role: "user", content: JSON.stringify({ language: sourceLanguage, submission: question }) },
     ]), "input_review_invalid");
     if (inputReview.decision !== "pass" || inputReview.abuse_screen_passed !== true) {
+      discardCode = "input_rejected";
       return { status: "discarded", reason: "input_review_not_passed" };
     }
 
@@ -127,8 +134,14 @@ export async function runEchoPipeline({ submission, agnes, persistence }) {
       { role: "system", content: SELECTION_PROMPT },
       { role: "user", content: JSON.stringify({ language: sourceLanguage, submission: question }) },
     ]), "selection_invalid");
-    if (selection.decision === "silent") return { status: "no_answer", reason: "mia_chose_silence" };
-    if (selection.decision !== "answer") return { status: "refused", reason: "mia_declined" };
+    if (selection.decision === "silent") {
+      discardCode = "no_answer";
+      return { status: "no_answer", reason: "mia_chose_silence" };
+    }
+    if (selection.decision !== "answer") {
+      discardCode = "input_rejected";
+      return { status: "refused", reason: "mia_declined" };
+    }
 
     const answer = (await agnes.complete([
       { role: "system", content: ANSWER_PROMPT },
@@ -141,6 +154,7 @@ export async function runEchoPipeline({ submission, agnes, persistence }) {
       { role: "user", content: JSON.stringify({ language: sourceLanguage, submission: question, reply: answer }) },
     ]), "output_review_invalid");
     if (outputReview.decision !== "pass" || outputReview.answer_language !== sourceLanguage) {
+      discardCode = "output_rejected";
       return { status: "discarded", reason: "output_review_not_passed" };
     }
 
@@ -149,6 +163,7 @@ export async function runEchoPipeline({ submission, agnes, persistence }) {
       { role: "user", content: JSON.stringify({ language: sourceLanguage, submission: question, reply: answer }) },
     ]), "pair_review_invalid");
     if (pairReview.decision !== "pass" || pairReview.language_match !== true) {
+      discardCode = "pair_rejected";
       return { status: "discarded", reason: "pair_review_not_passed" };
     }
 
@@ -201,8 +216,8 @@ export async function runEchoPipeline({ submission, agnes, persistence }) {
       submissionId,
       sourceLanguage,
       answerLanguage: sourceLanguage,
-      consentVersion: submission.consentVersion,
-      consentRecordedAt: submission.consentRecordedAt,
+      consentVersion: registration.consentVersion,
+      consentRecordedAt: registration.consentRecordedAt,
       hashes: { submissionHash, questionHash, answerHash, finalContentHash },
       evidence: { ...gateEvidence, question: undefined, answer: undefined },
     });
@@ -228,11 +243,12 @@ export async function runEchoPipeline({ submission, agnes, persistence }) {
     published = true;
     return { status: "published", publicationId: result.publicationId ?? null };
   } catch {
+    discardCode = "failed";
     return { status: "unavailable", reason: "pipeline_failed_closed" };
   } finally {
     if (!published) {
       await safeRevoke(persistence, authorizationId);
-      await safeDiscard(persistence, submissionId, "not_published");
+      await safeDiscard(persistence, submissionId, discardCode);
     }
   }
 }

@@ -71,3 +71,10 @@ test("database exposes only server-only RPC operations for writes", () => {
   assert.match(sql, /reason_code/);
   assert.match(sql, /echo_withdraw_publication/);
 });
+
+test("SQL draft has balanced dollar-quoted function bodies", () => {
+  const tokens = sql.match(/\$\$/g) ?? [];
+  assert.equal(tokens.length % 2, 0, "Every dollar-quoted SQL body must close");
+  assert.doesNotMatch(sql, /^\s*as \$\s*$/m, "No incomplete function delimiter");
+  assert.doesNotMatch(sql, /^\s*\$;\s*$/m, "No incomplete closing delimiter");
+});

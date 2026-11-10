@@ -101,8 +101,7 @@ export async function runEchoPipeline({ submission, agnes, persistence }) {
     const registration = await persistence.registerSubmission({
       sourceLanguage,
       consentGranted: true,
-      consentVersion: registration.consentVersion,
-      consentRecordedAt: registration.consentRecordedAt,
+      consentVersion: submission.consentVersion,
       idempotencyKey: submission.idempotencyKey,
       subjectHash: submission.subjectHash,
       submissionHash,
@@ -207,8 +206,8 @@ export async function runEchoPipeline({ submission, agnes, persistence }) {
       reviewedAnswerHash: answerHash,
       finalContentHash,
       authorizedContentHash: finalContentHash,
-      consentVersion: submission.consentVersion,
-      consentRecordedAt: submission.consentRecordedAt,
+      consentVersion: registration.consentVersion,
+      consentRecordedAt: registration.consentRecordedAt,
       gateVersion: "echo-gate-v1",
     };
 

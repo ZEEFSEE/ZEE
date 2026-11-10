@@ -135,11 +135,20 @@ Deno.serve(async (req: Request) => {
       return response({ status: "published", publicationId: result.publicationId }, 201, origin);
     }
     if (result.status === "unavailable") {
+      const diagnostic = result.diagnostic ?? { stage: "unknown", code: "unknown_error" };
+      console.warn("echo_pipeline_failed_closed", {
+        stage: diagnostic.stage,
+        code: diagnostic.code,
+      });
       return response({ status: "not_published" }, 503, origin);
     }
     // Do not disclose moderation decisions or echo submitted content to the caller.
     return response({ status: "received" }, 202, origin);
-  } catch {
+  } catch (error) {
+    const candidate = (error as { code?: unknown })?.code;
+    const code = typeof candidate === "string" && /^[a-z0-9_]{1,48}$/.test(candidate)
+      ? candidate : "request_setup_failed";
+    console.warn("echo_request_failed_closed", { stage: "request_setup", code });
     return response({ status: "not_published" }, 503, origin);
   }
 });

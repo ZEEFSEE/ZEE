@@ -4,6 +4,7 @@ import { strict as assert } from "node:assert";
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const endpoint = readFileSync(new URL("../../supabase/functions/echo-submit/index.ts", import.meta.url), "utf8");
 const gate = readFileSync(new URL("../../supabase/functions/_shared/echo-publication-gate.mjs", import.meta.url), "utf8");
+const agnesAdapter = readFileSync(new URL("../../supabase/functions/_shared/agnes-mailbox-adapter.mjs", import.meta.url), "utf8");
 const schema = readFileSync(new URL("../../supabase/design/echo-mailbox-v2-schema.draft.sql", import.meta.url), "utf8");
 
 assert.match(html, /data-lang="zh"/, "Chinese language toggle must exist");
@@ -34,5 +35,9 @@ assert.match(schema, /create schema if not exists echo_private/i, "Dedicated pri
 assert.match(schema, /alter table public\.echo_publications enable row level security/i, "Public archive must use RLS");
 assert.match(schema, /before insert on public\.echo_publications/i, "Database publication gate trigger must exist");
 assert.match(schema, /echo_authorization_replay/, "Database gate must reject authorization replay");
+
+assert.match(agnesAdapter, /agnes_zero_cost_not_confirmed/, "AGNES calls must be blocked without explicit zero-cost confirmation");
+assert.match(agnesAdapter, /apihub\.agnes-ai\.com\/v1\/chat\/completions/, "Only the AGNES API endpoint may be used");
+assert.doesNotMatch(agnesAdapter, /groq|GROQ/i, "No Groq fallback may exist");
 
 console.log("Echo Mailbox frontend and fail-closed backend checks passed.");

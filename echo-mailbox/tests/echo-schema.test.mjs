@@ -44,3 +44,19 @@ test("withdrawal is irreversible and non-selected payloads have an expiry worker
   assert.match(sql, /cron\.schedule\s*\(/i);
   assert.match(sql, /echo-mailbox-expiry/);
 });
+
+test("database exposes only server-only RPC operations for writes", () => {
+  for (const fn of [
+    "echo_register_submission", "echo_issue_authorization", "echo_publish",
+    "echo_discard_submission", "echo_revoke_authorization",
+  ]) {
+    assert.match(sql, new RegExp(`create or replace function public\\.${fn}`, "i"));
+    assert.match(sql, new RegExp(`revoke all on function public\\.${fn}`, "i"));
+    assert.match(sql, new RegExp(`grant execute on function public\\.${fn}.*to service_role`, "i"));
+  }
+  assert.match(sql, /p_body_sha256/);
+  assert.match(sql, /request_count > 5/);
+  assert.match(sql, /p_evidence->>'consentCoversQuestionAndAnswer'/);
+  assert.match(sql, /p_evidence->>'privateMemoryAccessed'/);
+  assert.match(sql, /echo_original_submission_mismatch/);
+});

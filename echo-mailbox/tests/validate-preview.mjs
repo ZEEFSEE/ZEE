@@ -6,6 +6,7 @@ const endpoint = readFileSync(new URL("../../supabase/functions/echo-submit/inde
 const gate = readFileSync(new URL("../../supabase/functions/_shared/echo-publication-gate.mjs", import.meta.url), "utf8");
 const agnesAdapter = readFileSync(new URL("../../supabase/functions/_shared/agnes-mailbox-adapter.mjs", import.meta.url), "utf8");
 const pipeline = readFileSync(new URL("../../supabase/functions/_shared/echo-pipeline.mjs", import.meta.url), "utf8");
+const persistence = readFileSync(new URL("../../supabase/functions/_shared/echo-persistence.mjs", import.meta.url), "utf8");
 const schema = readFileSync(new URL("../../supabase/design/echo-mailbox-v2-schema.draft.sql", import.meta.url), "utf8");
 
 assert.match(html, /data-lang="zh"/, "Chinese language toggle must exist");
@@ -47,5 +48,8 @@ assert.match(pipeline, /PAIR_REVIEW_PROMPT/, "Pipeline must review the question 
 assert.match(pipeline, /publishAtomically/, "Publication must use an atomic database operation");
 assert.match(pipeline, /safeRevoke/, "Unused publication authorizations must be revoked");
 assert.doesNotMatch(pipeline, /mia_messages|mia_memories|mia_identity|mia_personality_state/i, "Pipeline must not query private Mia tables");
+assert.match(persistence, /client\.rpc\(/, "Persistence must use server-only RPC calls");
+assert.doesNotMatch(persistence, /client\.from\(/, "Persistence must not query arbitrary database tables");
+assert.doesNotMatch(persistence, /mia_messages|mia_memories|mia_identity|mia_personality_state/i, "Persistence must not access private Mia tables");
 
 console.log("Echo Mailbox frontend and fail-closed backend checks passed.");

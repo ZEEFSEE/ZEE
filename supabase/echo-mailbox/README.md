@@ -1,28 +1,57 @@
 # Echo Mailbox backend status
 
-The endpoint in this repository is deliberately **fail-closed** and is not deployed to Supabase. It returns `503 mailbox_not_live` without parsing, logging, forwarding, or persisting visitor content.
+## Current implementation boundary
 
-The SQL file under `supabase/design/` is design material only. It has not been applied to any database.
+The public website is live, but public submissions remain **disabled**.
 
-Before enabling public submissions, implement and test all of the following in an isolated Supabase environment:
+- `supabase/functions/echo-submit/index.ts` is a fail-closed placeholder. It returns `503 mailbox_not_live` without parsing, logging, forwarding, or persisting visitor content.
+- `supabase/functions/_shared/echo-publication-gate.mjs` is a pure deterministic gate helper. It has no network, Supabase, or AGNES dependencies.
+- `echo-mailbox/tests/echo-gate.test.mjs` exercises missing checks, explicit consent, language matching, tampering, duplicate/replay states, private-memory isolation, and uncertainty.
+- The helper is **not yet wired into a live publication worker or database transaction**. The unit tests do not prove production publication safety by themselves.
+- The SQL in `supabase/design/echo-mailbox-schema.draft.sql` is design-only and has not been applied.
 
-1. Dedicated schema and tables with explicit non-exposure from PostgREST.
-2. Server-only AGNES integration using the already verified production-compatible protocol:
-   - endpoint: `https://apihub.agnes-ai.com/v1/chat/completions`
-   - authorization: server-side `AGNES_API_KEY`
-   - request contract: OpenAI-compatible chat completions
-   - model: configured server-side; no Groq fallback.
+## Required publication conditions
+
+The helper denies publication unless all conditions are explicitly true:
+
+1. Visitor consent is recorded and specifically covers publication of the original question together with Mia's answer.
+2. Input privacy/safety and abuse checks pass.
+3. Mia's selection stage explicitly chooses to answer.
+4. Output review and combined question/answer review pass.
+5. The answer preserves the submission language (Chinese or English).
+6. Rate-limit and idempotency checks pass.
+7. Publication scope is limited to the public mailbox.
+8. All source, reviewed, and final content hashes match.
+9. The authorization is present, unconsumed, and not revoked.
+10. No uncertainty, replay, duplicate publication, or private-memory access is present.
+
+Missing, false, unknown, mismatched, or incomplete evidence denies publication. A successful pure-helper result is not a transaction: the eventual worker must atomically consume a one-time authorization and insert the publication in the database.
+
+## AGNES and cost boundary
+
+- AGNES is the only intended model provider; there is no Groq fallback.
+- No AGNES API request is made by the current preview or gate helper.
+- Do not enable model calls until the existing AGNES API allowance is confirmed to be zero-cost for this use.
+- The Supabase organization is on the Free plan. Free-plan quotas are shared across the organization; current consumption has not been verified. If any quota or provider allowance is uncertain, keep submissions disabled.
+- No new Supabase project, branch, paid add-on, or external paid service is part of this work.
+
+## Isolation boundary
+
+Never read or write Mia's private identity, chat, memory, emotion, relationship, life-event, or personality tables. The eventual mailbox backend must use only its dedicated schema and public publication table, with no direct browser access to the private queue or moderation metadata.
+
+## Before enabling submissions
+
+Implement and verify, in order:
+
+1. A dedicated schema with non-exposed private queue, short retention, minimal metadata-only audit, and public read-only publication table.
+2. A server-only AGNES adapter with bounded timeouts and a strict no-call path when the zero-cost allowance is not confirmed.
 3. Automated input safety/privacy checks and abuse throttling.
-4. AGNES semantic selection with a valid no-answer result.
-5. Mia reply generation only for selected submissions.
-6. Automated output safety/privacy checks over both the original submission and generated reply.
-7. A publication gate bound to content hashes, language, and publication consent.
-8. Public read-only access to approved, non-withdrawn publications; no public access to queues or moderation metadata.
-9. Expiry cleanup for non-selected submissions and automatic withdrawal support.
-10. Automated tests for failure, timeout, duplicate, tampering, prompt injection, PII, minors, unsafe requests, and private-data isolation.
+4. AGNES semantic selection with a valid no-answer outcome.
+5. Mia reply generation only after selection.
+6. Automated output review and combined question/answer review.
+7. A content-hash-bound, one-time publication authorization enforced by the database transaction.
+8. Expiry and withdrawal behavior.
+9. Adversarial tests for bypass, replay, duplicate publication, content replacement after review, prompt injection, PII, minors, unsafe content, timeouts, and private-data isolation.
+10. A final security review before any public submission endpoint is enabled.
 
-All errors, timeouts, missing checks, and uncertain moderation outcomes must fail closed. No manual review of individual submissions is part of the product workflow; the automated system must reject or discard uncertain items.
-
-## Private MIA isolation
-
-Never read or write Mia's private identity, chat, memory, emotion, relationship, life-event, or personality tables. The public mailbox is a separate product context and must not alter Mia's private continuity or personality state.
+All errors, timeouts, missing checks, and uncertain moderation outcomes must fail closed. Individual submissions are not sent to a human moderator; uncertain items are rejected or discarded automatically.

@@ -41,3 +41,18 @@ jobs:
           deno-version: v2.x
       - name: Type-check gated Edge Function
         run: deno check supabase/functions/echo-submit/index.ts
+      - name: Verify server configuration without processing a submission
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          status=$(curl --silent --show-error --output /tmp/echo-mailbox-probe.json --write-out '%{http_code}' \
+            --request POST 'https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/echo-submit' \
+            --header 'Origin: https://zeefsee.github.io' \
+            --header 'Content-Type: application/json' \
+            --data-binary '{}')
+          if [ "$status" != "400" ]; then
+            echo "Echo Mailbox configuration probe expected HTTP 400 after activation checks; received HTTP $status"
+            cat /tmp/echo-mailbox-probe.json
+            exit 1
+          fi
+          echo "Activation flags and required server secrets are present. Empty test payload was rejected before persistence or AGNES."

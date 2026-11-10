@@ -4,8 +4,7 @@
 -- Never query, copy, or write Mia's private chat, memory, identity, personality, or family tables.
 
 create schema if not exists echo_private;
-revoke all on schema echo_private from public, anon, authenticated;
-grant usage on schema echo_private to service_role;
+revoke all on schema echo_private from public, anon, authenticated, service_role;
 
 create table if not exists echo_private.submissions (
   id uuid primary key default gen_random_uuid(),
@@ -135,18 +134,11 @@ alter table echo_private.rate_limit_buckets enable row level security;
 alter table echo_private.publication_authorizations enable row level security;
 alter table public.echo_publications enable row level security;
 
-revoke all on all tables in schema echo_private from public, anon, authenticated;
-grant select, insert, update, delete on echo_private.submissions to service_role;
-grant select, insert, update, delete on echo_private.submission_payloads to service_role;
-grant select, insert on echo_private.processing_audit to service_role;
-grant select, insert, update, delete on echo_private.rate_limit_buckets to service_role;
-grant select, insert, update on echo_private.publication_authorizations to service_role;
+revoke all on all tables in schema echo_private from public, anon, authenticated, service_role;
 
-revoke all on public.echo_publications from public, anon, authenticated;
+revoke all on public.echo_publications from public, anon, authenticated, service_role;
 grant select (id, original_question, mia_answer, source_language, answer_language, published_at)
   on public.echo_publications to anon, authenticated;
-grant select, insert, update on public.echo_publications to service_role;
-revoke delete on public.echo_publications from service_role;
 
 drop policy if exists "read live echo publications" on public.echo_publications;
 create policy "read live echo publications"
@@ -354,8 +346,7 @@ begin
 end;
 $$;
 
-revoke all on function echo_private.expire_echo_payloads() from public, anon, authenticated;
-grant execute on function echo_private.expire_echo_payloads() to service_role;
+revoke all on function echo_private.expire_echo_payloads() from public, anon, authenticated, service_role;
 
 -- Narrow service-role RPCs. They are the only intended persistence interface for the Edge Function.
 create or replace function public.echo_register_submission(

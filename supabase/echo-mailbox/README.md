@@ -2,7 +2,7 @@
 
 ## Deployment state
 
-<badge>Public intake disabled</badge>
+**Public intake disabled**
 
 - The bilingual website is deployed at `https://zeefsee.github.io/ZEE/echo-mailbox/`.
 - The isolated V2 schema and RPC hardening are applied to Supabase project `dbooikzqprnqbgpfwsze`.

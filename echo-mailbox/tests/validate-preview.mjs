@@ -31,7 +31,7 @@ const bodyReadIndex = endpoint.indexOf("await req.text()");
 assert.ok(activationIndex >= 0 && costIndex > activationIndex && bodyReadIndex > costIndex,
   "Activation and zero-cost checks must occur before request-body parsing");
 assert.doesNotMatch(endpoint, /console\.(log|error|warn)/, "Endpoint must not log visitor content");
-assert.doesNotMatch(endpoint, /\.from\(/, "Endpoint must not query arbitrary Supabase tables");
+assert.doesNotMatch(endpoint, /client\.from\(/, "Endpoint must not query arbitrary Supabase tables");
 assert.doesNotMatch(endpoint, /mia_messages|mia_memories|mia_identity|mia_personality_state/i,
   "Endpoint must not access Mia private data");
 

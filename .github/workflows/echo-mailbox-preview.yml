@@ -45,6 +45,19 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         shell: bash
         run: |
+          preflight_status=$(curl --silent --show-error --dump-header /tmp/echo-preflight-headers.txt --output /dev/null --write-out '%{http_code}' \
+            --request OPTIONS 'https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/echo-submit' \
+            --header 'Origin: https://zeefsee.github.io' \
+            --header 'Access-Control-Request-Method: POST' \
+            --header 'Access-Control-Request-Headers: content-type')
+          if [ "$preflight_status" != "204" ] \
+            || ! grep -qi '^access-control-allow-origin: https://zeefsee.github.io' /tmp/echo-preflight-headers.txt \
+            || ! grep -qi '^access-control-allow-methods: .*POST' /tmp/echo-preflight-headers.txt \
+            || ! grep -qi '^access-control-allow-headers: .*content-type' /tmp/echo-preflight-headers.txt; then
+            echo "Echo Mailbox browser CORS preflight failed (HTTP $preflight_status)"
+            cat /tmp/echo-preflight-headers.txt
+            exit 1
+          fi
           status=$(curl --silent --show-error --output /tmp/echo-mailbox-probe.json --write-out '%{http_code}' \
             --request POST 'https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/echo-submit' \
             --header 'Origin: https://zeefsee.github.io' \

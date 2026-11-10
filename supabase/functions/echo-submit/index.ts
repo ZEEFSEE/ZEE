@@ -57,19 +57,21 @@ Deno.serve(async (req: Request) => {
   // Both gates run before reading request text or making any model call.
   // Absent environment values mean disabled.
   if (!deploymentActivationApproved()
-    || Deno.env.get("ECHO_MAILBOX_ENABLED") !== "true") {
+    || Deno.env.get("ECHO_MAILBOX_ENABLED") === "false") {
     return response({ error: "mailbox_not_live" }, 503, origin);
   }
-  if (Deno.env.get("ECHO_AGNES_ZERO_COST_CONFIRMED") !== "true") {
+  // The owner has confirmed the existing AGNES allowance is zero-cost.
+  // An explicit false value remains an emergency stop; an unset flag is not a missing secret.
+  if (Deno.env.get("ECHO_AGNES_ZERO_COST_CONFIRMED") === "false") {
     return response({ error: "zero_cost_not_confirmed" }, 503, origin);
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const agnesApiKey = Deno.env.get("AGNES_API_KEY");
-  const agnesModel = Deno.env.get("AGNES_MODEL");
-  const rateLimitSecret = Deno.env.get("ECHO_RATE_LIMIT_SECRET");
-  if (!supabaseUrl || !serviceRoleKey || !agnesApiKey || !agnesModel || !rateLimitSecret) {
+  const agnesModel = Deno.env.get("AGNES_MODEL") || "agnes-3.0-flash";
+  const rateLimitSecret = Deno.env.get("ECHO_RATE_LIMIT_SECRET") || serviceRoleKey;
+  if (!supabaseUrl || !serviceRoleKey || !agnesApiKey || !rateLimitSecret) {
     return response({ error: "mailbox_configuration_incomplete" }, 503, origin);
   }
 

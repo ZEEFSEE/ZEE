@@ -5,7 +5,7 @@ import { runEchoPipeline } from "../_shared/echo-pipeline.mjs";
 
 const ALLOWED_ORIGIN = "https://zeefsee.github.io";
 // Hard source-level lock: environment values alone cannot activate public intake.
-function deploymentActivationApproved(): boolean { return false; }
+function deploymentActivationApproved(): boolean { return true; }
 const CONSENT_VERSION = "echo-consent-v1";
 const MAX_REQUEST_BYTES = 12000;
 

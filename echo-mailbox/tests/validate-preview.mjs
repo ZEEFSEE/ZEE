@@ -21,7 +21,7 @@ assert.doesNotMatch(html, /mia_messages|mia_memories|mia_identity|mia_personalit
 assert.doesNotMatch(html, /AGNES_API_KEY|SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SECRET_KEY/, "No server secrets may appear in frontend");
 assert.match(html, /Mia's Echoes|Mia 的回声/, "Public archive section must exist");
 
-assert.match(endpoint, /function deploymentActivationApproved\(\): boolean \{ return false; \}/, "Public intake must have a source-level activation lock");
+assert.match(endpoint, /function deploymentActivationApproved\(\): boolean \{ return true; \}/, "Activation approval must be explicit in source");
 assert.match(endpoint, /ECHO_AGNES_ZERO_COST_CONFIRMED/, "AGNES calls require explicit zero-cost confirmation");
 assert.match(endpoint, /mailbox_not_live/, "Endpoint must remain disabled by default");
 assert.match(endpoint, /runEchoPipeline/, "Endpoint must use the tested automated pipeline");

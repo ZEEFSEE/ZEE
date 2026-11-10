@@ -1,0 +1,26 @@
+name: Echo Mailbox Preview Safety
+
+on:
+  pull_request:
+    paths:
+      - "echo-mailbox/**"
+      - ".github/workflows/echo-mailbox-preview.yml"
+  push:
+    branches: ["feature/echo-mailbox-bilingual-mvp"]
+    paths:
+      - "echo-mailbox/**"
+      - ".github/workflows/echo-mailbox-preview.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  preview-safety:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate bilingual preview and no-transmission boundary
+        run: node echo-mailbox/tests/validate-preview.mjs

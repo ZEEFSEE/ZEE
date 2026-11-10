@@ -35,6 +35,9 @@ jobs:
       - name: Validate family identity consistency
         run: node --test mia-digital-family/tests/family-display.test.mjs
 
+      - name: Validate Echo Mailbox frontend and disabled endpoint
+        run: node echo-mailbox/tests/validate-preview.mjs
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 

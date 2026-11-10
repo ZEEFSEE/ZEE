@@ -1,6 +1,10 @@
--- THE ECHO MAILBOX V2 — DESIGN DRAFT ONLY.
--- NOT APPLIED TO SUPABASE. Review the deployment boundary before applying.
--- Additive only: a dedicated private schema and a read-only public archive.
+-- THE ECHO MAILBOX V2 — BASE SCHEMA REFERENCE.
+-- Applied as migration echo_mailbox_v2_isolated_schema.
+-- Follow with echo-mailbox-v2-rpc-hardening.applied.sql for the current
+-- SECURITY INVOKER public wrappers and unexposed SECURITY DEFINER implementations.
+-- Do not reapply this base file alone after hardening: it contains the initial
+-- public RPC definitions that the hardening migration replaces.
+-- Additive only: dedicated private schema + read-only public archive.
 -- Never query, copy, or write Mia's private chat, memory, identity, personality, or family tables.
 
 create schema if not exists echo_private;

@@ -14,7 +14,10 @@ assert.match(html, /data-lang="en"/, "English language toggle must exist");
 assert.match(html, /publish-consent/, "Explicit publication consent must exist");
 assert.match(html, /does not send or store|不会发送或保存/, "Preview must clearly disclose that it does not submit");
 assert.match(html, /addEventListener\('submit'/, "Form must have an explicit safe submit handler");
-assert.doesNotMatch(html, /fetch\s*\(|XMLHttpRequest|sendBeacon/, "Preview must not transmit visitor content");
+assert.match(html, /functions.*echo-submit/, "Submissions must use the dedicated Echo endpoint");
+assert.match(html, /echo_publications/, "Archive must read only the public Echo archive");
+assert.match(html, /textContent/, "Untrusted archive content must be rendered as text");
+assert.doesNotMatch(html, /mia_messages|mia_memories|mia_identity|mia_personality_state/i, "Frontend must not access Mia private data");
 assert.doesNotMatch(html, /AGNES_API_KEY|SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SECRET_KEY/, "No server secrets may appear in frontend");
 assert.match(html, /Mia's Echoes|Mia 的回声/, "Public archive section must exist");
 

@@ -44,6 +44,9 @@ create table if not exists echo_private.processing_audit (
     'received','input_rejected','selected','no_answer','output_rejected',
     'pair_rejected','published','withdrawn','expired','failed'
   )),
+  reason_code text check (reason_code is null or reason_code in (
+    'privacy_risk','safety_risk','content_issue','moderation_uncertain','user_request'
+  )),
   content_sha256 text check (content_sha256 is null or content_sha256 ~ '^[a-f0-9]{64}$'),
   created_at timestamptz not null default now()
 );
@@ -297,10 +300,6 @@ begin
   if new.withdrawn_at is not null then
     new.withdrawn_at := coalesce(old.withdrawn_at, now());
     new.is_published := false;
-    if old.withdrawn_at is null then
-      insert into echo_private.processing_audit (event_code, content_sha256)
-        values ('withdrawn', old.content_sha256);
-    end if;
   end if;
   return new;
 end;
@@ -567,6 +566,41 @@ begin
   return jsonb_build_object('discarded', true);
 end;
 $$;
+
+create or replace function public.echo_withdraw_publication(
+  p_publication_id uuid,
+  p_reason_code text
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = pg_catalog, echo_private, extensions
+as $
+declare
+  v_content_hash text;
+begin
+  if p_reason_code not in ('privacy_risk','safety_risk','content_issue','moderation_uncertain','user_request') then
+    raise exception using errcode = '22023', message = 'echo_withdrawal_reason_invalid';
+  end if;
+
+  update public.echo_publications
+    set withdrawn_at = now(), is_published = false
+    where id = p_publication_id and is_published is true and withdrawn_at is null
+    returning content_sha256 into v_content_hash;
+
+  if not found then
+    return jsonb_build_object('withdrawn', false);
+  end if;
+
+  insert into echo_private.processing_audit (event_code, reason_code, content_sha256)
+    values ('withdrawn', p_reason_code, v_content_hash);
+
+  return jsonb_build_object('withdrawn', true);
+end;
+$;
+
+revoke all on function public.echo_withdraw_publication(uuid,text) from public, anon, authenticated;
+grant execute on function public.echo_withdraw_publication(uuid,text) to service_role;
 
 create or replace function public.echo_revoke_authorization(p_authorization_id uuid, p_reason text)
 returns jsonb

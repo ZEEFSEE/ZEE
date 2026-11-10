@@ -597,7 +597,7 @@ begin
 
   return jsonb_build_object('withdrawn', true);
 end;
-$;
+$$;
 
 revoke all on function public.echo_withdraw_publication(uuid,text) from public, anon, authenticated;
 grant execute on function public.echo_withdraw_publication(uuid,text) to service_role;

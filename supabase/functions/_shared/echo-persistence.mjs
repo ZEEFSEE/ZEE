@@ -22,7 +22,9 @@ function requireClient(client) {
 }
 
 async function rpc(client, name, args) {
-  const result = await client.rpc(name, args);
+  let result;
+  try { result = await client.rpc(name, args); }
+  catch { throw new EchoPersistenceError("echo_database_operation_failed"); }
   if (result?.error) throw new EchoPersistenceError("echo_database_operation_failed");
   return result?.data;
 }

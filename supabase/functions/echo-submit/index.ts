@@ -3,8 +3,6 @@
 // and does NOT publish anything until the AGNES adapter and review workflow
 // are configured and separately tested.
 
-import { createClient } from "npm:@supabase/supabase-js@2";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "https://zeefsee.github.io",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -65,18 +63,24 @@ Deno.serve(async (req: Request) => {
     return json(503, { error: "mailbox_backend_not_configured" });
   }
 
-  const admin = createClient(supabaseUrl, secretKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
+  const insertResponse = await fetch(`${supabaseUrl}/rest/v1/submissions`, {
+    method: "POST",
+    headers: {
+      "apikey": secretKey,
+      "Authorization": `Bearer ${secretKey}`,
+      "Content-Type": "application/json",
+      "Content-Profile": "echo_private",
+      "Prefer": "return=minimal",
+    },
+    body: JSON.stringify({
+      body,
+      source_language: detectLanguage(body),
+      consent_to_publication: true,
+      status: "pending",
+    }),
   });
 
-  const { error } = await admin.schema("echo_private").from("submissions").insert({
-    body,
-    source_language: detectLanguage(body),
-    consent_to_publication: true,
-    status: "pending",
-  });
-
-  if (error) {
+  if (!insertResponse.ok) {
     // Do not echo database errors or submitted content to the visitor/log.
     return json(503, { error: "submission_temporarily_unavailable" });
   }

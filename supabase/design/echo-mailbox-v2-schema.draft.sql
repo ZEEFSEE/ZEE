@@ -113,7 +113,6 @@ create table if not exists public.echo_publications (
   published_at timestamptz not null default now(),
   is_published boolean not null default true,
   withdrawn_at timestamptz,
-  withdrawal_code text,
   constraint echo_publication_language_match check (source_language = answer_language),
   constraint echo_publication_withdrawal_state check (
     (withdrawn_at is null and is_published is true)
@@ -140,7 +139,7 @@ grant select, insert, update, delete on echo_private.rate_limit_buckets to servi
 grant select, insert, update on echo_private.publication_authorizations to service_role;
 
 revoke all on public.echo_publications from public, anon, authenticated;
-grant select on public.echo_publications to anon, authenticated;
+grant select (id, original_question, mia_answer, source_language, answer_language, published_at)\n  on public.echo_publications to anon, authenticated;
 grant select, insert, update on public.echo_publications to service_role;
 revoke delete on public.echo_publications from service_role;
 
@@ -173,6 +172,31 @@ begin
 
   if v_auth.consumed_at is not null or v_auth.revoked_at is not null then
     raise exception using errcode = '42501', message = 'echo_authorization_unavailable';
+  end if;
+
+  select * into v_submission
+  from echo_private.submissions
+  where id = v_auth.submission_id
+  for update;
+
+  if not found
+     or v_submission.status <> 'selected'
+     or v_submission.expires_at <= now()
+     or v_submission.consent_to_publication is not true
+     or v_submission.consent_version is distinct from v_auth.consent_version
+     or v_submission.consent_recorded_at is distinct from v_auth.consent_recorded_at
+     or v_submission.source_language is distinct from v_auth.source_language
+     or v_submission.body_sha256 is distinct from v_auth.submission_sha256 then
+    raise exception using errcode = '42501', message = 'echo_submission_consent_or_state_invalid';
+  end if;
+
+  select body into v_original_body
+  from echo_private.submission_payloads
+  where submission_id = v_submission.id and expires_at > now()
+  for update;
+
+  if not found or v_original_body is distinct from new.original_question then
+    raise exception using errcode = '42501', message = 'echo_original_submission_mismatch';
   end if;
 
   if not (
@@ -208,6 +232,7 @@ begin
   );
 
   if v_question_hash <> v_auth.question_sha256
+     or v_question_hash <> v_submission.body_sha256
      or v_answer_hash <> v_auth.answer_sha256
      or v_content_hash <> v_auth.content_sha256
      or v_auth.consent_version is null
@@ -227,6 +252,16 @@ begin
   if not found then
     raise exception using errcode = '42501', message = 'echo_authorization_replay';
   end if;
+
+  update echo_private.submissions
+    set status = 'published', processed_at = now(), lease_until = null
+    where id = v_submission.id and status = 'selected';
+
+  if not found then
+    raise exception using errcode = '42501', message = 'echo_submission_state_changed';
+  end if;
+
+  delete from echo_private.submission_payloads where submission_id = v_submission.id;
 
   insert into echo_private.processing_audit (submission_id, event_code, content_sha256)
     values (v_auth.submission_id, 'published', v_content_hash);
@@ -268,6 +303,7 @@ begin
   end if;
 
   if new.withdrawn_at is not null then
+    new.withdrawn_at := coalesce(old.withdrawn_at, now());
     new.is_published := false;
     if old.withdrawn_at is null then
       insert into echo_private.processing_audit (event_code, content_sha256)
@@ -295,10 +331,15 @@ as $$
 declare
   v_removed integer := 0;
 begin
-  update echo_private.submissions
-    set status = 'expired', processed_at = now(), lease_until = null
-    where status in ('pending','processing','selected')
-      and expires_at <= now();
+  with expired as (
+    update echo_private.submissions
+      set status = 'expired', processed_at = now(), lease_until = null
+      where status in ('pending','processing','selected')
+        and expires_at <= now()
+      returning id, body_sha256
+  )
+  insert into echo_private.processing_audit (submission_id, event_code, content_sha256)
+    select id, 'expired', body_sha256 from expired;
 
   delete from echo_private.submission_payloads
     where expires_at <= now()

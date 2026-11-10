@@ -6,10 +6,11 @@ The public website is live, but public submissions remain **disabled**.
 
 - `supabase/functions/echo-submit/index.ts` is a fail-closed placeholder. It returns `503 mailbox_not_live` without parsing, logging, forwarding, or persisting visitor content.
 - `supabase/functions/_shared/echo-publication-gate.mjs` is a pure deterministic gate helper. It has no network, Supabase, or AGNES dependencies.
-- `supabase/functions/_shared/echo-pipeline.mjs` contains the dependency-injected automated sequence: input review, Mia's answer/silence choice, reply generation, output review, combined-pair review, hash-bound authorization, and atomic publish call. It is not yet wired to the live database.\n- `supabase/functions/_shared/agnes-mailbox-adapter.mjs` is a server-only AGNES adapter. It refuses all network calls unless `zeroCostConfirmed === true`, uses the fixed AGNES endpoint, and has no Groq fallback. It is not yet wired into a live submission flow.
+- `supabase/functions/_shared/echo-pipeline.mjs` contains the dependency-injected automated sequence: input review, Mia's answer/silence choice, reply generation, output review, combined-pair review, hash-bound authorization, and atomic publish call. It is not yet wired to the live database.
+- `supabase/functions/_shared/agnes-mailbox-adapter.mjs` is a server-only AGNES adapter. It refuses all network calls unless `zeroCostConfirmed === true`, uses the fixed AGNES endpoint, and has no Groq fallback. It is not yet wired into a live submission flow.
 - `echo-mailbox/tests/echo-gate.test.mjs` exercises missing checks, explicit consent, language matching, tampering, duplicate/replay states, private-memory isolation, and uncertainty.
 - The helper is **not yet wired into a live publication worker or database transaction**. The unit tests do not prove production publication safety by themselves.
-- The SQL in `supabase/design/echo-mailbox-schema.draft.sql` is design-only and has not been applied.
+- The SQL files under `supabase/design/` are design-only and have not been applied. The V2 draft is `echo-mailbox-v2-schema.draft.sql`.
 
 ## Required publication conditions
 

@@ -1,5 +1,5 @@
 // Server-only AGNES adapter for THE ECHO MAILBOX.
-// No Groq fallback. No network request is permitted until the operator has
+// No network request is permitted until the operator has
 // explicitly confirmed that the existing AGNES allowance is zero-cost.
 
 export const AGNES_MAILBOX_ENDPOINT = "https://apihub.agnes-ai.com/v1/chat/completions";

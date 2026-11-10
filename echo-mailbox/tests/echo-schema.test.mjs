@@ -45,6 +45,15 @@ test("withdrawal is irreversible and non-selected payloads have an expiry worker
   assert.match(sql, /echo-mailbox-expiry/);
 });
 
+
+test("service role has RPC execution only, not direct mailbox table access", () => {
+  assert.match(sql, /revoke all on schema echo_private from public, anon, authenticated, service_role/i);
+  assert.match(sql, /revoke all on all tables in schema echo_private from public, anon, authenticated, service_role/i);
+  assert.match(sql, /revoke all on public\.echo_publications from public, anon, authenticated, service_role/i);
+  assert.doesNotMatch(sql, /grant [^;]* on echo_private\.[^;]* to service_role/i);
+  assert.doesNotMatch(sql, /grant [^;]* on public\.echo_publications to service_role/i);
+});
+
 test("database exposes only server-only RPC operations for writes", () => {
   for (const fn of [
     "echo_register_submission", "echo_issue_authorization", "echo_publish",

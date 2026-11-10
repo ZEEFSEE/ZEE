@@ -139,7 +139,8 @@ grant select, insert, update, delete on echo_private.rate_limit_buckets to servi
 grant select, insert, update on echo_private.publication_authorizations to service_role;
 
 revoke all on public.echo_publications from public, anon, authenticated;
-grant select (id, original_question, mia_answer, source_language, answer_language, published_at)\n  on public.echo_publications to anon, authenticated;
+grant select (id, original_question, mia_answer, source_language, answer_language, published_at)
+  on public.echo_publications to anon, authenticated;
 grant select, insert, update on public.echo_publications to service_role;
 revoke delete on public.echo_publications from service_role;
 

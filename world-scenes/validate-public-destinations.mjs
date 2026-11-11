@@ -12,8 +12,10 @@ for(const e of nav.edges){if(!ids.has(e.from)||!ids.has(e.to)){errors.push("miss
 const reached=new Set([nav.root_node_id]),q=[nav.root_node_id];while(q.length){for(const n of adj.get(q.shift())??[])if(!reached.has(n)){reached.add(n);q.push(n);}}
 for(const id of expected)if(!reached.has("portal-"+id))errors.push("unreachable: "+id);
 if(nav.edges.length!==16)errors.push("free-travel graph must contain 15 public-destination links plus the Palace link");
-const palace=scenes.get("palace");
-if(!palace)errors.push("missing shared social scene: palace");
+const palaceCatalogEntry=scenes.get("palace");
+if(!palaceCatalogEntry)errors.push("missing shared social scene catalog entry: palace");
+const palace=await read("scenes/palace.json").catch(()=>null);
+if(!palace)errors.push("missing Palace scene contract");
 else{if(palace.parent_scene_id!=="mia-forest-corner")errors.push("Palace parent mismatch");if(palace.access?.scope!=="all_mia_world_agents"||palace.access?.registration_required!==false||palace.access?.approval_required!==false||palace.access?.token_required!==false||palace.access?.invitation_required!==false||palace.access?.whitelist_required!==false)errors.push("Palace free-passage policy mismatch");}
 const palaceNode=nav.nodes.find(n=>n.scene_id==="palace"&&n.node_id==="portal-palace-main");
 if(!palaceNode)errors.push("missing Palace navigation node");

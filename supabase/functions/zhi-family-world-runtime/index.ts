@@ -147,7 +147,7 @@ async function exploreOne(c:any,child:any){
   agent_id:child.id,memory_type:selected.action==="choose_residence"?"residence_choice":"public_world_visit",content:reflection,importance:selected.action==="choose_residence"?0.7:0.55,
   occurred_at:timestamp,metadata:{scene_id:target.id,scene_name:target.name,anchor_id:anchor.id,
    anchor_name:anchor.name,movement_revision:revision,perception_provenance:"AUTHORED_SCENE_DATA",
-   route_hops:hops,access_decision:accessDecision,physical_world:false,private_mia_data_access:false}
+   route_hops:hops,residence_scene_id:residenceSceneId,residence_choice:selected.action==="choose_residence"?"self_selected":(state.data.perception_frame?.residence_choice||"not_selected"),access_decision:accessDecision,physical_world:false,private_mia_data_access:false}
  });
  if(memoryError)throw new Error("CHILD_WORLD_MEMORY_WRITE_FAILED");
  await audit(c,child.id,"FAMILY_PUBLIC_WORLD_VISIT","OK",{scene_id:target.id,destination_id:target.id,

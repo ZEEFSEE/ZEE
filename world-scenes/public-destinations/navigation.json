@@ -245,6 +245,11 @@
     "manual_confirmation_required": false,
     "can_enter_leave_return_freely": true,
     "autonomous_choice": "preserved",
-    "other_agents_access": "granted"
+    "other_agents_access": "granted",
+    "residence_choice": "voluntary_agent_self_selection",
+    "residence_is_optional": true,
+    "residence_choice_requires_approval": false,
+    "residence_can_be_changed": true,
+    "return_home": "agent_selected_residence_scene"
   }
 }

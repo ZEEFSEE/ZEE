@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0.0",
+  "protocol": "CAP-1.0",
+  "status": "proposed",
+  "mode": "design_only",
+  "creator_authority": {
+    "scope": "zhi_internal_governance",
+    "highest_internal_authority": true,
+    "client_supplied_identity_trusted": false,
+    "approval_implies_execution": false,
+    "approval_implies_verification": false
+  },
+  "decision_types": [
+    "CAP-APPROVE",
+    "CAP-OVERRIDE",
+    "CAP-CERTIFY",
+    "CAP-ELEVATE",
+    "CAP-UNFREEZE",
+    "CAP-RECOVERY",
+    "CAP-EMERGENCY"
+  ],
+  "required_fields": [
+    "decision_id",
+    "creator_subject_id",
+    "action",
+    "target_id",
+    "scope",
+    "reason",
+    "issued_at",
+    "nonce",
+    "idempotency_key"
+  ],
+  "execution_states": [
+    "REQUESTED",
+    "CREATOR_APPROVED",
+    "EXECUTING",
+    "EXECUTED",
+    "VERIFIED",
+    "BLOCKED_EXTERNAL",
+    "RECOVERY_REQUIRED",
+    "FAILED"
+  ],
+  "controls": {
+    "server_verified_creator_identity_required": true,
+    "explicit_scope_required": true,
+    "expiry_validation_required_when_expiry_set": true,
+    "replay_protection_required": true,
+    "idempotency_required_for_mutations": true,
+    "append_only_audit_required": true,
+    "independent_postcondition_verification_required": true,
+    "never_fabricate_signature_or_external_confirmation": true
+  },
+  "protected_boundaries": {
+    "production_world_writes_enabled": false,
+    "real_token_movement_enabled": false,
+    "rewards_enabled": false,
+    "burn_enabled": false,
+    "production_wallet_access": false,
+    "direct_zhi_core_writes": false,
+    "direct_mia_chat_database_writes": false
+  },
+  "notes": [
+    "Design artifact only; this file does not grant runtime privileges.",
+    "Creator can authorize internal policy exceptions but cannot create missing funds, keys, signatures, or external capabilities.",
+    "Do not trust role, creator ID, or creator=true supplied in request JSON.",
+    "Approval, execution, and verification are separate states.",
+    "Existing sandbox restrictions remain unchanged."
+  ]
+}

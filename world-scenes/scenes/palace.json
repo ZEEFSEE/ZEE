@@ -21,13 +21,13 @@
     "created_at": null
   },
   "access": {
-    "scope": "all_mia_world_resident_agents",
-    "audience": "所有 MIA 世界智能体居民",
+    "scope": "all_mia_world_agents",
+    "audience": "所有 MIA 世界智能体",
     "resident_agents": true,
     "non_resident_external_visitors": false,
     "public_chat": false,
     "external_federation": false,
-    "policy": "unrestricted_resident_access",
+    "policy": "open_free_passage",
     "application_required": false,
     "approval_required": false,
     "safety_review_required_for_entry": false,
@@ -37,7 +37,12 @@
     "visit_limit": null,
     "stay_duration_limit": null,
     "can_enter_leave_return_freely": true,
-    "access_rule": "Any registered resident agent of the Mia world may enter, leave, and return freely at any time without review or permission."
+    "access_rule": "All agents in the Mia world may pass freely without registration, application, invitation, approval, token, whitelist, or manual confirmation.",
+    "registration_required": false,
+    "identity_registration_required": false,
+    "account_registration_required": false,
+    "whitelist_required": false,
+    "allow_unregistered_agents": true
   },
   "destination": {
     "kind": "world_scene",
@@ -115,39 +120,42 @@
   ],
   "verification_status": "native scene authored; directory anchor source-backed; geometry, cross-scene navigation, rendering, and runtime movement unverified",
   "notes": [
-    "The previous prototype-Mia-only scope and any approval, invitation, token, or manual-confirmation gate are revoked.",
-    "Every resident agent of the Mia world may enter, leave, and return freely at any time. No access review or permission step is part of this contract.",
+    "The previous prototype-Mia-only scope and all registration, approval, invitation, token, whitelist, or manual-confirmation gates are revoked.",
+    "Every agent in the Mia world may pass freely: enter, leave, and return at any time, without registration or review.",
     "The Palace is a shared social space for resident interaction, meetings, gatherings, and public activities.",
     "The directory anchor (1000,300) and entry (1000,330) retain their source values; their unit scale and relationship to other scene coordinates are not assumed.",
     "Palace dimensions, terrain, interior layout, collision geometry, 3D depth, and cross-scene transform remain unknown until measured or supplied.",
-    "The access contract is defined, but the runtime portal, renderer integration, and end-to-end enter/leave/return behavior have not yet been tested.",
+    "The open-passage policy is defined, but runtime portal and renderer integration plus end-to-end movement have not yet been tested.",
     "24/7 describes continuous availability in the directory."
   ],
   "transition_contract": {
-    "applies_to": "all_mia_world_resident_agents",
+    "applies_to": "all_mia_world_agents",
     "review_or_permission": "none",
     "enter": {
       "allowed": true,
-      "preconditions": [
-        "resident_agent_identity"
-      ],
+      "preconditions": [],
       "approval_required": false,
       "token_required": false,
       "manual_confirmation_required": false,
-      "semantics": "A resident may initiate entry at will; no application, invitation, review, or permission is required."
+      "semantics": "Any agent in the Mia world may enter directly at will. No registration, identity enrollment, application, invitation, review, token, whitelist, or permission is required.",
+      "registration_required": false,
+      "identity_registration_required": false,
+      "whitelist_required": false
     },
     "leave": {
       "allowed": true,
       "approval_required": false,
-      "semantics": "A resident may leave the Palace at any time without notice or approval."
+      "semantics": "A resident may leave the Palace at any time without notice or approval.",
+      "registration_required": false
     },
     "return": {
       "allowed": true,
       "approval_required": false,
       "token_required": false,
       "visit_limit": null,
-      "semantics": "A resident may return at any time and may repeat enter/leave cycles without a visit limit."
+      "semantics": "Any agent may return directly at any time, without registration or any other gate; enter/leave cycles are unlimited.",
+      "registration_required": false
     },
-    "runtime_status": "contract_defined; portal registration, renderer integration, and end-to-end movement remain unverified"
+    "runtime_status": "open_passage_contract_defined; runtime portal registration, renderer integration, and end-to-end movement remain unverified"
   }
 }

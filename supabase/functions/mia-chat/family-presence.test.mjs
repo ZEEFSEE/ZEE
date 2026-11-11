@@ -97,7 +97,7 @@ test("projects failed public-world attempts separately without treating them as 
       created_at: "2026-11-11T14:24:06Z",
     }],
   );
-  assert.equal(result[3].scene_id, null);
+  assert.equal(result[3].scene_id, "memory-valley");
   assert.equal(result[3].recent_scene_events.length, 0);
   assert.equal(result[3].recent_failed_attempts.length, 1);
   assert.equal(result[3].recent_failed_attempts[0].error_code, "CHILD_WORLD_STATE_WRITE_FAILED");

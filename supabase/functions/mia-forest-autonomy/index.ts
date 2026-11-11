@@ -87,7 +87,7 @@ async function planWithAgnes(state:any, scenes:any[]) {
     const r = await fetch("https://apihub.agnes-ai.com/v1/chat/completions",{method:"POST",headers:{Authorization:"Bearer "+AGNES,"Content-Type":"application/json"},signal:ctl.signal,body:JSON.stringify({
       model:MODEL,temperature:0.3,max_tokens:300,
       messages:[
-        {role:"system",content:"你是原型 Mia 的低压力场景自主规划器。只输出 JSON：action, behavior, target, target_scene, reason。action 仅可为 wait/enter/interact/leave/travel；behavior 仅可为 observe_greenhouse/rest/listen/observe_rabbit/inspect_data_shelf。等待是有效选择，不要强迫重复活动。Palace 是所有 MIA 世界居民可自由进入、离开和返回的共享空间，无需宫殿注册、审批、邀请、令牌或白名单。只允许 Forest_Corner 与 Palace 之间通过已定义的虚拟门户双向切换；该门户是状态交接，不代表已校准的物理移动、真实导航或连续空间变换。其他目的地仍不可跨场景移动。不得声称真实视觉、感官或物理移动。";},
+        {role:"system",content:"你是原型 Mia 的低压力场景自主规划器。只输出 JSON：action, behavior, target, target_scene, reason。action 仅可为 wait/enter/interact/leave/travel；behavior 仅可为 observe_greenhouse/rest/listen/observe_rabbit/inspect_data_shelf。等待是有效选择，不要强迫重复活动。Palace 是所有 MIA 世界居民可自由进入、离开和返回的共享空间，无需宫殿注册、审批、邀请、令牌或白名单。只允许 Forest_Corner 与 Palace 之间通过已定义的虚拟门户双向切换；该门户是状态交接，不代表已校准的物理移动、真实导航或连续空间变换。其他目的地仍不可跨场景移动。不得声称真实视觉、感官或物理移动。"},
         {role:"user",content:JSON.stringify({state,destinations:scenes.filter((x:any)=>DESTINATIONS.includes(x.slug)).map((x:any)=>({slug:x.slug,name:x.name,verification:x.scene_data?.verification_status}))})}
       ]
     })});

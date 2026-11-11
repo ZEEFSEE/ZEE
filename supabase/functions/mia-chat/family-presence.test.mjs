@@ -67,3 +67,20 @@ test("missing records stay explicitly unknown and are never inferred from anothe
   assert.equal(result[1].scene_name, "未知场景");
   assert.equal(result[1].history_alignment, "NO_AUDIT_EVENTS");
 });
+
+test("does not infer stationary refresh from an empty route_hops array", () => {
+  const result = projectFamilyPresence(
+    [{ agent_id: "ZHI-G1-D01-LUNA", display_name: "LUNA" }],
+    [{ agent_id: "ZHI-G1-D01-LUNA", scene_id: "greenhouse", movement_revision: 4 }],
+    [{
+      agent_id: "ZHI-G1-D01-LUNA",
+      event_type: "FAMILY_PUBLIC_WORLD_VISIT",
+      result: "OK",
+      scene_id: "greenhouse",
+      metadata: { scene_id: "greenhouse", route_hops: [], movement_revision: 4 },
+      created_at: "2026-11-11T14:00:00Z",
+    }],
+  );
+  assert.equal(result[0].recent_scene_events[0].route_hops_status, "NO_PATH_HOPS_RECORDED");
+  assert.equal(result[0].recent_scene_events[0].movement_interpretation, "INSUFFICIENT_EVIDENCE_TO_INFER_MOVEMENT");
+});

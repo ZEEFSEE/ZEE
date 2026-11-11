@@ -32,6 +32,12 @@ function projectPublicVisitEvent(row) {
     route_hops: Array.isArray(metadata.route_hops)
       ? metadata.route_hops.map((value) => String(value)).slice(0, 8)
       : [],
+    route_hops_status: Array.isArray(metadata.route_hops) && metadata.route_hops.length > 0
+      ? "PATH_HOPS_RECORDED"
+      : "NO_PATH_HOPS_RECORDED",
+    movement_interpretation: Array.isArray(metadata.route_hops) && metadata.route_hops.length > 0
+      ? "RECORDED_ROUTE_HOPS_ONLY"
+      : "INSUFFICIENT_EVIDENCE_TO_INFER_MOVEMENT",
     occurred_at: row?.created_at || null,
     physical_world: metadata.physical_world === true,
   };

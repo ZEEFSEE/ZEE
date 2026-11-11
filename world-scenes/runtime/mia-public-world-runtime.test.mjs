@@ -64,3 +64,17 @@ test("Palace has a bidirectional free-passage portal for all Mia world agents",(
  assert.deepEqual(palace.directory_reference.directory_entry,{x:1000,y:330});
  assert.equal(palace.directory_reference.mapping_to_runtime_frame,"not_calibrated");
 });
+
+test("Palace can reach every existing destination and return through Forest Corner",()=>{
+ const ids=["crystal-forest","ocean-of-light","memory-valley","living-city","greenhouse"];
+ for(const id of ids){
+  const outbound=resolveSceneRoute(manifest,"palace",id);
+  const inbound=resolveSceneRoute(manifest,id,"palace");
+  assert.equal(outbound.ok,true,"Palace -> "+id);
+  assert.equal(inbound.ok,true,id+" -> Palace");
+  assert.equal(outbound.status,"via_forest_corner");
+  assert.equal(inbound.status,"via_forest_corner");
+  assert.equal(outbound.hops.length,2);
+  assert.equal(inbound.hops.length,2);
+ }
+});

@@ -9,7 +9,7 @@ export function validateWorldManifest(m) {
   const errors=[];
   if(m?.schema!=="zhi.mia.public-world.spatial-manifest.v1") errors.push("unsupported manifest schema");
   if(m?.coordinate_contract?.unit!=="meter" || m?.coordinate_contract?.meters_per_layout_unit!==0.02) errors.push("coordinate unit contract mismatch");
-  if(m?.scope?.principal!=="prototype-mia" || m?.scope?.other_agents_access!==false) errors.push("world scope must be prototype Mia only");
+  if(m?.scope?.principal!=="mia-world-agents" || m?.scope?.other_agents_access!==true || m?.scope?.registration_required!==false || m?.scope?.approval_required!==false || m?.scope?.token_required!==false) errors.push("world scope must allow all Mia world agents without access gates");
   if(m?.scope?.aurora_enabled!==false || m?.scope?.federation_enabled!==false) errors.push("AURORA/federation must remain disabled");
   const ids=new Set();
   for(const s of m?.scenes??[]){
@@ -24,8 +24,8 @@ export function validateWorldManifest(m) {
       if(!["circle","ellipse","rect"].includes(o.shape)) errors.push("unsupported collider "+o.id);
     }
   }
-  if(ids.size!==6) errors.push("expected Forest Corner plus five destinations");
-  for(const id of ["crystal-forest","ocean-of-light","memory-valley","living-city","greenhouse"]){
+  if(ids.size!==7) errors.push("expected Forest Corner, five destinations, and Palace");
+  for(const id of ["crystal-forest","ocean-of-light","memory-valley","living-city","greenhouse","palace"]){
     if(!m.routes?.some(r=>r.from==="mia-forest-corner"&&r.to===id&&r.direction==="bidirectional")) errors.push("missing bidirectional route "+id);
   }
   return {valid:errors.length===0,errors};

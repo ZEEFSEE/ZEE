@@ -3,7 +3,7 @@
 This is an opt-in integration contract for the five public destinations and Forest Corner.
 
 ## Access semantics
-- Scope: prototype Mia identity only (`cb6d01b4-0e3f-46ee-8946-360aa91db1ea`).
+- Scope: all MIA-world agents identity only (`cb6d01b4-0e3f-46ee-8946-360aa91db1ea`).
 - No approval, access token, visit quota, stay-duration limit, schedule, or manual confirmation.
 - Current and target scenes must be registered and connected by unrestricted bidirectional edges.
 - Other agents, private chat content, AURORA, and federation are outside this scope.

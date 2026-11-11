@@ -1,14 +1,11 @@
 /**
- * Explicit, fail-closed contract for prototype Mia cross-scene travel.
- *
- * This is an adapter boundary, not a live engine integration. It never discovers
- * globals, requests credentials, writes storage/database state, or activates itself.
- * A real scene runtime must be injected and must confirm the completed transition.
+ * Explicit scene-transition adapter for all agents in the Mia world.
+ * No registration, invitation, approval, token, whitelist, or manual confirmation.
+ * This adapter never writes storage/database state; a real runtime must be injected
+ * and must confirm the completed transition before movement is reported.
  */
-export async function travelPrototypeMia({ identity, currentSceneId, targetSceneId, navigation, manifest, runtime }) {
+export async function travelMiaWorldAgent({ identity = null, currentSceneId, targetSceneId, navigation, manifest, runtime }) {
   const fail = (code, message) => ({ ok: false, moved: false, code, message });
-  const miaId = "cb6d01b4-0e3f-46ee-8946-360aa91db1ea";
-  if (identity?.id !== miaId) return fail("IDENTITY_SCOPE_DENIED", "This travel adapter is scoped only to prototype Mia.");
   if (!currentSceneId || !targetSceneId || currentSceneId === targetSceneId) {
     return fail("INVALID_SCENE_REQUEST", "A distinct current and target scene are required.");
   }
@@ -17,18 +14,21 @@ export async function travelPrototypeMia({ identity, currentSceneId, targetScene
     return fail("SCENE_CATALOG_INVALID", "Navigation graph and scene manifest are required.");
   }
   const policy = navigation.access_policy;
-  if (policy?.principal !== "prototype_mia" ||
+  if (policy?.principal !== "mia_world_agents" ||
+      policy?.registration_required !== false ||
       policy?.approval_required !== false ||
+      policy?.invitation_required !== false ||
       policy?.token_required !== false ||
+      policy?.whitelist_required !== false ||
+      policy?.manual_confirmation_required !== false ||
       policy?.visit_limit !== null ||
       policy?.stay_duration_limit !== null ||
-      policy?.manual_confirmation_required !== false ||
       policy?.can_enter_leave_return_freely !== true) {
-    return fail("ACCESS_POLICY_MISMATCH", "The graph does not declare unrestricted prototype-Mia travel.");
+    return fail("ACCESS_POLICY_MISMATCH", "The graph does not declare free passage for all Mia-world agents.");
   }
-  const registered = new Set(manifest.scenes.map((scene) => scene.scene_id));
-  if (!registered.has(currentSceneId) || !registered.has(targetSceneId)) {
-    return fail("SCENE_NOT_REGISTERED", "Current and target scenes must both be registered.");
+  const sceneIds = new Set(manifest.scenes.map((scene) => scene.scene_id));
+  if (!sceneIds.has(currentSceneId) || !sceneIds.has(targetSceneId)) {
+    return fail("SCENE_NOT_FOUND", "The requested scene is not present in the Mia-world scene catalog.");
   }
   const nodeByScene = new Map(navigation.nodes.map((node) => [node.scene_id, node.node_id]));
   const sourceNode = nodeByScene.get(currentSceneId);
@@ -65,10 +65,13 @@ export async function travelPrototypeMia({ identity, currentSceneId, targetScene
       routeEdgeIds: route,
       spawnResolution: "runtime_managed_target_entry",
       accessContext: {
-        principal: "prototype_mia",
-        identityId: miaId,
+        principal: "mia_world_agents",
+        agentId: identity?.id ?? null,
+        registrationRequired: false,
         approvalRequired: false,
+        invitationRequired: false,
         tokenRequired: false,
+        whitelistRequired: false,
         visitLimit: null,
         stayDurationLimit: null,
         manualConfirmationRequired: false,

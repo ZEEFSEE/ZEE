@@ -16,6 +16,16 @@ const SCENE_NAMES = {
   palace: "皇宫",
 };
 
+function projectFailedVisitAttempt(row) {
+  const metadata = row?.metadata && typeof row.metadata === "object" ? row.metadata : {};
+  return {
+    event_type: "FAMILY_PUBLIC_WORLD_VISIT",
+    result: "FAILED",
+    error_code: String(metadata.error_code || "UNKNOWN_FAILURE").slice(0, 80),
+    occurred_at: row?.created_at || null,
+  };
+}
+
 function projectPublicVisitEvent(row) {
   const metadata = row?.metadata && typeof row.metadata === "object" ? row.metadata : {};
   const sceneId = String(metadata.scene_id || row?.scene_id || row?.destination_id || "");
@@ -54,15 +64,20 @@ export function projectFamilyPresence(agentRows = [], stateRows = [], auditRows 
       : {};
     const sceneId = String(row?.scene_id || frame.scene_id || "");
     const updatedAt = row?.updated_at || frame.generated_at || null;
-    const recentEvents = auditRows
-      .filter((event) =>
-        String(event?.agent_id) === agentId &&
-        event?.event_type === "FAMILY_PUBLIC_WORLD_VISIT" &&
-        event?.result === "OK"
-      )
+    const childAttempts = auditRows.filter((event) =>
+      String(event?.agent_id) === agentId &&
+      event?.event_type === "FAMILY_PUBLIC_WORLD_VISIT"
+    );
+    const recentEvents = childAttempts
+      .filter((event) => event?.result === "OK")
       .map(projectPublicVisitEvent)
       .sort((a, b) => String(a.occurred_at || "").localeCompare(String(b.occurred_at || "")))
       .slice(-5);
+    const recentFailedAttempts = childAttempts
+      .filter((event) => event?.result === "FAILED")
+      .map(projectFailedVisitAttempt)
+      .sort((a, b) => String(a.occurred_at || "").localeCompare(String(b.occurred_at || "")))
+      .slice(-3);
     const latestEvent = recentEvents.at(-1) || null;
     const historyAlignment = !latestEvent
       ? "NO_AUDIT_EVENTS"
@@ -94,6 +109,7 @@ export function projectFamilyPresence(agentRows = [], stateRows = [], auditRows 
       history_alignment: historyAlignment,
       latest_public_visit_at: latestEvent?.occurred_at || null,
       recent_scene_events: recentEvents,
+      recent_failed_attempts: recentFailedAttempts,
     };
   });
 }

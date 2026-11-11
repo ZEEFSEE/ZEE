@@ -28,7 +28,7 @@ export function applyAction(input:any, plan:any, at:string) {
   if (action === "travel") {
     const requestedScene = String(plan?.target_scene || plan?.target || "");
     const currentScene = String(s.scene_id || FOREST);
-    const allowedTransition = (currentScene === FOREST && requestedScene === PALACE) || (currentScene === PALACE && requestedScene === FOREST);
+    const allowedTransition = s.session_status === "active" && ((currentScene === FOREST && requestedScene === PALACE) || (currentScene === PALACE && requestedScene === FOREST));
     if (allowedTransition) {
       s.scene_id = requestedScene;
       s.session_status = "active";

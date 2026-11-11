@@ -40,5 +40,7 @@ jobs:
         run: node --test mia-digital-family/tests/family-world-catalog.test.mjs
       - name: Verify world spatial contracts
         run: node --test world-scenes/runtime/mia-public-world-runtime.test.mjs
+      - name: Verify Mia-world free-passage runtime adapter
+        run: node --test world-scenes/public-destinations/mia-public-destination-runtime-adapter.test.mjs
       - name: Verify static public destination catalog
         run: node world-scenes/validate-public-destinations.mjs

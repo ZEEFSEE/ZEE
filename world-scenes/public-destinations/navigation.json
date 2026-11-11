@@ -215,13 +215,13 @@
     "travel_mode": "world_portal_route",
     "distance": "unspecified",
     "coordinate_transform": "unverified",
-    "runtime_movement": "not_integrated",
+    "runtime_movement": "browser_local_runtime_only; production_multi_agent_state_not_integrated",
     "no_coordinate_guessing": true,
     "no_access_gate": true
   },
   "verification": {
     "graph_connectivity": "complete_undirected_graph_static_verification_pending",
-    "runtime_traversal": "browser_scene_runtime_contract_enabled; end_to_end browser test pending",
+    "runtime_traversal": "browser_scene_graph_contract_and_adapter_tests; production_multi_agent_state_not_integrated",
     "production_deployment": false
   },
   "exclusions": [

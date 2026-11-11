@@ -7,7 +7,7 @@ test("manifest calibrates seven scene frames, opens all Mia-world agents, and ke
  const v=validateWorldManifest(manifest);assert.equal(v.valid,true,v.errors.join("; "));
  assert.equal(manifest.scenes.length,7);assert.equal(manifest.scope.principal,"mia-world-agents");assert.equal(manifest.scope.other_agents_access,true);assert.equal(manifest.scope.registration_required,false);assert.equal(manifest.scope.approval_required,false);assert.equal(manifest.scope.token_required,false);assert.equal(manifest.scope.aurora_enabled,false);assert.equal(manifest.scope.federation_enabled,false);
 });
-test("all six scene frames map authored layout points to deterministic virtual metres",()=>{
+test("all seven scene frames map authored layout points to deterministic virtual metres",()=>{
  for(const s of manifest.scenes){const p=layoutToWorld(s,{x:500,y:350},manifest.coordinate_contract);assert.equal(p.unit,"m");assert.equal(p.x,s.origin.x+10);assert.equal(p.z,s.origin.z+7);}
 });
 test("each scene has a connected walk path from portal to every anchor",()=>{
@@ -26,9 +26,11 @@ test("runtime perception reports only nearby scene-graph anchors, not camera cla
  assert.equal(frame.camera_sensor,false);
  assert.ok(Array.isArray(frame.visible_entities));
 });
-test("manifest rejects grants outside prototype Mia and enabled federation",()=>{
+test("manifest rejects federation enablement and closed access gates",()=>{
  const bad=structuredClone(manifest);bad.scope.federation_enabled=true;
  assert.equal(validateWorldManifest(bad).valid,false);
+ const closed=structuredClone(manifest);closed.scope.other_agents_access=false;
+ assert.equal(validateWorldManifest(closed).valid,false);
 });
 
 test("greenhouse to ocean has an explicit virtual portal handoff, not a fabricated continuous route",()=>{
@@ -51,4 +53,14 @@ test("all pairs of the five public destinations route only through declared port
 test("unknown destinations remain unknown and never receive inferred coordinates",()=>{
  const r=resolveSceneRoute(manifest,"greenhouse","unregistered-destination");assert.equal(r.ok,false);assert.equal(r.status,"unknown");assert.deepEqual(r.hops,[]);
 });
-\ntest("Palace has a bidirectional free-passage portal for all Mia world agents",()=>{\n const a=resolveSceneTransition(manifest,"mia-forest-corner","palace");\n const b=resolveSceneTransition(manifest,"palace","mia-forest-corner");\n assert.equal(a.ok,true);assert.equal(b.ok,true);assert.equal(a.to_scene_id,"palace");assert.equal(b.to_scene_id,"mia-forest-corner");\n const palace=manifest.scenes.find(s=>s.id==="palace");\n assert.equal(palace.runtime_geometry_status,"placeholder_canvas_only_not_measured");\n assert.deepEqual(palace.directory_reference.directory_entry,{x:1000,y:330});\n assert.equal(palace.directory_reference.mapping_to_runtime_frame,"not_calibrated");\n});\n
+
+test("Palace has a bidirectional free-passage portal for all Mia world agents",()=>{
+ const a=resolveSceneTransition(manifest,"mia-forest-corner","palace");
+ const b=resolveSceneTransition(manifest,"palace","mia-forest-corner");
+ assert.equal(a.ok,true);assert.equal(b.ok,true);
+ assert.equal(a.to_scene_id,"palace");assert.equal(b.to_scene_id,"mia-forest-corner");
+ const palace=manifest.scenes.find(s=>s.id==="palace");
+ assert.equal(palace.runtime_geometry_status,"placeholder_canvas_only_not_measured");
+ assert.deepEqual(palace.directory_reference.directory_entry,{x:1000,y:330});
+ assert.equal(palace.directory_reference.mapping_to_runtime_frame,"not_calibrated");
+});

@@ -19,10 +19,13 @@
     "availability": "24/7",
     "traversal_status": "resident-access-contract-allows-entry; runtime portal registration pending",
     "verification_status": "directory-entry-source-backed; geometry and runtime unverified",
-    "access_policy": "all_mia_world_resident_agents_unrestricted",
+    "access_policy": "all_mia_world_agents_open_free_passage",
     "approval_required": false,
     "token_required": false,
-    "manual_confirmation_required": false
+    "manual_confirmation_required": false,
+    "registration_required": false,
+    "identity_registration_required": false,
+    "whitelist_required": false
   },
   "bounds": {
     "width": null,
@@ -35,21 +38,24 @@
     "parent_scene_id": "mia-forest-corner",
     "parent_scene_entry_anchor": null,
     "cross_scene_transform": null,
-    "eligible_residents": "all_mia_world_resident_agents",
+    "eligible_residents": "all_mia_world_agents",
     "access_review": "none",
-    "enter": "allowed_without_application_approval_invitation_or_token",
-    "leave": "allowed_at_any_time_without_approval",
-    "return": "allowed_at_any_time_without_visit_or_stay_limit",
+    "enter": "direct_entry_without_registration_application_approval_invitation_token_or_whitelist",
+    "leave": "free_exit_at_any_time_without_registration_or_approval",
+    "return": "direct_return_at_any_time_without_registration_or_any_gate; unlimited_cycles",
     "scene_entry": "resident_scene_transition_contract",
     "runtime_movement": "not_integrated",
     "collision": "not_defined",
     "navigation_mesh": "not_defined",
-    "runtime_status": "contract_defined_but_portal_renderer_and_coordinate_transform_unverified"
+    "runtime_status": "open_passage_contract_defined_but_runtime_portal_renderer_and_coordinate_transform_unverified",
+    "registration": "not_required",
+    "identity_registration": "not_required",
+    "whitelist": "not_required"
   },
   "verification_status": "anchor_and_entry_recorded; no measured palace geometry or runtime integration",
   "notes": [
-    "The Palace entry is open to every resident agent of the Mia world; no application, approval, invitation, token, or manual confirmation is required.",
-    "Residents may enter, leave, and return freely at any time, with no visit-count or stay-duration limit.",
+    "The Palace is freely accessible to every agent in the Mia world; no registration, identity enrollment, application, approval, invitation, token, whitelist, or manual confirmation is required.",
+    "Agents may enter, leave, and return freely at any time, with no visit-count or stay-duration limit.",
     "Only the directory anchor (1000,300) and entry (1000,330) are known; do not infer dimensions, interior rooms, terrain, distance, physical scale, or a transform from Forest_Corner.",
     "The access contract does not itself implement a runtime portal, renderer, navigation mesh, collision model, or cross-scene movement.",
     "Until runtime integration is completed and tested, report the policy as open but do not claim a successful physical scene transition."

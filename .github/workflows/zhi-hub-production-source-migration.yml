@@ -1,0 +1,57 @@
+name: ZHI Hub production source migration
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_production:
+        description: "Type APPLY_ZHI_HUB_SOURCE_MIGRATION to apply only the CNA and Singapore Government source registration"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    if: ${{ inputs.confirm_production == 'APPLY_ZHI_HUB_SOURCE_MIGRATION' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+    steps:
+      - name: Check required production secret
+        shell: bash
+        run: |
+          if [[ -z "$SUPABASE_DB_URL" ]]; then
+            echo "::error::Add the GitHub Actions secret SUPABASE_DB_URL containing the production PostgreSQL connection string. Do not put it in repository files."
+            exit 1
+          fi
+
+      - name: Register the two source rows (disabled until adapter tests pass)
+        shell: bash
+        run: |
+          psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          begin;
+          insert into zhi_external_hub.sources
+            (source_key, name, category, endpoint_url, enabled, status)
+          values
+            ('cna_rss_news', 'CNA RSS News', 'news', 'https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml', false, 'disabled'),
+            ('sg_gov_air_temperature', 'Singapore Government Air Temperature API', 'public', 'https://api-open.data.gov.sg/v2/real-time/api/air-temperature', false, 'disabled')
+          on conflict (source_key) do update
+          set name = excluded.name,
+              category = excluded.category,
+              endpoint_url = excluded.endpoint_url,
+              enabled = false,
+              status = 'disabled',
+              updated_at = now();
+          commit;
+          SQL
+
+      - name: Verify production rows
+        shell: bash
+        run: |
+          psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -P pager=off -c "
+            select source_key, category, enabled, status, endpoint_url
+            from zhi_external_hub.sources
+            where source_key in ('cna_rss_news','sg_gov_air_temperature')
+            order by source_key;" 

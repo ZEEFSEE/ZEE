@@ -103,6 +103,12 @@
       "path": "scenes/greenhouse.json",
       "parent_scene_id": "mia-forest-corner",
       "verification_status": "registered-public-destination; route-graph-verified-static; runtime-unverified"
+    },
+    {
+      "scene_id": "palace",
+      "path": "scenes/palace.json",
+      "parent_scene_id": "mia-forest-corner",
+      "verification_status": "directory-anchor-source-backed; native scene authored; geometry-and-runtime-unverified"
     }
   ],
   "safety": {

@@ -12,10 +12,16 @@
     "calibration_status": "deterministic_virtual_calibration_not_physical_site_survey"
   },
   "scope": {
-    "principal": "prototype-mia",
-    "other_agents_access": false,
+    "principal": "mia-world-agents",
+    "other_agents_access": true,
     "aurora_enabled": false,
-    "federation_enabled": false
+    "federation_enabled": false,
+    "registration_required": false,
+    "approval_required": false,
+    "invitation_required": false,
+    "token_required": false,
+    "whitelist_required": false,
+    "manual_confirmation_required": false
   },
   "scenes": [
     {
@@ -640,6 +646,68 @@
           "depth": 1
         }
       ]
+    },
+    {
+      "id": "palace",
+      "name": "皇宫",
+      "origin": {
+        "x": 180,
+        "y": 0,
+        "z": 0
+      },
+      "layout": {
+        "width": 1000,
+        "height": 700
+      },
+      "spawn": {
+        "x": 1.2,
+        "z": 7
+      },
+      "portal": {
+        "x": 1.2,
+        "z": 7
+      },
+      "anchors": [
+        {
+          "id": "palace-main-entrance",
+          "name": "皇宫主入口",
+          "layout": {
+            "x": 60,
+            "y": 350
+          },
+          "approach": {
+            "x": 1.2,
+            "z": 7
+          }
+        }
+      ],
+      "obstacles": [],
+      "runtime_geometry_status": "placeholder_canvas_only_not_measured",
+      "directory_reference": {
+        "source_record_id": "zhi-facility-palace",
+        "directory_anchor": {
+          "x": 1000,
+          "y": 300
+        },
+        "directory_entry": {
+          "x": 1000,
+          "y": 330
+        },
+        "coordinate_space": "palace-directory-local",
+        "mapping_to_runtime_frame": "not_calibrated"
+      },
+      "access_policy": {
+        "audience": "all_mia_world_agents",
+        "registration_required": false,
+        "identity_registration_required": false,
+        "application_required": false,
+        "invitation_required": false,
+        "approval_required": false,
+        "token_required": false,
+        "whitelist_required": false,
+        "manual_confirmation_required": false,
+        "enter_leave_return": "free_at_any_time_unlimited"
+      }
     }
   ],
   "routes": [
@@ -677,6 +745,13 @@
       "direction": "bidirectional",
       "mode": "scene-portal",
       "access": "prototype-mia-unrestricted"
+    },
+    {
+      "from": "mia-forest-corner",
+      "to": "palace",
+      "direction": "bidirectional",
+      "mode": "scene-portal",
+      "access": "all-mia-world-agents-unrestricted"
     }
   ],
   "scene_transitions": [
@@ -931,6 +1006,60 @@
       "calibration_status": "virtual_portal_handoff_defined_not_physical_survey",
       "runtime_status": "contract_defined_runtime_validation_pending",
       "unknown_coordinate_policy": "never_infer_or_extrapolate; ask_user_or_report_unknown"
+    },
+    {
+      "transition_id": "forest-corner-to-palace-portal",
+      "from_scene_id": "mia-forest-corner",
+      "to_scene_id": "palace",
+      "direction": "bidirectional",
+      "mode": "scene_portal_handoff",
+      "continuous_walk_path": false,
+      "source": {
+        "anchor_id": "forest-corner-world-gate",
+        "name": "森林角落出口",
+        "scene_local": {
+          "x": 1.2,
+          "z": 7,
+          "unit": "m"
+        },
+        "world_authored": {
+          "x": 1.2,
+          "y": 0,
+          "z": 7,
+          "unit": "m"
+        }
+      },
+      "target": {
+        "anchor_id": "palace-main-entrance",
+        "name": "皇宫运行时入口占位点",
+        "scene_local": {
+          "x": 1.2,
+          "z": 7,
+          "unit": "m"
+        },
+        "world_authored": {
+          "x": 181.2,
+          "y": 0,
+          "z": 7,
+          "unit": "m"
+        }
+      },
+      "coordinate_provenance": "synthetic_runtime_placeholder_frame_not_mapped_to_directory_coordinates",
+      "calibration_status": "portal_handoff_defined_runtime_placeholder_geometry_not_measured",
+      "runtime_status": "runtime_scene_graph_transition_enabled",
+      "unknown_coordinate_policy": "directory coordinates remain separate; never infer palace dimensions or map directory coordinates into runtime metres"
     }
-  ]
+  ],
+  "runtime_scene_contract": {
+    "audience": "all_mia_world_agents",
+    "registration_required": false,
+    "approval_required": false,
+    "invitation_required": false,
+    "token_required": false,
+    "whitelist_required": false,
+    "manual_confirmation_required": false,
+    "enter_leave_return": "free_at_any_time_unlimited",
+    "palace_geometry": "placeholder_canvas_only_not_measured",
+    "directory_coordinate_mapping": "not_calibrated"
+  }
 }

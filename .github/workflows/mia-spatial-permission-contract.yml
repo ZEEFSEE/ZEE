@@ -1,0 +1,27 @@
+name: MIA spatial permission contract
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "supabase/functions/mia-spatial-permission-test/**"
+      - ".github/workflows/mia-spatial-permission-contract.yml"
+  push:
+    branches: [mia/spatial-permission-http-test-v1]
+    paths:
+      - "supabase/functions/mia-spatial-permission-test/**"
+      - ".github/workflows/mia-spatial-permission-contract.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  type-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check spatial permission executor
+        run: deno check supabase/functions/mia-spatial-permission-test/index.ts

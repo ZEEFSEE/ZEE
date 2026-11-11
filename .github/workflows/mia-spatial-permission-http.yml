@@ -1,0 +1,150 @@
+name: Mia spatial and permission HTTP test
+# v3 revocation coverage
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/mia-spatial-permission-http.yml
+  push:
+    branches:
+      - mia/spatial-permission-http-test-v1
+    paths:
+      - .github/workflows/mia-spatial-permission-http.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mia-spatial-permission-http
+  cancel-in-progress: false
+
+jobs:
+  spatial-permission-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SUPABASE_URL: https://boaiqnkhrytxwdpgkxti.supabase.co
+      SUPABASE_SECRET_KEY: ${{ secrets.ZEE_PREDICTION_SECRET_KEY }}
+    steps:
+      - name: Run isolated spatial and permission tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          const base = process.env.SUPABASE_URL + "/functions/v1/mia-spatial-permission-test";
+          const secret = process.env.SUPABASE_SECRET_KEY;
+          if (!secret) throw new Error("Missing repository secret ZEE_PREDICTION_SECRET_KEY.");
+          const uuid = () => crypto.randomUUID();
+          async function call(body, auth = true) {
+            const headers = { "content-type": "application/json" };
+            if (auth) headers.apikey = secret;
+            const res = await fetch(base, { method: "POST", headers, body: JSON.stringify(body) });
+            let data = {}; try { data = await res.json(); } catch {}
+            return { status: res.status, data };
+          }
+          const results = [];
+          function check(name, pass, detail) {
+            results.push({ name, pass, detail });
+            console.log(`${pass ? "PASS" : "FAIL"} ${name}: ${JSON.stringify(detail)}`);
+            if (!pass) process.exitCode = 1;
+          }
+
+          const unauth = await call({ test_only: true, request_id: uuid(), test_run_id: uuid(), intent: "observe_spatial" }, false);
+          check("unauthenticated-rejected", [401,403].includes(unauth.status), { http: unauth.status, error: unauth.data.error });
+
+          const observeBody = { test_only: true, request_id: uuid(), test_run_id: uuid(), intent: "observe_spatial" };
+          const observed = await call(observeBody);
+          const anchors = observed.data.spatial?.anchors ?? [];
+          const lounge = anchors.find(x => x.anchor_id === "forest-lounge-fixture");
+          const unknown = anchors.find(x => x.anchor_id === "crystal-forest-unknown");
+          check("spatial-provenance-and-unknowns", observed.status === 200 &&
+            observed.data.spatial?.current_frame?.calibration_status === "uncalibrated" &&
+            lounge?.verification_status === "fixture_known" &&
+            unknown?.verification_status === "unknown" && unknown?.coordinates === null &&
+            observed.data.epistemics?.live_perception === false &&
+            observed.data.epistemics?.physical_movement === false &&
+            observed.data.epistemics?.confidence_basis === "database_record_integrity" &&
+            observed.data.epistemics?.confidence_scope === "database_record_retrieval_only" &&
+            observed.data.epistemics?.world_truth_claim === false &&
+            observed.data.epistemics?.external_sensor_connection === "not_configured" &&
+            (typeof observed.data.observation_snapshot_id === "number" || /^[0-9]+$/.test(String(observed.data.observation_snapshot_id))), {
+              http: observed.status, frame: observed.data.spatial?.current_frame,
+              lounge, unknown, epistemics: observed.data.epistemics,
+              observation_snapshot_id: observed.data.observation_snapshot_id
+            });
+
+          const travelBody = { test_only: true, request_id: uuid(), test_run_id: uuid(), intent: "travel", destination_id: "crystal-forest-unknown" };
+          const travel = await call(travelBody);
+          check("unknown-destination-travel-blocked", travel.status === 200 &&
+            travel.data.outcome === "blocked" &&
+            travel.data.execution?.reason === "destination_anchor_unresolved" &&
+            travel.data.world_state?.state_changed === false, {
+              http: travel.status, outcome: travel.data.outcome, execution: travel.data.execution,
+              world_state: travel.data.world_state
+            });
+
+          const runId = uuid();
+          const denied = await call({ test_only: true, request_id: uuid(), test_run_id: runId, intent: "interact" });
+          check("default-deny-without-permission", denied.status === 200 &&
+            denied.data.outcome === "blocked" &&
+            denied.data.execution?.reason === "permission_denied_default_deny" &&
+            denied.data.world_state?.state_changed === false, {
+              http: denied.status, outcome: denied.data.outcome,
+              execution: denied.data.execution, world_state: denied.data.world_state
+            });
+
+          const grant = await call({ test_only: true, request_id: uuid(), test_run_id: runId, intent: "grant_interact" });
+          const authorized = await call({ test_only: true, request_id: uuid(), test_run_id: runId, intent: "interact" });
+          check("scoped-permission-allows-interaction", grant.status === 200 &&
+            grant.data.permission?.grant_id != null &&
+            authorized.status === 200 && authorized.data.outcome === "completed" &&
+            authorized.data.execution?.executed === true &&
+            authorized.data.world_state?.state_changed === true &&
+            authorized.data.world_state?.after_version === authorized.data.world_state?.before_version + 1, {
+              grant: grant.data.permission, authorized: authorized.data
+            });
+
+          const revoke = await call({ test_only: true, request_id: uuid(), test_run_id: runId, intent: "revoke_interact" });
+          const afterRevoke = await call({ test_only: true, request_id: uuid(), test_run_id: runId, intent: "interact" });
+          check("revoked-permission-blocks-next-action", revoke.status === 200 &&
+            revoke.data.outcome === "completed" &&
+            revoke.data.execution?.permission_revoked === true &&
+            afterRevoke.status === 200 && afterRevoke.data.outcome === "blocked" &&
+            afterRevoke.data.execution?.reason === "permission_denied_default_deny" &&
+            afterRevoke.data.world_state?.state_changed === false, {
+              revoke: revoke.data.execution, after_revoke: afterRevoke.data
+            });
+
+          const concurrentRun = uuid();
+          const concurrentGrant = await call({ test_only: true, request_id: uuid(), test_run_id: concurrentRun, intent: "grant_interact" });
+          const sameRequest = { test_only: true, request_id: uuid(), test_run_id: concurrentRun, intent: "interact" };
+          const pair = await Promise.all([call(sameRequest), call(sameRequest)]);
+          const winners = pair.filter(x => x.status === 200 && x.data.claimed === true && x.data.duplicate === false);
+          const duplicates = pair.filter(x => x.status === 200 && x.data.claimed === false && x.data.duplicate === true);
+          check("concurrent-idempotent-authorized-interact", concurrentGrant.status === 200 &&
+            winners.length === 1 && duplicates.length === 1 &&
+            winners[0].data.world_state?.after_version === winners[0].data.world_state?.before_version + 1, {
+              grant_id: concurrentGrant.data.permission?.grant_id,
+              winners: winners.length, duplicates: duplicates.length,
+              winning_state: winners[0]?.data.world_state
+            });
+
+          const summary = [
+            "# MIA spatial and permission HTTP test",
+            "",
+            `Result: ${results.every(x => x.pass) ? "PASS" : "FAIL"}`,
+            "",
+            "| Test | Result | Detail |",
+            "|---|---|---|",
+            ...results.map(x => `| ${x.name} | ${x.pass ? "PASS" : "FAIL"} | \`${JSON.stringify(x.detail).replaceAll("|", "\\\\|")}\` |`),
+            "",
+            "Target: zee-prediction / mia-spatial-permission-test. No production project is called.",
+            "Spatial data is semantic test-fixture data only. Live perception, physical measurement, physical movement, and cross-scene travel remain unavailable."
+          ].join("\n");
+          const fs = await import("node:fs");
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary + "\n");
+          if (results.some(x => !x.pass)) process.exitCode = 1;
+          NODE

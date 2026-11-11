@@ -14,6 +14,8 @@ on:
       - "supabase/functions/mia-chat/scene-plan-contract.mjs"
       - "supabase/functions/mia-chat/scene-plan-contract.test.mjs"
       - "supabase/functions/mia-chat/index.ts"
+      - "supabase/functions/mia-chat/family-presence.test.mjs"
+      - "supabase/functions/mia-chat/family-presence.mjs"
       - ".github/workflows/mia-scene-plan-contract.yml"
 permissions:
   contents: read

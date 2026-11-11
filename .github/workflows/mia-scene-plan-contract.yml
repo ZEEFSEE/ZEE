@@ -5,6 +5,8 @@ on:
       - "supabase/functions/mia-chat/scene-plan-contract.mjs"
       - "supabase/functions/mia-chat/scene-plan-contract.test.mjs"
       - "supabase/functions/mia-chat/index.ts"
+      - "supabase/functions/mia-chat/family-presence.test.mjs"
+      - "supabase/functions/mia-chat/family-presence.mjs"
       - ".github/workflows/mia-scene-plan-contract.yml"
   push:
     branches: [main]
@@ -23,5 +25,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Run scene plan contract tests
-        run: node --test supabase/functions/mia-chat/scene-plan-contract.test.mjs
+      - name: Run scene plan and family presence contract tests
+        run: node --test supabase/functions/mia-chat/scene-plan-contract.test.mjs supabase/functions/mia-chat/family-presence.test.mjs

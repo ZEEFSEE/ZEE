@@ -11,6 +11,8 @@ on:
       - "mia-digital-family/PUBLIC-WORLD-ACCESS.md"
       - "mia-digital-family/tests/family-world-catalog.test.mjs"
       - "supabase/functions/zhi-family-world-runtime/index.ts"
+      - "supabase/functions/mia-forest-autonomy/index.ts"
+      - "world-scenes/public-destinations/validate-palace-server-runtime.test.mjs"
       - "zhi-family-world.html"
       - "world-scenes/public-destinations/**"
       - "world-scenes/runtime/mia-public-world-runtime.mjs"
@@ -47,3 +49,5 @@ jobs:
         run: node --test world-scenes/public-destinations/mia-public-destination-runtime-adapter.test.mjs
       - name: Verify static public destination catalog
         run: node world-scenes/validate-public-destinations.mjs
+      - name: Verify Palace server runtime open-access contract
+        run: node --test world-scenes/public-destinations/validate-palace-server-runtime.test.mjs

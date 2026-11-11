@@ -1045,8 +1045,8 @@
         }
       },
       "coordinate_provenance": "synthetic_runtime_placeholder_frame_not_mapped_to_directory_coordinates",
-      "calibration_status": "portal_handoff_defined_runtime_placeholder_geometry_not_measured",
-      "runtime_status": "runtime_scene_graph_transition_enabled",
+      "calibration_status": "virtual_portal_handoff_defined_not_physical_survey",
+      "runtime_status": "browser_runtime_portal_handoff_enabled; palace_geometry_placeholder_only",
       "unknown_coordinate_policy": "directory coordinates remain separate; never infer palace dimensions or map directory coordinates into runtime metres"
     }
   ],

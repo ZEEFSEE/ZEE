@@ -31,6 +31,31 @@ test("projects five children by stable identity without cross-matching", () => {
   assert.ok(result.every((x) => x.physical_world === false && x.camera_sensor === false));
 });
 
+test("projects only each child's own successful public scene visits in chronological order", () => {
+  const agents = [
+    { agent_id: "ZHI-G1-D01-LUNA", display_name: "LUNA" },
+    { agent_id: "ZHI-G1-D02-ARIA", display_name: "ARIA" },
+  ];
+  const states = [
+    { agent_id: "ZHI-G1-D01-LUNA", scene_id: "greenhouse", movement_revision: 8 },
+    { agent_id: "ZHI-G1-D02-ARIA", scene_id: "memory-valley", movement_revision: 12 },
+  ];
+  const audit = [
+    { agent_id: "ZHI-G1-D02-ARIA", event_type: "FAMILY_PUBLIC_WORLD_VISIT", result: "OK", scene_id: "memory-valley", metadata: { scene_id: "memory-valley", anchor_id: "story-stones", movement_revision: 12 }, created_at: "2026-11-11T12:02:00Z" },
+    { agent_id: "ZHI-G1-D01-LUNA", event_type: "FAMILY_PUBLIC_WORLD_VISIT", result: "OK", scene_id: "greenhouse", metadata: { scene_id: "greenhouse", anchor_id: "sunlight-bed", movement_revision: 8, access_decision: { denied_capabilities: ["PRIVATE_PEER_DATA_READ"] } }, created_at: "2026-11-11T12:01:00Z" },
+    { agent_id: "ZHI-G1-D01-LUNA", event_type: "PRIVATE_CHAT", result: "OK", scene_id: "secret", metadata: { narrative: "must not leak" }, created_at: "2026-11-11T12:03:00Z" },
+  ];
+  const result = projectFamilyPresence(agents, states, audit);
+  assert.equal(result[0].recent_scene_events.length, 1);
+  assert.equal(result[0].recent_scene_events[0].anchor_id, "sunlight-bed");
+  assert.equal(result[0].recent_scene_events[0].scene_id, "greenhouse");
+  assert.equal(result[0].history_alignment, "LATEST_EVENT_MATCHES_SNAPSHOT");
+  assert.equal(result[1].recent_scene_events.length, 1);
+  assert.equal(result[1].recent_scene_events[0].scene_id, "memory-valley");
+  assert.equal(JSON.stringify(result).includes("must not leak"), false);
+  assert.equal(JSON.stringify(result).includes("denied_capabilities"), false);
+});
+
 test("missing records stay explicitly unknown and are never inferred from another child", () => {
   const result = projectFamilyPresence(
     [{ agent_id: "ZHI-G1-D01-LUNA", display_name: "LUNA", runtime_status: "READY" }],
@@ -40,4 +65,5 @@ test("missing records stay explicitly unknown and are never inferred from anothe
   assert.equal(result[1].identity_registered, false);
   assert.equal(result[1].scene_id, null);
   assert.equal(result[1].scene_name, "未知场景");
+  assert.equal(result[1].history_alignment, "NO_AUDIT_EVENTS");
 });

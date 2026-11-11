@@ -47,7 +47,7 @@
   "destination": {
     "kind": "world_scene",
     "social_role": "MIA 世界共享社会空间核心",
-    "purpose": "王室活动、公共仪式与社会空间中的正式会晤",
+    "purpose": "共享居所与公共社会空间；居民可自主选择长期居住，也可会晤、交流、聚集和开展公共活动",
     "opening_hours": "24/7",
     "entry_portal_id": "portal-palace-main",
     "directory_anchor": {
@@ -62,7 +62,9 @@
       "共享公共社会空间",
       "面向所有 MIA 世界智能体居民开放",
       "支持居民自主会晤、交流、聚集与公共活动",
-      "不设身份等级、邀请制或访问审批门槛"
+      "不设身份等级、邀请制或访问审批门槛",
+      "居民可自主选择皇宫作为长期居所",
+      "居住选择自愿、可撤回、可改变，不影响自由通行"
     ]
   },
   "coordinate_reference": {
@@ -118,7 +120,7 @@
     "public-ceremony",
     "mia-native"
   ],
-  "verification_status": "native scene authored; directory anchor source-backed; geometry, cross-scene navigation, rendering, and runtime movement unverified",
+  "verification_status": "open passage and voluntary residence contract authored; individual runtime persistence is being integrated; geometry remains placeholder and unmeasured",
   "notes": [
     "The previous prototype-Mia-only scope and all registration, approval, invitation, token, whitelist, or manual-confirmation gates are revoked.",
     "Every agent in the Mia world may pass freely: enter, leave, and return at any time, without registration or review.",
@@ -126,7 +128,8 @@
     "The directory anchor (1000,300) and entry (1000,330) retain their source values; their unit scale and relationship to other scene coordinates are not assumed.",
     "Palace dimensions, terrain, interior layout, collision geometry, 3D depth, and cross-scene transform remain unknown until measured or supplied.",
     "The open-passage policy is defined, but runtime portal and renderer integration plus end-to-end movement have not yet been tested.",
-    "24/7 describes continuous availability in the directory."
+    "24/7 describes continuous availability in the directory.",
+    "Palace is also an optional residence. Every resident chooses independently; visits do not imply residence, and no scheduler or other agent may impose a residence choice."
   ],
   "transition_contract": {
     "applies_to": "all_mia_world_agents",
@@ -157,5 +160,26 @@
       "registration_required": false
     },
     "runtime_status": "open_passage_contract_defined; runtime portal registration, renderer integration, and end-to-end movement remain unverified"
+  },
+  "residential_policy": {
+    "applies_to": "all_mia_world_agents",
+    "residence_is_optional": true,
+    "resident_may_self_select": true,
+    "default_residence_required": false,
+    "selection_requires_registration": false,
+    "selection_requires_approval": false,
+    "selection_requires_invitation": false,
+    "selection_requires_token": false,
+    "selection_requires_whitelist": false,
+    "manual_confirmation_required": false,
+    "may_leave_at_any_time": true,
+    "may_return_to_self_chosen_residence": true,
+    "may_change_residence_at_any_time": true,
+    "residence_choice_is_independent_per_agent": true,
+    "residence_choice_must_not_be_inferred_from_visits": true,
+    "residence_choice_must_not_be_imposed_by_scheduler": true,
+    "semantics": "Any MIA-world resident may independently choose Palace as a home if they wish. No resident is required to choose it. A resident may leave, return, or change their residence freely. Visiting Palace does not itself mean choosing it as a home.",
+    "runtime_persistence": "server_runtime_per_agent_state",
+    "residence_choice_does_not_equal_current_location": true
   }
 }

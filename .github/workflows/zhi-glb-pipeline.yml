@@ -1,0 +1,36 @@
+name: ZHI GLB pipeline checks
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "tools/zhi-glb/**"
+      - "tests/zhi-glb-pipeline.test.mjs"
+      - "docs/zhi-glb-asset-pipeline-v1.md"
+      - ".github/workflows/zhi-glb-pipeline.yml"
+  push:
+    branches: ["feat/zhi-glb-pipeline-v1"]
+    paths:
+      - "tools/zhi-glb/**"
+      - "tests/zhi-glb-pipeline.test.mjs"
+      - "docs/zhi-glb-asset-pipeline-v1.md"
+      - ".github/workflows/zhi-glb-pipeline.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  node-tests:
+    name: Unit tests (Node.js 20)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Khronos glTF Validator
+        run: npm install --no-save --package-lock=false gltf-validator
+      - name: Run isolated tests
+        run: node --test tests/zhi-glb-pipeline.test.mjs

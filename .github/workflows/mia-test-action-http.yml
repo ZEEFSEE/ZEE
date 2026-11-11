@@ -1,0 +1,159 @@
+name: Mia isolated semantic action HTTP test
+
+on:
+  push:
+    branches:
+      - mia/test-action-http-runner-v1
+    paths:
+      - .github/workflows/mia-test-action-http.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mia-test-action-http
+  cancel-in-progress: false
+
+jobs:
+  isolated-http-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SUPABASE_URL: https://boaiqnkhrytxwdpgkxti.supabase.co
+      SUPABASE_SECRET_KEY: ${{ secrets.ZEE_PREDICTION_SECRET_KEY }}
+    steps:
+      - name: Run isolated HTTP contract tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import { appendFileSync } from "node:fs";
+          const base = process.env.SUPABASE_URL + "/functions/v1/mia-semantic-evidence-test";
+          const secretKey = process.env.SUPABASE_SECRET_KEY;
+          if (!secretKey) {
+            throw new Error("Missing GitHub Actions secret ZEE_PREDICTION_SECRET_KEY. Add the zee-prediction sb_secret key under repository Actions secrets, then rerun this workflow. Never put the key in source code or logs.");
+          }
+
+          const uuid = () => crypto.randomUUID();
+          const headers = {
+            apikey: secretKey,
+            "content-type": "application/json",
+          };
+          async function call(body, auth = true) {
+            const h = { "content-type": "application/json" };
+            if (auth) Object.assign(h, headers);
+            const response = await fetch(base, {
+              method: "POST",
+              headers: h,
+              body: JSON.stringify(body),
+            });
+            let data = {};
+            try { data = await response.json(); } catch {}
+            return { status: response.status, data };
+          }
+          const results = [];
+          function record(name, pass, detail) {
+            results.push({ name, pass, detail });
+            console.log(`${pass ? "PASS" : "FAIL"} ${name}: ${JSON.stringify(detail)}`);
+            if (!pass) process.exitCode = 1;
+          }
+
+          for (const intent of ["wait", "interact", "blocked_travel", "simulate_failure"]) {
+            const body = { test_only: true, request_id: uuid(), test_run_id: uuid(), intent };
+            const r = await call(body);
+            const expected = {
+              wait: "completed",
+              interact: "completed",
+              blocked_travel: "blocked",
+              simulate_failure: "failed",
+            }[intent];
+            const pass = r.status === 200 && r.data.ok === true &&
+              r.data.claimed === true && r.data.duplicate === false &&
+              r.data.receipt?.finalized === true &&
+              r.data.receipt?.status === expected &&
+              r.data.receipt?.sequence_no === 1 &&
+              r.data.observation?.live_perception === false &&
+              r.data.observation?.physical_movement === false &&
+              r.data.observation?.cross_scene_travel === false &&
+              r.data.world_state?.state_changed === (intent === "interact") &&
+              (intent === "interact"
+                ? r.data.world_state?.after_version === r.data.world_state?.before_version + 1
+                : r.data.world_state?.after_version === r.data.world_state?.before_version) &&
+              r.data.world_state?.event_id != null;
+            record(intent, pass, {
+              http: r.status, claimed: r.data.claimed, duplicate: r.data.duplicate,
+              outcome: r.data.receipt?.status, sequence: r.data.receipt?.sequence_no,
+              epistemics: r.data.observation,
+              world_state: r.data.world_state,
+              request_id: r.data.request_id,
+            });
+          }
+
+          const duplicateBody = {
+            test_only: true, request_id: uuid(), test_run_id: uuid(), intent: "interact",
+          };
+          const duplicatePair = await Promise.all([
+            call(duplicateBody),
+            call(duplicateBody),
+          ]);
+          const claimedResponses = duplicatePair.filter(x => x.status === 200 && x.data.claimed === true && x.data.duplicate === false);
+          const duplicateCount = duplicatePair.filter(x => x.status === 200 && x.data.claimed === false && x.data.duplicate === true).length;
+          const winner = claimedResponses[0]?.data;
+          record("concurrent-interact-idempotency", claimedResponses.length === 1 && duplicateCount === 1 &&
+            winner?.world_state?.state_changed === true &&
+            winner?.world_state?.after_version === winner?.world_state?.before_version + 1, {
+            claimed_responses: claimedResponses.length, duplicate_responses: duplicateCount,
+            single_state_transition: winner?.world_state ?? null,
+            request_id: duplicateBody.request_id,
+          });
+
+          const invalid = await call({
+            test_only: false, request_id: uuid(), test_run_id: uuid(), intent: "wait",
+          });
+          record("test-only-guard", invalid.status === 400 && invalid.data.error === "test_only_true_required", {
+            http: invalid.status, error: invalid.data.error,
+          });
+
+          const recoveryBody = {
+            test_only: true, request_id: uuid(), test_run_id: uuid(), intent: "simulate_transaction_abort",
+          };
+          const aborted = await call(recoveryBody);
+          const recovered = await call({ ...recoveryBody, intent: "wait" });
+          record("transaction-rollback-recovery",
+            aborted.status === 500 && aborted.data.error === "test_pipeline_failed" &&
+            recovered.status === 200 && recovered.data.claimed === true &&
+            recovered.data.duplicate === false &&
+            recovered.data.receipt?.status === "completed" &&
+            recovered.data.world_state?.state_changed === false, {
+              aborted_http: aborted.status,
+              aborted_error: aborted.data.error,
+              retry_http: recovered.status,
+              retry_claimed: recovered.data.claimed,
+              retry_outcome: recovered.data.receipt?.status,
+              retry_world_state: recovered.data.world_state,
+              request_id: recoveryBody.request_id,
+            });
+
+          const unauth = await call({
+            test_only: true, request_id: uuid(), test_run_id: uuid(), intent: "wait",
+          }, false);
+          record("unauthorized-rejected", [401, 403].includes(unauth.status), {
+            http: unauth.status, error: unauth.data.error ?? "gateway_rejected",
+          });
+
+          const summary = [
+            "# MIA isolated semantic action HTTP test",
+            "",
+            `Result: ${results.every(x => x.pass) ? "PASS" : "FAIL"}`,
+            "",
+            "| Test | Result | Detail |",
+            "|---|---|---|",
+            ...results.map(x => `| ${x.name} | ${x.pass ? "PASS" : "FAIL"} | \`${JSON.stringify(x.detail).replaceAll("|", "\\\\|")}\` |`),
+            "",
+            "Target: zee-prediction / mia-semantic-evidence-test. No production project is called.",
+            "All execution is deterministic semantic test runtime; live perception, physical movement, and cross-scene travel remain false.",
+          ].join("\n");
+          appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary + "\n");
+          if (results.some(x => !x.pass)) process.exitCode = 1;
+          NODE

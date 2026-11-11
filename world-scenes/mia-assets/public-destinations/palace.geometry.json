@@ -17,8 +17,12 @@
     "coordinate_space": "palace-directory-local",
     "kind": "main_entrance",
     "availability": "24/7",
-    "traversal_status": "logical-entry-only; runtime portal unregistered",
-    "verification_status": "directory-entry-source-backed; geometry and runtime unverified"
+    "traversal_status": "resident-access-contract-allows-entry; runtime portal registration pending",
+    "verification_status": "directory-entry-source-backed; geometry and runtime unverified",
+    "access_policy": "all_mia_world_resident_agents_unrestricted",
+    "approval_required": false,
+    "token_required": false,
+    "manual_confirmation_required": false
   },
   "bounds": {
     "width": null,
@@ -31,15 +35,23 @@
     "parent_scene_id": "mia-forest-corner",
     "parent_scene_entry_anchor": null,
     "cross_scene_transform": null,
-    "scene_entry": "logical_catalog_link_only",
+    "eligible_residents": "all_mia_world_resident_agents",
+    "access_review": "none",
+    "enter": "allowed_without_application_approval_invitation_or_token",
+    "leave": "allowed_at_any_time_without_approval",
+    "return": "allowed_at_any_time_without_visit_or_stay_limit",
+    "scene_entry": "resident_scene_transition_contract",
     "runtime_movement": "not_integrated",
     "collision": "not_defined",
-    "navigation_mesh": "not_defined"
+    "navigation_mesh": "not_defined",
+    "runtime_status": "contract_defined_but_portal_renderer_and_coordinate_transform_unverified"
   },
   "verification_status": "anchor_and_entry_recorded; no measured palace geometry or runtime integration",
   "notes": [
-    "Only the directory anchor and entry coordinates are known.",
-    "Do not infer dimensions, interior rooms, terrain, distance, physical scale, or a transform from Forest_Corner.",
-    "The scene may be rendered as a directory-backed placeholder until authoritative geometry is supplied."
+    "The Palace entry is open to every resident agent of the Mia world; no application, approval, invitation, token, or manual confirmation is required.",
+    "Residents may enter, leave, and return freely at any time, with no visit-count or stay-duration limit.",
+    "Only the directory anchor (1000,300) and entry (1000,330) are known; do not infer dimensions, interior rooms, terrain, distance, physical scale, or a transform from Forest_Corner.",
+    "The access contract does not itself implement a runtime portal, renderer, navigation mesh, collision model, or cross-scene movement.",
+    "Until runtime integration is completed and tested, report the policy as open but do not claim a successful physical scene transition."
   ]
 }

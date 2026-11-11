@@ -84,3 +84,22 @@ test("does not infer stationary refresh from an empty route_hops array", () => {
   assert.equal(result[0].recent_scene_events[0].route_hops_status, "NO_PATH_HOPS_RECORDED");
   assert.equal(result[0].recent_scene_events[0].movement_interpretation, "INSUFFICIENT_EVIDENCE_TO_INFER_MOVEMENT");
 });
+
+test("projects failed public-world attempts separately without treating them as child locations", () => {
+  const result = projectFamilyPresence(
+    [{ agent_id: "ZHI-G1-S01-KAEL", display_name: "KAEL", runtime_status: "READY" }],
+    [{ agent_id: "ZHI-G1-S01-KAEL", scene_id: "memory-valley", movement_revision: 527 }],
+    [{
+      agent_id: "ZHI-G1-S01-KAEL",
+      event_type: "FAMILY_PUBLIC_WORLD_VISIT",
+      result: "FAILED",
+      metadata: { error_code: "CHILD_WORLD_STATE_WRITE_FAILED", private_payload: "must not leak" },
+      created_at: "2026-11-11T14:24:06Z",
+    }],
+  );
+  assert.equal(result[3].scene_id, null);
+  assert.equal(result[3].recent_scene_events.length, 0);
+  assert.equal(result[3].recent_failed_attempts.length, 1);
+  assert.equal(result[3].recent_failed_attempts[0].error_code, "CHILD_WORLD_STATE_WRITE_FAILED");
+  assert.equal(JSON.stringify(result).includes("must not leak"), false);
+});

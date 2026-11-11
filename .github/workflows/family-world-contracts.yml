@@ -14,6 +14,7 @@ on:
       - "zhi-family-world.html"
       - "world-scenes/public-destinations/**"
       - "world-scenes/runtime/mia-public-world-runtime.mjs"
+      - "world-scenes/validate-public-destinations.mjs"
   pull_request:
     paths:
       - ".github/workflows/family-world-contracts.yml"
@@ -22,6 +23,7 @@ on:
       - "mia-digital-family/tests/family-public-world-runtime-adapter.test.mjs"
       - "world-scenes/public-destinations/**"
       - "world-scenes/runtime/mia-public-world-runtime.mjs"
+      - "world-scenes/validate-public-destinations.mjs"
 
 permissions:
   contents: read

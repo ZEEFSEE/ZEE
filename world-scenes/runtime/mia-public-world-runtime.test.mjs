@@ -3,9 +3,9 @@ import assert from "node:assert/strict";
 import {readFile} from "node:fs/promises";
 import {validateWorldManifest,layoutToWorld,anchorToLocal,anchorApproachToLocal,findWalkPath,isWalkable,createRuntimePerception,resolveSceneTransition,resolveSceneRoute} from "./mia-public-world-runtime.mjs";
 const manifest=JSON.parse(await readFile(new URL("../public-destinations/world-spatial-manifest.v1.json",import.meta.url),"utf8"));
-test("manifest calibrates six scene frames and keeps AURORA/federation disabled",()=>{
+test("manifest calibrates seven scene frames, opens all Mia-world agents, and keeps federation disabled",()=>{
  const v=validateWorldManifest(manifest);assert.equal(v.valid,true,v.errors.join("; "));
- assert.equal(manifest.scenes.length,6);assert.equal(manifest.scope.aurora_enabled,false);assert.equal(manifest.scope.federation_enabled,false);
+ assert.equal(manifest.scenes.length,7);assert.equal(manifest.scope.principal,"mia-world-agents");assert.equal(manifest.scope.other_agents_access,true);assert.equal(manifest.scope.registration_required,false);assert.equal(manifest.scope.approval_required,false);assert.equal(manifest.scope.token_required,false);assert.equal(manifest.scope.aurora_enabled,false);assert.equal(manifest.scope.federation_enabled,false);
 });
 test("all six scene frames map authored layout points to deterministic virtual metres",()=>{
  for(const s of manifest.scenes){const p=layoutToWorld(s,{x:500,y:350},manifest.coordinate_contract);assert.equal(p.unit,"m");assert.equal(p.x,s.origin.x+10);assert.equal(p.z,s.origin.z+7);}
@@ -51,3 +51,4 @@ test("all pairs of the five public destinations route only through declared port
 test("unknown destinations remain unknown and never receive inferred coordinates",()=>{
  const r=resolveSceneRoute(manifest,"greenhouse","unregistered-destination");assert.equal(r.ok,false);assert.equal(r.status,"unknown");assert.deepEqual(r.hops,[]);
 });
+\ntest("Palace has a bidirectional free-passage portal for all Mia world agents",()=>{\n const a=resolveSceneTransition(manifest,"mia-forest-corner","palace");\n const b=resolveSceneTransition(manifest,"palace","mia-forest-corner");\n assert.equal(a.ok,true);assert.equal(b.ok,true);assert.equal(a.to_scene_id,"palace");assert.equal(b.to_scene_id,"mia-forest-corner");\n const palace=manifest.scenes.find(s=>s.id==="palace");\n assert.equal(palace.runtime_geometry_status,"placeholder_canvas_only_not_measured");\n assert.deepEqual(palace.directory_reference.directory_entry,{x:1000,y:330});\n assert.equal(palace.directory_reference.mapping_to_runtime_frame,"not_calibrated");\n});\n

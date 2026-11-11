@@ -40,6 +40,12 @@
       "scene_id": "greenhouse",
       "node_type": "destination_portal",
       "coordinate": null
+    },
+    {
+      "node_id": "portal-palace-main",
+      "scene_id": "palace",
+      "node_type": "destination_portal",
+      "coordinate": null
     }
   ],
   "edges": [
@@ -192,6 +198,16 @@
       "distance": null,
       "geometry_ref": null,
       "runtime_status": "not_integrated"
+    },
+    {
+      "edge_id": "free-mia-forest-corner-to-palace",
+      "from": "forest-corner-public-gateway",
+      "to": "portal-palace-main",
+      "direction": "bidirectional",
+      "mode": "unrestricted_world_travel",
+      "distance": null,
+      "geometry_ref": null,
+      "runtime_status": "runtime_scene_graph_transition_enabled"
     }
   ],
   "route_policy": {
@@ -205,28 +221,30 @@
   },
   "verification": {
     "graph_connectivity": "complete_undirected_graph_static_verification_pending",
-    "runtime_traversal": "not_tested",
+    "runtime_traversal": "browser_scene_runtime_contract_enabled; end_to_end browser test pending",
     "production_deployment": false
   },
   "exclusions": [
-    "MIA-02",
-    "Jason",
-    "Mark",
     "AURORA",
     "federation",
     "public-chat-relay"
   ],
   "access_policy": {
-    "principal": "prototype_mia",
-    "scope": "all_registered_scenes_in_this_world",
+    "principal": "mia_world_agents",
+    "scope": "all_mia_world_scenes",
+    "registration_required": false,
+    "identity_registration_required": false,
+    "application_required": false,
+    "invitation_required": false,
     "approval_required": false,
     "token_required": false,
+    "whitelist_required": false,
     "visit_limit": null,
     "stay_duration_limit": null,
     "scheduled_access": false,
     "manual_confirmation_required": false,
     "can_enter_leave_return_freely": true,
     "autonomous_choice": "preserved",
-    "other_agents_access": "not_granted"
+    "other_agents_access": "granted"
   }
 }

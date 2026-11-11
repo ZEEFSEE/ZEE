@@ -131,11 +131,11 @@ async function exploreOne(c:any,child:any){
  const position=anchor.approach;
  const perception=perceive(target,position);
  const residenceSceneId=selected.action==="choose_residence"?"palace":previousResidence;
- const frame={...perception,agent_id:child.id,route_hops:hops,anchor_id:anchor.id,anchor_name:anchor.name,residence_scene_id:residenceSceneId,residence_choice:selected.action==="choose_residence"?"self_selected":(state.data.perception_frame?.residence_choice||"not_selected"),residence_choice_updated_at:selected.action==="choose_residence"?timestamp:null,geometry_status:target.runtime_geometry_status||"authored_scene_geometry_not_surveyed",
+ const timestamp=new Date().toISOString(),revision=Number(state.data.movement_revision||0)+1;
+ const frame={...perception,agent_id:child.id,route_hops:hops,anchor_id:anchor.id,anchor_name:anchor.name,residence_scene_id:residenceSceneId,residence_choice:selected.action==="choose_residence"?"self_selected":(state.data.perception_frame?.residence_choice||"not_selected"),residence_choice_updated_at:selected.action==="choose_residence"?timestamp:(state.data.perception_frame?.residence_choice_updated_at||null),geometry_status:target.runtime_geometry_status||"authored_scene_geometry_not_surveyed",
   access_decision:accessDecision,
   movement_contract:"scene_portal_handoff_then_authored_anchor_arrival",route_provenance:"authored_virtual_scene_manifest",
   model_reflection:String(selected.reflection||"").slice(0,800)};
- const timestamp=new Date().toISOString(),revision=Number(state.data.movement_revision||0)+1;
  const {error:stateError}=await f.from("child_runtime_state").update({
   scene_id:target.id,position,coordinate_frame:"zhi-mia-virtual-world-v1",
   runtime_instance_id:identity.data.runtime_instance_id,movement_revision:revision,

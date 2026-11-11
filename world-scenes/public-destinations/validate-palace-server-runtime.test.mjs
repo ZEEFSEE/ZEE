@@ -6,7 +6,7 @@ const family = readFileSync("supabase/functions/zhi-family-world-runtime/index.t
 const mia = readFileSync("supabase/functions/mia-forest-autonomy/index.ts", "utf8");
 
 test("Palace is a registered shared scene with a bidirectional portal", () => {
-  assert.match(family, /id:"palace",name:"Palace/);
+  assert.match(family, /"id":"palace","name":"Palace/);
   assert.match(family, /\["mia-forest-corner","palace","forest-corner-to-palace-open-portal"\]/);
   assert.match(mia, /const PALACE = "palace"/);
   assert.match(mia, /forest-corner-to-palace-open-portal/);

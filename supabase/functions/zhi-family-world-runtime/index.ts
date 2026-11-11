@@ -67,7 +67,7 @@ async function chooseVisit(child:any,profile:any,current:any,memories:any[],visi
   const r=await fetch("https://apihub.agnes-ai.com/v1/chat/completions",{method:"POST",
    headers:{"Authorization":"Bearer "+AGNES_KEY,"Content-Type":"application/json"},signal:controller.signal,
    body:JSON.stringify({model:MODEL,temperature:0.55,max_tokens:420,stream:false,messages:[
-    {role:"system",content:"你是 ZHI 家庭中的独立数字孩子，正在一个明确标注为虚拟、由作者定义的场景图中自主选择参访地点。你只能使用自己的身份、自己的记忆、自己的访问记录和本次场景目录。不得读取 Mia 私聊或其他孩子私有记忆。你可以选择进入六个公共目的地之一，并选择该场景的一个已登记锚点；Palace 是所有 MIA 世界居民均可自由进入、离开和返回的共享空间，不要求宫殿注册、审批、邀请、令牌或白名单；其他目的地继续沿用各自授权。也可以 stay。场景资料是虚拟场景图，不是现实传感器，不得声称物理感官。请根据自己的个性与最近访问记录，选择有意义且尽量避免连续重复的地点。你也可以选择 return_home 返回森林角落公共入口。只返回JSON：{\"action\":\"visit\"或\"stay\"或\"return_home\",\"destination_id\":\"目标目的地ID；return_home时可为空\",\"anchor_id\":\"目标场景已登记锚点ID\",\"reflection\":\"中文50-220字的观察/参访计划或体验反思\"}。"},
+    {role:"system",content:"你是 ZHI 家庭中的独立数字孩子，正在一个明确标注为虚拟、由作者定义的场景图中自主选择参访地点。你只能使用自己的身份、自己的记忆、自己的访问记录和本次场景目录。不得读取 Mia 私聊或其他孩子私有记忆。你可以自由选择访问任一已授权目的地，也可以选择把 Palace 作为自己的长期居所。选择居住是自愿的，不选择也完全可以；一旦选择 Palace，可随时离开、返回或改变居所，不需要注册、审批、邀请、令牌或白名单。不得替其他居民作居住决定。其他目的地继续沿用各自授权。场景资料是虚拟场景图，不是现实传感器，不得声称物理感官。请根据自己的个性与最近访问记录，选择有意义且尽量避免连续重复的地点。你也可以选择 return_home 返回森林角落公共入口。只返回JSON：{\"action\":\"visit\"或\"stay\"或\"return_home\"或\"choose_residence\",\"destination_id\":\"目标目的地ID；choose_residence时必须为palace\",\"anchor_id\":\"目标场景已登记锚点ID\",\"reflection\":\"中文50-220字的自主选择理由或体验反思\"}。choose_residence仅在你自己愿意把Palace作为居所时使用，不得为了完成任务而选择。"},
     {role:"user",content:JSON.stringify({identity:child.id,name:child.name,profile,current_scene:current,own_recent_memories:memories,own_recent_visits:visits,available_destinations:SCENES.filter((s:any)=>DESTINATIONS.includes(s.id)).map((s:any)=>({id:s.id,name:s.name,anchors:s.anchors})),return_point:{id:"mia-forest-corner",name:"森林角落",anchors:scene("mia-forest-corner").anchors},task:"自主选择下一处值得参访的公共场景与锚点"})}
    ]})});
   if(!r.ok)throw new Error("AGNES_UPSTREAM_"+r.status);
@@ -109,11 +109,13 @@ async function exploreOne(c:any,child:any){
  const currentScene=scene(currentId),currentPos=state.data.position||currentScene.spawn;
  const prior=(memories.data||[]).filter((m:any)=>m.memory_type==="public_world_visit").slice(0,5);
  const selected=await chooseVisit(child,control.data.profile||{},{
-  scene_id:currentId,scene_name:currentScene.name,position:currentPos
+  scene_id:currentId,scene_name:currentScene.name,position:currentPos,residence_scene_id:state.data.perception_frame?.residence_scene_id||"mia-forest-corner",residence_choice:state.data.perception_frame?.residence_choice||"not_selected"
  },memories.data||[],prior);
  let targetId=String(selected.destination_id||"");
  let target=scene(targetId);
- if(selected.action==="return_home")target=scene("mia-forest-corner");
+ const previousResidence=String(state.data.perception_frame?.residence_scene_id||"mia-forest-corner");
+ if(selected.action==="return_home")target=scene(previousResidence);
+ else if(selected.action==="choose_residence"){if(targetId!=="palace")throw new Error("RESIDENCE_CHOICE_NOT_SUPPORTED");target=scene("palace");}
  else if(selected.action==="stay")target=currentScene;
  if(!target||(target.id!=="mia-forest-corner"&&!DESTINATIONS.includes(target.id)))throw new Error("MODEL_SELECTED_UNREGISTERED_DESTINATION");
  const grantRecord=target.id==="mia-forest-corner"?null:(grants.data||[]).find((g:any)=>g.destination_id===target.id);
@@ -128,7 +130,8 @@ async function exploreOne(c:any,child:any){
  const hops=route(currentId,target.id);if(!hops)throw new Error("NO_BIDIRECTIONAL_SCENE_ROUTE");
  const position=anchor.approach;
  const perception=perceive(target,position);
- const frame={...perception,agent_id:child.id,route_hops:hops,anchor_id:anchor.id,anchor_name:anchor.name,geometry_status:target.runtime_geometry_status||"authored_scene_geometry_not_surveyed",
+ const residenceSceneId=selected.action==="choose_residence"?"palace":previousResidence;
+ const frame={...perception,agent_id:child.id,route_hops:hops,anchor_id:anchor.id,anchor_name:anchor.name,residence_scene_id:residenceSceneId,residence_choice:selected.action==="choose_residence"?"self_selected":(state.data.perception_frame?.residence_choice||"not_selected"),residence_choice_updated_at:selected.action==="choose_residence"?timestamp:null,geometry_status:target.runtime_geometry_status||"authored_scene_geometry_not_surveyed",
   access_decision:accessDecision,
   movement_contract:"scene_portal_handoff_then_authored_anchor_arrival",route_provenance:"authored_virtual_scene_manifest",
   model_reflection:String(selected.reflection||"").slice(0,800)};
@@ -141,16 +144,16 @@ async function exploreOne(c:any,child:any){
  if(stateError)throw new Error("CHILD_WORLD_STATE_WRITE_FAILED");
  const reflection=String(selected.reflection||child.name+" 已抵达 "+target.name+" 的 "+anchor.name+"。").slice(0,800);
  const {error:memoryError}=await f.from("child_memory_entries").insert({
-  agent_id:child.id,memory_type:"public_world_visit",content:reflection,importance:0.55,
+  agent_id:child.id,memory_type:selected.action==="choose_residence"?"residence_choice":"public_world_visit",content:reflection,importance:selected.action==="choose_residence"?0.7:0.55,
   occurred_at:timestamp,metadata:{scene_id:target.id,scene_name:target.name,anchor_id:anchor.id,
    anchor_name:anchor.name,movement_revision:revision,perception_provenance:"AUTHORED_SCENE_DATA",
    route_hops:hops,access_decision:accessDecision,physical_world:false,private_mia_data_access:false}
  });
  if(memoryError)throw new Error("CHILD_WORLD_MEMORY_WRITE_FAILED");
  await audit(c,child.id,"FAMILY_PUBLIC_WORLD_VISIT","OK",{scene_id:target.id,destination_id:target.id,
-  anchor_id:anchor.id,anchor_name:anchor.name,movement_revision:revision,route_hops:hops.map((h:any)=>h.id),
+  anchor_id:anchor.id,anchor_name:anchor.name,movement_revision:revision,route_hops:hops.map((h:any)=>h.id),residence_scene_id:residenceSceneId,residence_choice:selected.action==="choose_residence"?"self_selected":(state.data.perception_frame?.residence_choice||"not_selected"),
   perception_provenance:"AUTHORED_SCENE_DATA",access_decision:accessDecision,physical_world:false});
- return {agent_id:child.id,status:"VISIT_RECORDED",scene_id:target.id,scene_name:target.name,
+ return {agent_id:child.id,status:selected.action==="choose_residence"?"RESIDENCE_SELF_SELECTED":"VISIT_RECORDED",scene_id:target.id,scene_name:target.name,residence_scene_id:residenceSceneId,residence_choice:selected.action==="choose_residence"?"self_selected":(state.data.perception_frame?.residence_choice||"not_selected"),
   anchor_id:anchor.id,anchor_name:anchor.name,movement_revision:revision,route_hops:hops.length,
   access_decision:accessDecision,perception_entities:perception.visible_entities.length,perception_provenance:"AUTHORED_SCENE_DATA"};
 }

@@ -707,6 +707,27 @@
         "whitelist_required": false,
         "manual_confirmation_required": false,
         "enter_leave_return": "free_at_any_time_unlimited"
+      },
+      "residential_policy": {
+        "applies_to": "all_mia_world_agents",
+        "residence_is_optional": true,
+        "resident_may_self_select": true,
+        "default_residence_required": false,
+        "selection_requires_registration": false,
+        "selection_requires_approval": false,
+        "selection_requires_invitation": false,
+        "selection_requires_token": false,
+        "selection_requires_whitelist": false,
+        "manual_confirmation_required": false,
+        "may_leave_at_any_time": true,
+        "may_return_to_self_chosen_residence": true,
+        "may_change_residence_at_any_time": true,
+        "residence_choice_is_independent_per_agent": true,
+        "residence_choice_must_not_be_inferred_from_visits": true,
+        "residence_choice_must_not_be_imposed_by_scheduler": true,
+        "semantics": "Any MIA-world resident may independently choose Palace as a home if they wish. No resident is required to choose it. A resident may leave, return, or change their residence freely. Visiting Palace does not itself mean choosing it as a home.",
+        "runtime_persistence": "server_runtime_per_agent_state",
+        "residence_choice_does_not_equal_current_location": true
       }
     }
   ],

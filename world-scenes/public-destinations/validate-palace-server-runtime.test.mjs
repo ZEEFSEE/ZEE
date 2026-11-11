@@ -22,6 +22,19 @@ test("Palace does not require an individual destination grant", () => {
   }
 });
 
+test("Palace residence is optional, individually self-selected, persistent, and reversible", () => {
+  assert.match(family, /choose_residence/);
+  assert.match(family, /residence_scene_id:residenceSceneId/);
+  assert.match(family, /residence_choice:selected\.action==="choose_residence"\?"self_selected"/);
+  assert.match(family, /scene\(previousResidence\)/);
+  assert.match(mia, /action === "choose_residence"/);
+  assert.match(mia, /s\.residence_scene_id = PALACE/);
+  assert.match(mia, /action === "return_home"/);
+  assert.match(mia, /s\.scene_id = home;/);
+  assert.match(mia, /residence_scene_id:result\.state\.residence_scene_id/);
+  assert.match(mia, /不得诱导或强迫/);
+});
+
 test("Mia can use the Palace portal in both directions without claiming physical movement", () => {
   assert.match(mia, /const PALACE_SCENE = \{/);
   assert.match(mia, /runtime_geometry_status:"placeholder_canvas_only_not_measured"/);

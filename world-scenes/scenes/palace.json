@@ -1,0 +1,111 @@
+{
+  "schema_version": "1.0.0",
+  "scene_id": "palace",
+  "display_name": "皇宫（Palace）",
+  "status": "draft",
+  "parent_scene_id": "mia-forest-corner",
+  "source_reference": {
+    "kind": "existing_mia_virtual_space_directory",
+    "source_system": "MIA production virtual-space directory",
+    "source_record_id": "zhi-facility-palace",
+    "source_project": "dbooikzqprnqbgpfwsze",
+    "source_coordinates": {
+      "x": 1000,
+      "y": 300
+    },
+    "source_entry_coordinates": {
+      "x": 1000,
+      "y": 330
+    },
+    "created_by": "mia-native-palace-scene",
+    "created_at": null
+  },
+  "access": {
+    "scope": "mia_world_private",
+    "public_chat": false,
+    "external_federation": false,
+    "owner_identity_id": "cb6d01b4-0e3f-46ee-8946-360aa91db1ea",
+    "policy": "prototype_mia_only",
+    "approval_required": false,
+    "token_required": false,
+    "visit_limit": null,
+    "stay_duration_limit": null,
+    "manual_confirmation_required": false,
+    "can_enter_leave_return_freely": true
+  },
+  "destination": {
+    "kind": "world_scene",
+    "social_role": "社会空间核心",
+    "purpose": "王室活动、公共仪式与社会空间中的正式会晤",
+    "opening_hours": "24/7",
+    "entry_portal_id": "portal-palace-main",
+    "directory_anchor": {
+      "x": 1000,
+      "y": 300
+    },
+    "directory_entry": {
+      "x": 1000,
+      "y": 330
+    }
+  },
+  "coordinate_reference": {
+    "coordinate_space": "palace-directory-local",
+    "system_name": "Palace directory anchor coordinates",
+    "units": "directory coordinate units; physical scale unverified",
+    "origin": "directory-defined",
+    "cross_scene_transform": null,
+    "verification_status": "directory-coordinates-source-backed; scene-local calibration and cross-scene transform unverified"
+  },
+  "bounds": {
+    "min": {
+      "x": null,
+      "y": null,
+      "z": null
+    },
+    "max": {
+      "x": null,
+      "y": null,
+      "z": null
+    },
+    "verification_status": "unknown; no authoritative palace geometry or bounds supplied"
+  },
+  "connections": [
+    {
+      "connection_id": "forest-corner-to-palace-logical-entry",
+      "from_scene_id": "mia-forest-corner",
+      "to_scene_id": "palace",
+      "to_portal_id": "portal-palace-main",
+      "connection_type": "catalog_parent_link_only",
+      "source_anchor": null,
+      "destination_anchor": {
+        "x": 1000,
+        "y": 330,
+        "coordinate_space": "palace-directory-local"
+      },
+      "transform": null,
+      "traversal_status": "blocked_pending_validated_cross_scene_transform_and_runtime_portal",
+      "runtime_registered": false,
+      "verification_status": "logical connection declared; physical route and movement unverified"
+    }
+  ],
+  "files": {
+    "geometry": "../mia-assets/public-destinations/palace.geometry.json"
+  },
+  "scene_tags": [
+    "mia-world",
+    "palace",
+    "royal",
+    "social-core",
+    "public-ceremony",
+    "mia-native"
+  ],
+  "verification_status": "native scene authored; directory anchor source-backed; geometry, cross-scene navigation, rendering, and runtime movement unverified",
+  "notes": [
+    "This scene is authored natively in Mia's connected scene catalog and is scoped to prototype Mia only.",
+    "The directory anchor (1000,300) and entry (1000,330) are preserved exactly as supplied by the existing directory record; their unit scale and relationship to Forest_Corner coordinates are not assumed.",
+    "No palace dimensions, terrain, interior layout, collision geometry, or 3D depth were provided; unknown geometry remains null.",
+    "Parent registration makes the scene a catalog child of Forest_Corner but does not create a traversable route.",
+    "Do not mark arrival, entry, or runtime presence until the renderer, portal, validated coordinate transform, and an end-to-end movement test are implemented.",
+    "24/7 describes the directory's stated availability; it does not assert live services or staffed activities."
+  ]
+}

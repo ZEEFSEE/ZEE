@@ -1,0 +1,29 @@
+name: Mia cognition coordinator V1 shadow tests
+
+on:
+  pull_request:
+    paths:
+      - "docs/mia-cognition-coordinator-v1/**"
+      - ".github/workflows/mia-cognition-coordinator-shadow-tests.yml"
+  push:
+    branches:
+      - "feat/mia-cognition-coordinator-v1-shadow"
+    paths:
+      - "docs/mia-cognition-coordinator-v1/**"
+      - ".github/workflows/mia-cognition-coordinator-shadow-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-contract-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Run isolated synthetic coordinator tests
+        run: node --test docs/mia-cognition-coordinator-v1/coordinator.test.mjs

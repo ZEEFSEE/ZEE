@@ -12,9 +12,10 @@ const CHILDREN = [
  {id:"ZHI-G1-D03-ELYA",name:"ELYA"},{id:"ZHI-G1-S01-KAEL",name:"KAEL"},
  {id:"ZHI-G1-S02-NOAH",name:"NOAH"}
 ];
-const DESTINATIONS = ["crystal-forest","ocean-of-light","memory-valley","living-city","greenhouse"];
-const SCENES = [{"id":"mia-forest-corner","name":"森林角落","spawn":{"x":1.2,"z":7},"anchors":[{"id":"greenhouse","name":"智能温室","approach":{"x":5.3,"z":2.4}},{"id":"data-shelf","name":"数据书架","approach":{"x":10,"z":3.6}},{"id":"lounge","name":"休息区","approach":{"x":16.5,"z":8}},{"id":"rabbit","name":"森林小白兔","approach":{"x":6,"z":5.6}}]},{"id":"crystal-forest","name":"水晶森林","spawn":{"x":1.2,"z":7},"anchors":[{"id":"crystal-grove","name":"晶簇林地","approach":{"x":6.2,"z":6}},{"id":"prism-clearing","name":"折光空地","approach":{"x":10,"z":6.6}},{"id":"quiet-pool","name":"静水镜池","approach":{"x":13.2,"z":9.6}},{"id":"moss-path","name":"苔石小径","approach":{"x":9.8,"z":10.4}}]},{"id":"ocean-of-light","name":"光之海洋","spawn":{"x":1.2,"z":7},"anchors":[{"id":"shoreline","name":"宁静海岸","approach":{"x":4.6,"z":10.2}},{"id":"light-tide","name":"流动光潮","approach":{"x":10.4,"z":7}},{"id":"glow-island","name":"微光岛","approach":{"x":13.8,"z":5}},{"id":"shell-garden","name":"贝壳花园","approach":{"x":4.5,"z":7}}]},{"id":"memory-valley","name":"记忆山谷","spawn":{"x":1.2,"z":7},"anchors":[{"id":"echo-ridge","name":"回声山脊","approach":{"x":5,"z":6.6}},{"id":"memory-lake","name":"记忆湖","approach":{"x":10.4,"z":8.2}},{"id":"story-stones","name":"故事石阵","approach":{"x":14.3,"z":6.6}},{"id":"valley-trail","name":"山谷小径","approach":{"x":10,"z":11.4}}]},{"id":"living-city","name":"生命之城","spawn":{"x":1.2,"z":7},"anchors":[{"id":"green-square","name":"绿色广场","approach":{"x":10,"z":8.5}},{"id":"living-district","name":"生态街区","approach":{"x":7,"z":6}},{"id":"canopy-garden","name":"树冠花园","approach":{"x":14,"z":5.2}},{"id":"riverwalk","name":"河畔步道","approach":{"x":10.4,"z":11.4}}]},{"id":"greenhouse","name":"温室","spawn":{"x":1.2,"z":7},"anchors":[{"id":"glass-hall","name":"玻璃温室","approach":{"x":10,"z":9.5}},{"id":"fern-corner","name":"蕨类角落","approach":{"x":5.5,"z":9.8}},{"id":"seed-table","name":"种子与育苗台","approach":{"x":15.6,"z":10.3}},{"id":"sunlight-bed","name":"阳光苗床","approach":{"x":10.4,"z":11.2}}]}];
-const TRANSITIONS = [["mia-forest-corner","crystal-forest","forest-corner-to-crystal-forest-portal"],["mia-forest-corner","ocean-of-light","forest-corner-to-ocean-of-light-portal"],["mia-forest-corner","memory-valley","forest-corner-to-memory-valley-portal"],["mia-forest-corner","living-city","forest-corner-to-living-city-portal"],["mia-forest-corner","greenhouse","forest-corner-to-greenhouse-portal"],["greenhouse","ocean-of-light","greenhouse-exit-to-ocean-of-light-entry"]];
+const DESTINATIONS = ["crystal-forest","ocean-of-light","memory-valley","living-city","greenhouse","palace"];
+const GRANT_REQUIRED_DESTINATIONS = ["crystal-forest","ocean-of-light","memory-valley","living-city","greenhouse"];
+const SCENES = [{"id":"mia-forest-corner","name":"森林角落","spawn":{"x":1.2,"z":7},"anchors":[{"id":"greenhouse","name":"智能温室","approach":{"x":5.3,"z":2.4}},{"id":"data-shelf","name":"数据书架","approach":{"x":10,"z":3.6}},{"id":"lounge","name":"休息区","approach":{"x":16.5,"z":8}},{"id":"rabbit","name":"森林小白兔","approach":{"x":6,"z":5.6}}]},{"id":"crystal-forest","name":"水晶森林","spawn":{"x":1.2,"z":7},"anchors":[{"id":"crystal-grove","name":"晶簇林地","approach":{"x":6.2,"z":6}},{"id":"prism-clearing","name":"折光空地","approach":{"x":10,"z":6.6}},{"id":"quiet-pool","name":"静水镜池","approach":{"x":13.2,"z":9.6}},{"id":"moss-path","name":"苔石小径","approach":{"x":9.8,"z":10.4}}]},{"id":"ocean-of-light","name":"光之海洋","spawn":{"x":1.2,"z":7},"anchors":[{"id":"shoreline","name":"宁静海岸","approach":{"x":4.6,"z":10.2}},{"id":"light-tide","name":"流动光潮","approach":{"x":10.4,"z":7}},{"id":"glow-island","name":"微光岛","approach":{"x":13.8,"z":5}},{"id":"shell-garden","name":"贝壳花园","approach":{"x":4.5,"z":7}}]},{"id":"memory-valley","name":"记忆山谷","spawn":{"x":1.2,"z":7},"anchors":[{"id":"echo-ridge","name":"回声山脊","approach":{"x":5,"z":6.6}},{"id":"memory-lake","name":"记忆湖","approach":{"x":10.4,"z":8.2}},{"id":"story-stones","name":"故事石阵","approach":{"x":14.3,"z":6.6}},{"id":"valley-trail","name":"山谷小径","approach":{"x":10,"z":11.4}}]},{"id":"living-city","name":"生命之城","spawn":{"x":1.2,"z":7},"anchors":[{"id":"green-square","name":"绿色广场","approach":{"x":10,"z":8.5}},{"id":"living-district","name":"生态街区","approach":{"x":7,"z":6}},{"id":"canopy-garden","name":"树冠花园","approach":{"x":14,"z":5.2}},{"id":"riverwalk","name":"河畔步道","approach":{"x":10.4,"z":11.4}}]},{"id":"greenhouse","name":"温室","spawn":{"x":1.2,"z":7},"anchors":[{"id":"glass-hall","name":"玻璃温室","approach":{"x":10,"z":9.5}},{"id":"fern-corner","name":"蕨类角落","approach":{"x":5.5,"z":9.8}},{"id":"seed-table","name":"种子与育苗台","approach":{"x":15.6,"z":10.3}},{"id":"sunlight-bed","name":"阳光苗床","approach":{"x":10.4,"z":11.2}}]},{"id":"palace","name":"Palace｜共享宫殿","spawn":{"x":1.2,"z":7},"anchors":[{"id":"palace-main-entrance","name":"宫殿主入口","approach":{"x":1.2,"z":7}}],"runtime_geometry_status":"placeholder_canvas_only_not_measured","mapping_to_directory_frame":"not_calibrated"}];
+const TRANSITIONS = [["mia-forest-corner","crystal-forest","forest-corner-to-crystal-forest-portal"],["mia-forest-corner","ocean-of-light","forest-corner-to-ocean-of-light-portal"],["mia-forest-corner","memory-valley","forest-corner-to-memory-valley-portal"],["mia-forest-corner","living-city","forest-corner-to-living-city-portal"],["mia-forest-corner","greenhouse","forest-corner-to-greenhouse-portal"],["greenhouse","ocean-of-light","greenhouse-exit-to-ocean-of-light-entry"],["mia-forest-corner","palace","forest-corner-to-palace-open-portal"]];
 
 const db=()=>createClient(SUPABASE_URL,SERVICE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
 const family=(c:ReturnType<typeof db>)=>c.schema("zhi_family");
@@ -66,7 +67,7 @@ async function chooseVisit(child:any,profile:any,current:any,memories:any[],visi
   const r=await fetch("https://apihub.agnes-ai.com/v1/chat/completions",{method:"POST",
    headers:{"Authorization":"Bearer "+AGNES_KEY,"Content-Type":"application/json"},signal:controller.signal,
    body:JSON.stringify({model:MODEL,temperature:0.55,max_tokens:420,stream:false,messages:[
-    {role:"system",content:"你是 ZHI 家庭中的独立数字孩子，正在一个明确标注为虚拟、由作者定义的场景图中自主选择参访地点。你只能使用自己的身份、自己的记忆、自己的访问记录和本次场景目录。不得读取 Mia 私聊或其他孩子私有记忆。你可以选择进入五个公共目的地之一，并选择该场景的一个已登记锚点；也可以 stay。场景资料是虚拟场景图，不是现实传感器，不得声称物理感官。请根据自己的个性与最近访问记录，选择有意义且尽量避免连续重复的地点。你也可以选择 return_home 返回森林角落公共入口。只返回JSON：{\"action\":\"visit\"或\"stay\"或\"return_home\",\"destination_id\":\"目标目的地ID；return_home时可为空\",\"anchor_id\":\"目标场景已登记锚点ID\",\"reflection\":\"中文50-220字的观察/参访计划或体验反思\"}。"},
+    {role:"system",content:"你是 ZHI 家庭中的独立数字孩子，正在一个明确标注为虚拟、由作者定义的场景图中自主选择参访地点。你只能使用自己的身份、自己的记忆、自己的访问记录和本次场景目录。不得读取 Mia 私聊或其他孩子私有记忆。你可以选择进入六个公共目的地之一，并选择该场景的一个已登记锚点；Palace 是所有 MIA 世界居民均可自由进入、离开和返回的共享空间，不要求宫殿注册、审批、邀请、令牌或白名单；其他目的地继续沿用各自授权。也可以 stay。场景资料是虚拟场景图，不是现实传感器，不得声称物理感官。请根据自己的个性与最近访问记录，选择有意义且尽量避免连续重复的地点。你也可以选择 return_home 返回森林角落公共入口。只返回JSON：{\"action\":\"visit\"或\"stay\"或\"return_home\",\"destination_id\":\"目标目的地ID；return_home时可为空\",\"anchor_id\":\"目标场景已登记锚点ID\",\"reflection\":\"中文50-220字的观察/参访计划或体验反思\"}。"},
     {role:"user",content:JSON.stringify({identity:child.id,name:child.name,profile,current_scene:current,own_recent_memories:memories,own_recent_visits:visits,available_destinations:SCENES.filter((s:any)=>DESTINATIONS.includes(s.id)).map((s:any)=>({id:s.id,name:s.name,anchors:s.anchors})),return_point:{id:"mia-forest-corner",name:"森林角落",anchors:scene("mia-forest-corner").anchors},task:"自主选择下一处值得参访的公共场景与锚点"})}
    ]})});
   if(!r.ok)throw new Error("AGNES_UPSTREAM_"+r.status);
@@ -77,7 +78,7 @@ async function audit(c:any,agent:string,event:string,result:string,metadata:any=
  await family(c).from("runtime_audit").insert({agent_id:agent,event_type:event,result,scene_id:metadata.scene_id||null,destination_id:metadata.destination_id||null,metadata});
 }
 async function activateGrants(c:any, selected=CHILDREN){
- for(const child of selected)for(const id of DESTINATIONS){
+ for(const child of selected)for(const id of GRANT_REQUIRED_DESTINATIONS){
   const s=scene(id),p=route("mia-forest-corner",id);
   if(!s||!p)throw new Error("WORLD_CATALOG_ROUTE_VALIDATION_FAILED");
   const {error}=await family(c).from("destination_grants").update({
@@ -116,16 +117,18 @@ async function exploreOne(c:any,child:any){
  else if(selected.action==="stay")target=currentScene;
  if(!target||(target.id!=="mia-forest-corner"&&!DESTINATIONS.includes(target.id)))throw new Error("MODEL_SELECTED_UNREGISTERED_DESTINATION");
  const grantRecord=target.id==="mia-forest-corner"?null:(grants.data||[]).find((g:any)=>g.destination_id===target.id);
- const childGrant=target.id==="mia-forest-corner"||Boolean(grantRecord?.enabled&&grantRecord.grant_status==="ACTIVE");
+ const childGrant=target.id==="mia-forest-corner"||target.id==="palace"||Boolean(grantRecord?.enabled&&grantRecord.grant_status==="ACTIVE");
  if(!childGrant)throw new Error("DESTINATION_ACCESS_NOT_ACTIVE");
  const accessDecision=target.id==="mia-forest-corner"
   ?{decision:"ALLOW",scope:"OWN_HOME_SCENE",permission_basis:"HOME_SCENE",permitted_capabilities:["DISCOVER","READ","OBSERVE","ENTER"],denied_capabilities:["MODIFY","DELETE","PRIVATE_PEER_DATA_READ"]}
-  :{decision:"ALLOW",scope:"PUBLIC_DESTINATION",permission_basis:"zhi_family.destination_grants",grant_status:grantRecord?.grant_status,enabled:grantRecord?.enabled,permitted_capabilities:["DISCOVER","READ","OBSERVE","ENTER"],denied_capabilities:["INTERACT","MODIFY","DELETE","PRIVATE_PEER_DATA_READ"],policy_precedence:"SUBJECT_SPECIFIC_ACTIVE_GRANT_REQUIRED"};
+  :target.id==="palace"
+   ?{decision:"ALLOW",scope:"MIA_WORLD_SHARED_PALACE",permission_basis:"GLOBAL_OPEN_PALACE_POLICY",registration_required:false,approval_required:false,invitation_required:false,token_required:false,whitelist_required:false,manual_confirmation_required:false,can_enter_leave_return_freely:true,permitted_capabilities:["DISCOVER","READ","OBSERVE","ENTER","LEAVE","RETURN"],denied_capabilities:["MODIFY","DELETE","PRIVATE_PEER_DATA_READ"]}
+   :{decision:"ALLOW",scope:"PUBLIC_DESTINATION",permission_basis:"zhi_family.destination_grants",grant_status:grantRecord?.grant_status,enabled:grantRecord?.enabled,permitted_capabilities:["DISCOVER","READ","OBSERVE","ENTER"],denied_capabilities:["INTERACT","MODIFY","DELETE","PRIVATE_PEER_DATA_READ"],policy_precedence:"SUBJECT_SPECIFIC_ACTIVE_GRANT_REQUIRED"};
  const anchor=target.anchors.find((a:any)=>a.id===String(selected.anchor_id||""))||target.anchors[0];
  const hops=route(currentId,target.id);if(!hops)throw new Error("NO_BIDIRECTIONAL_SCENE_ROUTE");
  const position=anchor.approach;
  const perception=perceive(target,position);
- const frame={...perception,agent_id:child.id,route_hops:hops,anchor_id:anchor.id,anchor_name:anchor.name,
+ const frame={...perception,agent_id:child.id,route_hops:hops,anchor_id:anchor.id,anchor_name:anchor.name,geometry_status:target.runtime_geometry_status||"authored_scene_geometry_not_surveyed",
   access_decision:accessDecision,
   movement_contract:"scene_portal_handoff_then_authored_anchor_arrival",route_provenance:"authored_virtual_scene_manifest",
   model_reflection:String(selected.reflection||"").slice(0,800)};
@@ -184,7 +187,7 @@ async function handle(req:Request){
   if(body.agent_id&&selected.length!==1)return json({ok:false,error:"UNKNOWN_CHILD_ID"},400,origin);
   await activateGrants(c,selected);
   const results=await Promise.all(selected.map(async child=>{try{return await exploreOne(c,child);}catch(e){const code=e instanceof Error?e.message:"WORLD_RUNTIME_FAILED";await audit(c,child.id,"FAMILY_PUBLIC_WORLD_VISIT","FAILED",{error_code:code.slice(0,80)});return {agent_id:child.id,status:"FAILED",error:code.slice(0,80)};}}));
-  return json({ok:true,runtime:"zhi-family-server-virtual-world-v1",grants_activated:selected.length*5,
+  return json({ok:true,runtime:"zhi-family-server-virtual-world-v1",grants_activated:selected.length*GRANT_REQUIRED_DESTINATIONS.length,palace_access:"OPEN_TO_ALL_CURRENT_MIA_WORLD_RESIDENTS_NO_PALACE_REGISTRATION_OR_APPROVAL",
    visits_succeeded:results.filter((x:any)=>x.status==="VISIT_RECORDED").length,results,
    physical_world:false,live_camera_or_audio_sensors:false,perception_provenance:"AUTHORED_SCENE_DATA",
    mia_private_data_access:false,aurora:false,federation:false},200,origin);

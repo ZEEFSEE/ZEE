@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.0",
+  "agent_id": "REPLACE_WITH_GENERATED_UUID",
+  "project_ref": "REPLACE_WITH_APPROVED_PROJECT_REF",
+  "observed_at_utc": null,
+  "window_start_utc": null,
+  "window_end_utc": null,
+  "environment": "staging",
+  "metrics": {
+    "api_request_count": null,
+    "api_5xx_count": null,
+    "api_5xx_rate": null,
+    "edge_function_invocations": null,
+    "edge_function_error_rate": null,
+    "p50_latency_ms": null,
+    "p95_latency_ms": null,
+    "database_size_bytes": null,
+    "largest_tables_bytes": [],
+    "active_connections": null,
+    "confirmed_connection_limit": null,
+    "egress_bytes": null,
+    "storage_bytes": null,
+    "log_ingest_bytes": null,
+    "model_calls": null,
+    "model_input_tokens": null,
+    "model_output_tokens": null,
+    "estimated_model_cost": null,
+    "memory_event_duplicate_rate": null,
+    "memory_required_field_missing_rate": null,
+    "memory_write_failure_rate": null
+  },
+  "limits": {
+    "plan_name": null,
+    "confirmed_limits_source": null,
+    "confirmed_limits_observed_at_utc": null
+  },
+  "assessment": "unable_to_assess",
+  "notes": "Do not invent missing metrics. Use consistent units and comparable windows. A single snapshot cannot establish a growth trend."
+}

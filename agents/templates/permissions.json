@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "default_policy": "deny",
+  "agent_id": "REPLACE_WITH_GENERATED_UUID",
+  "project_ref": "REPLACE_WITH_EXPLICITLY_APPROVED_PROJECT_REF",
+  "allowed_data_scopes": [],
+  "allowed_edge_functions": [],
+  "capabilities": {
+    "read_memory": false,
+    "write_memory": false,
+    "write_emotion_event": false,
+    "write_life_event": false,
+    "change_personality": false,
+    "execute_world_action": false,
+    "administer_users": false
+  },
+  "requirements": [
+    "Validate caller identity server-side",
+    "Validate agent_id and row ownership server-side",
+    "Use least-privilege database role",
+    "Never expose service_role or provider secrets to browser code",
+    "Do not assume RLS enabled means access is correctly configured",
+    "Require explicit review before granting new table privileges"
+  ]
+}

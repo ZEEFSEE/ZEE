@@ -61,6 +61,7 @@ These are software structures. A node is not a literal biological neuron; a syna
 - Ten region-anchor nodes seeded.
 - Seventeen directed baseline synapses seeded.
 - KEN chat runtime upgraded to use region routing, bounded historical-message retrieval, neural-node retrieval, and cognitive-cycle audit.
+- Each successful chat turn now creates a private episodic node and evidence-linked associative synapses to the activated region anchors; extracted memory candidates also enter the owner-review learning ledger.
 - KEN chat now verifies the active `ken_token_owners` binding in addition to validating the signed Mia session.
 - AGNES remains the only KEN model provider. No Groq route is used.
 - Existing KEN archive remains separate and unchanged.

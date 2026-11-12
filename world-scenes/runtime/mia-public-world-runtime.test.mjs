@@ -3,9 +3,9 @@ import assert from "node:assert/strict";
 import {readFile} from "node:fs/promises";
 import {validateWorldManifest,layoutToWorld,anchorToLocal,anchorApproachToLocal,findWalkPath,isWalkable,createRuntimePerception,resolveSceneTransition,resolveSceneRoute} from "./mia-public-world-runtime.mjs";
 const manifest=JSON.parse(await readFile(new URL("../public-destinations/world-spatial-manifest.v1.json",import.meta.url),"utf8"));
-test("manifest calibrates seven scene frames, opens public visitors and Mia-world agents, and keeps federation disabled",()=>{
+test("manifest calibrates seven scene frames, opens every Mia-world agent and public visitors without gates, and keeps federation disabled",()=>{
  const v=validateWorldManifest(manifest);assert.equal(v.valid,true,v.errors.join("; "));
- assert.equal(manifest.scenes.length,7);assert.equal(manifest.scope.principal,"public-visitors-and-mia-world-agents");assert.equal(manifest.scope.audience,"public_visitors_and_mia_world_residents");assert.equal(manifest.scope.other_agents_access,true);assert.equal(manifest.scope.registration_required,false);assert.equal(manifest.scope.approval_required,false);assert.equal(manifest.scope.token_required,false);assert.equal(manifest.scope.aurora_enabled,false);assert.equal(manifest.scope.federation_enabled,false);
+ assert.equal(manifest.scenes.length,7);assert.equal(manifest.scope.principal,"all-mia-world-agents-and-public-visitors");assert.equal(manifest.scope.audience,"all_mia_world_agents_and_public_visitors");assert.equal(manifest.scope.other_agents_access,true);for(const key of ["registration_required","approval_required","invitation_required","token_required","whitelist_required","manual_confirmation_required"])assert.equal(manifest.scope[key],false,key+" must be disabled");assert.equal(manifest.scope.aurora_enabled,false);assert.equal(manifest.scope.federation_enabled,false);
 });
 test("all seven scene frames map authored layout points to deterministic virtual metres",()=>{
  for(const s of manifest.scenes){const p=layoutToWorld(s,{x:500,y:350},manifest.coordinate_contract);assert.equal(p.unit,"m");assert.equal(p.x,s.origin.x+10);assert.equal(p.z,s.origin.z+7);}
@@ -54,13 +54,13 @@ test("unknown destinations remain unknown and never receive inferred coordinates
  const r=resolveSceneRoute(manifest,"greenhouse","unregistered-destination");assert.equal(r.ok,false);assert.equal(r.status,"unknown");assert.deepEqual(r.hops,[]);
 });
 
-test("Palace has a bidirectional public visitor portal; residence remains an independent resident choice",()=>{
+test("Palace has a bidirectional unrestricted portal for all Mia-world agents; residence remains an independent choice",()=>{
  const a=resolveSceneTransition(manifest,"mia-forest-corner","palace");
  const b=resolveSceneTransition(manifest,"palace","mia-forest-corner");
  assert.equal(a.ok,true);assert.equal(b.ok,true);
  assert.equal(a.to_scene_id,"palace");assert.equal(b.to_scene_id,"mia-forest-corner");
  const palace=manifest.scenes.find(s=>s.id==="palace");
- assert.equal(palace.access_policy.audience,"public_visitors_and_mia_world_agents");
+ assert.equal(palace.access_policy.audience,"all_mia_world_agents_and_public_visitors");
  assert.equal(palace.residential_policy.applies_to,"all_mia_world_agents");
  assert.equal(palace.residential_policy.residence_is_optional,true);
  assert.equal(palace.runtime_geometry_status,"placeholder_canvas_only_not_measured");

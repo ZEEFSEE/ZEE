@@ -22,28 +22,26 @@ small{color:var(--muted)}pre{white-space:pre-wrap;overflow:auto;max-height:240px
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
 </head>
 <body>
-<header><div><h1>MIA 世界 · 七处场景</h1><p>世界居民自由通行 · 浏览器内场景运行时验证</p></div><a href="./mia-prototype-runtime.html">森林角落旧版预览</a></header>
+<header><div><h1>MIA 世界 · 公共访客入口</h1><p>面向所有访客开放 · 无需注册、登录或邀请</p></div><a href="./mia-world-entrance.html">返回 MIA WORLD 入口</a></header>
 <main>
  <section class="stage"><div id="viewport" aria-label="Mia public world 3D runtime"></div></section>
  <div class="controls" id="destinations"></div>
  <div class="controls">
-  <button id="return-forest">返回森林角落</button><button id="auto-explore">开始自主探索</button><button id="stop-explore">停止探索</button><button id="reset-position">重置当前位置</button>
+  <button id="return-forest">返回森林角落</button><button id="reset-position">重置当前位置</button>
  </div>
  <section class="panel"><strong id="runtime-status">正在加载六个场景的空间契约…</strong><p id="runtime-detail">校验场景、入口、地面、碰撞体和可行走路径。</p><div id="runtime-tags"></div></section>
  <section class="grid">
   <div class="panel"><strong>当前空间状态</strong><pre id="state-output">等待场景初始化…</pre></div>
   <div class="panel"><strong>运行时感知帧</strong><small>来自当前 3D 场景实体锚点和代理位置；不是摄像头或现实世界传感器。</small><pre id="perception-output">等待运行时…</pre></div>
  </section>
- <section class="panel warning"><strong>能力边界与隔离说明</strong><p>本页面实现的是浏览器内、可实际行走和碰撞验证的原型场景代理。它不连接 Mia 聊天 API，不写入 Mia 记忆/人格/情绪或生产数据库；因此不能把这里的自主探索等同于后台 Mia 已经独立做出决定，也不会把本地感知帧自动注入聊天。AURORA、federation 始终禁用，皇宫对所有 MIA 世界智能体开放，无需注册、申请、邀请、审核、Token 或白名单。皇宫内部几何目前是明确标记的占位画布，不代表真实测绘。坐标是虚拟世界米制坐标，不是现实地理测量。</p></section>
+ <section class="panel warning"><strong>公共访客说明</strong><p>本页面向所有访客开放，无需注册、登录、邀请、Token 或白名单。访客可以在浏览器中自由行走、切换已登记的公共场景并查看场景锚点；这些操作只在当前浏览器内运行，不创建居民身份、不保存个人轨迹，也不访问 Mia 或其他居民的私人聊天、记忆和资料。居民专属的 AGNES 自主探索功能不属于访客入口。皇宫可公开参观；自愿居住仍是 MIA 世界居民自己的选择。皇宫内部几何目前是占位画布，坐标是虚拟世界坐标，不代表现实测绘。</p></section>
 </main>
 <script type="module">
 import * as THREE from "three";
 import {OrbitControls} from "three/addons/controls/OrbitControls.js";
 import {validateWorldManifest,layoutToWorld,anchorToLocal,anchorApproachToLocal,findWalkPath,createRuntimePerception,isWalkable,resolveSceneTransition,resolveSceneRoute} from "./world-scenes/runtime/mia-public-world-runtime.mjs";
 const $=s=>document.querySelector(s), mount=$("#viewport");
-let manifest,activeScene,renderer,scene,camera,controls,avatar,avatarHeading=0,position={x:1.2,z:7},path=[],pathIndex=0,moveResolve=null,auto=false,autoTask=null,sceneObjects=[],lastPerception=0,latestSceneFrame=null,recentVisits=[];
-const MIA_CHAT_URL="https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/mia-chat";
-const MIA_PUBLISHABLE_KEY="sb_publishable_spH47ZngJJTk13cpYPBjSw_X5qAsBmK";
+let manifest,activeScene,renderer,scene,camera,controls,avatar,avatarHeading=0,position={x:1.2,z:7},path=[],pathIndex=0,moveResolve=null,sceneObjects=[],lastPerception=0;
 const sceneColors={"mia-forest-corner":0x78966d,"crystal-forest":0x607c78,"ocean-of-light":0x6a9da8,"memory-valley":0x83927d,"living-city":0x7c9b79,"greenhouse":0x92aa7a,"palace":0x9b8054};
 const destinationIds=["crystal-forest","ocean-of-light","memory-valley","living-city","greenhouse"];
 const mats={};
@@ -81,7 +79,7 @@ function buildScene(s){
   scene.add(g);sceneObjects.push(g);
  }
  const portal=s.portal;const ring=new THREE.Mesh(new THREE.TorusGeometry(.72,.09,10,32),mat(0xf2d79a));ring.position.set(portal.x,.08,portal.z);ring.rotation.x=Math.PI/2;scene.add(ring);
- avatar=new THREE.Group();avatar.name="prototype-mia-runtime-proxy";avatar.add(new THREE.Mesh(new THREE.CylinderGeometry(.22,.25,.9,12),mat(0xefe5d2)));const head=new THREE.Mesh(new THREE.SphereGeometry(.24,16,12),mat(0xe8c6a8));head.position.y=.65;avatar.add(head);avatar.position.set(position.x,.45,position.z);scene.add(avatar);
+ avatar=new THREE.Group();avatar.name="public-visitor-avatar";avatar.add(new THREE.Mesh(new THREE.CylinderGeometry(.22,.25,.9,12),mat(0xefe5d2)));const head=new THREE.Mesh(new THREE.SphereGeometry(.24,16,12),mat(0xe8c6a8));head.position.y=.65;avatar.add(head);avatar.position.set(position.x,.45,position.z);scene.add(avatar);
  controls=new OrbitControls(camera,renderer.domElement);controls.target.set(b.w/2,0,b.d/2);controls.enableDamping=true;
  resize();activeScene=s;
 }
@@ -89,7 +87,7 @@ function resize(){if(!renderer||!camera)return;const w=Math.max(1,mount.clientWi
 window.addEventListener("resize",resize);
 function updateState(){
  const world=layoutToWorld(activeScene,{x:position.x/manifest.coordinate_contract.meters_per_layout_unit,y:position.z/manifest.coordinate_contract.meters_per_layout_unit},manifest.coordinate_contract);
- $("#state-output").textContent=JSON.stringify({scene_id:activeScene.id,scene_name:activeScene.name,local_position:{...position,unit:"m"},world_position:world,walking:path.length>0,autonomous_exploration:auto,colliders:activeScene.obstacles.length,coordinate_status:"authored_virtual_world_frame"},null,2);
+ $("#state-output").textContent=JSON.stringify({scene_id:activeScene.id,scene_name:activeScene.name,local_position:{...position,unit:"m"},world_position:world,walking:path.length>0,colliders:activeScene.obstacles.length,coordinate_status:"authored_virtual_world_frame"},null,2);
  const frame=createRuntimePerception({scene:activeScene,position,heading:avatarHeading});
  $("#perception-output").textContent=JSON.stringify(frame,null,2);
  latestSceneFrame={schema:"zhi.mia.browser-scene-frame.v1",subject:"prototype-mia",identity_id:"cb6d01b4-0e3f-46ee-8946-360aa91db1ea",captured_at:frame.generated_at,scene:{id:activeScene.id,name:activeScene.name,coordinate_frame:"zhi-mia-virtual-world-v1",position:{x:position.x,z:position.z,unit:"m",coordinate_space:"scene-local"},world_position:world,available_anchors:activeScene.anchors.map(a=>({id:a.id,name:a.name,approach:{x:a.approach.x,z:a.approach.z}}))},heading_rad:avatarHeading,visible_entities:frame.visible_entities,recent_visits:recentVisits.slice(-12),navigation_contracts:(manifest.scene_transitions||[]),runtime:{engine:"three.js",source:"scene-graph",walkable:isWalkable(activeScene,position.x,position.z),collider_count:activeScene.obstacles.length,physical_world:false,camera_sensor:false}};
@@ -131,47 +129,6 @@ async function goToScene(id){
  const target=manifest.scenes.find(s=>s.id===id);
  setStatus("已通过已登记入口契约进入："+target.name,"导航："+route.status+"；入口坐标来自作者定义的虚拟场景坐标，不代表现实测量。");
 }
-async function requestMiaPlan(){
- const token=sessionStorage.getItem("mia_chat_token")||"";
- if(token.length<20)throw new Error("请先登录 Mia 独立聊天室，再启动 Mia 自主探索。");
- updateState();
- const response=await fetch(MIA_CHAT_URL,{method:"POST",headers:{"Content-Type":"application/json","apikey":MIA_PUBLISHABLE_KEY,"Authorization":"Bearer "+token},body:JSON.stringify({action:"scene_plan",scene_frame:latestSceneFrame}),cache:"no-store"});
- const payload=await response.json().catch(()=>({}));
- if(!response.ok||payload?.ok!==true)throw new Error(payload?.error||("Mia 规划请求失败（HTTP "+response.status+"）"));
- return payload.plan;
-}
-async function explore(){
- if(auto)return;auto=true;$("#auto-explore").disabled=true;
- setStatus("Mia 正在自主探索","每一步由 AGNES 根据当前场景帧、可达锚点和近期访问记录选择；可随时停止。");
- try{
-  while(auto){
-   const plan=await requestMiaPlan();if(!auto)break;
-   setStatus("Mia 的选择："+plan.action,plan.reason||"根据当前场景状态继续探索。");
-   if(plan.action==="visit_scene"){
-    await goToScene(plan.scene_id);
-   }else if(plan.action==="visit_anchor"){
-    if(plan.scene_id!==activeScene.id)throw new Error("规划目标场景与当前场景不一致。");
-    const anchor=activeScene.anchors.find(a=>a.id===plan.anchor_id);
-    if(!anchor)throw new Error("规划目标锚点未在当前场景注册。");
-    const p=anchorApproachToLocal(activeScene,anchor,manifest.coordinate_contract);
-    await walkTo({x:p.x,z:p.z});
-    recentVisits.push({scene_id:activeScene.id,anchor_id:anchor.id,visited_at:new Date().toISOString()});recentVisits=recentVisits.slice(-12);
-    updateState();setStatus("Mia 正在观察："+anchor.name,plan.reason||"已到达实体锚点的安全接近位置。");
-   }else if(plan.action==="return_forest"){
-    await goToScene("mia-forest-corner");
-   }else if(plan.action==="wait"){
-    setStatus("Mia 选择暂时停留",plan.reason||"等待也是有效的自主选择。");
-   }else if(plan.action==="report_unknown"){
-    setStatus("Mia 暂不移动：导航信息未知",plan.reason||"我没有可靠入口坐标，需要你提供锚点或入口信息。");
-    auto=false;
-   }else throw new Error("收到未知探索动作。");
-   renderButtons();
-   await new Promise(r=>setTimeout(r,plan.pause_ms||1200));
-  }
- }catch(e){setStatus("自主探索暂停",e.message);auto=false;}
- finally{$("#auto-explore").disabled=false;updateState();}
-}
-function stopExplore(){auto=false;cancelWalk();setStatus("已停止自主探索","代理保留在当前已验证的可行走位置。");}
 function tick(dt){
  if(path.length&&pathIndex<path.length){
   const target=path[pathIndex],dx=target.x-position.x,dz=target.z-position.z,dist=Math.hypot(dx,dz),step=2.2*dt;
@@ -188,7 +145,7 @@ function renderButtons(){
  const root=$("#destinations");root.replaceChildren();
  for(const s of manifest.scenes){const b=document.createElement("button");b.textContent=s.name;b.className=s.id===activeScene.id?"active":"";b.addEventListener("click",async()=>{try{await goToScene(s.id);renderButtons();}catch(e){setStatus("无法切换场景",e.message);}});root.append(b);}
 }
-$("#return-forest").addEventListener("click",async()=>{stopExplore();try{await goToScene("mia-forest-corner");renderButtons();}catch(e){setStatus("返回失败",e.message);}});
+$("#return-forest").addEventListener("click",async()=>{try{await goToScene("mia-forest-corner");renderButtons();}catch(e){setStatus("返回失败",e.message);}});
 $("#auto-explore").addEventListener("click",explore);
 $("#stop-explore").addEventListener("click",stopExplore);
 $("#reset-position").addEventListener("click",()=>{position={...activeScene.spawn};avatar.position.set(position.x,.45,position.z);path=[];pathIndex=0;moveResolve?.();moveResolve=null;updateState();});
@@ -200,8 +157,8 @@ try{
  if(requestedDestination&&requestedDestination!=="mia-forest-corner"){
   goToScene(requestedDestination).then(renderButtons).catch(error=>setStatus("目的地暂不可直达",error.message));
  }
- $("#runtime-tags").innerHTML=["7 个场景运行时框架","6 个既有场景几何 + 皇宫占位画布","碰撞体与 A* 路径检查","皇宫双向自由通行入口","无需注册或审核"].map(x=>'<span class="badge">'+x+'</span>').join("");
- setStatus("七个场景空间运行时已就绪","虚拟米制坐标、场景几何和路径契约校验通过；皇宫几何仍为占位画布，目录坐标未映射。");
+ $("#runtime-tags").innerHTML=["面向公众开放","七处公共场景","场景行走与碰撞检查","已登记的双向入口","无需注册或登录"].map(x=>'<span class="badge">'+x+'</span>').join("");
+ setStatus("公共访客场景已就绪","访客可自由浏览已登记的场景；皇宫几何仍为占位画布，目录坐标未映射。");
 }catch(e){setStatus("运行时载入失败",e.message);console.error(e);}
 </script>
 </body></html>

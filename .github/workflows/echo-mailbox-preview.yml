@@ -71,3 +71,12 @@ jobs:
             exit 1
           fi
           echo "Activation flags and required server secrets are present. Empty test payload was rejected before persistence or AGNES."
+          archive_status=$(curl --silent --show-error --output /tmp/echo-public-archive.json --write-out '%{http_code}' \
+            'https://dbooikzqprnqbgpfwsze.supabase.co/rest/v1/echo_publications?select=id&limit=1' \
+            --header 'apikey: sb_publishable_spH47ZngJJTk13cpYPBjSw_X5qAsBmK')
+          if [ "$archive_status" != "200" ] || ! jq -e 'type == "array"' /tmp/echo-public-archive.json >/dev/null; then
+            echo "Echo public archive read failed (HTTP $archive_status)"
+            cat /tmp/echo-public-archive.json
+            exit 1
+          fi
+          echo "Public archive read endpoint is available; RLS limits rows to published, non-withdrawn echoes."

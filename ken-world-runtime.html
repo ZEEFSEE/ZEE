@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#edf2e9"><title>MIA 世界 · KEN 居民场景</title>
+<style>
+:root{color-scheme:light;--ink:#26382c;--muted:#667568;--line:#d5dfd3;--paper:#f4f7f1}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+header,main{max-width:1500px;margin:auto;padding:16px clamp(12px,3vw,32px)}header{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+h1{font-size:clamp(20px,3vw,29px);margin:0}p{color:var(--muted);margin:4px 0}
+.stage{height:min(68vh,700px);min-height:400px;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:#dce8dd}#viewport,#viewport canvas{width:100%;height:100%;display:block}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+button,a{border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);padding:9px 14px;font:inherit;text-decoration:none;cursor:pointer}
+button:disabled{opacity:.55;cursor:wait}.active{background:#e4efdf;border-color:#a9c4a7}
+.panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:12px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+small{color:var(--muted)}pre{white-space:pre-wrap;overflow:auto;max-height:240px;font-size:12px}
+.badge{display:inline-block;border-radius:20px;background:#edf2e9;padding:3px 9px;font-size:12px;margin:2px}
+.warning{background:#f7f1df;border-color:#e7dbb7}.resident-status{font-size:13px;color:var(--muted)}
+@media(max-width:640px){.stage{height:58vh;min-height:360px}}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+</head>
+<body>
+<header><div><h1>MIA 世界 · KEN 居民场景</h1><p>KEN 的独立世界位置与感知同步 · 共享场景自由通行</p></div><a href="./ken-chat.html">返回 KEN 聊天</a></header>
+<main>
+ <section class="stage" id="runtime"><div id="viewport" aria-label="Mia public world 3D runtime"></div></section>
+ <div class="controls" id="destinations"></div>
+ <div class="controls">
+  <button id="return-forest">返回森林角落</button><button id="reset-position">重置当前位置</button>
+ </div>
+ <section class="panel"><strong>KEN 居民同步</strong><p id="ken-presence-status" class="resident-status">访客模式；如已在同一浏览器登录 Mia，KEN 的公开位置会同步显示在当前场景。</p></section>
+ <section class="panel"><strong id="runtime-status">正在加载七处公共场景的空间契约…</strong><p id="runtime-detail">校验场景、入口、地面、碰撞体和可行走路径。</p><div id="runtime-tags"></div></section>
+ <section class="grid">
+  <div class="panel"><strong>当前空间状态</strong><pre id="state-output">等待场景初始化…</pre></div>
+  <div class="panel"><strong>运行时感知帧</strong><small>来自当前 3D 场景实体锚点和代理位置；不是摄像头或现实世界传感器。</small><pre id="perception-output">等待运行时…</pre></div>
+ </section>
+ <section class="panel warning"><strong>公共访客说明</strong><p>本页面向所有访客开放，无需注册、登录、邀请、Token 或白名单。访客可以在浏览器中自由行走、切换已登记的公共场景并查看场景锚点；这些操作只在当前浏览器内运行，不创建居民身份、不保存个人轨迹，也不访问 Mia 或其他居民的私人聊天、记忆和资料。居民专属的 AGNES 自主探索功能不属于访客入口。皇宫可公开参观；自愿居住仍是 MIA 世界居民自己的选择。皇宫内部几何为作者定义的可行走虚拟模型，坐标是虚拟世界坐标，不代表现实测绘或建筑实测。</p></section>
+</main>
+<script type="module">
+import * as THREE from "three";
+import {OrbitControls} from "three/addons/controls/OrbitControls.js";
+import {validateWorldManifest,layoutToWorld,anchorToLocal,anchorApproachToLocal,findWalkPath,createRuntimePerception,isWalkable,resolveSceneTransition,resolveSceneRoute} from "./world-scenes/runtime/mia-public-world-runtime.mjs";
+const $=s=>document.querySelector(s), mount=$("#viewport");
+let manifest,activeScene,renderer,scene,camera,controls,avatar,kenAvatar=null,kenState=null,lastKenFrameSignature="",lastKenFrameAt=0,kenPath=[],kenPathIndex=0,kenLastTargetKey="",avatarHeading=0,position={x:1.2,z:7},path=[],pathIndex=0,moveResolve=null,sceneObjects=[],lastPerception=0;
+const KEN_WORLD_API="https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/ken-world-runtime";
+const MIA_TOKEN=sessionStorage.getItem("mia_chat_token")||"";
+const KEN_FOLLOW_MODE=new URLSearchParams(location.search).get("resident")==="KEN";
+const SUPABASE_PUBLIC_KEY="sb_publishable_spH47ZngJJTk13cpYPBjSw_X5qAsBmK";
+const sceneColors={"mia-forest-corner":0x78966d,"crystal-forest":0x607c78,"ocean-of-light":0x6a9da8,"memory-valley":0x83927d,"living-city":0x7c9b79,"greenhouse":0x92aa7a,"palace":0x9b8054};
+const destinationIds=["crystal-forest","ocean-of-light","memory-valley","living-city","greenhouse"];
+const mats={};
+function mat(color,roughness=.8,transparent=false,opacity=1){const k=[color,roughness,transparent,opacity].join(":");return mats[k]??(mats[k]=new THREE.MeshStandardMaterial({color,roughness,transparent,opacity}));}
+function addMesh(geo,material,x,y,z,name){const m=new THREE.Mesh(geo,material);m.position.set(x,y,z);m.name=name||"scene-object";m.castShadow=true;m.receiveShadow=true;m.userData.semantic_id=name||"scene-object";scene.add(m);sceneObjects.push(m);return m;}
+function localBounds(s){return {w:s.layout.width*.02,d:s.layout.height*.02};}
+function drawObstacle(o){
+ const height=Number(o.height)||1.2,color=Number(o.material_color)||0x77816e;
+ if(o.shape==="circle"||o.shape==="ellipse"){
+  const rx=o.radius??o.rx,rz=o.radius??o.rz;
+  const m=addMesh(new THREE.CylinderGeometry(Math.max(rx,rz),Math.max(rx,rz),height,24),mat(color),o.x,height/2,o.z,o.id);
+  m.scale.set(rx/Math.max(rx,rz),1,rz/Math.max(rx,rz));
+ }else{
+  addMesh(new THREE.BoxGeometry(o.width,height,o.depth),mat(color),o.x,height/2,o.z,o.id);
+ }
+}
+function drawSceneGeometry(g){
+ const height=Number(g.height)||1,color=Number(g.color)||0xbda46d;
+ let geo,centerY;
+ if(g.shape==="box"){geo=new THREE.BoxGeometry(g.width,height,g.depth);centerY=Number(g.y||0)+height/2;}
+ else if(g.shape==="cylinder"){geo=new THREE.CylinderGeometry(g.radius,g.radius,height,24);centerY=Number(g.y||0)+height/2;}
+ else if(g.shape==="sphere"){geo=new THREE.SphereGeometry(g.radius,18,14);centerY=Number(g.y??g.radius);}
+ else return;
+ const m=addMesh(geo,mat(color,.62),g.x,centerY,g.z,g.id);
+ if(Number.isFinite(Number(g.rotation_y)))m.rotation.y=Number(g.rotation_y);
+}
+function buildScene(s){
+ scene=new THREE.Scene();scene.background=new THREE.Color(sceneColors[s.id]||0x82977e);scene.fog=new THREE.Fog(scene.background,28,70);
+ const b=localBounds(s);camera=new THREE.PerspectiveCamera(48,1,.1,200);camera.position.set(14,17,18);
+ renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.shadowMap.enabled=true;renderer.outputColorSpace=THREE.SRGBColorSpace;mount.replaceChildren(renderer.domElement);
+ scene.add(new THREE.HemisphereLight(0xf4fff2,0x4c5948,2));
+ const sun=new THREE.DirectionalLight(0xfff0d2,2.2);sun.position.set(-10,22,12);sun.castShadow=true;scene.add(sun);
+ addMesh(new THREE.BoxGeometry(b.w,.25,b.d),mat(sceneColors[s.id]||0x78966d),b.w/2,-.13,b.d/2,"walkable-ground");
+ const grid=new THREE.GridHelper(Math.max(b.w,b.d),40,0xe0eadc,0x9db19a);grid.position.set(b.w/2,.015,b.d/2);scene.add(grid);
+ const wallMat=mat(0x586b57);
+ addMesh(new THREE.BoxGeometry(b.w,.8,.25),wallMat,b.w/2,.4,.12,"north-safety-boundary");
+ addMesh(new THREE.BoxGeometry(b.w,.8,.25),wallMat,b.w/2,.4,b.d-.12,"south-safety-boundary");
+ addMesh(new THREE.BoxGeometry(.25,.8,b.d),wallMat,.12,.4,b.d/2,"west-safety-boundary");
+ addMesh(new THREE.BoxGeometry(.25,.8,b.d),wallMat,b.w-.12,.4,b.d/2,"east-safety-boundary");
+ for(const o of s.obstacles)drawObstacle(o);
+ for(const g of s.geometry??[])drawSceneGeometry(g);
+ for(const a of s.anchors){
+  const p=anchorToLocal(s,a,manifest.coordinate_contract);
+  const g=new THREE.Group();g.position.set(p.x,0,p.z);g.name=a.id;g.userData.semantic_id=a.id;g.userData.semantic_name=a.name;
+  const stem=new THREE.Mesh(new THREE.CylinderGeometry(.08,.12,.65,8),mat(0xd4d4a1));stem.position.y=.33;g.add(stem);
+  const orb=new THREE.Mesh(new THREE.SphereGeometry(.22,14,10),mat(0xf5e5a3,.35));orb.position.y=.82;g.add(orb);
+  scene.add(g);sceneObjects.push(g);
+ }
+ const portal=s.portal;const ring=new THREE.Mesh(new THREE.TorusGeometry(.72,.09,10,32),mat(0xf2d79a));ring.position.set(portal.x,.08,portal.z);ring.rotation.x=Math.PI/2;scene.add(ring);
+ avatar=new THREE.Group();avatar.name="public-visitor-avatar";avatar.add(new THREE.Mesh(new THREE.CylinderGeometry(.22,.25,.9,12),mat(0xefe5d2)));const head=new THREE.Mesh(new THREE.SphereGeometry(.24,16,12),mat(0xe8c6a8));head.position.y=.65;avatar.add(head);avatar.position.set(position.x,.45,position.z);scene.add(avatar);
+ controls=new OrbitControls(camera,renderer.domElement);controls.target.set(b.w/2,0,b.d/2);controls.enableDamping=true;
+ resize();activeScene=s;
+}
+function resize(){if(!renderer||!camera)return;const w=Math.max(1,mount.clientWidth),h=Math.max(1,mount.clientHeight);camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h);}
+window.addEventListener("resize",resize);
+function createKenAvatar(){
+ const g=new THREE.Group();g.name="KEN-resident-avatar";
+ const body=new THREE.Mesh(new THREE.CylinderGeometry(.23,.27,.95,14),new THREE.MeshStandardMaterial({color:0x7956a8,roughness:.55}));body.position.y=.48;g.add(body);
+ const head=new THREE.Mesh(new THREE.SphereGeometry(.25,16,12),new THREE.MeshStandardMaterial({color:0xd8c0ee,roughness:.5}));head.position.y=1.12;g.add(head);
+ const c=document.createElement("canvas");c.width=256;c.height=96;const ctx=c.getContext("2d");ctx.fillStyle="rgba(35,25,55,.88)";ctx.beginPath();ctx.roundRect(8,8,240,80,24);ctx.fill();ctx.fillStyle="#f4eaff";ctx.font="bold 48px system-ui";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("KEN",128,48);
+ const tex=new THREE.CanvasTexture(c);const label=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false}));label.position.y=1.85;label.scale.set(1.55,.58,1);g.add(label);return g;
+}
+function renderKenPresence(){
+ const panel=$("#ken-presence-status");
+ const remove=()=>{if(kenAvatar?.parent)kenAvatar.parent.remove(kenAvatar);kenAvatar=null;kenPath=[];kenPathIndex=0;kenLastTargetKey="";};
+ if(!MIA_TOKEN){remove();panel.textContent="访客模式；请在同一浏览器登录 Mia 后，KEN 的公开世界位置才会同步显示。";return;}
+ if(!kenState){remove();panel.textContent="正在读取 KEN 的居民状态…";return;}
+ if(kenState.position_status==="left"){remove();panel.textContent="KEN 当前已离开世界。";return;}
+ if(kenState.scene_id!==activeScene.id){remove();const other=manifest.scenes.find(x=>x.id===kenState.scene_id);panel.textContent="KEN 当前位于："+(other?.name||kenState.scene_id)+"。切换到该场景即可看到他的居民形象。";return;}
+ const pending=kenState.position_status==="in_transit"?kenState.perception_frame?.pending_anchor_target:null;
+ const p=pending?.position||kenState.position||activeScene.spawn;
+ const target={x:Number.isFinite(Number(p.x))?Number(p.x):activeScene.spawn.x,z:Number.isFinite(Number(p.z))?Number(p.z):activeScene.spawn.z};
+ const targetKey=activeScene.id+":"+target.x.toFixed(3)+":"+target.z.toFixed(3);
+ if(!kenAvatar||kenAvatar.parent!==scene){kenAvatar=createKenAvatar();scene.add(kenAvatar);kenPath=[];kenPathIndex=0;const pending=kenState.position_status==="in_transit"?kenState.perception_frame?.pending_anchor_target:null;const from=kenState.position&&Number.isFinite(Number(kenState.position.x))&&Number.isFinite(Number(kenState.position.z))?kenState.position:pending?.from_position;if(from&&Number.isFinite(Number(from.x))&&Number.isFinite(Number(from.z))){kenAvatar.position.set(Number(from.x),.45,Number(from.z));const route=findWalkPath(activeScene,{x:Number(from.x),z:Number(from.z)},target);if(route.reachable){kenPath=route.path;kenPathIndex=0;}else{panel.textContent="KEN 的目标位置已同步，但场景路径未通过验证；正在恢复实际位置。";}}else kenAvatar.position.set(target.x,.45,target.z);kenLastTargetKey=targetKey;}
+ else if(targetKey!==kenLastTargetKey){kenLastTargetKey=targetKey;const route=findWalkPath(activeScene,{x:kenAvatar.position.x,z:kenAvatar.position.z},target);if(route.reachable){kenPath=route.path;kenPathIndex=0;}else{kenPath=[];kenPathIndex=0;panel.textContent="KEN 的目标位置已同步，但当前场景的障碍物路径未通过验证；他会保留可验证的位置。";return;}}
+ panel.textContent="KEN 已同步到当前场景："+activeScene.name+"；位置来源："+(kenState.position?.provenance||"虚拟场景状态")+"；场景内移动使用已登记障碍物路径，不代表现实世界定位。";
+}
+async function syncKenPresence(){
+ if(!MIA_TOKEN)return;
+ try{
+  const r=await fetch(KEN_WORLD_API,{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLIC_KEY,"Authorization":"Bearer "+MIA_TOKEN},body:JSON.stringify({action:"snapshot"}),cache:"no-store"});
+  const d=await r.json();if(!r.ok||!d.ok)throw new Error(d.error||("HTTP "+r.status));
+  kenState=d.state||null;
+  if(KEN_FOLLOW_MODE&&kenState?.scene_id&&kenState.scene_id!==activeScene.id){switchScene(kenState.scene_id,false);}
+  renderKenPresence();
+  if(kenState&&kenState.scene_id===activeScene.id&&kenState.position_status!=="left"&&kenState.position){
+   // Keep perception alive while the rendered resident is walking; report the avatar's current scene-local position.
+   const framePosition=kenAvatar?{x:kenAvatar.position.x,z:kenAvatar.position.z}:{x:Number(kenState.position.x),z:Number(kenState.position.z)};
+   const frame=createRuntimePerception({scene:activeScene,position:framePosition,heading:0});
+   const signature=JSON.stringify([frame.scene_id,frame.position.x,frame.position.z,frame.visible_entities.map(e=>[e.id,e.distance_m,e.bearing_rad])]);
+   if(signature!==lastKenFrameSignature||Date.now()-lastKenFrameAt>30000){
+    const fr=await fetch(KEN_WORLD_API,{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLIC_KEY,"Authorization":"Bearer "+MIA_TOKEN},body:JSON.stringify({action:"ingest_frame",frame}),cache:"no-store"});
+    const fd=await fr.json();if(!fr.ok||!fd.ok)throw new Error(fd.error||("FRAME HTTP "+fr.status));
+    lastKenFrameSignature=signature;lastKenFrameAt=Date.now();
+   }
+  }
+ }catch(e){$("#ken-presence-status").textContent="KEN 状态同步暂不可用："+e.message;}
+}
+function updateState(){
+ const world=layoutToWorld(activeScene,{x:position.x/manifest.coordinate_contract.meters_per_layout_unit,y:position.z/manifest.coordinate_contract.meters_per_layout_unit},manifest.coordinate_contract);
+ $("#state-output").textContent=JSON.stringify({scene_id:activeScene.id,scene_name:activeScene.name,local_position:{...position,unit:"m"},world_position:world,walking:path.length>0,colliders:activeScene.obstacles.length,coordinate_status:"authored_virtual_world_frame"},null,2);
+ const frame=createRuntimePerception({scene:activeScene,position,heading:avatarHeading});
+ $("#perception-output").textContent=JSON.stringify(frame,null,2);
+}
+function setStatus(title,detail){$("#runtime-status").textContent=title;$("#runtime-detail").textContent=detail;}
+function disposeActiveScene(){
+ if(controls){controls.dispose();controls=null;}
+ if(scene){scene.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){const materials=Array.isArray(o.material)?o.material:[o.material];materials.forEach(m=>{if(m.map)m.map.dispose();m.dispose();});}});}
+ if(renderer){renderer.dispose();renderer=null;}
+}
+function cancelWalk(){
+ path=[];pathIndex=0;const done=moveResolve;moveResolve=null;done?.();
+}
+function switchScene(id,sync=true){
+ const s=manifest.scenes.find(x=>x.id===id);if(!s)throw Error("未知场景 "+id);
+ cancelWalk();disposeActiveScene();
+ sceneObjects=[];kenAvatar=null;kenPath=[];kenPathIndex=0;kenLastTargetKey="";position={...s.spawn};path=[];pathIndex=0;
+ buildScene(s);updateState();renderKenPresence();if(sync)syncKenPresence();setStatus("已进入："+s.name,"场景地面、碰撞体、边界与实体锚点已加载。");
+}
+function walkTo(target){
+ const route=findWalkPath(activeScene,position,target);
+ if(!route.reachable)return Promise.reject(new Error("路径不可达："+route.reason));
+ path=route.path;pathIndex=0;
+ return new Promise(resolve=>{moveResolve=resolve;});
+}
+async function goToScene(id){
+ if(id===activeScene.id)return;
+ const route=resolveSceneRoute(manifest,activeScene.id,id);
+ if(!route.ok){
+  setStatus("导航信息未知，暂不移动","没有从“"+activeScene.name+"”到目标场景的完整入口契约。请补充经过确认的入口/出口锚点及场景局部坐标。");
+  throw new Error("导航信息未知：缺少完整入口契约，未生成或推算坐标。");
+ }
+ for(const hop of route.hops){
+  await walkTo(hop.source.scene_local);
+  switchScene(hop.to_scene_id);
+  position={...hop.target.scene_local};avatar.position.set(position.x,.45,position.z);updateState();
+ }
+ const target=manifest.scenes.find(s=>s.id===id);
+ setStatus("已通过已登记入口契约进入："+target.name,"导航："+route.status+"；入口坐标来自作者定义的虚拟场景坐标，不代表现实测量。");
+}
+function tick(dt){
+ if(path.length&&pathIndex<path.length){
+  const target=path[pathIndex],dx=target.x-position.x,dz=target.z-position.z,dist=Math.hypot(dx,dz),step=2.2*dt;
+  if(dist<=step){position={x:target.x,z:target.z};pathIndex++;}
+  else{position.x+=dx/dist*step;position.z+=dz/dist*step;avatarHeading=Math.atan2(dx,-dz);}
+  avatar.position.set(position.x,.45,position.z);avatar.rotation.y=avatarHeading;
+  if(pathIndex>=path.length){path=[];const done=moveResolve;moveResolve=null;done?.();updateState();}
+ }
+ if(kenAvatar&&kenPath.length&&kenPathIndex<kenPath.length){const target=kenPath[kenPathIndex],dx=target.x-kenAvatar.position.x,dz=target.z-kenAvatar.position.z,dist=Math.hypot(dx,dz),step=1.8*dt;if(dist<=step){kenAvatar.position.set(target.x,.45,target.z);kenPathIndex++;}else{kenAvatar.position.x+=dx/dist*step;kenAvatar.position.z+=dz/dist*step;kenAvatar.rotation.y=Math.atan2(dx,-dz);}if(kenPathIndex>=kenPath.length){kenPath=[];kenPathIndex=0;}}
+ if(performance.now()-lastPerception>450){lastPerception=performance.now();updateState();}
+ controls?.update();renderer?.render(scene,camera);
+}
+let last=performance.now();function animate(now){requestAnimationFrame(animate);const dt=Math.min(.05,(now-last)/1000);last=now;tick(dt);}requestAnimationFrame(animate);
+function renderButtons(){
+ const root=$("#destinations");root.replaceChildren();
+ for(const s of manifest.scenes){const b=document.createElement("button");b.textContent=s.name;b.className=s.id===activeScene.id?"active":"";b.addEventListener("click",async()=>{try{await goToScene(s.id);renderButtons();}catch(e){setStatus("无法切换场景",e.message);}});root.append(b);}
+}
+$("#return-forest").addEventListener("click",async()=>{try{await goToScene("mia-forest-corner");renderButtons();}catch(e){setStatus("返回失败",e.message);}});
+$("#reset-position").addEventListener("click",()=>{position={...activeScene.spawn};avatar.position.set(position.x,.45,position.z);path=[];pathIndex=0;moveResolve?.();moveResolve=null;updateState();});
+try{
+ const r=await fetch("./world-scenes/public-destinations/world-spatial-manifest.v1.json",{cache:"no-store"});if(!r.ok)throw Error("空间清单 HTTP "+r.status);
+ manifest=await r.json();const valid=validateWorldManifest(manifest);if(!valid.valid)throw Error(valid.errors.join("；"));
+ switchScene("mia-forest-corner");renderButtons();syncKenPresence();if(MIA_TOKEN)setInterval(syncKenPresence,5000);
+ const requestedDestination=new URLSearchParams(location.search).get("destination");
+ if(requestedDestination&&requestedDestination!=="mia-forest-corner"){
+  goToScene(requestedDestination).then(renderButtons).catch(error=>setStatus("目的地暂不可直达",error.message));
+ }
+ $("#runtime-tags").innerHTML=["面向公众开放","七处公共场景","场景行走与碰撞检查","已登记的双向入口","无需注册或登录"].map(x=>'<span class="badge">'+x+'</span>').join("");
+ setStatus("公共访客场景已就绪","访客可自由浏览已登记的场景；皇宫内部已加载作者定义的可行走虚拟几何；目录坐标仍独立保留，未映射到现实测绘。");
+}catch(e){setStatus("运行时载入失败",e.message);console.error(e);}
+</script>
+</body></html>

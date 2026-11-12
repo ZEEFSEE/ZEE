@@ -1,0 +1,2 @@
+[functions.mia-stock-query]
+verify_jwt = false

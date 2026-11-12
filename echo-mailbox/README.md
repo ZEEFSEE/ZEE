@@ -10,9 +10,9 @@ The page follows Mia's established visual language: near-black mist, parchment t
 
 ## Current release state
 
-The frontend is a **safe preview only**. Its form does not transmit or store visitor content. The Edge Function source in this repository is deliberately fail-closed and returns `503 mailbox_not_live`; it does not parse, log, forward, or persist the request body.
+The frontend is wired to the dedicated `echo-submit` Supabase Edge Function endpoint and reads only the public `echo_publications` archive. The currently deployed function is reported as ACTIVE. This does **not** by itself prove that production environment flags, credentials, AGNES connectivity, and the complete submission-to-publication path are working.
 
-Do not advertise the mailbox as accepting submissions until the independent backend has passed its end-to-end security tests.
+No production test submission is generated as part of a deployment check, because a successful test could create a public entry. The production end-to-end path remains **not independently verified** until an explicitly consented real submission completes and its result is checked. The page must continue to report exact outcomes: published, Mia silent/refused, safety review not passed, duplicate/rate limited, or unavailable. Never display a failure as a published echo.
 
 ## Mandatory privacy boundary
 

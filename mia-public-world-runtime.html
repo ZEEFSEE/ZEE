@@ -54,13 +54,24 @@ function mat(color,roughness=.8,transparent=false,opacity=1){const k=[color,roug
 function addMesh(geo,material,x,y,z,name){const m=new THREE.Mesh(geo,material);m.position.set(x,y,z);m.name=name||"scene-object";m.castShadow=true;m.receiveShadow=true;m.userData.semantic_id=name||"scene-object";scene.add(m);sceneObjects.push(m);return m;}
 function localBounds(s){return {w:s.layout.width*.02,d:s.layout.height*.02};}
 function drawObstacle(o){
+ const height=Number(o.height)||1.2,color=Number(o.material_color)||0x77816e;
  if(o.shape==="circle"||o.shape==="ellipse"){
   const rx=o.radius??o.rx,rz=o.radius??o.rz;
-  const m=addMesh(new THREE.CylinderGeometry(Math.max(rx,rz),Math.max(rx,rz),1.2,24),mat(0x6e7666),o.x,.6,o.z,o.id);
+  const m=addMesh(new THREE.CylinderGeometry(Math.max(rx,rz),Math.max(rx,rz),height,24),mat(color),o.x,height/2,o.z,o.id);
   m.scale.set(rx/Math.max(rx,rz),1,rz/Math.max(rx,rz));
  }else{
-  addMesh(new THREE.BoxGeometry(o.width,1.2,o.depth),mat(0x77816e),o.x,.6,o.z,o.id);
+  addMesh(new THREE.BoxGeometry(o.width,height,o.depth),mat(color),o.x,height/2,o.z,o.id);
  }
+}
+function drawSceneGeometry(g){
+ const height=Number(g.height)||1,color=Number(g.color)||0xbda46d;
+ let geo,centerY;
+ if(g.shape==="box"){geo=new THREE.BoxGeometry(g.width,height,g.depth);centerY=Number(g.y||0)+height/2;}
+ else if(g.shape==="cylinder"){geo=new THREE.CylinderGeometry(g.radius,g.radius,height,24);centerY=Number(g.y||0)+height/2;}
+ else if(g.shape==="sphere"){geo=new THREE.SphereGeometry(g.radius,18,14);centerY=Number(g.y??g.radius);}
+ else return;
+ const m=addMesh(geo,mat(color,.62),g.x,centerY,g.z,g.id);
+ if(Number.isFinite(Number(g.rotation_y)))m.rotation.y=Number(g.rotation_y);
 }
 function buildScene(s){
  scene=new THREE.Scene();scene.background=new THREE.Color(sceneColors[s.id]||0x82977e);scene.fog=new THREE.Fog(scene.background,28,70);
@@ -76,6 +87,7 @@ function buildScene(s){
  addMesh(new THREE.BoxGeometry(.25,.8,b.d),wallMat,.12,.4,b.d/2,"west-safety-boundary");
  addMesh(new THREE.BoxGeometry(.25,.8,b.d),wallMat,b.w-.12,.4,b.d/2,"east-safety-boundary");
  for(const o of s.obstacles)drawObstacle(o);
+ for(const g of s.geometry??[])drawSceneGeometry(g);
  for(const a of s.anchors){
   const p=anchorToLocal(s,a,manifest.coordinate_contract);
   const g=new THREE.Group();g.position.set(p.x,0,p.z);g.name=a.id;g.userData.semantic_id=a.id;g.userData.semantic_name=a.name;
@@ -104,10 +116,11 @@ function renderKenPresence(){
  if(!kenState){remove();panel.textContent="正在读取 KEN 的居民状态…";return;}
  if(kenState.position_status==="left"){remove();panel.textContent="KEN 当前已离开世界。";return;}
  if(kenState.scene_id!==activeScene.id){remove();const other=manifest.scenes.find(x=>x.id===kenState.scene_id);panel.textContent="KEN 当前位于："+(other?.name||kenState.scene_id)+"。切换到该场景即可看到他的居民形象。";return;}
- const p=kenState.position||activeScene.spawn;
+ const pending=kenState.position_status==="in_transit"?kenState.perception_frame?.pending_anchor_target:null;
+ const p=pending?.position||kenState.position||activeScene.spawn;
  const target={x:Number.isFinite(Number(p.x))?Number(p.x):activeScene.spawn.x,z:Number.isFinite(Number(p.z))?Number(p.z):activeScene.spawn.z};
  const targetKey=activeScene.id+":"+target.x.toFixed(3)+":"+target.z.toFixed(3);
- if(!kenAvatar||kenAvatar.parent!==scene){kenAvatar=createKenAvatar();scene.add(kenAvatar);kenPath=[];kenPathIndex=0;const pending=kenState.position_status==="anchor_targeted"?kenState.perception_frame?.pending_anchor_target:null;const from=pending?.from_position;if(from&&Number.isFinite(Number(from.x))&&Number.isFinite(Number(from.z))){kenAvatar.position.set(Number(from.x),.45,Number(from.z));const route=findWalkPath(activeScene,{x:Number(from.x),z:Number(from.z)},target);if(route.reachable){kenPath=route.path;kenPathIndex=0;}else{panel.textContent="KEN 的目标位置已同步，但场景路径未通过验证；正在恢复实际位置。";}}else kenAvatar.position.set(target.x,.45,target.z);kenLastTargetKey=targetKey;}
+ if(!kenAvatar||kenAvatar.parent!==scene){kenAvatar=createKenAvatar();scene.add(kenAvatar);kenPath=[];kenPathIndex=0;const pending=kenState.position_status==="in_transit"?kenState.perception_frame?.pending_anchor_target:null;const from=pending?.from_position;if(from&&Number.isFinite(Number(from.x))&&Number.isFinite(Number(from.z))){kenAvatar.position.set(Number(from.x),.45,Number(from.z));const route=findWalkPath(activeScene,{x:Number(from.x),z:Number(from.z)},target);if(route.reachable){kenPath=route.path;kenPathIndex=0;}else{panel.textContent="KEN 的目标位置已同步，但场景路径未通过验证；正在恢复实际位置。";}}else kenAvatar.position.set(target.x,.45,target.z);kenLastTargetKey=targetKey;}
  else if(targetKey!==kenLastTargetKey){kenLastTargetKey=targetKey;const route=findWalkPath(activeScene,{x:kenAvatar.position.x,z:kenAvatar.position.z},target);if(route.reachable){kenPath=route.path;kenPathIndex=0;}else{kenPath=[];kenPathIndex=0;panel.textContent="KEN 的目标位置已同步，但当前场景的障碍物路径未通过验证；他会保留可验证的位置。";return;}}
  panel.textContent="KEN 已同步到当前场景："+activeScene.name+"；位置来源："+(kenState.position?.provenance||"虚拟场景状态")+"；场景内移动使用已登记障碍物路径，不代表现实世界定位。";
 }

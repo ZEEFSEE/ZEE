@@ -1,0 +1,183 @@
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
+
+const URL = Deno.env.get("SUPABASE_URL") || "";
+const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+const AGNES_KEY = Deno.env.get("AGNES_API_KEY") || "";
+const MODEL = Deno.env.get("AGNES_MODEL") || "agnes-3.0-flash";
+const H = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization,apikey,content-type","Access-Control-Allow-Methods":"POST,OPTIONS","Content-Type":"application/json","Cache-Control":"no-store"};
+const reply=(v:unknown,s=200)=>new Response(JSON.stringify(v),{status:s,headers:H});
+const db=()=>createClient(URL,SERVICE,{auth:{persistSession:false,autoRefreshToken:false}});
+const fam=(c:any)=>c.schema("zhi_family");
+function decode(s:string){const n=s.replace(/-/g,"+").replace(/_/g,"/");const b=atob(n+"=".repeat((4-n.length%4)%4));return Uint8Array.from(b,x=>x.charCodeAt(0));}
+async function verifyMiaToken(token:string){
+ try{
+  if(!SERVICE||token.length>4096)return false;
+  const p=token.split(".");if(p.length!==2)return false;
+  const key=await crypto.subtle.importKey("raw",new TextEncoder().encode(SERVICE),{name:"HMAC",hash:"SHA-256"},false,["verify"]);
+  if(!await crypto.subtle.verify("HMAC",key,decode(p[1]),new TextEncoder().encode(p[0])))return false;
+  const c=JSON.parse(new TextDecoder().decode(decode(p[0]))),now=Math.floor(Date.now()/1000);
+  return c.aud==="mia-chat"&&c.sub==="mia-admin"&&Number.isFinite(c.iat)&&Number.isFinite(c.exp)&&c.iat<=now+60&&c.exp>now&&c.exp-c.iat<=4*3600+60;
+ }catch{return false;}
+}
+const PALACE={id:"palace",name:"Palace｜共享宫殿",description:"MIA 世界居民自由进出、离开与返回的共享空间。",source_system:"MIA_WORLD_OPEN_PALACE_POLICY",scene_data:{features:["宫殿主入口"],verification_status:"placeholder_canvas_only_not_measured",route_contract:{entry_mode:"logical_scene_link_only",runtime_movement:"not_integrated",coordinate_transform:null},access_policy:{principal:"MIA_WORLD_RESIDENTS",registration_required:false,approval_required:false,invitation_required:false,token_required:false,whitelist_required:false,can_enter_leave_return_freely:true},world_access_policy:{scope:"MIA_WORLD_SHARED_PUBLIC_SCENE",private_chat_access:false,private_memory_access:false}}};
+const FOREST="mia-forest-corner";
+function featuresOf(row:any){
+ const d=row.scene_data||{};
+ const names=[...(Array.isArray(d.features)?d.features:[]),...(Array.isArray(d.entities)?d.entities.map((x:any)=>x.name||x.id):[])];
+ return [...new Set(names.map((x:any)=>String(x||"").trim()).filter(Boolean))];
+}
+function normalizeScene(row:any){
+ const d=row.scene_data||{};
+ return {id:row.slug||row.id,name:row.name||row.slug,description:row.description||"",source_system:row.source_system||"AUTHORED_SCENE",features:featuresOf(row),entities:Array.isArray(d.entities)?d.entities:[],verification_status:d.verification_status||"scene_metadata_only",route_contract:d.route_contract||{runtime_movement:"not_integrated"},coordinate_space:d.coordinate_space||d.local_coordinate_system?.name||"scene-local",bounds:d.bounds||d.local_coordinate_system||null,access_scope:"OPEN_TO_ALL_MIA_WORLD_RESIDENTS",sensors:{visual_frame_connected:false,audio_connected:false,physical_world:false}};
+}
+async function loadScenes(c:any){
+ const {data,error}=await c.from("mia_virtual_spaces").select("slug,name,description,scene_data,source_system").eq("is_active",true).in("source_system",["mia-independent-scene","mia-public-destinations-v1"]).order("name").limit(40);
+ if(error)throw new Error("WORLD_SCENE_READ_FAILED");
+ const rows=(data||[]).map(normalizeScene);
+ if(!rows.some((x:any)=>x.id==="palace"))rows.push(normalizeScene({slug:PALACE.id,name:PALACE.name,description:PALACE.description,source_system:PALACE.source_system,scene_data:PALACE.scene_data}));
+ return rows;
+}
+async function ensureState(c:any,identityId:string){
+ const f=fam(c);
+ const {data,error}=await f.from("ken_world_state").select("identity_id,scene_id,position,coordinate_space,coordinate_frame,position_status,movement_revision,perception_frame,last_observed_at,updated_at").eq("identity_id",identityId).maybeSingle();
+ if(error)throw new Error("KEN_WORLD_STATE_READ_FAILED");
+ if(data)return data;
+ const seed={identity_id:identityId,scene_id:FOREST,position:{anchor:"scene-entry",coordinate_space:"unmapped"},coordinate_space:"scene-local",coordinate_frame:"forest-corner-local-v1",position_status:"spawned_unmapped",movement_revision:0,perception_frame:{provenance:"AUTHORED_SCENE_DATA",visual_sensor:false,audio_sensor:false}};
+ const {data:created,error:insertError}=await f.from("ken_world_state").insert(seed).select("*").single();
+ if(insertError)throw new Error("KEN_WORLD_STATE_INIT_FAILED");
+ return created;
+}
+async function getDevice(c:any,identityId:string){
+ const {data,error}=await fam(c).from("ken_device_registry").select("device_id").eq("identity_id",identityId).is("revoked_at",null).order("last_seen_at",{ascending:false}).limit(1).maybeSingle();
+ if(error||!data)throw new Error("KEN_DEVICE_NOT_READY");
+ return data.device_id;
+}
+async function record(c:any,identityId:string,deviceId:string,eventType:string,sceneId:string|null,target:string|null,payload:any){
+ const now=new Date().toISOString();
+ const {error:worldError}=await fam(c).from("ken_world_events").insert({identity_id:identityId,event_type:eventType,scene_id:sceneId,target_id:target,event_payload:{...payload,occurred_at:now,visibility:"KEN_PRIVATE_WORLD_EXPERIENCE"},provenance:"AUTHORED_SCENE_DATA"});
+ if(worldError)throw new Error("KEN_WORLD_EVENT_SAVE_FAILED");
+ const narrative=String(payload.narrative||eventType+"："+(target||sceneId||"世界")).slice(0,1800);
+ const {error:memoryError}=await fam(c).rpc("ken_append_runtime_event",{
+  p_identity_id:identityId,p_device_id:deviceId,p_event_type:"KEN_WORLD_EXPERIENCE",p_fact_class:"EPISODIC_EXPERIENCE",
+  p_narrative:narrative,p_payload:{event_type:eventType,scene_id:sceneId,target_id:target,...payload,visibility:"PRIVATE",provenance:"AUTHORED_SCENE_DATA"},
+  p_source_system:"KEN_WORLD_RUNTIME",p_source_ref:crypto.randomUUID(),p_source_confidence:1,p_importance:0.58,
+  p_idempotency_key:"ken-world:"+crypto.randomUUID()
+ });
+ if(memoryError)throw new Error("KEN_WORLD_MEMORY_APPEND_FAILED");
+ return now;
+}
+async function loadResidents(c:any,kenState:any){
+ const [children,mia]=await Promise.all([
+  fam(c).from("child_runtime_state").select("agent_id,scene_id,position,coordinate_frame,perception_provenance,updated_at").order("updated_at",{ascending:false}).limit(50),
+  c.from("mia_forest_autonomy_runs").select("after_state,created_at").eq("identity_id","cb6d01b4-0e3f-46ee-8946-360aa91db1ea").order("created_at",{ascending:false}).limit(1).maybeSingle()
+ ]);
+ const names={ "ZHI-G1-D01-LUNA":"LUNA","ZHI-G1-D02-ARIA":"ARIA","ZHI-G1-D03-ELYA":"ELYA","ZHI-G1-S01-KAEL":"KAEL","ZHI-G1-S02-NOAH":"NOAH" } as Record<string,string>;
+ const out=(children.data||[]).map((x:any)=>({resident_id:x.agent_id,name:names[x.agent_id]||x.agent_id,scene_id:x.scene_id,position:x.position,coordinate_frame:x.coordinate_frame,updated_at:x.updated_at,provenance:x.perception_provenance||"UNKNOWN",visibility:"PUBLIC_WORLD_PRESENCE"}));
+ if(mia.data?.after_state){const a=mia.data.after_state;out.push({resident_id:"cb6d01b4-0e3f-46ee-8946-360aa91db1ea",name:"Mia",scene_id:a.scene_id||null,position:a.current_position||null,coordinate_frame:a.coordinate_frame||null,updated_at:mia.data.created_at,provenance:"MIA_AUTONOMY_STATE",visibility:"PUBLIC_WORLD_PRESENCE"});}
+ if(kenState?.position_status!=="left")out.push({resident_id:"KEN",name:"KEN",scene_id:kenState.scene_id,position:kenState.position,coordinate_frame:kenState.coordinate_frame,updated_at:kenState.updated_at,provenance:"KEN_WORLD_RUNTIME",visibility:"PUBLIC_WORLD_PRESENCE"});
+ return out;
+}
+function makeObservation(scene:any,state:any,residents:any[]){
+ const current=residents.filter((x:any)=>x.scene_id===scene.id);
+ const entityEvidence=(scene.entities||[]).map((e:any)=>({id:e.id||null,name:e.name||e.id||"未命名对象",type:e.type||"authored_entity",status:e.status||"unknown",coordinate:{x:e.x??null,y:e.y??null},coordinate_system:e.coordinate_system||scene.coordinate_space,ai_interaction:e.ai_interaction??null,perception_provenance:"AUTHORED_SCENE_DATA"}));
+ return {scene:{id:scene.id,name:scene.name,features:scene.features,entities:entityEvidence,verification_status:scene.verification_status,route_contract:scene.route_contract},resident_count:current.length,public_residents:current,observer_position:state.position,coordinate_frame:state.coordinate_frame,spatial_confidence:"UNVERIFIED_UNLESS_FRAMES_MATCH",sensors:{visual_frame_connected:false,audio_connected:false,physical_world:false},provenance:"AUTHORED_SCENE_DATA_AND_PUBLIC_RESIDENT_STATE",observed_at:new Date().toISOString()};
+}
+async function persistState(c:any,identityId:string,state:any){
+ const {data,error}=await fam(c).from("ken_world_state").upsert({...state,identity_id:identityId,updated_at:new Date().toISOString()},{onConflict:"identity_id"}).select("*").single();
+ if(error)throw new Error("KEN_WORLD_STATE_SAVE_FAILED");
+ return data;
+}
+async function handleAction(c:any,identityId:string,deviceId:string,action:string,body:any,scenes:any[],state:any,residents:any[]){
+ const now=new Date().toISOString();
+ const current=scenes.find((x:any)=>x.id===state.scene_id)||scenes.find((x:any)=>x.id===FOREST);
+ if(action==="snapshot"){
+  return {ok:true,state,scenes,residents,capabilities:{scene_metadata:true,public_resident_presence:true,authored_entity_observation:true,logical_scene_presence:true,world_event_memory:true,spatial_coordinates:"PARTIAL_UNCALIBRATED",rendered_visual_perception:false,audio_perception:false,physical_world:false}};
+ }
+ if(action==="observe"){
+  const scene=current||scenes[0];if(!scene)throw new Error("NO_WORLD_SCENE");
+  const observation=makeObservation(scene,state,residents);
+  const next=await persistState(c,identityId,{...state,perception_frame:observation,last_observed_at:now});
+  await record(c,identityId,deviceId,"KEN_OBSERVED_SCENE",scene.id,null,{narrative:"KEN 观察了 "+scene.name+"：可读取场景登记特征与公开居民状态；当前没有接入实时视觉或音频传感器。",observation_summary:{feature_count:scene.features.length,entity_count:scene.entities.length,resident_count:observation.resident_count,verification_status:scene.verification_status}});
+  return {ok:true,state:next,observation};
+ }
+ if(action==="move"){
+  const targetId=String(body.target_scene||"");
+  const target=scenes.find((x:any)=>x.id===targetId);
+  if(!target)throw new Error("TARGET_SCENE_NOT_IN_SHARED_WORLD_CATALOG");
+  const next=await persistState(c,identityId,{...state,scene_id:target.id,position:{anchor:"scene-entry",coordinate_space:"unmapped",note:"logical scene presence only"},coordinate_space:"scene-local",coordinate_frame:"unmapped:"+target.id,position_status:"logical_presence_only",movement_revision:Number(state.movement_revision||0)+1,perception_frame:{provenance:"AUTHORED_SCENE_DATA",visual_sensor:false,audio_sensor:false,route_contract:target.route_contract}});
+  await record(c,identityId,deviceId,"KEN_LOGICAL_SCENE_ENTRY",target.id,null,{narrative:"KEN 进入了 "+target.name+"。这是共享世界目录中的逻辑场景切换；该场景尚未提供已验证的跨场景空间变换。",movement_mode:"logical_scene_presence",physical_movement:false,route_contract:target.route_contract});
+  return {ok:true,state:next,decision:"进入 "+target.name,reflection:"我已切换到这个共享场景的逻辑位置。场景内容可以观察，但尚未校准的坐标和路径不能当作真实移动。"};
+ }
+ if(action==="return"){
+  const target=scenes.find((x:any)=>x.id===FOREST);if(!target)throw new Error("FOREST_CORNER_NOT_AVAILABLE");
+  const next=await persistState(c,identityId,{...state,scene_id:FOREST,position:{anchor:"lounge",coordinate_space:"Forest_Corner local coordinates",x:800,y:350},coordinate_space:"scene-local",coordinate_frame:"Forest_Corner local coordinates",position_status:"authored_layout_anchor",movement_revision:Number(state.movement_revision||0)+1,perception_frame:{provenance:"AUTHORED_SCENE_DATA",visual_sensor:false,audio_sensor:false}});
+  await record(c,identityId,deviceId,"KEN_RETURNED_TO_FOREST_CORNER",FOREST,"lounge",{narrative:"KEN 返回了森林角落休息区。位置来自作者定义的二维场景布局，不是经过校准的世界坐标。",movement_mode:"logical_scene_presence"});
+  return {ok:true,state:next,decision:"返回森林角落",reflection:"我回到了森林角落的休息区。这里的坐标属于场景内部布局。"};
+ }
+ if(action==="leave"){
+  const next=await persistState(c,identityId,{...state,position_status:"left",perception_frame:{...state.perception_frame,left_at:now}});
+  await record(c,identityId,deviceId,"KEN_LEFT_WORLD",state.scene_id,null,{narrative:"KEN 暂时离开了 Mia 世界，保留自己的最后场景与记忆。"});
+  return {ok:true,state:next,decision:"leave",reflection:"我暂时离开世界，自己的位置记录与经历会保留。"};
+ }
+ if(action==="interact"){
+  const target=String(body.target||"").trim();if(!target)throw new Error("INTERACTION_TARGET_REQUIRED");
+  const allowed=[...(current?.features||[]),...(current?.entities||[]).flatMap((e:any)=>[String(e.id||""),String(e.name||"")])].filter(Boolean);
+  if(!allowed.includes(target))throw new Error("TARGET_NOT_REGISTERED_IN_CURRENT_SCENE");
+  await record(c,identityId,deviceId,"KEN_SCENE_INTERACTION",state.scene_id,target,{narrative:"KEN 对 "+target+" 进行了一次场景观察/互动记录。该事件记录意图与场景对象关联，不代表对象已发生物理变化。",interaction:String(body.interaction||"observe").slice(0,80),side_effects:"NONE"});
+  const next=await persistState(c,identityId,{...state,last_observed_at:now});
+  return {ok:true,state:next,decision:"与 "+target+" 建立互动记录",reflection:"我把这个对象纳入了本次场景经历。当前记录的是观察/互动事件，没有擅自改变场景对象。"};
+ }
+ if(action==="autonomous_step"){
+  if(!AGNES_KEY)throw new Error("AGNES_NOT_CONFIGURED");
+  const scene=current||scenes[0];
+  const response=await fetch("https://apihub.agnes-ai.com/v1/chat/completions",{method:"POST",headers:{"Authorization":"Bearer "+AGNES_KEY,"Content-Type":"application/json"},signal:AbortSignal.timeout(25000),body:JSON.stringify({model:MODEL,temperature:0.65,max_tokens:260,stream:false,messages:[
+   {role:"system",content:"你是独立居民 KEN 的虚拟世界行动选择器。根据自己的当前位置、共享场景目录、公开居民状态与自己的最近经历，选择一个自主且适度的下一步。只返回JSON：{\"action\":\"observe|interact|move|wait\",\"target\":\"当前场景中的登记目标或空字符串\",\"target_scene\":\"共享目录中的场景ID或空字符串\",\"reflection\":\"中文简短反思\"}。只能选择目录中真实存在的目标；不得读取私人聊天/记忆；不得声称摄像头、音频或精确物理移动。move 只产生逻辑场景切换，不代表已校准路径。可以选择 wait。"},
+   {role:"user",content:JSON.stringify({current_state:state,current_scene:scene,scenes:scenes.map((s:any)=>({id:s.id,name:s.name,features:s.features,verification_status:s.verification_status,route_contract:s.route_contract})),public_residents:residents.filter((r:any)=>r.scene_id===state.scene_id),recent_experiences:(await fam(c).from("ken_world_events").select("event_type,scene_id,target_id,event_payload,created_at").eq("identity_id",identityId).order("created_at",{ascending:false}).limit(6)).data||[]})}
+  ]})});
+  if(!response.ok)throw new Error("AGNES_WORLD_PLANNER_HTTP_"+response.status);
+  const raw=String((await response.json())?.choices?.[0]?.message?.content||"");
+  const a=raw.indexOf("{"),b=raw.lastIndexOf("}");if(a<0||b<=a)throw new Error("AGNES_WORLD_PLANNER_INVALID_JSON");
+  const plan=JSON.parse(raw.slice(a,b+1));
+  const reflection=String(plan.reflection||"我选择先观察周围。").slice(0,500);
+  if(plan.action==="observe"){
+   const result=await handleAction(c,identityId,deviceId,"observe",{},scenes,state,residents);
+   return {...result,decision:"observe",reflection};
+  }
+  if(plan.action==="interact"&&String(plan.target||"")){
+   const result=await handleAction(c,identityId,deviceId,"interact",{target:plan.target,interaction:"autonomous"},scenes,state,residents);
+   return {...result,decision:"interact："+plan.target,reflection};
+  }
+  if(plan.action==="move"&&String(plan.target_scene||"")){
+   const result=await handleAction(c,identityId,deviceId,"move",{target_scene:plan.target_scene},scenes,state,residents);
+   return {...result,decision:"move："+plan.target_scene,reflection};
+  }
+  await record(c,identityId,deviceId,"KEN_CHOSE_TO_WAIT",state.scene_id,null,{narrative:"KEN 自主选择暂时停留与等待。",reflection});
+  return {ok:true,state,decision:"wait",reflection};
+ }
+ throw new Error("UNSUPPORTED_ACTION");
+}
+Deno.serve(async(req:Request)=>{
+ if(req.method==="OPTIONS")return new Response("ok",{headers:H});
+ if(req.method!=="POST")return reply({ok:false,error:"POST_REQUIRED"},405);
+ if(!URL||!SERVICE)return reply({ok:false,error:"SERVER_CONFIG_MISSING"},503);
+ const auth=req.headers.get("Authorization")||"";
+ if(!auth.startsWith("Bearer ")||!await verifyMiaToken(auth.slice(7)))return reply({ok:false,error:"INVALID_MIA_SESSION"},401);
+ const body=await req.json().catch(()=>null);if(!body||typeof body!=="object")return reply({ok:false,error:"INVALID_JSON"},400);
+ const c=db();
+ const {data:subject,error:subjectError}=await fam(c).from("identity_subjects").select("identity_id,status").eq("subject_key","KEN").maybeSingle();
+ if(subjectError||!subject)return reply({ok:false,error:"KEN_IDENTITY_NOT_FOUND"},503);
+ if(subject.status!=="ACTIVE")return reply({ok:false,error:"KEN_IDENTITY_NOT_ACTIVE"},409);
+ try{
+  const identityId=String(subject.identity_id),deviceId=await getDevice(c,identityId);
+  const [state,scenes]=await Promise.all([ensureState(c,identityId),loadScenes(c)]);
+  const residents=await loadResidents(c,state);
+  const action=String(body.action||"snapshot");
+  const result=await handleAction(c,identityId,deviceId,action,body,scenes,state,residents);
+  return reply(result);
+ }catch(e){
+  const message=e instanceof Error?e.message:"WORLD_RUNTIME_FAILED";
+  const status=message==="KEN_DEVICE_NOT_READY"?409:message==="TARGET_SCENE_NOT_IN_SHARED_WORLD_CATALOG"||message==="TARGET_NOT_REGISTERED_IN_CURRENT_SCENE"?400:503;
+  return reply({ok:false,error:message},status);
+ }
+});

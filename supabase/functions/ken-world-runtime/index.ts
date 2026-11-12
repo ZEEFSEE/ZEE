@@ -84,7 +84,8 @@ function makeObservation(scene:any,state:any,residents:any[]){
  return {scene:{id:scene.id,name:scene.name,features:scene.features,entities:entityEvidence,verification_status:scene.verification_status,route_contract:scene.route_contract},resident_count:current.length,public_residents:current,observer_position:state.position,coordinate_frame:state.coordinate_frame,spatial_confidence:"UNVERIFIED_UNLESS_FRAMES_MATCH",sensors:{visual_frame_connected:false,audio_connected:false,physical_world:false},provenance:"AUTHORED_SCENE_DATA_AND_PUBLIC_RESIDENT_STATE",observed_at:new Date().toISOString()};
 }
 async function persistState(c:any,identityId:string,state:any){
- const {data,error}=await fam(c).from("ken_world_state").upsert({...state,identity_id:identityId,updated_at:new Date().toISOString()},{onConflict:"identity_id"}).select("*").single();
+ const {residence_scene_id,...persistable}=state;
+ const {data,error}=await fam(c).from("ken_world_state").upsert({...persistable,identity_id:identityId,updated_at:new Date().toISOString()},{onConflict:"identity_id"}).select("*").single();
  if(error)throw new Error("KEN_WORLD_STATE_SAVE_FAILED");
  return data;
 }

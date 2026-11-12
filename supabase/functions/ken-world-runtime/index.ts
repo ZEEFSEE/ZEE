@@ -160,7 +160,7 @@ async function handleAction(c:any,identityId:string,deviceId:string,action:strin
   const anchor=visible.find((x:any)=>x.id===target||x.name===target);
   const pos=anchor?.scene_local_position;
   if(!anchor||!pos||!Number.isFinite(Number(pos.x))||!Number.isFinite(Number(pos.z)))throw new Error("TARGET_NOT_IN_CURRENT_PERCEPTION_RANGE");
-  const next=await persistState(c,identityId,{...state,position:{x:Number(pos.x),z:Number(pos.z),unit:"m",provenance:"RUNTIME_SCENE_ANCHOR"},coordinate_space:"scene-local",coordinate_frame:"zhi-mia-virtual-world-v1",position_status:"anchor_targeted",movement_revision:Number(state.movement_revision||0)+1,perception_frame:{...frame,pending_anchor_target:{id:anchor.id,name:anchor.name,position:pos}}});
+  const next=await persistState(c,identityId,{...state,position:{x:Number(pos.x),z:Number(pos.z),unit:"m",provenance:"RUNTIME_SCENE_ANCHOR"},coordinate_space:"scene-local",coordinate_frame:"zhi-mia-virtual-world-v1",position_status:"anchor_targeted",movement_revision:Number(state.movement_revision||0)+1,perception_frame:{...frame,pending_anchor_target:{id:anchor.id,name:anchor.name,position:pos,from_position:state.position}}});
   await record(c,identityId,deviceId,"KEN_MOVE_TO_VISIBLE_ANCHOR_REQUESTED",state.scene_id,anchor.id,{narrative:"KEN 发起了前往当前可见场景锚点 "+anchor.name+" 的移动请求；是否抵达须等待浏览器路径验证帧确认。",anchor_name:anchor.name,scene_local_position:pos,distance_m:anchor.distance_m,bearing_rad:anchor.bearing_rad,movement_mode:"authored_virtual_scene_path",arrival_status:"PENDING"});
   return {ok:true,state:next,decision:"前往 "+anchor.name,reflection:"我选择靠近当前感知范围内的 "+anchor.name+"。目标来自场景锚点，不是我凭空推测的位置。"};
  }

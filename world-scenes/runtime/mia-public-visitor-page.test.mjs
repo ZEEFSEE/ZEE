@@ -18,6 +18,7 @@ test("visitor controls reference existing elements and offer a public return pat
  for(const id of ["auto-explore","stop-explore"])
   assert.doesNotMatch(html,new RegExp('id="'+id+'"'));
  assert.match(html,/mia-world-entrance\.html/);
+ assert.match(html,/<section class="stage" id="runtime">/);
 });
 
 test("all seven catalogued scenes are available through the visitor scene selector",()=>{

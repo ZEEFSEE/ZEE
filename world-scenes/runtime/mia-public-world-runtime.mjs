@@ -86,7 +86,7 @@ export function createRuntimePerception({scene,position,heading=0,visibleDistanc
     const dx=p.x-position.x,dz=p.z-position.z,dist=Math.hypot(dx,dz);
     const angle=Math.atan2(dx,-dz)-heading;
     const normalized=Math.atan2(Math.sin(angle),Math.cos(angle));
-    return {id:a.id,name:a.name,distance_m:Number(dist.toFixed(2)),bearing_rad:Number(normalized.toFixed(3)),in_range:dist<=visibleDistance,source:"runtime_scene_anchor"};
+    return {id:a.id,name:a.name,distance_m:Number(dist.toFixed(2)),bearing_rad:Number(normalized.toFixed(3)),scene_local_position:{x:p.x,z:p.z,unit:"m"},in_range:dist<=visibleDistance,source:"runtime_scene_anchor"};
   }).filter(e=>e.in_range).sort((a,b)=>a.distance_m-b.distance_m);
   return {schema:"zhi.mia.runtime-perception.v1",scene_id:scene.id,position:{...position,unit:"m",coordinate_space:"scene-local"},heading_rad:heading,visible_distance_m:visibleDistance,visible_entities:entities,collider_count:scene.obstacles.length,perception_mode:"live_runtime_scene_graph",camera_sensor:false,physical_world:false,generated_at:new Date().toISOString()};
 }

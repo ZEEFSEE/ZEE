@@ -12,6 +12,65 @@ button,input{font:inherit}button{cursor:pointer;border:1px solid #47646a;backgro
 .scene-panel{padding:12px;display:flex;flex-direction:column;gap:12px}.scene-wrap{position:relative;overflow:hidden;border-radius:16px;background:#142c36;min-height:360px;aspect-ratio:16/10}.scene-wrap canvas{width:100%;height:100%;display:block}.scene-label{position:absolute;left:16px;top:14px;padding:6px 10px;border-radius:999px;background:#071b22a8;border:1px solid #ffffff20;color:#f7f2e6;font-size:11px;letter-spacing:.08em}.scene-caption{padding:6px 10px 2px}.scene-caption h2{margin:0 0 4px;color:var(--ink);font-size:20px}.scene-caption p{margin:0;color:var(--muted);font-size:13px}
 .echo{margin-top:16px;padding:20px 22px;border:1px solid #54716d;border-radius:20px;background:linear-gradient(120deg,#183a40,#1a3338 70%,#263b3a)}.echo-top{display:flex;justify-content:space-between;align-items:center;gap:10px}.echo-top button{font-size:12px;padding:8px 13px}.echo-top button:disabled{opacity:.6;cursor:wait}.echo h2{margin:0;color:var(--gold);font-size:13px;letter-spacing:.12em}.echo blockquote{margin:14px 0 6px;font-size:clamp(17px,2.3vw,22px);line-height:1.65;font-family:Georgia,"Noto Serif SC",serif}.echo small{color:var(--muted);font-size:11px}.music{margin-top:16px;padding:20px 22px;border:1px solid #47646a;border-radius:20px;background:linear-gradient(120deg,#132f38,#102730 70%,#1b3438)}.music-head{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}.music h2{margin:0 0 5px;color:var(--mint);font-size:14px;letter-spacing:.08em}.music p{margin:0;color:var(--muted);font-size:12px}.music-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.music-controls button{min-width:118px}.volume-control{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px}.volume-control input{width:110px;accent-color:var(--mint)}.music-note{display:block;margin-top:12px;color:#819d99;font-size:11px}.foot{text-align:center;color:#78908f;font-size:11px;margin:22px 0 0}
 @media(max-width:760px){.layout{grid-template-columns:1fr}.panel{padding:17px}.scene-wrap{min-height:270px}.intro{margin-top:22px}.top{align-items:flex-start}.tag{max-width:170px}}
+
+/* Mia World visual language — literary, quiet, warm, and atmospheric */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Noto+Serif+SC:wght@400;500;600&family=ZCOOL+XiaoWei&display=swap');
+:root{--bg:#0a0a0a;--panel:#171715;--ink:#e9e3d7;--muted:#aaa395;--line:#ffffff20;--mint:#c49a67;--gold:#c49a67;--moss:#8e9b82;--serif:'Cormorant Garamond','Noto Serif SC',serif;--cn:'Noto Serif SC',serif;--art:'ZCOOL XiaoWei','Noto Serif SC',serif;color-scheme:dark}
+html{background:#0a0a0a;scroll-behavior:smooth}
+body{position:relative;isolation:isolate;overflow-x:hidden;background:radial-gradient(ellipse at 50% 42%,#252522 0,#151514 38%,#090909 82%);color:var(--ink);font-family:var(--cn);font-weight:400}
+body:before,body:after{content:"";position:fixed;z-index:-1;pointer-events:none;border-radius:50%;filter:blur(38px);mix-blend-mode:screen}
+body:before{width:min(65vw,720px);height:min(65vw,720px);left:4%;top:4%;background:radial-gradient(circle,#c6bda31b 0,#7b82751e 27%,transparent 69%);animation:miaMoodMistDrift 23s ease-in-out infinite alternate}
+body:after{width:min(58vw,620px);height:min(58vw,620px);right:1%;bottom:0;background:radial-gradient(circle,#b7a88d18 0,#747b7618 30%,transparent 69%);animation:miaMoodMistDrift 29s ease-in-out infinite alternate-reverse}
+@keyframes miaMoodMistDrift{from{transform:translate3d(-3%,2%,0) scale(.92)}to{transform:translate3d(5%,-4%,0) scale(1.12)}}
+.wrap{position:relative;z-index:0;width:min(1100px,100% - 40px);padding:25px 0 70px}
+.top{padding:0 0 22px;margin-bottom:10px;border-bottom:1px solid #ffffff18}
+.brand{font:500 22px var(--serif);letter-spacing:.28em;color:#e9e3d7}
+.brand span{color:#c49a67}
+.tag{font:500 10px var(--serif);letter-spacing:.2em;color:#aaa395}
+.lang button{border-radius:2px;background:transparent;border-color:#ffffff24;color:#bdb5a8;font:500 11px var(--serif);letter-spacing:.1em}
+.lang button.active{border-color:#c49a6780;color:#c49a67;background:#c49a6710}
+.intro{max-width:760px;margin:clamp(44px,8vh,86px) auto 42px;text-align:center}
+.intro h1{font:400 clamp(34px,5.5vw,62px)/1.42 var(--art);letter-spacing:.035em;color:#e4ddcf;margin:0 0 17px}
+.intro p{max-width:540px;margin:0 auto;color:#b8b1a5;font:400 13px/2.15 var(--cn);letter-spacing:.035em}
+.layout{gap:18px;grid-template-columns:minmax(260px,.82fr) minmax(0,1.5fr)}
+.panel{border:1px solid #ffffff1c;border-radius:5px;background:linear-gradient(135deg,#ffffff09,#ffffff02);box-shadow:0 18px 60px #0003;backdrop-filter:blur(12px)}
+.panel h2,.echo h2,.music h2{color:#c49a67;font:500 11px/1.7 var(--serif);letter-spacing:.2em}
+.panel h2{font-size:12px;margin-bottom:18px}
+.hint{color:#aaa395;font:400 11px/2 var(--cn);letter-spacing:.02em}
+.swatches{gap:11px}
+.swatch{border-radius:3px;border:1px solid #ffffff35;transition:transform .25s,border-color .25s,box-shadow .25s}
+.swatch:hover{transform:translateY(-2px)}
+.swatch[aria-pressed=true]{outline:1px solid #c49a67;outline-offset:4px;box-shadow:0 0 18px #c49a6725}
+.picker-row input{border:1px solid #ffffff30;border-radius:3px;background:#ffffff08}
+.hex{font:500 12px var(--serif);letter-spacing:.12em;color:#c9c0b2}
+button{border:1px solid #c49a6770;border-radius:2px;background:#c49a6710;color:#e9e3d7;padding:11px 14px;font:500 12px var(--serif);letter-spacing:.08em;transition:background .28s,border-color .28s,transform .28s}
+button:hover{border-color:#c49a67;background:#c49a6720;transform:translateY(-1px)}
+button:focus-visible,input:focus-visible{outline:2px solid #c49a67;outline-offset:4px}
+button.primary{background:#c49a67;color:#171511;border-color:#c49a67}
+button.primary:hover{background:#d2aa79;border-color:#d2aa79}
+.action-row{gap:8px}.action-row button{flex:1 1 auto}
+.scene-panel{padding:13px;background:linear-gradient(135deg,#ffffff08,#ffffff02)}
+.scene-wrap{border-radius:3px;background:#111;border:1px solid #ffffff14;min-height:360px}
+.scene-label{left:18px;top:18px;border-radius:2px;padding:7px 11px;background:#0a0a0acc;border:1px solid #ffffff24;color:#d7c8ad;font:500 10px var(--serif);letter-spacing:.18em;backdrop-filter:blur(12px)}
+.scene-caption{padding:12px 10px 5px}
+.scene-caption h2{font:400 clamp(23px,2.8vw,30px)/1.45 var(--art);letter-spacing:.04em;color:#e0d9cc}
+.scene-caption p{color:#aaa395;font:400 12px/2 var(--cn)}
+.echo,.music{border:1px solid #ffffff1c;border-radius:5px;background:linear-gradient(135deg,#ffffff09,#ffffff02);box-shadow:0 18px 60px #0002;backdrop-filter:blur(12px)}
+.echo{margin-top:18px;padding:24px clamp(20px,3.5vw,38px)}
+.echo h2,.music h2{margin:0;color:#c49a67}
+.echo-top button,.music-controls button{border-radius:2px;font:500 11px var(--serif);letter-spacing:.09em}
+.echo blockquote{font:400 clamp(18px,2.3vw,23px)/1.9 var(--art);letter-spacing:.035em;color:#e4ddcf}
+.echo small,.music-note{color:#aaa395;font:400 10px/1.9 var(--cn);letter-spacing:.025em}
+.music{margin-top:14px;padding:22px clamp(20px,3.5vw,38px)}
+.music h2{font-size:12px;letter-spacing:.18em}
+.music p{color:#aaa395;font:400 11px/1.9 var(--cn)}
+.music-controls{gap:15px}
+.volume-control{color:#aaa395;font:400 11px var(--cn)}
+.volume-control input{accent-color:#c49a67}
+.music-note{color:#928b80}
+.foot{margin-top:30px;color:#8e887d;font:400 10px/2 var(--serif);letter-spacing:.1em}
+@media(max-width:760px){.wrap{width:calc(100% - 32px);padding:18px 0 54px}.top{padding-bottom:18px}.intro{margin:44px auto 30px}.intro h1{font-size:clamp(31px,8vw,42px);line-height:1.45}.layout{grid-template-columns:1fr;gap:13px}.panel{padding:18px}.scene-panel{padding:10px}.scene-wrap{min-height:270px}.echo,.music{padding:20px 18px}}
+@media(prefers-reduced-motion:reduce){body:before,body:after{animation:none}}
 </style></head><body><main class="wrap">
 <header class="top"><div><div class="brand">MIA <span>MOOD</span></div><div class="tag">A SMALL WORLD, FROM A COLOR · WITH MIA</div></div><div class="lang"><button id="zh" class="active" type="button">中文</button><button id="en" type="button">EN</button></div></header>
 <section class="intro"><h1 data-zh="把此刻，投向一片风景。" data-en="Cast this moment into a landscape.">把此刻，投向一片风景。</h1><p data-zh="不必解释，也不必被定义。选一种颜色，让它慢慢长成一个世界。" data-en="No explanation. No labels. Choose a color and let it become a world.">不必解释，也不必被定义。选一种颜色，让它慢慢长成一个世界。</p></section>

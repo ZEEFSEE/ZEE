@@ -895,6 +895,24 @@
           "radius": 0.55,
           "height": 0.5,
           "material_color": 5797711
+        },
+        {
+          "id": "palace-entry-arch-pillar-left",
+          "shape": "circle",
+          "x": 1.9,
+          "z": 5.8,
+          "radius": 0.18,
+          "height": 3,
+          "material_color": 14731668
+        },
+        {
+          "id": "palace-entry-arch-pillar-right",
+          "shape": "circle",
+          "x": 1.9,
+          "z": 8.2,
+          "radius": 0.18,
+          "height": 3,
+          "material_color": 14731668
         }
       ],
       "runtime_geometry_status": "authored_virtual_geometry_v1_not_physical_site_survey",

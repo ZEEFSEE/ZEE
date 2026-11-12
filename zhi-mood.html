@@ -31,35 +31,33 @@ button,input{font:inherit}button{cursor:pointer;border:1px solid #47646a;backgro
 (()=>{
 const $=id=>document.getElementById(id);let color='#65b88b',lang='zh',particles=[],w=900,h=560,seed=1;
 const zh=[
-['AFTER THE RAIN · FOREST','雨后森林','风从树梢经过，微光正在慢慢升起。','有些绿色，不急着抵达哪里。它只是提醒我们，生长可以很安静。'],
-['MIDNIGHT · OPEN SEA','深夜海面','潮汐放慢了脚步，远处有一盏微弱的灯。','有些蓝色，不是为了表达悲伤，而是给暂时不想说话的时刻，留下一片安静的海。'],
-['FIRST LIGHT · GOLDEN FIELD','日出麦田','晨光越过田野，细小的光点向远方散开。','有些光不需要照亮整条路。能陪你看清眼前一步，就已经足够。'],
-['DUSK · ROSE GARDEN','暮色花园','花影在晚风里轻轻摇晃，天空留着柔软的余温。','柔软并不意味着脆弱。有时，愿意感受本身就是一种力量。'],
-['STILLNESS · STONE VALLEY','静石山谷','雾沿着山谷缓缓移动，时间像是放轻了声音。','不必每一刻都有答案。有些时刻，只需要一个可以停留的地方。'],
-['EMBER · WARM HORIZON','余烬地平线','暖色的微粒缓缓漂浮，远方仍有温度。','即使只剩一点余温，也可以成为重新开始的地方。'],
-['MORNING MIST · LAKE','晨雾湖畔','薄雾贴着水面流动，世界正在苏醒。','安静不是空白。它也许装着许多尚未说出口的可能。'],
-['VIOLET HOUR · HIGHLANDS','紫色高地','暮光在山脊停留，星点逐渐显现。','有些念头需要一点距离，才能看见它真正的形状。'],
-['SAND DUNE · SOFT WIND','柔风沙丘','沙纹被风轻轻改写，每一道痕迹都不必永久。','改变不一定要很响亮。风经过的地方，也会留下新的纹路。'],
+['AFTER THE RAIN · FOREST','雨后森林','风从树梢经过，微光正在慢慢升起。'],
+['MIDNIGHT · OPEN SEA','深夜海面','潮汐放慢了脚步，远处有一盏微弱的灯。'],
+['FIRST LIGHT · GOLDEN FIELD','日出麦田','晨光越过田野，细小的光点向远方散开。'],
+['DUSK · ROSE GARDEN','暮色花园','花影在晚风里轻轻摇晃，天空留着柔软的余温。'],
+['STILLNESS · STONE VALLEY','静石山谷','雾沿着山谷缓缓移动，时间像是放轻了声音。'],
+['EMBER · WARM HORIZON','余烬地平线','暖色的微粒缓缓漂浮，远方仍有温度。'],
+['MORNING MIST · LAKE','晨雾湖畔','薄雾贴着水面流动，世界正在苏醒。'],
+['VIOLET HOUR · HIGHLANDS','紫色高地','暮光在山脊停留，星点逐渐显现。'],
+['SAND DUNE · SOFT WIND','柔风沙丘','沙纹被风轻轻改写，每一道痕迹都不必永久。'],
 ['PALE DAWN · QUIET SKY','浅色晨空','天色渐亮，留白也成为风景的一部分。','留白不是缺少什么，而是给新的东西留出位置。']];
 const en=[
-['AFTER THE RAIN · FOREST','Forest After Rain','A breeze crosses the canopy; a little light begins to rise.','Some greens are in no hurry to arrive. They remind us that growing can be quiet.'],
-['MIDNIGHT · OPEN SEA','Midnight Sea','The tide slows. A distant light keeps its place.','Some blues are not sadness. They leave a quiet sea for moments when words can wait.'],
-['FIRST LIGHT · GOLDEN FIELD','Field at First Light','Sunlight crosses the field; tiny sparks drift outward.','Light need not illuminate the whole road. Showing the next step can be enough.'],
-['DUSK · ROSE GARDEN','Rose Garden at Dusk','Petal shadows sway; the sky keeps a little warmth.','Softness is not weakness. Being willing to feel can itself be a kind of strength.'],
-['STILLNESS · STONE VALLEY','Stone Valley','Mist moves through the valley, and time lowers its voice.','Not every moment needs an answer. Some moments only need a place to stay.'],
-['EMBER · WARM HORIZON','Warm Horizon','Warm particles drift slowly; the distance still holds heat.','Even a small ember can become a place to begin again.'],
-['MORNING MIST · LAKE','Lake in Morning Mist','Thin mist moves over the water; the world is waking.','Quiet is not empty. It may hold many possibilities not yet spoken.'],
-['VIOLET HOUR · HIGHLANDS','Violet Highlands','Twilight rests on the ridge as the first stars appear.','Some thoughts need distance before their true shape comes into view.'],
-['SAND DUNE · SOFT WIND','Soft Wind over Dunes','Wind gently rewrites the sand; no trace has to last forever.','Change need not be loud. The wind leaves new patterns as it passes.'],
+['AFTER THE RAIN · FOREST','Forest After Rain','A breeze crosses the canopy; a little light begins to rise.'],
+['MIDNIGHT · OPEN SEA','Midnight Sea','The tide slows. A distant light keeps its place.'],
+['FIRST LIGHT · GOLDEN FIELD','Field at First Light','Sunlight crosses the field; tiny sparks drift outward.'],
+['DUSK · ROSE GARDEN','Rose Garden at Dusk','Petal shadows sway; the sky keeps a little warmth.'],
+['STILLNESS · STONE VALLEY','Stone Valley','Mist moves through the valley, and time lowers its voice.'],
+['EMBER · WARM HORIZON','Warm Horizon','Warm particles drift slowly; the distance still holds heat.'],
+['MORNING MIST · LAKE','Lake in Morning Mist','Thin mist moves over the water; the world is waking.'],
+['VIOLET HOUR · HIGHLANDS','Violet Highlands','Twilight rests on the ridge as the first stars appear.'],
+['SAND DUNE · SOFT WIND','Soft Wind over Dunes','Wind gently rewrites the sand; no trace has to last forever.'],
 ['PALE DAWN · QUIET SKY','Pale Dawn','The sky brightens; empty space becomes part of the view.','An open space is not a lack. It makes room for what comes next.']];
 function rgb(hex){return {r:parseInt(hex.slice(1,3),16),g:parseInt(hex.slice(3,5),16),b:parseInt(hex.slice(5,7),16)}}
 function hsv(hex){const q=rgb(hex),r=q.r/255,g=q.g/255,b=q.b/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;let h=0;if(d){if(mx===r)h=((g-b)/d)%6;else if(mx===g)h=(b-r)/d+2;else h=(r-g)/d+4;h*=60;if(h<0)h+=360}return {h:h,s:mx?d/mx:0,v:mx}}
 function index(hex){const q=hsv(hex);if(q.v>.88&&q.s<.2)return 9;if(q.s<.18)return 4;if(q.h<28||q.h>=345)return 5;if(q.h<65)return 2;if(q.h<155)return 0;if(q.h<195)return 6;if(q.h<255)return 1;if(q.h<295)return 7;return 3}
 function resize(){const c=$('world'),rect=c.parentElement.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2);w=Math.max(320,rect.width);h=Math.max(240,rect.height);c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);c.getContext('2d').setTransform(dpr,0,0,dpr,0,0);seed++;particles=Array.from({length:Math.round(w*h/1900)},()=>{const angle=Math.random()*Math.PI*2;return{x:Math.random()*w,y:Math.random()*h,r:Math.random()*2.2+.5,a:Math.random()*.55+.15,vx:(Math.random()-.5)*.35,vy:(Math.random()-.5)*.4,p:Math.random()*6.28,angle,speed:.18+Math.random()*.48,originX:w*.5,originY:h*.58}})}
-function update(){const i=index(color),p=(lang==='zh'?zh:en)[i];$('elementTag').textContent=p[0];$('sceneTitle').textContent=p[1];$('sceneDesc').textContent=p[2];$('echoText').textContent='“'+p[3]+'”';$('hex').textContent=color.toUpperCase();$('picker').value=color;document.querySelectorAll('.swatch').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.color.toLowerCase()===color.toLowerCase())));resize()}
+function update(){const i=index(color),p=(lang==='zh'?zh:en)[i];$('elementTag').textContent=p[0];$('sceneTitle').textContent=p[1];$('sceneDesc').textContent=p[2];$('hex').textContent=color.toUpperCase();$('picker').value=color;document.querySelectorAll('.swatch').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.color.toLowerCase()===color.toLowerCase())));resize()}
 function hsl(hex){const q=rgb(hex),r=q.r/255,g=q.g/255,b=q.b/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn,l=(mx+mn)/2;let hue=0,sat=0;if(d){sat=d/(1-Math.abs(2*l-1));if(mx===r)hue=((g-b)/d)%6;else if(mx===g)hue=(b-r)/d+2;else hue=(r-g)/d+4;hue*=60;if(hue<0)hue+=360}return{h:hue,s:sat,l}}
-let lastPoemBeat=-1;
-function updatePoeticText(t){const beat=Math.floor(t/5000);if(beat===lastPoemBeat)return;lastPoemBeat=beat;const i=index(color),q=hsl(color),p=(lang==='zh'?zh:en)[i],tail=lang==='zh'?['风景没有催促你。','让这一刻，先有自己的形状。','不必解释，停留也算一种表达。']:['The landscape asks nothing of you.','Let this moment take its own shape.','No explanation needed; staying is expression too.'];$('echoText').textContent='“'+(beat%3===0?p[3]:tail[beat%3])+'”'}
 function draw(t){const c=$('world'),ctx=c.getContext('2d'),q=rgb(color),v=hsl(color),i=index(color),hue=v.h,sat=v.s,light=v.l;
 const bg=18+(1-light)*12,baseR=Math.round(bg+q.r*(.10+.22*(1-light))),baseG=Math.round(bg+q.g*(.10+.22*(1-light))),baseB=Math.round(bg+q.b*(.10+.22*(1-light)));let g=ctx.createLinearGradient(0,0,0,h);g.addColorStop(0,'rgb('+Math.min(255,baseR+18)+','+Math.min(255,baseG+18)+','+Math.min(255,baseB+18)+')');g.addColorStop(1,'rgb('+baseR+','+baseG+','+baseB+')');ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
 const glowAlpha=.035+sat*.20;let glow=ctx.createRadialGradient(w*.5,h*.55,4,w*.5,h*.55,w*.65);glow.addColorStop(0,'rgba('+q.r+','+q.g+','+q.b+','+glowAlpha+')');glow.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=glow;ctx.fillRect(0,0,w,h);
@@ -67,7 +65,7 @@ const horizon=h*.68;ctx.beginPath();ctx.moveTo(0,horizon);for(let x=0;x<=w;x+=8)
 const sx=w*.72,sy=h*.38,sr=Math.min(w,h)*(.055+(1-light)*.055),sg=ctx.createRadialGradient(sx,sy,1,sx,sy,sr*(2.2+sat*2.8));sg.addColorStop(0,'rgba('+Math.min(255,q.r+80)+','+Math.min(255,q.g+70)+','+Math.min(255,q.b+55)+','+(.35+sat*.45)+')');sg.addColorStop(1,'rgba(255,230,190,0)');ctx.fillStyle=sg;ctx.fillRect(sx-sr*5,sy-sr*5,sr*10,sr*10);ctx.beginPath();ctx.arc(sx,sy,sr,0,Math.PI*2);ctx.fillStyle='rgba('+Math.min(255,q.r+95)+','+Math.min(255,q.g+85)+','+Math.min(255,q.b+65)+',.48)';ctx.fill();
 particles.forEach(p=>{if(hue>=90&&hue<=150){p.x+=p.vx+Math.sin(t*.00055+p.p)*.28;p.y+=Math.sin(t*.00115+p.p)*.52;}else if(hue>=210&&hue<=270){p.x+=(Math.random()-.5)*.65+p.vx*.18;p.y+=(Math.random()-.5)*.55+p.vy*.18;}else if(hue>=42&&hue<=78){p.x+=Math.cos(p.angle)*p.speed;p.y+=Math.sin(p.angle)*p.speed;}else{p.x+=p.vx+Math.sin(t*.00045+p.p)*.12;p.y+=p.vy+Math.cos(t*.00035+p.p)*.10;}if(p.x<0||p.x>w||p.y<0||p.y>h){p.x=Math.random()*w;p.y=Math.random()*h;p.angle=Math.atan2(p.y-p.originY,p.x-p.originX)}const radius=(.45+Math.random()*.12)*(0.65+(1-light)*1.65)*(p.r+0.5);ctx.save();ctx.shadowBlur=sat*18;ctx.shadowColor='rgba('+q.r+','+q.g+','+q.b+','+(sat*.75)+')';ctx.beginPath();ctx.arc(p.x,p.y,radius,0,Math.PI*2);ctx.fillStyle='rgba('+Math.min(255,q.r+95)+','+Math.min(255,q.g+90)+','+Math.min(255,q.b+70)+','+(p.a*(.55+.45*Math.sin(t*.001+p.p))*(.35+sat*.65))+')';ctx.fill();ctx.restore()});
 if(i===1||i===6){ctx.strokeStyle='rgba(190,220,230,.12)';for(let k=0;k<5;k++){ctx.beginPath();ctx.moveTo(0,horizon+18+k*12);ctx.bezierCurveTo(w*.3,horizon+8+k*14,w*.65,horizon+35+k*10,w,horizon+16+k*13);ctx.stroke()}}
-updatePoeticText(t);requestAnimationFrame(draw)}
+requestAnimationFrame(draw)}
 function setColor(c){color=c;update()}
 $('swatches').addEventListener('click',e=>{const b=e.target.closest('[data-color]');if(b)setColor(b.dataset.color)});$('picker').addEventListener('input',e=>setColor(e.target.value));$('refresh').onclick=()=>resize();
 $('save').onclick=()=>{const a=document.createElement('a');a.download='mia-mood-'+color.slice(1)+'.png';a.href=$('world').toDataURL('image/png');a.click()};

@@ -41,7 +41,7 @@ import * as THREE from "three";
 import {OrbitControls} from "three/addons/controls/OrbitControls.js";
 import {validateWorldManifest,layoutToWorld,anchorToLocal,anchorApproachToLocal,findWalkPath,createRuntimePerception,isWalkable,resolveSceneTransition,resolveSceneRoute} from "./world-scenes/runtime/mia-public-world-runtime.mjs";
 const $=s=>document.querySelector(s), mount=$("#viewport");
-let manifest,activeScene,renderer,scene,camera,controls,avatar,kenAvatar=null,kenState=null,avatarHeading=0,position={x:1.2,z:7},path=[],pathIndex=0,moveResolve=null,sceneObjects=[],lastPerception=0;\nconst KEN_WORLD_API="https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/ken-world-runtime";\nconst MIA_TOKEN=sessionStorage.getItem("mia_chat_token")||"";\nconst SUPABASE_PUBLIC_KEY="sb_publishable_spH47ZngJJTk13cpYPBjSw_X5qAsBmK";
+let manifest,activeScene,renderer,scene,camera,controls,avatar,kenAvatar=null,kenState=null,lastKenFrameSignature="",avatarHeading=0,position={x:1.2,z:7},path=[],pathIndex=0,moveResolve=null,sceneObjects=[],lastPerception=0;\nconst KEN_WORLD_API="https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/ken-world-runtime";\nconst MIA_TOKEN=sessionStorage.getItem("mia_chat_token")||"";\nconst SUPABASE_PUBLIC_KEY="sb_publishable_spH47ZngJJTk13cpYPBjSw_X5qAsBmK";
 const sceneColors={"mia-forest-corner":0x78966d,"crystal-forest":0x607c78,"ocean-of-light":0x6a9da8,"memory-valley":0x83927d,"living-city":0x7c9b79,"greenhouse":0x92aa7a,"palace":0x9b8054};
 const destinationIds=["crystal-forest","ocean-of-light","memory-valley","living-city","greenhouse"];
 const mats={};
@@ -94,18 +94,32 @@ function createKenAvatar(){
 }
 function renderKenPresence(){
  const panel=$("#ken-presence-status");
- if(kenAvatar&&kenAvatar.parent){kenAvatar.parent.remove(kenAvatar);kenAvatar=null;}
- if(!MIA_TOKEN){panel.textContent="访客模式；请在同一浏览器登录 Mia 后，KEN 的公开世界位置才会同步显示。";return;}
- if(!kenState){panel.textContent="正在读取 KEN 的居民状态…";return;}
- if(kenState.position_status==="left"){panel.textContent="KEN 当前已离开世界。";return;}
- if(kenState.scene_id!==activeScene.id){const other=manifest.scenes.find(x=>x.id===kenState.scene_id);panel.textContent="KEN 当前位于："+(other?.name||kenState.scene_id)+"。切换到该场景即可看到他的居民形象。";return;}
- const p=kenState.position||activeScene.spawn;kenAvatar=createKenAvatar();kenAvatar.position.set(Number(p.x)||activeScene.spawn.x,.45,Number(p.z)||activeScene.spawn.z);scene.add(kenAvatar);
+ const remove=()=>{if(kenAvatar?.parent)kenAvatar.parent.remove(kenAvatar);kenAvatar=null;};
+ if(!MIA_TOKEN){remove();panel.textContent="访客模式；请在同一浏览器登录 Mia 后，KEN 的公开世界位置才会同步显示。";return;}
+ if(!kenState){remove();panel.textContent="正在读取 KEN 的居民状态…";return;}
+ if(kenState.position_status==="left"){remove();panel.textContent="KEN 当前已离开世界。";return;}
+ if(kenState.scene_id!==activeScene.id){remove();const other=manifest.scenes.find(x=>x.id===kenState.scene_id);panel.textContent="KEN 当前位于："+(other?.name||kenState.scene_id)+"。切换到该场景即可看到他的居民形象。";return;}
+ const p=kenState.position||activeScene.spawn;
+ if(!kenAvatar){kenAvatar=createKenAvatar();scene.add(kenAvatar);}
+ kenAvatar.position.set(Number(p.x)||activeScene.spawn.x,.45,Number(p.z)||activeScene.spawn.z);
  panel.textContent="KEN 已同步到当前场景："+activeScene.name+"；位置来源："+(kenState.position?.provenance||"虚拟场景状态")+"；不是现实世界定位。";
 }
 async function syncKenPresence(){
  if(!MIA_TOKEN)return;
- try{const r=await fetch(KEN_WORLD_API,{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLIC_KEY,"Authorization":"Bearer "+MIA_TOKEN},body:JSON.stringify({action:"snapshot"}),cache:"no-store"});const d=await r.json();if(!r.ok||!d.ok)throw new Error(d.error||("HTTP "+r.status));kenState=d.state||null;renderKenPresence();}
- catch(e){$("#ken-presence-status").textContent="KEN 状态同步暂不可用："+e.message;}
+ try{
+  const r=await fetch(KEN_WORLD_API,{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLIC_KEY,"Authorization":"Bearer "+MIA_TOKEN},body:JSON.stringify({action:"snapshot"}),cache:"no-store"});
+  const d=await r.json();if(!r.ok||!d.ok)throw new Error(d.error||("HTTP "+r.status));
+  kenState=d.state||null;renderKenPresence();
+  if(kenState&&kenState.scene_id===activeScene.id&&kenState.position_status!=="left"&&kenState.position){
+   const frame=createRuntimePerception({scene:activeScene,position:{x:Number(kenState.position.x),z:Number(kenState.position.z)},heading:0});
+   const signature=JSON.stringify([frame.scene_id,frame.position.x,frame.position.z,frame.visible_entities.map(e=>[e.id,e.distance_m,e.bearing_rad])]);
+   if(signature!==lastKenFrameSignature){
+    const fr=await fetch(KEN_WORLD_API,{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLIC_KEY,"Authorization":"Bearer "+MIA_TOKEN},body:JSON.stringify({action:"ingest_frame",frame}),cache:"no-store"});
+    const fd=await fr.json();if(!fr.ok||!fd.ok)throw new Error(fd.error||("FRAME HTTP "+fr.status));
+    lastKenFrameSignature=signature;
+   }
+  }
+ }catch(e){$("#ken-presence-status").textContent="KEN 状态同步暂不可用："+e.message;}
 }
 function updateState(){
  const world=layoutToWorld(activeScene,{x:position.x/manifest.coordinate_contract.meters_per_layout_unit,y:position.z/manifest.coordinate_contract.meters_per_layout_unit},manifest.coordinate_contract);

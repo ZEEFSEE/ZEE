@@ -117,7 +117,8 @@ async function handleAction(c:any,identityId:string,deviceId:string,action:strin
  if(action==="observe"){
   const scene=current||scenes[0];if(!scene)throw new Error("NO_WORLD_SCENE");
   const observation=makeObservation(scene,state,residents);
-  const next=await persistState(c,identityId,{...state,perception_frame:observation,last_observed_at:now});
+  const savedFrame=state.perception_frame?.schema==="zhi.mia.runtime-perception.v1"?{...state.perception_frame,latest_scene_observation:observation}:observation;
+  const next=await persistState(c,identityId,{...state,perception_frame:savedFrame,last_observed_at:now});
   await record(c,identityId,deviceId,"KEN_OBSERVED_SCENE",scene.id,null,{narrative:"KEN 观察了 "+scene.name+"：可读取场景登记特征与公开居民状态；当前没有接入实时视觉或音频传感器。",observation_summary:{feature_count:scene.features.length,entity_count:scene.entities.length,resident_count:observation.resident_count,verification_status:scene.verification_status}});
   return {ok:true,state:next,observation};
  }

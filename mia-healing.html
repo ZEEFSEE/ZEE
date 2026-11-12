@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="description" content="Mia Healing · A quiet place to leave what you feel, and receive Mia's original echo.">
+<title>Mia Healing · A quiet place with Mia</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Noto+Serif+SC:wght@400;500;600&family=ZCOOL+XiaoWei&display=swap');
+:root{color-scheme:dark;--bg:#090909;--panel:#171715;--ink:#e9e3d7;--muted:#aaa395;--line:#ffffff20;--gold:#c49a67;--moss:#8e9b82;--serif:'Cormorant Garamond','Noto Serif SC',serif;--cn:'Noto Serif SC',serif;--art:'ZCOOL XiaoWei','Noto Serif SC',serif}
+*{box-sizing:border-box}html{background:var(--bg);scroll-behavior:smooth}
+body{margin:0;min-height:100vh;overflow-x:hidden;position:relative;isolation:isolate;background:radial-gradient(ellipse at 50% 38%,#282720 0,#151513 40%,#090909 82%);color:var(--ink);font:400 14px/1.8 var(--cn)}
+body:before,body:after{content:"";position:fixed;z-index:-1;pointer-events:none;border-radius:50%;filter:blur(42px);mix-blend-mode:screen}
+body:before{width:min(65vw,720px);height:min(65vw,720px);left:2%;top:0;background:radial-gradient(circle,#b6a17a1c 0,#7b82751a 30%,transparent 70%);animation:mist 25s ease-in-out infinite alternate}
+body:after{width:min(55vw,620px);height:min(55vw,620px);right:0;bottom:-8%;background:radial-gradient(circle,#8c92741c 0,#747b7615 32%,transparent 70%);animation:mist 31s ease-in-out infinite alternate-reverse}
+@keyframes mist{from{transform:translate3d(-2%,2%,0) scale(.92)}to{transform:translate3d(5%,-4%,0) scale(1.12)}}
+.wrap{width:min(1000px,calc(100% - 40px));margin:auto;padding:24px 0 60px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:0 0 20px;border-bottom:1px solid #ffffff18}
+.brand{font:500 22px var(--serif);letter-spacing:.28em;color:#e9e3d7}.brand span{color:var(--gold)}
+.tag{font:500 10px var(--serif);letter-spacing:.2em;color:var(--muted)}
+.lang{display:flex;gap:7px}.lang button{padding:6px 10px;font:500 11px var(--serif);letter-spacing:.1em}
+button{cursor:pointer;border:1px solid #c49a6770;border-radius:2px;background:#c49a6710;color:var(--ink);padding:10px 14px;font:500 12px var(--serif);letter-spacing:.08em;transition:background .25s,border-color .25s,transform .25s}
+button:hover{border-color:var(--gold);background:#c49a6720;transform:translateY(-1px)}
+button:focus-visible,textarea:focus-visible{outline:2px solid var(--gold);outline-offset:4px}
+button.primary{background:var(--gold);border-color:var(--gold);color:#171511}
+button.primary:hover{background:#d2aa79}
+button:disabled{opacity:.55;cursor:wait;transform:none}
+.lang button.active{border-color:#c49a6780;color:var(--gold);background:#c49a6710}
+.intro{max-width:740px;margin:clamp(42px,8vh,78px) auto 38px;text-align:center}
+.eyebrow{font:500 11px var(--serif);letter-spacing:.28em;color:var(--gold);margin-bottom:13px}
+.intro h1{font:400 clamp(34px,5.5vw,60px)/1.4 var(--art);letter-spacing:.04em;color:#e4ddcf;margin:0 0 16px}
+.intro p{max-width:560px;margin:auto;color:#b8b1a5;font:400 13px/2.15 var(--cn);letter-spacing:.035em}
+.panel{border:1px solid #ffffff1c;border-radius:5px;background:linear-gradient(135deg,#ffffff09,#ffffff02);box-shadow:0 18px 60px #0003;backdrop-filter:blur(12px)}
+.selector{padding:clamp(19px,3vw,30px)}
+.section-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:8px}
+.section-head h2{font:500 12px/1.7 var(--serif);letter-spacing:.2em;color:var(--gold);margin:0}
+.section-head span{font:400 11px var(--cn);color:var(--muted)}
+.lead{color:#aaa395;font:400 12px/2 var(--cn);margin:0 0 24px}
+.group{margin:23px 0 0}.group-title{font:500 12px/1.8 var(--cn);color:#d8cbb7;margin:0 0 11px;letter-spacing:.04em}
+.moods{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.mood{min-height:68px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:3px;border:1px solid #ffffff1c;border-radius:3px;background:#ffffff05;padding:8px 5px;color:#d9d2c6;font:400 12px var(--cn);letter-spacing:.03em}
+.mood .emoji{font-size:20px;line-height:1.3}.mood[aria-pressed=true]{border-color:#c49a67;background:#c49a6718;box-shadow:inset 0 0 0 1px #c49a6733;color:#f0d7b4}
+.mood[aria-pressed=true]:after{content:"✓";position:absolute;margin:0 0 0 104px;color:var(--gold);font:12px var(--serif)}
+.note-wrap{margin-top:28px;border-top:1px solid #ffffff17;padding-top:22px}
+.note-label{display:block;color:#d8cbb7;font:400 12px/2 var(--cn);margin-bottom:9px}
+textarea{display:block;width:100%;min-height:112px;resize:vertical;border:1px solid #ffffff24;border-radius:3px;background:#ffffff06;color:var(--ink);padding:13px 14px;font:400 13px/1.9 var(--cn)}
+textarea::placeholder{color:#80796e}
+.note-meta{display:flex;justify-content:space-between;gap:12px;margin-top:7px;color:#928b80;font:400 10px var(--cn)}
+.actions{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-top:23px}
+.selected-count{color:var(--muted);font:400 11px var(--cn)}
+.action-buttons{display:flex;gap:9px}.action-buttons button{min-width:118px}
+.privacy{margin:17px 0 0;color:#8e887d;font:400 10px/1.9 var(--cn)}
+.echo{margin-top:18px;padding:clamp(22px,4vw,38px);min-height:145px}
+.echo-top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.echo h2{font:500 11px var(--serif);letter-spacing:.22em;color:var(--gold);margin:0}
+.echo-state{color:#aaa395;font:400 10px var(--cn)}
+.echo-text{white-space:pre-wrap;margin:22px 0 8px;color:#e4ddcf;font:400 clamp(18px,2.4vw,24px)/1.95 var(--art);letter-spacing:.035em}
+.echo-foot{color:#aaa395;font:400 10px/1.9 var(--cn)}
+.spinner{display:inline-block;width:12px;height:12px;border:1px solid #c49a6750;border-top-color:var(--gold);border-radius:50%;vertical-align:-2px;margin-right:7px;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.foot{text-align:center;margin:28px 0 0;color:#8e887d;font:400 10px/2 var(--serif);letter-spacing:.1em}
+@media(max-width:700px){.wrap{width:calc(100% - 30px);padding:17px 0 46px}.top{padding-bottom:16px}.tag{max-width:175px;font-size:9px}.intro{margin:43px auto 28px}.intro h1{font-size:clamp(31px,8vw,43px)}.moods{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.mood{min-height:64px}.section-head{align-items:flex-start;flex-direction:column;gap:2px}.actions{align-items:stretch}.action-buttons{width:100%}.action-buttons button{flex:1}.echo-top{align-items:flex-start;flex-direction:column}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;scroll-behavior:auto!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header class="top">
+  <div><div class="brand">MIA <span>HEALING</span></div><div class="tag" data-zh="A QUIET PLACE TO BE · WITH MIA" data-en="A QUIET PLACE TO BE · WITH MIA">A QUIET PLACE TO BE · WITH MIA</div></div>
+  <div class="lang"><button id="zh" class="active" type="button">中文</button><button id="en" type="button">EN</button></div>
+</header>
+<section class="intro">
+  <div class="eyebrow">A MOMENT WITH MIA</div>
+  <h1 data-zh="此刻的你，可以在这里停一停。" data-en="You can pause here, just as you are.">此刻的你，可以在这里停一停。</h1>
+  <p data-zh="不必整理好情绪，也不必急着变得快乐。选出此刻的感受，让 Mia 听见你真正想表达的部分。" data-en="You don't need to sort your feelings out or rush toward happiness. Choose what is here, and let Mia hear what you want to express.">不必整理好情绪，也不必急着变得快乐。选出此刻的感受，让 Mia 听见你真正想表达的部分。</p>
+</section>
+<section class="panel selector" aria-labelledby="pickTitle">
+  <div class="section-head"><h2 id="pickTitle" data-zh="01 · 选择此刻的心情" data-en="01 · CHOOSE WHAT IS HERE">01 · 选择此刻的心情</h2><span data-zh="可以同时选择多种感受" data-en="You can choose more than one">可以同时选择多种感受</span></div>
+  <p class="lead" data-zh="没有正确答案。矛盾的感受，也可以同时存在。" data-en="There is no right answer. Contradictory feelings can exist together.">没有正确答案。矛盾的感受，也可以同时存在。</p>
+  <div id="moodGroups">
+    <div class="group"><h3 class="group-title" data-zh="不安与压力" data-en="Unease & pressure">不安与压力</h3><div class="moods">
+      <button class="mood" type="button" data-mood="焦虑" data-en-mood="Anxious" aria-pressed="false"><span class="emoji">😰</span><span data-zh="焦虑" data-en="Anxious">焦虑</span></button>
+      <button class="mood" type="button" data-mood="担忧" data-en-mood="Worried" aria-pressed="false"><span class="emoji">😟</span><span data-zh="担忧" data-en="Worried">担忧</span></button>
+      <button class="mood" type="button" data-mood="不知所措" data-en-mood="Overwhelmed" aria-pressed="false"><span class="emoji">😵‍💫</span><span data-zh="不知所措" data-en="Overwhelmed">不知所措</span></button>
+      <button class="mood" type="button" data-mood="压力很大" data-en-mood="Under pressure" aria-pressed="false"><span class="emoji">😣</span><span data-zh="压力很大" data-en="Under pressure">压力很大</span></button>
+      <button class="mood" type="button" data-mood="迷茫" data-en-mood="Lost" aria-pressed="false"><span class="emoji">🌫️</span><span data-zh="迷茫" data-en="Lost">迷茫</span></button>
+      <button class="mood" type="button" data-mood="恐惧" data-en-mood="Afraid" aria-pressed="false"><span class="emoji">🫨</span><span data-zh="恐惧" data-en="Afraid">恐惧</span></button>
+    </div></div>
+    <div class="group"><h3 class="group-title" data-zh="矛盾与挣扎" data-en="Conflict & uncertainty">矛盾与挣扎</h3><div class="moods">
+      <button class="mood" type="button" data-mood="犹豫" data-en-mood="Hesitant" aria-pressed="false"><span class="emoji">🤔</span><span data-zh="犹豫" data-en="Hesitant">犹豫</span></button>
+      <button class="mood" type="button" data-mood="纠结" data-en-mood="Torn" aria-pressed="false"><span class="emoji">⚖️</span><span data-zh="纠结" data-en="Torn">纠结</span></button>
+      <button class="mood" type="button" data-mood="混乱" data-en-mood="Confused" aria-pressed="false"><span class="emoji">🌀</span><span data-zh="混乱" data-en="Confused">混乱</span></button>
+      <button class="mood" type="button" data-mood="无助" data-en-mood="Helpless" aria-pressed="false"><span class="emoji">🫥</span><span data-zh="无助" data-en="Helpless">无助</span></button>
+      <button class="mood" type="button" data-mood="失望" data-en-mood="Disappointed" aria-pressed="false"><span class="emoji">🥀</span><span data-zh="失望" data-en="Disappointed">失望</span></button>
+      <button class="mood" type="button" data-mood="放不下" data-en-mood="Can't let go" aria-pressed="false"><span class="emoji">💭</span><span data-zh="放不下" data-en="Can't let go">放不下</span></button>
+    </div></div>
+    <div class="group"><h3 class="group-title" data-zh="愤怒与受伤" data-en="Anger & hurt">愤怒与受伤</h3><div class="moods">
+      <button class="mood" type="button" data-mood="愤怒" data-en-mood="Angry" aria-pressed="false"><span class="emoji">😠</span><span data-zh="愤怒" data-en="Angry">愤怒</span></button>
+      <button class="mood" type="button" data-mood="委屈" data-en-mood="Hurt" aria-pressed="false"><span class="emoji">🔥</span><span data-zh="委屈" data-en="Hurt">委屈</span></button>
+      <button class="mood" type="button" data-mood="心碎" data-en-mood="Heartbroken" aria-pressed="false"><span class="emoji">💔</span><span data-zh="心碎" data-en="Heartbroken">心碎</span></button>
+      <button class="mood" type="button" data-mood="不甘" data-en-mood="Resentful" aria-pressed="false"><span class="emoji">😤</span><span data-zh="不甘" data-en="Resentful">不甘</span></button>
+      <button class="mood" type="button" data-mood="冷漠" data-en-mood="Numb" aria-pressed="false"><span class="emoji">🧊</span><span data-zh="冷漠" data-en="Numb">冷漠</span></button>
+      <button class="mood" type="button" data-mood="压抑" data-en-mood="Suppressed" aria-pressed="false"><span class="emoji">🫧</span><span data-zh="压抑" data-en="Suppressed">压抑</span></button>
+    </div></div>
+    <div class="group"><h3 class="group-title" data-zh="低落与孤独" data-en="Low & alone">低落与孤独</h3><div class="moods">
+      <button class="mood" type="button" data-mood="难过" data-en-mood="Sad" aria-pressed="false"><span class="emoji">😢</span><span data-zh="难过" data-en="Sad">难过</span></button>
+      <button class="mood" type="button" data-mood="孤独" data-en-mood="Lonely" aria-pressed="false"><span class="emoji">🌙</span><span data-zh="孤独" data-en="Lonely">孤独</span></button>
+      <button class="mood" type="button" data-mood="沮丧" data-en-mood="Discouraged" aria-pressed="false"><span class="emoji">😞</span><span data-zh="沮丧" data-en="Discouraged">沮丧</span></button>
+      <button class="mood" type="button" data-mood="疲惫" data-en-mood="Exhausted" aria-pressed="false"><span class="emoji">🍂</span><span data-zh="疲惫" data-en="Exhausted">疲惫</span></button>
+      <button class="mood" type="button" data-mood="空虚" data-en-mood="Empty" aria-pressed="false"><span class="emoji">🕯️</span><span data-zh="空虚" data-en="Empty">空虚</span></button>
+      <button class="mood" type="button" data-mood="想哭" data-en-mood="Need to cry" aria-pressed="false"><span class="emoji">🌧️</span><span data-zh="想哭" data-en="Need to cry">想哭</span></button>
+    </div></div>
+    <div class="group"><h3 class="group-title" data-zh="温柔与希望" data-en="Gentleness & hope">温柔与希望</h3><div class="moods">
+      <button class="mood" type="button" data-mood="期待" data-en-mood="Looking forward" aria-pressed="false"><span class="emoji">🌱</span><span data-zh="期待" data-en="Looking forward">期待</span></button>
+      <button class="mood" type="button" data-mood="平静" data-en-mood="Peaceful" aria-pressed="false"><span class="emoji">☀️</span><span data-zh="平静" data-en="Peaceful">平静</span></button>
+      <button class="mood" type="button" data-mood="感恩" data-en-mood="Grateful" aria-pressed="false"><span class="emoji">🌷</span><span data-zh="感恩" data-en="Grateful">感恩</span></button>
+      <button class="mood" type="button" data-mood="释然" data-en-mood="Relieved" aria-pressed="false"><span class="emoji">🕊️</span><span data-zh="释然" data-en="Relieved">释然</span></button>
+      <button class="mood" type="button" data-mood="喜悦" data-en-mood="Joyful" aria-pressed="false"><span class="emoji">✨</span><span data-zh="喜悦" data-en="Joyful">喜悦</span></button>
+      <button class="mood" type="button" data-mood="重新开始" data-en-mood="A new beginning" aria-pressed="false"><span class="emoji">🌈</span><span data-zh="重新开始" data-en="A new beginning">重新开始</span></button>
+    </div></div>
+  </div>
+  <div class="note-wrap">
+    <label class="note-label" for="note" data-zh="02 · 也可以留一句话给 Mia（选填）" data-en="02 · Leave Mia a few words (optional)">02 · 也可以留一句话给 Mia（选填）</label>
+    <textarea id="note" maxlength="500" placeholder="我现在有些说不清楚……" data-placeholder-zh="我现在有些说不清楚……" data-placeholder-en="I don't quite know how to put it into words..."></textarea>
+    <div class="note-meta"><span data-zh="只写你愿意分享的部分。" data-en="Share only what you feel comfortable sharing.">只写你愿意分享的部分。</span><span id="charCount">0 / 500</span></div>
+  </div>
+  <div class="actions">
+    <span class="selected-count" id="selectedCount" aria-live="polite">已选择 0 种感受</span>
+    <div class="action-buttons"><button id="clear" type="button" data-zh="清空选择" data-en="Clear">清空选择</button><button id="send" class="primary" type="button" disabled data-zh="发送给 Mia" data-en="Send to Mia">发送给 Mia</button></div>
+  </div>
+  <p class="privacy" data-zh="你的心情和文字仅用于本次 AGNES 生成，不会写入 Mia 聊天、长期记忆或公开页面。请勿填写密码、联系方式等敏感信息。" data-en="Your moods and note are used only for this AGNES generation. They are not saved to Mia's chat, long-term memory or a public page. Please do not include passwords or sensitive contact details.">你的心情和文字仅用于本次 AGNES 生成，不会写入 Mia 聊天、长期记忆或公开页面。请勿填写密码、联系方式等敏感信息。</p>
+</section>
+<section class="panel echo" aria-live="polite">
+  <div class="echo-top"><h2 data-zh="MIA 的回声" data-en="MIA'S ECHO">MIA 的回声</h2><span class="echo-state" id="echoState" data-zh="这里留给 Mia" data-en="A space for Mia">这里留给 Mia</span></div>
+  <div class="echo-text" id="echoText" hidden></div>
+  <div class="echo-foot" id="echoFoot" data-zh="当你准备好时，Mia 会听见这一次的表达。" data-en="When you're ready, Mia will receive this moment of expression.">当你准备好时，Mia 会听见这一次的表达。</div>
+</section>
+<p class="foot" data-zh="Mia Healing · 一个允许真实情绪存在的安静角落。非心理诊断或医疗服务。" data-en="Mia Healing · A quiet corner where feelings are allowed to exist. Not a mental-health diagnosis or medical service.">Mia Healing · 一个允许真实情绪存在的安静角落。非心理诊断或医疗服务。</p>
+</main>
+<script>
+(()=>{
+const endpoint='https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/zhi-healing-echo';
+const publicKey='sb_publishable_spH47ZngJJTk13cpYPBjSw_X5qAsBmK';
+const $=id=>document.getElementById(id);
+let lang='zh';
+const selected=new Map();
+function labelMood(button){return lang==='zh'?button.dataset.mood:button.dataset.enMood}
+function refreshCount(){
+  const n=selected.size;
+  $('selectedCount').textContent=lang==='zh'?'已选择 '+n+' 种感受':n+' feeling'+(n===1?'':'s')+' selected';
+  $('send').disabled=n===0;
+}
+document.querySelectorAll('.mood').forEach(button=>{
+  button.addEventListener('click',()=>{
+    const key=button.dataset.mood;
+    if(selected.has(key)){selected.delete(key);button.setAttribute('aria-pressed','false')}
+    else{selected.set(key,button.dataset.enMood);button.setAttribute('aria-pressed','true')}
+    refreshCount();
+  });
+});
+$('note').addEventListener('input',()=>{$('charCount').textContent=$('note').value.length+' / 500'});
+$('clear').addEventListener('click',()=>{
+  selected.clear();
+  document.querySelectorAll('.mood').forEach(b=>b.setAttribute('aria-pressed','false'));
+  $('note').value='';$('charCount').textContent='0 / 500';refreshCount();
+});
+function setLang(next){
+  lang=next;document.documentElement.lang=next==='zh'?'zh-CN':'en';
+  $('zh').classList.toggle('active',next==='zh');$('en').classList.toggle('active',next==='en');
+  document.querySelectorAll('[data-zh][data-en]').forEach(el=>{el.textContent=el.dataset[next]});
+  $('note').placeholder=$('note').dataset['placeholder'+(next==='zh'?'Zh':'En')];
+  refreshCount();
+}
+$('zh').addEventListener('click',()=>setLang('zh'));
+$('en').addEventListener('click',()=>setLang('en'));
+$('send').addEventListener('click',async()=>{
+  if(!selected.size)return;
+  const button=$('send'),state=$('echoState'),foot=$('echoFoot'),output=$('echoText');
+  const moods=Array.from(selected.entries()).map(([zh,en])=>({zh,en}));
+  const note=$('note').value.trim();
+  button.disabled=true;button.textContent=lang==='zh'?'Mia 正在倾听…':'Mia is listening…';
+  state.innerHTML='<span class="spinner"></span>'+(lang==='zh'?'Mia 正在回应':'Mia is responding');
+  foot.textContent=lang==='zh'?'正在把你选择的感受交给 Mia。':'Your selected feelings are being shared with Mia.';
+  output.hidden=true;output.textContent='';
+  try{
+    const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','apikey':publicKey},body:JSON.stringify({moods,note,language:lang})});
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok||!result.echo)throw new Error(result.error||'CREATION_FAILED');
+    output.textContent=result.echo;output.hidden=false;
+    state.textContent=lang==='zh'?'Mia 的原创回声':'An original echo from Mia';
+    foot.textContent=lang==='zh'?'由 Mia 经 AGNES 本次生成 · 未保存到聊天或长期记忆。':'Created by Mia through AGNES · Not saved to chat or long-term memory.';
+  }catch(error){
+    state.textContent=lang==='zh'?'这一次尚未完成':'Not completed this time';
+    foot.textContent=lang==='zh'?'Mia 这次还没有完成创作，因此没有显示预设安慰语。你可以稍后再试。':'Mia has not completed a creation, so no preset comfort text is shown. Please try again later.';
+  }finally{
+    button.disabled=false;button.textContent=lang==='zh'?'发送给 Mia':'Send to Mia';refreshCount();
+  }
+});
+setLang('zh');refreshCount();
+})();
+</script>
+</body></html>

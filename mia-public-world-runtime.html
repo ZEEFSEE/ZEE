@@ -42,9 +42,10 @@ import * as THREE from "three";
 import {OrbitControls} from "three/addons/controls/OrbitControls.js";
 import {validateWorldManifest,layoutToWorld,anchorToLocal,anchorApproachToLocal,findWalkPath,createRuntimePerception,isWalkable,resolveSceneTransition,resolveSceneRoute} from "./world-scenes/runtime/mia-public-world-runtime.mjs";
 const $=s=>document.querySelector(s), mount=$("#viewport");
-let manifest,activeScene,renderer,scene,camera,controls,avatar,kenAvatar=null,kenState=null,lastKenFrameSignature="",kenPath=[],kenPathIndex=0,kenLastTargetKey="",avatarHeading=0,position={x:1.2,z:7},path=[],pathIndex=0,moveResolve=null,sceneObjects=[],lastPerception=0;
+let manifest,activeScene,renderer,scene,camera,controls,avatar,kenAvatar=null,kenState=null,lastKenFrameSignature="",lastKenFrameAt=0,kenPath=[],kenPathIndex=0,kenLastTargetKey="",avatarHeading=0,position={x:1.2,z:7},path=[],pathIndex=0,moveResolve=null,sceneObjects=[],lastPerception=0;
 const KEN_WORLD_API="https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/ken-world-runtime";
 const MIA_TOKEN=sessionStorage.getItem("mia_chat_token")||"";
+const KEN_FOLLOW_MODE=new URLSearchParams(location.search).get("resident")==="KEN";
 const SUPABASE_PUBLIC_KEY="sb_publishable_spH47ZngJJTk13cpYPBjSw_X5qAsBmK";
 const sceneColors={"mia-forest-corner":0x78966d,"crystal-forest":0x607c78,"ocean-of-light":0x6a9da8,"memory-valley":0x83927d,"living-city":0x7c9b79,"greenhouse":0x92aa7a,"palace":0x9b8054};
 const destinationIds=["crystal-forest","ocean-of-light","memory-valley","living-city","greenhouse"];
@@ -115,15 +116,17 @@ async function syncKenPresence(){
  try{
   const r=await fetch(KEN_WORLD_API,{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLIC_KEY,"Authorization":"Bearer "+MIA_TOKEN},body:JSON.stringify({action:"snapshot"}),cache:"no-store"});
   const d=await r.json();if(!r.ok||!d.ok)throw new Error(d.error||("HTTP "+r.status));
-  kenState=d.state||null;renderKenPresence();
+  kenState=d.state||null;
+  if(KEN_FOLLOW_MODE&&kenState?.scene_id&&kenState.scene_id!==activeScene.id){switchScene(kenState.scene_id,false);}
+  renderKenPresence();
   if(kenState&&kenState.scene_id===activeScene.id&&kenState.position_status!=="left"&&kenState.position&&kenPath.length===0){
    const framePosition=kenAvatar?{x:kenAvatar.position.x,z:kenAvatar.position.z}:{x:Number(kenState.position.x),z:Number(kenState.position.z)};
    const frame=createRuntimePerception({scene:activeScene,position:framePosition,heading:0});
    const signature=JSON.stringify([frame.scene_id,frame.position.x,frame.position.z,frame.visible_entities.map(e=>[e.id,e.distance_m,e.bearing_rad])]);
-   if(signature!==lastKenFrameSignature){
+   if(signature!==lastKenFrameSignature||Date.now()-lastKenFrameAt>30000){
     const fr=await fetch(KEN_WORLD_API,{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLIC_KEY,"Authorization":"Bearer "+MIA_TOKEN},body:JSON.stringify({action:"ingest_frame",frame}),cache:"no-store"});
     const fd=await fr.json();if(!fr.ok||!fd.ok)throw new Error(fd.error||("FRAME HTTP "+fr.status));
-    lastKenFrameSignature=signature;
+    lastKenFrameSignature=signature;lastKenFrameAt=Date.now();
    }
   }
  }catch(e){$("#ken-presence-status").textContent="KEN 状态同步暂不可用："+e.message;}
@@ -143,11 +146,11 @@ function disposeActiveScene(){
 function cancelWalk(){
  path=[];pathIndex=0;const done=moveResolve;moveResolve=null;done?.();
 }
-function switchScene(id){
+function switchScene(id,sync=true){
  const s=manifest.scenes.find(x=>x.id===id);if(!s)throw Error("未知场景 "+id);
  cancelWalk();disposeActiveScene();
  sceneObjects=[];kenAvatar=null;kenPath=[];kenPathIndex=0;kenLastTargetKey="";position={...s.spawn};path=[];pathIndex=0;
- buildScene(s);updateState();renderKenPresence();syncKenPresence();setStatus("已进入："+s.name,"场景地面、碰撞体、边界与实体锚点已加载。");
+ buildScene(s);updateState();renderKenPresence();if(sync)syncKenPresence();setStatus("已进入："+s.name,"场景地面、碰撞体、边界与实体锚点已加载。");
 }
 function walkTo(target){
  const route=findWalkPath(activeScene,position,target);

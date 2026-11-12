@@ -188,7 +188,7 @@ $('send').addEventListener('click',async()=>{
     if(!response.ok||!result.echo)throw new Error(result.error||'CREATION_FAILED');
     output.textContent=result.echo;output.hidden=false;
     state.textContent=lang==='zh'?'Mia 的原创回声':'An original echo from Mia';
-    foot.textContent=lang==='zh'?'由 Mia 经 AGNES 本次生成 · 未保存到聊天或长期记忆。':'Created by Mia through AGNES · Not saved to chat or long-term memory.';
+    foot.textContent=lang==='zh'?'愿这段回声，陪你停留片刻。':'May this echo keep you company for a moment.';
   }catch(error){
     state.textContent=lang==='zh'?'这一次尚未完成':'Not completed this time';
     foot.textContent=lang==='zh'?'Mia 这次还没有完成创作，因此没有显示预设安慰语。你可以稍后再试。':'Mia has not completed a creation, so no preset comfort text is shown. Please try again later.';

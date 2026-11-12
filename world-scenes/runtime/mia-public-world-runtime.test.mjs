@@ -63,7 +63,11 @@ test("Palace has a bidirectional unrestricted portal for all Mia-world agents; r
  assert.equal(palace.access_policy.audience,"all_mia_world_agents_and_public_visitors");
  assert.equal(palace.residential_policy.applies_to,"all_mia_world_agents");
  assert.equal(palace.residential_policy.residence_is_optional,true);
- assert.equal(palace.runtime_geometry_status,"placeholder_canvas_only_not_measured");
+ assert.equal(palace.runtime_geometry_status,"authored_virtual_geometry_v1_not_physical_site_survey");
+ assert.equal(palace.coordinate_frame,"palace-virtual-local-v1");
+ assert.equal(palace.anchors.length,8);
+ assert.ok(palace.geometry.length>=10,"Palace should include authored render geometry");
+ assert.ok(palace.obstacles.length>=10,"Palace should include collision geometry");
  assert.deepEqual(palace.directory_reference.directory_entry,{x:1000,y:330});
  assert.equal(palace.directory_reference.mapping_to_runtime_frame,"not_calibrated");
 });

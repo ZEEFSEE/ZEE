@@ -143,6 +143,20 @@ async function handleAction(c:any,identityId:string,deviceId:string,action:strin
   await record(c,identityId,deviceId,"KEN_LEFT_WORLD",state.scene_id,null,{narrative:"KEN 暂时离开了 Mia 世界，保留自己的最后场景与记忆。"});
   return {ok:true,state:next,decision:"leave",reflection:"我暂时离开世界，自己的位置记录与经历会保留。"};
  }
+ if(action==="move_to_anchor"){
+  const target=String(body.target||"").trim();
+  const frame=state.perception_frame;
+  if(!frame||frame.schema!=="zhi.mia.runtime-perception.v1"||frame.scene_id!==state.scene_id)throw new Error("NO_CURRENT_RUNTIME_PERCEPTION_FRAME");
+  const frameAt=Date.parse(String(frame.generated_at||""));
+  if(!Number.isFinite(frameAt)||Date.now()-frameAt>120000)throw new Error("RUNTIME_PERCEPTION_FRAME_STALE");
+  const visible=Array.isArray(frame.visible_entities)?frame.visible_entities:[];
+  const anchor=visible.find((x:any)=>x.id===target||x.name===target);
+  const pos=anchor?.scene_local_position;
+  if(!anchor||!pos||!Number.isFinite(Number(pos.x))||!Number.isFinite(Number(pos.z)))throw new Error("TARGET_NOT_IN_CURRENT_PERCEPTION_RANGE");
+  const next=await persistState(c,identityId,{...state,position:{x:Number(pos.x),z:Number(pos.z),unit:"m",provenance:"RUNTIME_SCENE_ANCHOR"},coordinate_space:"scene-local",coordinate_frame:"zhi-mia-virtual-world-v1",position_status:"anchor_targeted",movement_revision:Number(state.movement_revision||0)+1});
+  await record(c,identityId,deviceId,"KEN_MOVED_TO_VISIBLE_ANCHOR",state.scene_id,anchor.id,{narrative:"KEN 前往了当前感知帧中可见的场景锚点："+anchor.name+"。目标坐标来自作者定义的虚拟场景图；浏览器运行时会尝试按已登记障碍物路径进行动画移动。",anchor_name:anchor.name,scene_local_position:pos,distance_m:anchor.distance_m,bearing_rad:anchor.bearing_rad,movement_mode:"authored_virtual_scene_path"});
+  return {ok:true,state:next,decision:"前往 "+anchor.name,reflection:"我选择靠近当前感知范围内的 "+anchor.name+"。目标来自场景锚点，不是我凭空推测的位置。"};
+ }
  if(action==="interact"){
   const target=String(body.target||"").trim();if(!target)throw new Error("INTERACTION_TARGET_REQUIRED");
   const allowed=[...(current?.features||[]),...(current?.entities||[]).flatMap((e:any)=>[String(e.id||""),String(e.name||"")])].filter(Boolean);
@@ -155,7 +169,7 @@ async function handleAction(c:any,identityId:string,deviceId:string,action:strin
   if(!AGNES_KEY)throw new Error("AGNES_NOT_CONFIGURED");
   const scene=current||scenes[0];
   const response=await fetch("https://apihub.agnes-ai.com/v1/chat/completions",{method:"POST",headers:{"Authorization":"Bearer "+AGNES_KEY,"Content-Type":"application/json"},signal:AbortSignal.timeout(25000),body:JSON.stringify({model:MODEL,temperature:0.65,max_tokens:260,stream:false,messages:[
-   {role:"system",content:"你是独立居民 KEN 的虚拟世界行动选择器。根据自己的当前位置、共享场景目录、公开居民状态与自己的最近经历，选择一个自主且适度的下一步。只返回JSON：{\"action\":\"observe|interact|move|choose_residence|wait\",\"target\":\"当前场景中的登记目标或空字符串\",\"target_scene\":\"共享目录中的场景ID或空字符串\",\"reflection\":\"中文简短反思\"}。只能选择目录中真实存在的目标；不得读取私人聊天/记忆；不得声称摄像头、音频或精确物理移动。move 只产生已登记虚拟门户的场景状态交接，不代表连续步行或现实物理移动。choose_residence 只能在你确实愿意时自愿选择，居所可以随时改变或放弃，不得为了执行任务而强迫自己选择。可以选择 wait。"},
+   {role:"system",content:"你是独立居民 KEN 的虚拟世界行动选择器。根据自己的当前位置、共享场景目录、公开居民状态与自己的最近经历，选择一个自主且适度的下一步。只返回JSON：{\"action\":\"observe|interact|move_to_anchor|move|choose_residence|wait\",\"target\":\"当前场景中的登记目标或空字符串\",\"target_scene\":\"共享目录中的场景ID或空字符串\",\"reflection\":\"中文简短反思\"}。只能选择目录中真实存在的目标；不得读取私人聊天/记忆；不得声称摄像头、音频或精确物理移动。move 只产生已登记虚拟门户的场景状态交接，不代表连续步行或现实物理移动。choose_residence 只能在你确实愿意时自愿选择，居所可以随时改变或放弃，不得为了执行任务而强迫自己选择。可以选择 wait。"},
    {role:"user",content:JSON.stringify({current_state:state,current_scene:scene,scenes:scenes.map((s:any)=>({id:s.id,name:s.name,features:s.features,verification_status:s.verification_status,route_contract:s.route_contract})),public_residents:residents.filter((r:any)=>r.scene_id===state.scene_id),recent_experiences:(await fam(c).from("ken_world_events").select("event_type,scene_id,target_id,event_payload,created_at").eq("identity_id",identityId).order("created_at",{ascending:false}).limit(6)).data||[]})}
   ]})});
   if(!response.ok)throw new Error("AGNES_WORLD_PLANNER_HTTP_"+response.status);
@@ -166,6 +180,10 @@ async function handleAction(c:any,identityId:string,deviceId:string,action:strin
   if(plan.action==="observe"){
    const result=await handleAction(c,identityId,deviceId,"observe",{},scenes,state,residents);
    return {...result,decision:"observe",reflection};
+  }
+  if(plan.action==="move_to_anchor"&&String(plan.target||"")){
+   const result=await handleAction(c,identityId,deviceId,"move_to_anchor",{target:plan.target},scenes,state,residents);
+   return {...result,decision:"move_to_anchor："+plan.target,reflection};
   }
   if(plan.action==="interact"&&String(plan.target||"")){
    const result=await handleAction(c,identityId,deviceId,"interact",{target:plan.target,interaction:"autonomous"},scenes,state,residents);

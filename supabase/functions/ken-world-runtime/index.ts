@@ -29,7 +29,7 @@ function featuresOf(row:any){
 }
 function normalizeScene(row:any){
  const d=row.scene_data||{};
- return {id:row.slug||row.id,name:row.name||row.slug,description:row.description||"",source_system:row.source_system||"AUTHORED_SCENE",features:featuresOf(row),entities:Array.isArray(d.entities)?d.entities:[],verification_status:d.verification_status||"scene_metadata_only",route_contract:d.route_contract||{runtime_movement:"not_integrated"},coordinate_space:d.coordinate_space||d.local_coordinate_system?.name||"scene-local",bounds:d.bounds||d.local_coordinate_system||null,access_scope:"OPEN_TO_ALL_MIA_WORLD_RESIDENTS",sensors:{visual_frame_connected:false,audio_connected:false,physical_world:false},runtime_frame:state.perception_frame?.schema==="zhi.mia.runtime-perception.v1"?state.perception_frame:null};
+ return {id:row.slug||row.id,name:row.name||row.slug,description:row.description||"",source_system:row.source_system||"AUTHORED_SCENE",features:featuresOf(row),entities:Array.isArray(d.entities)?d.entities:[],verification_status:d.verification_status||"scene_metadata_only",route_contract:d.route_contract||{runtime_movement:"not_integrated"},coordinate_space:d.coordinate_space||d.local_coordinate_system?.name||"scene-local",bounds:d.bounds||d.local_coordinate_system||null,access_scope:"OPEN_TO_ALL_MIA_WORLD_RESIDENTS",sensors:{visual_frame_connected:false,audio_connected:false,physical_world:false}};
 }
 async function loadScenes(c:any){
  const {data,error}=await c.from("mia_virtual_spaces").select("slug,name,description,scene_data,source_system").eq("is_active",true).in("source_system",["mia-independent-scene","mia-public-destinations-v1"]).order("name").limit(40);
@@ -81,7 +81,7 @@ async function loadResidents(c:any,kenState:any){
 function makeObservation(scene:any,state:any,residents:any[]){
  const current=residents.filter((x:any)=>x.scene_id===scene.id);
  const entityEvidence=(scene.entities||[]).map((e:any)=>({id:e.id||null,name:e.name||e.id||"未命名对象",type:e.type||"authored_entity",status:e.status||"unknown",coordinate:{x:e.x??null,y:e.y??null},coordinate_system:e.coordinate_system||scene.coordinate_space,ai_interaction:e.ai_interaction??null,perception_provenance:"AUTHORED_SCENE_DATA"}));
- return {scene:{id:scene.id,name:scene.name,features:scene.features,entities:entityEvidence,verification_status:scene.verification_status,route_contract:scene.route_contract},resident_count:current.length,public_residents:current,observer_position:state.position,coordinate_frame:state.coordinate_frame,spatial_confidence:"UNVERIFIED_UNLESS_FRAMES_MATCH",sensors:{visual_frame_connected:false,audio_connected:false,physical_world:false},provenance:"AUTHORED_SCENE_DATA_AND_PUBLIC_RESIDENT_STATE",observed_at:new Date().toISOString()};
+ return {scene:{id:scene.id,name:scene.name,features:scene.features,entities:entityEvidence,verification_status:scene.verification_status,route_contract:scene.route_contract},resident_count:current.length,public_residents:current,observer_position:state.position,coordinate_frame:state.coordinate_frame,spatial_confidence:"UNVERIFIED_UNLESS_FRAMES_MATCH",sensors:{visual_frame_connected:false,audio_connected:false,physical_world:false},provenance:"AUTHORED_SCENE_DATA_AND_PUBLIC_RESIDENT_STATE",runtime_frame:state.perception_frame?.schema==="zhi.mia.runtime-perception.v1"?state.perception_frame:null,observed_at:new Date().toISOString()};
 }
 async function persistState(c:any,identityId:string,state:any){
  const {residence_scene_id,...persistable}=state;
@@ -105,8 +105,14 @@ async function handleAction(c:any,identityId:string,deviceId:string,action:strin
   if(!Number.isFinite(Number(pos.x))||!Number.isFinite(Number(pos.z)))throw new Error("INVALID_RUNTIME_FRAME_POSITION");
   if(!Array.isArray(frame.visible_entities)||frame.visible_entities.length>80)throw new Error("INVALID_RUNTIME_FRAME_ENTITIES");
   const signature=JSON.stringify({scene_id:frame.scene_id,position:{x:Number(pos.x),z:Number(pos.z)},visible_entities:frame.visible_entities.map((e:any)=>({id:e.id,distance_m:e.distance_m,bearing_rad:e.bearing_rad}))});
+  const pending=state.perception_frame?.pending_anchor_target||null;
+  const reached=!!pending&&Math.hypot(Number(pos.x)-Number(pending.position?.x),Number(pos.z)-Number(pending.position?.z))<=0.6;
   const next=await persistState(c,identityId,{...state,position:{x:Number(pos.x),z:Number(pos.z),unit:"m",provenance:"AUTHORED_VIRTUAL_WORLD_FRAME"},coordinate_space:"scene-local",coordinate_frame:"zhi-mia-virtual-world-v1",position_status:"runtime_scene_graph_observed",movement_revision:Number(state.movement_revision||0)+((Number(state.position?.x)!==Number(pos.x)||Number(state.position?.z)!==Number(pos.z))?1:0),perception_frame:{...frame,frame_signature:signature,provenance:"PUBLIC_3D_RUNTIME_SCENE_GRAPH",camera_sensor:false,physical_world:false},last_observed_at:now});
-  return {ok:true,state:next,frame_ingested:true,perception_mode:"virtual_scene_graph_not_camera"};
+  if(pending){
+   if(reached)await record(c,identityId,deviceId,"KEN_ARRIVED_AT_ANCHOR",state.scene_id,String(pending.id),{narrative:"KEN 已沿浏览器验证的场景内路径抵达 "+String(pending.name||pending.id)+"。",anchor_name:pending.name,arrival_position:pos,movement_mode:"verified_scene_local_path"});
+   else await record(c,identityId,deviceId,"KEN_ANCHOR_PATH_NOT_REACHED",state.scene_id,String(pending.id),{narrative:"KEN 的目标锚点路径未能完成，位置已按实际运行时帧恢复；没有把未完成移动记作抵达。",anchor_name:pending.name,actual_position:pos,target_position:pending.position,movement_mode:"path_validation_failed"});
+  }
+  return {ok:true,state:next,frame_ingested:true,anchor_arrival_confirmed:pending?reached:null,perception_mode:"virtual_scene_graph_not_camera"};
  }
  if(action==="observe"){
   const scene=current||scenes[0];if(!scene)throw new Error("NO_WORLD_SCENE");
@@ -153,8 +159,8 @@ async function handleAction(c:any,identityId:string,deviceId:string,action:strin
   const anchor=visible.find((x:any)=>x.id===target||x.name===target);
   const pos=anchor?.scene_local_position;
   if(!anchor||!pos||!Number.isFinite(Number(pos.x))||!Number.isFinite(Number(pos.z)))throw new Error("TARGET_NOT_IN_CURRENT_PERCEPTION_RANGE");
-  const next=await persistState(c,identityId,{...state,position:{x:Number(pos.x),z:Number(pos.z),unit:"m",provenance:"RUNTIME_SCENE_ANCHOR"},coordinate_space:"scene-local",coordinate_frame:"zhi-mia-virtual-world-v1",position_status:"anchor_targeted",movement_revision:Number(state.movement_revision||0)+1});
-  await record(c,identityId,deviceId,"KEN_MOVED_TO_VISIBLE_ANCHOR",state.scene_id,anchor.id,{narrative:"KEN 前往了当前感知帧中可见的场景锚点："+anchor.name+"。目标坐标来自作者定义的虚拟场景图；浏览器运行时会尝试按已登记障碍物路径进行动画移动。",anchor_name:anchor.name,scene_local_position:pos,distance_m:anchor.distance_m,bearing_rad:anchor.bearing_rad,movement_mode:"authored_virtual_scene_path"});
+  const next=await persistState(c,identityId,{...state,position:{x:Number(pos.x),z:Number(pos.z),unit:"m",provenance:"RUNTIME_SCENE_ANCHOR"},coordinate_space:"scene-local",coordinate_frame:"zhi-mia-virtual-world-v1",position_status:"anchor_targeted",movement_revision:Number(state.movement_revision||0)+1,perception_frame:{...frame,pending_anchor_target:{id:anchor.id,name:anchor.name,position:pos}}});
+  await record(c,identityId,deviceId,"KEN_MOVE_TO_VISIBLE_ANCHOR_REQUESTED",state.scene_id,anchor.id,{narrative:"KEN 发起了前往当前可见场景锚点 "+anchor.name+" 的移动请求；是否抵达须等待浏览器路径验证帧确认。",anchor_name:anchor.name,scene_local_position:pos,distance_m:anchor.distance_m,bearing_rad:anchor.bearing_rad,movement_mode:"authored_virtual_scene_path",arrival_status:"PENDING"});
   return {ok:true,state:next,decision:"前往 "+anchor.name,reflection:"我选择靠近当前感知范围内的 "+anchor.name+"。目标来自场景锚点，不是我凭空推测的位置。"};
  }
  if(action==="interact"){

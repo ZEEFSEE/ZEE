@@ -173,6 +173,13 @@ async function handleAction(c:any,identityId:string,deviceId:string,action:strin
   return {ok:true,state:next,decision:"与 "+target+" 建立互动记录",reflection:"我把这个对象纳入了本次场景经历。当前记录的是观察/互动事件，没有擅自改变场景对象。"};
  }
  if(action==="autonomous_step"){
+  const frame=state.perception_frame;
+  const frameAt=Date.parse(String(frame?.generated_at||""));
+  const frameFresh=frame?.schema==="zhi.mia.runtime-perception.v1"&&frame.scene_id===state.scene_id&&Number.isFinite(frameAt)&&Date.now()-frameAt<=120000;
+  if(!frameFresh){
+   const result=await handleAction(c,identityId,deviceId,"observe",{},scenes,state,residents);
+   return {...result,decision:"observe",reflection:"我先检查当前场景的登记信息。上一次 3D 场景帧已经过期或尚未到达；在收到新帧前，我不会把旧锚点当作当前可见目标，也不会贸然移动。"};
+  }
   if(!AGNES_KEY)throw new Error("AGNES_NOT_CONFIGURED");
   const scene=current||scenes[0];
   const response=await fetch("https://apihub.agnes-ai.com/v1/chat/completions",{method:"POST",headers:{"Authorization":"Bearer "+AGNES_KEY,"Content-Type":"application/json"},signal:AbortSignal.timeout(25000),body:JSON.stringify({model:MODEL,temperature:0.65,max_tokens:260,stream:false,messages:[

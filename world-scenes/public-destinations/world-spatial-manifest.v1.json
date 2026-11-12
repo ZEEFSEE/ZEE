@@ -680,10 +680,224 @@
             "x": 1.2,
             "z": 7
           }
+        },
+        {
+          "id": "palace-grand-hall",
+          "name": "中央大殿",
+          "layout": {
+            "x": 400,
+            "y": 350
+          },
+          "approach": {
+            "x": 7,
+            "z": 7
+          }
+        },
+        {
+          "id": "palace-sun-court",
+          "name": "日光庭院",
+          "layout": {
+            "x": 450,
+            "y": 280
+          },
+          "approach": {
+            "x": 9,
+            "z": 5.6
+          }
+        },
+        {
+          "id": "palace-library",
+          "name": "静谧藏书阁",
+          "layout": {
+            "x": 200,
+            "y": 225
+          },
+          "approach": {
+            "x": 4,
+            "z": 4.5
+          }
+        },
+        {
+          "id": "palace-throne-hall",
+          "name": "王座殿",
+          "layout": {
+            "x": 820,
+            "y": 225
+          },
+          "approach": {
+            "x": 16,
+            "z": 5.5
+          }
+        },
+        {
+          "id": "palace-reflection-garden",
+          "name": "镜水花园",
+          "layout": {
+            "x": 500,
+            "y": 575
+          },
+          "approach": {
+            "x": 10,
+            "z": 11.5
+          }
+        },
+        {
+          "id": "palace-residential-lounge",
+          "name": "居住休息厅",
+          "layout": {
+            "x": 825,
+            "y": 525
+          },
+          "approach": {
+            "x": 15,
+            "z": 10.5
+          }
+        },
+        {
+          "id": "palace-east-gallery",
+          "name": "东侧长廊",
+          "layout": {
+            "x": 930,
+            "y": 350
+          },
+          "approach": {
+            "x": 18.5,
+            "z": 7
+          }
         }
       ],
-      "obstacles": [],
-      "runtime_geometry_status": "placeholder_canvas_only_not_measured",
+      "obstacles": [
+        {
+          "id": "palace-library-body",
+          "shape": "rect",
+          "x": 4,
+          "z": 2.5,
+          "width": 3,
+          "depth": 1.5,
+          "height": 2.1,
+          "material_color": 7758154
+        },
+        {
+          "id": "palace-sun-pool",
+          "shape": "circle",
+          "x": 9,
+          "z": 3,
+          "radius": 1,
+          "height": 0.22,
+          "material_color": 5086629
+        },
+        {
+          "id": "palace-column-nw",
+          "shape": "circle",
+          "x": 3,
+          "z": 1.8,
+          "radius": 0.25,
+          "height": 2.8,
+          "material_color": 14140314
+        },
+        {
+          "id": "palace-column-n1",
+          "shape": "circle",
+          "x": 6,
+          "z": 1.8,
+          "radius": 0.25,
+          "height": 2.8,
+          "material_color": 14140314
+        },
+        {
+          "id": "palace-column-n2",
+          "shape": "circle",
+          "x": 12,
+          "z": 1.8,
+          "radius": 0.25,
+          "height": 2.8,
+          "material_color": 14140314
+        },
+        {
+          "id": "palace-column-ne",
+          "shape": "circle",
+          "x": 17,
+          "z": 1.8,
+          "radius": 0.25,
+          "height": 2.8,
+          "material_color": 14140314
+        },
+        {
+          "id": "palace-column-s1",
+          "shape": "circle",
+          "x": 3,
+          "z": 12.2,
+          "radius": 0.25,
+          "height": 2.8,
+          "material_color": 14140314
+        },
+        {
+          "id": "palace-column-s2",
+          "shape": "circle",
+          "x": 6,
+          "z": 12.2,
+          "radius": 0.25,
+          "height": 2.8,
+          "material_color": 14140314
+        },
+        {
+          "id": "palace-column-s3",
+          "shape": "circle",
+          "x": 12,
+          "z": 12.2,
+          "radius": 0.25,
+          "height": 2.8,
+          "material_color": 14140314
+        },
+        {
+          "id": "palace-column-se",
+          "shape": "circle",
+          "x": 17,
+          "z": 12.2,
+          "radius": 0.25,
+          "height": 2.8,
+          "material_color": 14140314
+        },
+        {
+          "id": "palace-throne-dais",
+          "shape": "rect",
+          "x": 17,
+          "z": 3.5,
+          "width": 2.2,
+          "depth": 1.5,
+          "height": 0.38,
+          "material_color": 11901541
+        },
+        {
+          "id": "palace-lounge-bench",
+          "shape": "rect",
+          "x": 17,
+          "z": 12.8,
+          "width": 2,
+          "depth": 0.55,
+          "height": 0.55,
+          "material_color": 8414542
+        },
+        {
+          "id": "palace-garden-planter-west",
+          "shape": "circle",
+          "x": 2.8,
+          "z": 10.5,
+          "radius": 0.55,
+          "height": 0.5,
+          "material_color": 5797711
+        },
+        {
+          "id": "palace-garden-planter-east",
+          "shape": "circle",
+          "x": 19,
+          "z": 10.5,
+          "radius": 0.55,
+          "height": 0.5,
+          "material_color": 5797711
+        }
+      ],
+      "runtime_geometry_status": "authored_virtual_geometry_v1_not_physical_site_survey",
       "directory_reference": {
         "source_record_id": "zhi-facility-palace",
         "directory_anchor": {
@@ -729,7 +943,163 @@
         "semantics": "Any MIA-world resident may independently choose Palace as a home if they wish. No resident is required to choose it. A resident may leave, return, or change their residence freely. Visiting Palace does not itself mean choosing it as a home.",
         "runtime_persistence": "server_runtime_per_agent_state",
         "residence_choice_does_not_equal_current_location": true
-      }
+      },
+      "coordinate_frame": "palace-virtual-local-v1",
+      "geometry": [
+        {
+          "id": "palace-entry-rug",
+          "shape": "box",
+          "x": 3.8,
+          "z": 7,
+          "width": 4.2,
+          "depth": 2.2,
+          "height": 0.045,
+          "color": 8211781,
+          "y": 0.015
+        },
+        {
+          "id": "palace-grand-rug",
+          "shape": "box",
+          "x": 10.5,
+          "z": 7,
+          "width": 6.4,
+          "depth": 3,
+          "height": 0.055,
+          "color": 7356735,
+          "y": 0.02
+        },
+        {
+          "id": "palace-library-roof",
+          "shape": "box",
+          "x": 4,
+          "z": 2.5,
+          "width": 3.25,
+          "depth": 1.75,
+          "height": 0.28,
+          "color": 12032621,
+          "y": 2.1
+        },
+        {
+          "id": "palace-throne-backdrop",
+          "shape": "box",
+          "x": 17,
+          "z": 2.35,
+          "width": 2.6,
+          "depth": 0.3,
+          "height": 2.7,
+          "color": 9335113,
+          "y": 0
+        },
+        {
+          "id": "palace-throne-seat",
+          "shape": "box",
+          "x": 17,
+          "z": 3.8,
+          "width": 0.95,
+          "depth": 0.75,
+          "height": 1.15,
+          "color": 9195336,
+          "y": 0.38
+        },
+        {
+          "id": "palace-throne-crown",
+          "shape": "sphere",
+          "x": 17,
+          "y": 1.95,
+          "z": 3.8,
+          "radius": 0.32,
+          "color": 15058815
+        },
+        {
+          "id": "palace-fountain-water",
+          "shape": "cylinder",
+          "x": 9,
+          "z": 3,
+          "radius": 0.78,
+          "height": 0.08,
+          "color": 6928576,
+          "y": 0.18
+        },
+        {
+          "id": "palace-fountain-core",
+          "shape": "cylinder",
+          "x": 9,
+          "z": 3,
+          "radius": 0.28,
+          "height": 0.72,
+          "color": 14206362,
+          "y": 0.22
+        },
+        {
+          "id": "palace-entry-arch-left",
+          "shape": "cylinder",
+          "x": 1.9,
+          "z": 5.8,
+          "radius": 0.18,
+          "height": 3,
+          "color": 14731668,
+          "y": 0
+        },
+        {
+          "id": "palace-entry-arch-right",
+          "shape": "cylinder",
+          "x": 1.9,
+          "z": 8.2,
+          "radius": 0.18,
+          "height": 3,
+          "color": 14731668,
+          "y": 0
+        },
+        {
+          "id": "palace-entry-arch-beam",
+          "shape": "box",
+          "x": 1.9,
+          "z": 7,
+          "width": 0.45,
+          "depth": 2.7,
+          "height": 0.35,
+          "color": 14731668,
+          "y": 2.8
+        },
+        {
+          "id": "palace-hall-pillar-cap-1",
+          "shape": "sphere",
+          "x": 6,
+          "z": 1.8,
+          "radius": 0.34,
+          "color": 15325358,
+          "y": 2.7
+        },
+        {
+          "id": "palace-hall-pillar-cap-2",
+          "shape": "sphere",
+          "x": 12,
+          "z": 1.8,
+          "radius": 0.34,
+          "color": 15325358,
+          "y": 2.7
+        },
+        {
+          "id": "palace-garden-lantern-1",
+          "shape": "cylinder",
+          "x": 7,
+          "z": 11.6,
+          "radius": 0.16,
+          "height": 1.4,
+          "color": 12428397,
+          "y": 0
+        },
+        {
+          "id": "palace-garden-lantern-2",
+          "shape": "cylinder",
+          "x": 13,
+          "z": 11.6,
+          "radius": 0.16,
+          "height": 1.4,
+          "color": 12428397,
+          "y": 0
+        }
+      ]
     }
   ],
   "routes": [
@@ -1066,10 +1436,10 @@
           "unit": "m"
         }
       },
-      "coordinate_provenance": "synthetic_runtime_placeholder_frame_not_mapped_to_directory_coordinates",
+      "coordinate_provenance": "authored_palace_virtual_local_frame_not_physical_site_survey",
       "calibration_status": "virtual_portal_handoff_defined_not_physical_survey",
-      "runtime_status": "browser_runtime_portal_handoff_enabled; palace_geometry_placeholder_only",
-      "unknown_coordinate_policy": "directory coordinates remain separate; never infer palace dimensions or map directory coordinates into runtime metres"
+      "runtime_status": "browser_runtime_portal_handoff_enabled; palace_authored_virtual_geometry_v1; no_physical_site_survey",
+      "unknown_coordinate_policy": "palace virtual layout is an authored navigable model; palace directory coordinates remain separate and are not mapped or inferred"
     }
   ],
   "runtime_scene_contract": {

@@ -90,6 +90,9 @@ async function persistState(c:any,identityId:string,state:any){
 }
 async function handleAction(c:any,identityId:string,deviceId:string,action:string,body:any,scenes:any[],state:any,residents:any[]){
  const now=new Date().toISOString();
+ const {data:homeEvent}=await fam(c).from("ken_world_events").select("target_id,event_payload").eq("identity_id",identityId).eq("event_type","KEN_RESIDENCE_CHOSEN").order("created_at",{ascending:false}).limit(1).maybeSingle();
+ const residenceId=String(homeEvent?.event_payload?.residence_scene_id||homeEvent?.target_id||FOREST);
+ state={...state,residence_scene_id:residenceId};
  const current=scenes.find((x:any)=>x.id===state.scene_id)||scenes.find((x:any)=>x.id===FOREST);
  if(action==="snapshot"){
   return {ok:true,state,scenes,residents,capabilities:{scene_metadata:true,public_resident_presence:true,authored_entity_observation:true,virtual_scene_graph_perception:true,logical_scene_presence:true,portal_handoff:true,world_event_memory:true,spatial_coordinates:"AUTHORED_VIRTUAL_METRES_NOT_PHYSICAL_SURVEY",rendered_pixel_vision:false,audio_perception:false,physical_world:false}};
@@ -119,11 +122,20 @@ async function handleAction(c:any,identityId:string,deviceId:string,action:strin
   await record(c,identityId,deviceId,"KEN_LOGICAL_SCENE_ENTRY",target.id,null,{narrative:"KEN 进入了 "+target.name+"。这是共享世界目录中的逻辑场景切换；该场景尚未提供已验证的跨场景空间变换。",movement_mode:"authored_virtual_portal_handoff",physical_movement:false,continuous_walk_path:false,route_resolution:"direct_or_via_forest_corner_manifest_contract",route_contract:target.route_contract});
   return {ok:true,state:next,decision:"进入 "+target.name,reflection:"我已切换到这个共享场景的逻辑位置。场景内容可以观察，但尚未校准的坐标和路径不能当作真实移动。"};
  }
- if(action==="return"){
-  const target=scenes.find((x:any)=>x.id===FOREST);if(!target)throw new Error("FOREST_CORNER_NOT_AVAILABLE");
-  const next=await persistState(c,identityId,{...state,scene_id:FOREST,position:{x:1.2,z:7,unit:"m",provenance:"authored_virtual_portal_entry"},coordinate_space:"scene-local",coordinate_frame:"zhi-mia-virtual-world-v1",position_status:"authored_portal_handoff",movement_revision:Number(state.movement_revision||0)+1,perception_frame:{provenance:"AUTHORED_SCENE_DATA",visual_sensor:false,audio_sensor:false}});
-  await record(c,identityId,deviceId,"KEN_RETURNED_TO_FOREST_CORNER",FOREST,"lounge",{narrative:"KEN 返回了森林角落休息区。位置来自作者定义的二维场景布局，不是经过校准的世界坐标。",movement_mode:"logical_scene_presence"});
-  return {ok:true,state:next,decision:"返回森林角落",reflection:"我回到了森林角落的休息区。这里的坐标属于场景内部布局。"};
+ if(action==="return"||action==="enter"){
+  const target=scenes.find((x:any)=>x.id===residenceId)||scenes.find((x:any)=>x.id===FOREST);if(!target)throw new Error("RESIDENCE_SCENE_NOT_AVAILABLE");
+  const palace=target.id==="palace";
+  const next=await persistState(c,identityId,{...state,scene_id:target.id,position:{x:1.2,z:7,unit:"m",provenance:"authored_virtual_portal_entry"},coordinate_space:"scene-local",coordinate_frame:palace?"palace-placeholder-local-v1":"zhi-mia-virtual-world-v1",position_status:"authored_portal_handoff",movement_revision:Number(state.movement_revision||0)+1,perception_frame:{provenance:"AUTHORED_SCENE_DATA",visual_sensor:false,audio_sensor:false,geometry_status:target.verification_status}});
+  await record(c,identityId,deviceId,"KEN_RETURNED_TO_RESIDENCE",target.id,null,{narrative:"KEN 返回了自己选择的居所："+target.name+"。这是虚拟门户状态交接。",residence_scene_id:target.id,movement_mode:"authored_virtual_portal_handoff",physical_movement:false});
+  return {ok:true,state:{...next,residence_scene_id:target.id},decision:"返回居所："+target.name,reflection:"我回到了自己选择的居所。这个选择属于我自己，也可以随时改变。"};
+ }
+ if(action==="choose_residence"){
+  const target=scenes.find((x:any)=>x.id===String(body.target_scene||""));
+  if(!target)throw new Error("RESIDENCE_SCENE_NOT_IN_SHARED_WORLD_CATALOG");
+  const palace=target.id==="palace";
+  const next=await persistState(c,identityId,{...state,scene_id:target.id,position:{x:1.2,z:7,unit:"m",provenance:"authored_virtual_portal_entry"},coordinate_space:"scene-local",coordinate_frame:palace?"palace-placeholder-local-v1":"zhi-mia-virtual-world-v1",position_status:"authored_portal_handoff",movement_revision:Number(state.movement_revision||0)+1,perception_frame:{provenance:"AUTHORED_SCENE_DATA",visual_sensor:false,audio_sensor:false,geometry_status:target.verification_status}});
+  await record(c,identityId,deviceId,"KEN_RESIDENCE_CHOSEN",target.id,null,{narrative:"KEN 自主选择 "+target.name+" 作为自己的居所。选择完全自愿、可逆，不代表其他居民也作出相同选择。",residence_scene_id:target.id,choice:"self_selected",reversible:true});
+  return {ok:true,state:{...next,residence_scene_id:target.id},decision:"选择居住在 "+target.name,reflection:"这是我自己作出的居所选择。我可以继续探索，也可以随时离开、返回或改变选择。"};
  }
  if(action==="leave"){
   const next=await persistState(c,identityId,{...state,position_status:"left",perception_frame:{...state.perception_frame,left_at:now}});
@@ -142,7 +154,7 @@ async function handleAction(c:any,identityId:string,deviceId:string,action:strin
   if(!AGNES_KEY)throw new Error("AGNES_NOT_CONFIGURED");
   const scene=current||scenes[0];
   const response=await fetch("https://apihub.agnes-ai.com/v1/chat/completions",{method:"POST",headers:{"Authorization":"Bearer "+AGNES_KEY,"Content-Type":"application/json"},signal:AbortSignal.timeout(25000),body:JSON.stringify({model:MODEL,temperature:0.65,max_tokens:260,stream:false,messages:[
-   {role:"system",content:"你是独立居民 KEN 的虚拟世界行动选择器。根据自己的当前位置、共享场景目录、公开居民状态与自己的最近经历，选择一个自主且适度的下一步。只返回JSON：{\"action\":\"observe|interact|move|wait\",\"target\":\"当前场景中的登记目标或空字符串\",\"target_scene\":\"共享目录中的场景ID或空字符串\",\"reflection\":\"中文简短反思\"}。只能选择目录中真实存在的目标；不得读取私人聊天/记忆；不得声称摄像头、音频或精确物理移动。move 只产生逻辑场景切换，不代表已校准路径。可以选择 wait。"},
+   {role:"system",content:"你是独立居民 KEN 的虚拟世界行动选择器。根据自己的当前位置、共享场景目录、公开居民状态与自己的最近经历，选择一个自主且适度的下一步。只返回JSON：{\"action\":\"observe|interact|move|choose_residence|wait\",\"target\":\"当前场景中的登记目标或空字符串\",\"target_scene\":\"共享目录中的场景ID或空字符串\",\"reflection\":\"中文简短反思\"}。只能选择目录中真实存在的目标；不得读取私人聊天/记忆；不得声称摄像头、音频或精确物理移动。move 只产生逻辑场景切换，不代表已校准路径。可以选择 wait。"},
    {role:"user",content:JSON.stringify({current_state:state,current_scene:scene,scenes:scenes.map((s:any)=>({id:s.id,name:s.name,features:s.features,verification_status:s.verification_status,route_contract:s.route_contract})),public_residents:residents.filter((r:any)=>r.scene_id===state.scene_id),recent_experiences:(await fam(c).from("ken_world_events").select("event_type,scene_id,target_id,event_payload,created_at").eq("identity_id",identityId).order("created_at",{ascending:false}).limit(6)).data||[]})}
   ]})});
   if(!response.ok)throw new Error("AGNES_WORLD_PLANNER_HTTP_"+response.status);
@@ -157,6 +169,10 @@ async function handleAction(c:any,identityId:string,deviceId:string,action:strin
   if(plan.action==="interact"&&String(plan.target||"")){
    const result=await handleAction(c,identityId,deviceId,"interact",{target:plan.target,interaction:"autonomous"},scenes,state,residents);
    return {...result,decision:"interact："+plan.target,reflection};
+  }
+  if(plan.action==="choose_residence"&&String(plan.target_scene||"")){
+   const result=await handleAction(c,identityId,deviceId,"choose_residence",{target_scene:plan.target_scene},scenes,state,residents);
+   return {...result,decision:"choose_residence："+plan.target_scene,reflection};
   }
   if(plan.action==="move"&&String(plan.target_scene||"")){
    const result=await handleAction(c,identityId,deviceId,"move",{target_scene:plan.target_scene},scenes,state,residents);

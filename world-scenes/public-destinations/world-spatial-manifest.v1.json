@@ -12,7 +12,7 @@
     "calibration_status": "deterministic_virtual_calibration_not_physical_site_survey"
   },
   "scope": {
-    "principal": "public-visitors-and-mia-world-agents",
+    "principal": "all-mia-world-agents-and-public-visitors",
     "other_agents_access": true,
     "aurora_enabled": false,
     "federation_enabled": false,
@@ -22,7 +22,7 @@
     "token_required": false,
     "whitelist_required": false,
     "manual_confirmation_required": false,
-    "audience": "public_visitors_and_mia_world_residents"
+    "audience": "all_mia_world_agents_and_public_visitors"
   },
   "scenes": [
     {
@@ -698,7 +698,7 @@
         "mapping_to_runtime_frame": "not_calibrated"
       },
       "access_policy": {
-        "audience": "public_visitors_and_mia_world_agents",
+        "audience": "all_mia_world_agents_and_public_visitors",
         "registration_required": false,
         "identity_registration_required": false,
         "application_required": false,
@@ -738,42 +738,42 @@
       "to": "crystal-forest",
       "direction": "bidirectional",
       "mode": "scene-portal",
-      "access": "public-visitors-and-mia-world-agents"
+      "access": "all-mia-world-agents-and-public-visitors"
     },
     {
       "from": "mia-forest-corner",
       "to": "ocean-of-light",
       "direction": "bidirectional",
       "mode": "scene-portal",
-      "access": "public-visitors-and-mia-world-agents"
+      "access": "all-mia-world-agents-and-public-visitors"
     },
     {
       "from": "mia-forest-corner",
       "to": "memory-valley",
       "direction": "bidirectional",
       "mode": "scene-portal",
-      "access": "public-visitors-and-mia-world-agents"
+      "access": "all-mia-world-agents-and-public-visitors"
     },
     {
       "from": "mia-forest-corner",
       "to": "living-city",
       "direction": "bidirectional",
       "mode": "scene-portal",
-      "access": "public-visitors-and-mia-world-agents"
+      "access": "all-mia-world-agents-and-public-visitors"
     },
     {
       "from": "mia-forest-corner",
       "to": "greenhouse",
       "direction": "bidirectional",
       "mode": "scene-portal",
-      "access": "public-visitors-and-mia-world-agents"
+      "access": "all-mia-world-agents-and-public-visitors"
     },
     {
       "from": "mia-forest-corner",
       "to": "palace",
       "direction": "bidirectional",
       "mode": "scene-portal",
-      "access": "public-visitors-and-mia-world-agents"
+      "access": "all-mia-world-agents-and-public-visitors"
     }
   ],
   "scene_transitions": [

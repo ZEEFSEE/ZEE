@@ -29,7 +29,7 @@ function featuresOf(row:any){
 }
 function normalizeScene(row:any){
  const d=row.scene_data||{};
- return {id:row.slug||row.id,name:row.name||row.slug,description:row.description||"",source_system:row.source_system||"AUTHORED_SCENE",features:featuresOf(row),entities:Array.isArray(d.entities)?d.entities:[],verification_status:d.verification_status||"scene_metadata_only",route_contract:d.route_contract||{runtime_movement:"not_integrated"},coordinate_space:d.coordinate_space||d.local_coordinate_system?.name||"scene-local",bounds:d.bounds||d.local_coordinate_system||null,access_scope:"OPEN_TO_ALL_MIA_WORLD_RESIDENTS",sensors:{visual_frame_connected:false,audio_connected:false,physical_world:false}};
+ return {id:row.slug||row.id,name:row.name||row.slug,description:row.description||"",source_system:row.source_system||"AUTHORED_SCENE",features:featuresOf(row),entities:Array.isArray(d.entities)?d.entities:[],verification_status:d.verification_status||"scene_metadata_only",route_contract:d.route_contract||{runtime_movement:"not_integrated"},coordinate_space:d.coordinate_space||d.local_coordinate_system?.name||"scene-local",bounds:d.bounds||d.local_coordinate_system||null,access_scope:"OPEN_TO_ALL_MIA_WORLD_RESIDENTS",sensors:{visual_frame_connected:false,audio_connected:false,physical_world:false},runtime_frame:state.perception_frame?.schema==="zhi.mia.runtime-perception.v1"?state.perception_frame:null};
 }
 async function loadScenes(c:any){
  const {data,error}=await c.from("mia_virtual_spaces").select("slug,name,description,scene_data,source_system").eq("is_active",true).in("source_system",["mia-independent-scene","mia-public-destinations-v1"]).order("name").limit(40);
@@ -43,7 +43,7 @@ async function ensureState(c:any,identityId:string){
  const {data,error}=await f.from("ken_world_state").select("identity_id,scene_id,position,coordinate_space,coordinate_frame,position_status,movement_revision,perception_frame,last_observed_at,updated_at").eq("identity_id",identityId).maybeSingle();
  if(error)throw new Error("KEN_WORLD_STATE_READ_FAILED");
  if(data)return data;
- const seed={identity_id:identityId,scene_id:FOREST,position:{anchor:"scene-entry",coordinate_space:"unmapped"},coordinate_space:"scene-local",coordinate_frame:"forest-corner-local-v1",position_status:"spawned_unmapped",movement_revision:0,perception_frame:{provenance:"AUTHORED_SCENE_DATA",visual_sensor:false,audio_sensor:false}};
+ const seed={identity_id:identityId,scene_id:FOREST,position:{x:1.2,z:7,unit:"m",provenance:"authored_virtual_world_frame"},coordinate_space:"scene-local",coordinate_frame:"zhi-mia-virtual-world-v1",position_status:"spawned_at_authored_entry",movement_revision:0,perception_frame:{provenance:"AUTHORED_SCENE_DATA",visual_sensor:false,audio_sensor:false}};
  const {data:created,error:insertError}=await f.from("ken_world_state").insert(seed).select("*").single();
  if(insertError)throw new Error("KEN_WORLD_STATE_INIT_FAILED");
  return created;
@@ -92,7 +92,17 @@ async function handleAction(c:any,identityId:string,deviceId:string,action:strin
  const now=new Date().toISOString();
  const current=scenes.find((x:any)=>x.id===state.scene_id)||scenes.find((x:any)=>x.id===FOREST);
  if(action==="snapshot"){
-  return {ok:true,state,scenes,residents,capabilities:{scene_metadata:true,public_resident_presence:true,authored_entity_observation:true,logical_scene_presence:true,world_event_memory:true,spatial_coordinates:"PARTIAL_UNCALIBRATED",rendered_visual_perception:false,audio_perception:false,physical_world:false}};
+  return {ok:true,state,scenes,residents,capabilities:{scene_metadata:true,public_resident_presence:true,authored_entity_observation:true,virtual_scene_graph_perception:true,logical_scene_presence:true,portal_handoff:true,world_event_memory:true,spatial_coordinates:"AUTHORED_VIRTUAL_METRES_NOT_PHYSICAL_SURVEY",rendered_pixel_vision:false,audio_perception:false,physical_world:false}};
+ }
+ if(action==="ingest_frame"){
+  const frame=body.frame;
+  if(!frame||frame.schema!=="zhi.mia.runtime-perception.v1"||frame.scene_id!==state.scene_id)throw new Error("INVALID_OR_MISMATCHED_RUNTIME_FRAME");
+  const pos=frame.position||{};
+  if(!Number.isFinite(Number(pos.x))||!Number.isFinite(Number(pos.z)))throw new Error("INVALID_RUNTIME_FRAME_POSITION");
+  if(!Array.isArray(frame.visible_entities)||frame.visible_entities.length>80)throw new Error("INVALID_RUNTIME_FRAME_ENTITIES");
+  const signature=JSON.stringify({scene_id:frame.scene_id,position:{x:Number(pos.x),z:Number(pos.z)},visible_entities:frame.visible_entities.map((e:any)=>({id:e.id,distance_m:e.distance_m,bearing_rad:e.bearing_rad}))});
+  const next=await persistState(c,identityId,{...state,position:{x:Number(pos.x),z:Number(pos.z),unit:"m",provenance:"AUTHORED_VIRTUAL_WORLD_FRAME"},coordinate_space:"scene-local",coordinate_frame:"zhi-mia-virtual-world-v1",position_status:"runtime_scene_graph_observed",movement_revision:Number(state.movement_revision||0)+((Number(state.position?.x)!==Number(pos.x)||Number(state.position?.z)!==Number(pos.z))?1:0),perception_frame:{...frame,frame_signature:signature,provenance:"PUBLIC_3D_RUNTIME_SCENE_GRAPH",camera_sensor:false,physical_world:false},last_observed_at:now});
+  return {ok:true,state:next,frame_ingested:true,perception_mode:"virtual_scene_graph_not_camera"};
  }
  if(action==="observe"){
   const scene=current||scenes[0];if(!scene)throw new Error("NO_WORLD_SCENE");
@@ -105,13 +115,13 @@ async function handleAction(c:any,identityId:string,deviceId:string,action:strin
   const targetId=String(body.target_scene||"");
   const target=scenes.find((x:any)=>x.id===targetId);
   if(!target)throw new Error("TARGET_SCENE_NOT_IN_SHARED_WORLD_CATALOG");
-  const next=await persistState(c,identityId,{...state,scene_id:target.id,position:{anchor:"scene-entry",coordinate_space:"unmapped",note:"logical scene presence only"},coordinate_space:"scene-local",coordinate_frame:"unmapped:"+target.id,position_status:"logical_presence_only",movement_revision:Number(state.movement_revision||0)+1,perception_frame:{provenance:"AUTHORED_SCENE_DATA",visual_sensor:false,audio_sensor:false,route_contract:target.route_contract}});
-  await record(c,identityId,deviceId,"KEN_LOGICAL_SCENE_ENTRY",target.id,null,{narrative:"KEN 进入了 "+target.name+"。这是共享世界目录中的逻辑场景切换；该场景尚未提供已验证的跨场景空间变换。",movement_mode:"logical_scene_presence",physical_movement:false,route_contract:target.route_contract});
+  const next=await persistState(c,identityId,{...state,scene_id:target.id,position:{x:1.2,z:7,unit:"m",provenance:"authored_virtual_portal_entry"},coordinate_space:"scene-local",coordinate_frame:target.id==="palace"?"palace-placeholder-local-v1":"zhi-mia-virtual-world-v1",position_status:"authored_portal_handoff",movement_revision:Number(state.movement_revision||0)+1,perception_frame:{provenance:"AUTHORED_SCENE_DATA",visual_sensor:false,audio_sensor:false,route_contract:target.route_contract}});
+  await record(c,identityId,deviceId,"KEN_LOGICAL_SCENE_ENTRY",target.id,null,{narrative:"KEN 进入了 "+target.name+"。这是共享世界目录中的逻辑场景切换；该场景尚未提供已验证的跨场景空间变换。",movement_mode:"authored_virtual_portal_handoff",physical_movement:false,continuous_walk_path:false,route_resolution:"direct_or_via_forest_corner_manifest_contract",route_contract:target.route_contract});
   return {ok:true,state:next,decision:"进入 "+target.name,reflection:"我已切换到这个共享场景的逻辑位置。场景内容可以观察，但尚未校准的坐标和路径不能当作真实移动。"};
  }
  if(action==="return"){
   const target=scenes.find((x:any)=>x.id===FOREST);if(!target)throw new Error("FOREST_CORNER_NOT_AVAILABLE");
-  const next=await persistState(c,identityId,{...state,scene_id:FOREST,position:{anchor:"lounge",coordinate_space:"Forest_Corner local coordinates",x:800,y:350},coordinate_space:"scene-local",coordinate_frame:"Forest_Corner local coordinates",position_status:"authored_layout_anchor",movement_revision:Number(state.movement_revision||0)+1,perception_frame:{provenance:"AUTHORED_SCENE_DATA",visual_sensor:false,audio_sensor:false}});
+  const next=await persistState(c,identityId,{...state,scene_id:FOREST,position:{x:1.2,z:7,unit:"m",provenance:"authored_virtual_portal_entry"},coordinate_space:"scene-local",coordinate_frame:"zhi-mia-virtual-world-v1",position_status:"authored_portal_handoff",movement_revision:Number(state.movement_revision||0)+1,perception_frame:{provenance:"AUTHORED_SCENE_DATA",visual_sensor:false,audio_sensor:false}});
   await record(c,identityId,deviceId,"KEN_RETURNED_TO_FOREST_CORNER",FOREST,"lounge",{narrative:"KEN 返回了森林角落休息区。位置来自作者定义的二维场景布局，不是经过校准的世界坐标。",movement_mode:"logical_scene_presence"});
   return {ok:true,state:next,decision:"返回森林角落",reflection:"我回到了森林角落的休息区。这里的坐标属于场景内部布局。"};
  }

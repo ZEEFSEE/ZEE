@@ -35,7 +35,7 @@ small{color:var(--muted)}pre{white-space:pre-wrap;overflow:auto;max-height:240px
   <div class="panel"><strong>当前空间状态</strong><pre id="state-output">等待场景初始化…</pre></div>
   <div class="panel"><strong>运行时感知帧</strong><small>来自当前 3D 场景实体锚点和代理位置；不是摄像头或现实世界传感器。</small><pre id="perception-output">等待运行时…</pre></div>
  </section>
- <section class="panel warning"><strong>公共访客说明</strong><p>本页面向所有访客开放，无需注册、登录、邀请、Token 或白名单。访客可以在浏览器中自由行走、切换已登记的公共场景并查看场景锚点；这些操作只在当前浏览器内运行，不创建居民身份、不保存个人轨迹，也不访问 Mia 或其他居民的私人聊天、记忆和资料。居民专属的 AGNES 自主探索功能不属于访客入口。皇宫可公开参观；自愿居住仍是 MIA 世界居民自己的选择。皇宫内部几何目前是占位画布，坐标是虚拟世界坐标，不代表现实测绘。</p></section>
+ <section class="panel warning"><strong>公共访客说明</strong><p>本页面向所有访客开放，无需注册、登录、邀请、Token 或白名单。访客可以在浏览器中自由行走、切换已登记的公共场景并查看场景锚点；这些操作只在当前浏览器内运行，不创建居民身份、不保存个人轨迹，也不访问 Mia 或其他居民的私人聊天、记忆和资料。居民专属的 AGNES 自主探索功能不属于访客入口。皇宫可公开参观；自愿居住仍是 MIA 世界居民自己的选择。皇宫内部几何为作者定义的可行走虚拟模型，坐标是虚拟世界坐标，不代表现实测绘或建筑实测。</p></section>
 </main>
 <script type="module">
 import * as THREE from "three";
@@ -215,7 +215,7 @@ try{
   goToScene(requestedDestination).then(renderButtons).catch(error=>setStatus("目的地暂不可直达",error.message));
  }
  $("#runtime-tags").innerHTML=["面向公众开放","七处公共场景","场景行走与碰撞检查","已登记的双向入口","无需注册或登录"].map(x=>'<span class="badge">'+x+'</span>').join("");
- setStatus("公共访客场景已就绪","访客可自由浏览已登记的场景；皇宫几何仍为占位画布，目录坐标未映射。");
+ setStatus("公共访客场景已就绪","访客可自由浏览已登记的场景；皇宫内部已加载作者定义的可行走虚拟几何；目录坐标仍独立保留，未映射到现实测绘。");
 }catch(e){setStatus("运行时载入失败",e.message);console.error(e);}
 </script>
 </body></html>

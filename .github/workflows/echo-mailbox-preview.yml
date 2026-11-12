@@ -72,7 +72,7 @@ jobs:
           fi
           echo "Activation flags and required server secrets are present. Empty test payload was rejected before persistence or AGNES."
           archive_status=$(curl --silent --show-error --output /tmp/echo-public-archive.json --write-out '%{http_code}' \
-            'https://dbooikzqprnqbgpfwsze.supabase.co/rest/v1/echo_publications?select=id&limit=1' \
+            'https://dbooikzqprnqbgpfwsze.supabase.co/rest/v1/echo_publications?select=id,original_question,mia_answer,source_language,answer_language,published_at&limit=1' \
             --header 'apikey: sb_publishable_spH47ZngJJTk13cpYPBjSw_X5qAsBmK')
           if [ "$archive_status" != "200" ] || ! jq -e 'type == "array"' /tmp/echo-public-archive.json >/dev/null; then
             echo "Echo public archive read failed (HTTP $archive_status)"

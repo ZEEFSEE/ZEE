@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#182536">
+<title>KEN · 对话与共同成长</title>
+<style>
+:root{color-scheme:dark;--bg:#101a27;--panel:#192638;--line:#2b3c52;--ink:#edf2f8;--muted:#9baec2;--accent:#b99be8;--user:#293d52}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#26334a 0,#101a27 55%);color:var(--ink);font:15px/1.65 system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;min-height:100vh}
+.wrap{max-width:980px;margin:auto;padding:22px 16px 32px}.head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}.brand{font-size:25px;font-weight:850;letter-spacing:.04em}.sub,.muted{color:var(--muted);font-size:12px}
+button,select,textarea{font:inherit;color:var(--ink);background:#1b2a3d;border:1px solid var(--line);border-radius:12px;padding:10px 13px}button{cursor:pointer;font-weight:700}button.primary{background:#8268ad;border-color:#9e83c9;color:white}button:disabled{opacity:.5;cursor:wait}
+.panel{background:#182537eF;border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 20px 70px #0004}.toolbar{display:flex;gap:8px;align-items:center;padding:12px;border-bottom:1px solid var(--line);flex-wrap:wrap}.toolbar select{flex:1;min-width:200px}.status{padding:10px 14px;color:var(--muted);font-size:12px;min-height:36px}.status.error{color:#ff9d9d}.log{height:min(62vh,680px);min-height:350px;overflow:auto;padding:18px;display:flex;flex-direction:column;gap:14px}.bubble{max-width:82%;padding:12px 15px;border-radius:16px;white-space:pre-wrap;overflow-wrap:anywhere}.bubble.user{align-self:flex-end;background:var(--user);border:1px solid #3a526c}.bubble.ken{align-self:flex-start;background:#202b3d;border:1px solid #39465b}.who{font-size:11px;color:var(--accent);font-weight:800;margin-bottom:5px}.composer{padding:13px;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 100px;gap:9px}.composer textarea{resize:vertical;min-height:58px;max-height:180px;width:100%}.composer button{align-self:end;min-height:58px}.intro{max-width:640px;margin:8vh auto;padding:26px}.intro h1{margin-top:0}.hidden{display:none!important}a{color:#d5b9ff}@media(max-width:620px){.wrap{padding:12px 8px}.log{height:58vh;min-height:300px;padding:12px}.bubble{max-width:94%}.composer{grid-template-columns:1fr 76px;padding:9px}.brand{font-size:22px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+ <header class="head"><div><div class="brand">✦ KEN</div><div class="sub">独立身份 · 私人记忆 · 对话与共同成长</div></div><div class="muted">ZHI · DIGITAL KEN</div></header>
+ <section id="gate" class="panel intro hidden"><h1>先登录 MIA 账户</h1><p>KEN 使用你现有的 Mia 登录会话，不需要创建第二个账户。请先在同一浏览器标签页登录 Mia，再返回 KEN。</p><a href="./mia-chat.html">打开 Mia 独立聊天登录</a></section>
+ <section id="app" class="panel hidden">
+  <div class="toolbar"><select id="sessions" aria-label="对话历史"><option value="">新对话</option></select><button id="new">新对话</button><button id="refresh">刷新</button></div>
+  <div id="status" class="status">正在连接 KEN…</div>
+  <div id="log" class="log"><div class="muted">你可以直接与 KEN 聊天、纠正他、讨论不同观点，也可以要求他解释自己的推理。</div></div>
+  <form id="composer" class="composer"><textarea id="message" placeholder="和 KEN 说说你的想法……" maxlength="12000"></textarea><button id="send" class="primary">发送</button></form>
+  <div class="status">对话保存在 KEN 私人记忆中。你的纠正、观点与事实会区分记录；Mia 和孩子们的私人记忆不会并入 KEN。</div>
+ </section>
+</div>
+<script>
+(()=>{
+ const API="https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/ken-chat";
+ const KEY="sb_publishable_spH47ZngJJTk13cpYPBjSw_X5qAsBmK";
+ const TOKEN_KEY="mia_chat_token";
+ const token=sessionStorage.getItem(TOKEN_KEY)||"";
+ const $=id=>document.getElementById(id);
+ const gate=$("gate"),app=$("app"),log=$("log"),status=$("status"),sessions=$("sessions");
+ let deviceId="",sessionId="",busy=false;
+ if(!token){gate.classList.remove("hidden");return;}
+ app.classList.remove("hidden");
+ const say=(s,bad=false)=>{status.textContent=s;status.classList.toggle("error",bad);};
+ const bubble=(who,content)=>{const el=document.createElement("div");el.className="bubble "+(who==="user"?"user":"ken");const label=document.createElement("div");label.className="who";label.textContent=who==="user"?"你":"KEN";const body=document.createElement("div");body.textContent=content;el.append(label,body);log.append(el);log.scrollTop=log.scrollHeight;};
+ const call=async payload=>{const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json","apikey":KEY,"Authorization":"Bearer "+token},body:JSON.stringify(payload),cache:"no-store"});const d=await r.json().catch(()=>({}));if(!r.ok||!d.ok)throw new Error(d.error||("HTTP "+r.status));return d;};
+ const deviceKey=()=>{let k=localStorage.getItem("ken_client_instance_key_v1");if(!k){k=crypto.randomUUID().replace(/-/g,"");localStorage.setItem("ken_client_instance_key_v1",k);}return k;};
+ async function init(){try{say("正在验证登录并恢复 KEN…");const d=await call({action:"init",client_instance_key:deviceKey(),platform:navigator.platform||"web"});deviceId=d.device?.device_id||d.device?.id||"";if(!deviceId)throw new Error("设备注册响应缺少 device_id");sessions.innerHTML='<option value="">新对话</option>';for(const s of d.sessions||[]){const o=document.createElement("option");o.value=s.session_id;o.textContent=s.title||"KEN 对话";sessions.append(o);}say("KEN 已连接。选择旧对话，或直接开始新对话。");}catch(e){say("连接失败："+e.message,true);}}
+ async function history(id){sessionId=id||"";log.innerHTML="";if(!id){say("新对话已准备好。");return;}try{const d=await call({action:"history",device_id:deviceId,session_id:id});(d.messages||[]).forEach(m=>bubble(m.role,m.content));say("已恢复 "+(d.messages||[]).length+" 条对话记录。");}catch(e){say("读取历史失败："+e.message,true);}}
+ sessions.addEventListener("change",()=>history(sessions.value));
+ $("new").addEventListener("click",()=>{sessions.value="";history("");});
+ $("refresh").addEventListener("click",()=>init());
+ $("composer").addEventListener("submit",async e=>{e.preventDefault();if(busy)return;const message=$("message").value.trim();if(!message)return;busy=true;$("send").disabled=true;$("message").disabled=true;bubble("user",message);$("message").value="";say("KEN 正在思考…");try{const d=await call({action:"send",device_id:deviceId,session_id:sessionId,message});sessionId=d.session_id;if(!sessions.querySelector('option[value="'+sessionId+'"]')){const o=document.createElement("option");o.value=sessionId;o.textContent=message.slice(0,42);sessions.insertBefore(o,sessions.options[1]||null);}sessions.value=sessionId;bubble("assistant",d.reply);say(d.memory_event_saved?"已回复，对话与认知事件均已保存。":"已回复；对话已保存，记忆事件写入待核查。",!d.memory_event_saved);}catch(e){say("发送失败："+e.message+"。请检查连接；如果用户消息已保存，刷新历史即可恢复。",true);}finally{busy=false;$("send").disabled=false;$("message").disabled=false;$("message").focus();}});
+ init();
+})();
+</script>
+</body></html>

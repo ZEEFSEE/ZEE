@@ -117,7 +117,8 @@ async function syncKenPresence(){
   const d=await r.json();if(!r.ok||!d.ok)throw new Error(d.error||("HTTP "+r.status));
   kenState=d.state||null;renderKenPresence();
   if(kenState&&kenState.scene_id===activeScene.id&&kenState.position_status!=="left"&&kenState.position&&kenPath.length===0){
-   const frame=createRuntimePerception({scene:activeScene,position:{x:Number(kenState.position.x),z:Number(kenState.position.z)},heading:0});
+   const framePosition=kenAvatar?{x:kenAvatar.position.x,z:kenAvatar.position.z}:{x:Number(kenState.position.x),z:Number(kenState.position.z)};
+   const frame=createRuntimePerception({scene:activeScene,position:framePosition,heading:0});
    const signature=JSON.stringify([frame.scene_id,frame.position.x,frame.position.z,frame.visible_entities.map(e=>[e.id,e.distance_m,e.bearing_rad])]);
    if(signature!==lastKenFrameSignature){
     const fr=await fetch(KEN_WORLD_API,{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLIC_KEY,"Authorization":"Bearer "+MIA_TOKEN},body:JSON.stringify({action:"ingest_frame",frame}),cache:"no-store"});

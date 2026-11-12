@@ -29,7 +29,8 @@ small{color:var(--muted)}pre{white-space:pre-wrap;overflow:auto;max-height:240px
  <div class="controls">
   <button id="return-forest">返回森林角落</button><button id="reset-position">重置当前位置</button>
  </div>
- <section class="panel"><strong>KEN 居民同步</strong><p id="ken-presence-status" class="resident-status">访客模式；如已在同一浏览器登录 Mia，KEN 的公开位置会同步显示在当前场景。</p></section>\n <section class="panel"><strong id="runtime-status">正在加载七处公共场景的空间契约…</strong><p id="runtime-detail">校验场景、入口、地面、碰撞体和可行走路径。</p><div id="runtime-tags"></div></section>
+ <section class="panel"><strong>KEN 居民同步</strong><p id="ken-presence-status" class="resident-status">访客模式；如已在同一浏览器登录 Mia，KEN 的公开位置会同步显示在当前场景。</p></section>
+ <section class="panel"><strong id="runtime-status">正在加载七处公共场景的空间契约…</strong><p id="runtime-detail">校验场景、入口、地面、碰撞体和可行走路径。</p><div id="runtime-tags"></div></section>
  <section class="grid">
   <div class="panel"><strong>当前空间状态</strong><pre id="state-output">等待场景初始化…</pre></div>
   <div class="panel"><strong>运行时感知帧</strong><small>来自当前 3D 场景实体锚点和代理位置；不是摄像头或现实世界传感器。</small><pre id="perception-output">等待运行时…</pre></div>
@@ -41,7 +42,10 @@ import * as THREE from "three";
 import {OrbitControls} from "three/addons/controls/OrbitControls.js";
 import {validateWorldManifest,layoutToWorld,anchorToLocal,anchorApproachToLocal,findWalkPath,createRuntimePerception,isWalkable,resolveSceneTransition,resolveSceneRoute} from "./world-scenes/runtime/mia-public-world-runtime.mjs";
 const $=s=>document.querySelector(s), mount=$("#viewport");
-let manifest,activeScene,renderer,scene,camera,controls,avatar,kenAvatar=null,kenState=null,lastKenFrameSignature="",avatarHeading=0,position={x:1.2,z:7},path=[],pathIndex=0,moveResolve=null,sceneObjects=[],lastPerception=0;\nconst KEN_WORLD_API="https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/ken-world-runtime";\nconst MIA_TOKEN=sessionStorage.getItem("mia_chat_token")||"";\nconst SUPABASE_PUBLIC_KEY="sb_publishable_spH47ZngJJTk13cpYPBjSw_X5qAsBmK";
+let manifest,activeScene,renderer,scene,camera,controls,avatar,kenAvatar=null,kenState=null,lastKenFrameSignature="",avatarHeading=0,position={x:1.2,z:7},path=[],pathIndex=0,moveResolve=null,sceneObjects=[],lastPerception=0;
+const KEN_WORLD_API="https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/ken-world-runtime";
+const MIA_TOKEN=sessionStorage.getItem("mia_chat_token")||"";
+const SUPABASE_PUBLIC_KEY="sb_publishable_spH47ZngJJTk13cpYPBjSw_X5qAsBmK";
 const sceneColors={"mia-forest-corner":0x78966d,"crystal-forest":0x607c78,"ocean-of-light":0x6a9da8,"memory-valley":0x83927d,"living-city":0x7c9b79,"greenhouse":0x92aa7a,"palace":0x9b8054};
 const destinationIds=["crystal-forest","ocean-of-light","memory-valley","living-city","greenhouse"];
 const mats={};

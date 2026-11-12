@@ -34,3 +34,14 @@ test("visitor runtime module script parses as an async JavaScript module body",(
  const AsyncFunction=Object.getPrototypeOf(async function(){}).constructor;
  assert.doesNotThrow(()=>new AsyncFunction(body));
 });
+
+
+test("world scope admits every Mia world agent and public visitors without access gates",()=>{
+ assert.equal(manifest.scope.principal,"all-mia-world-agents-and-public-visitors");
+ assert.equal(manifest.scope.audience,"all_mia_world_agents_and_public_visitors");
+ assert.equal(manifest.scope.other_agents_access,true);
+ for(const key of ["registration_required","approval_required","invitation_required","token_required","whitelist_required","manual_confirmation_required"])
+  assert.equal(manifest.scope[key],false,key+" must remain disabled");
+ assert.ok(manifest.routes.every(route=>route.access==="all-mia-world-agents-and-public-visitors"));
+ assert.equal(manifest.scenes.find(scene=>scene.id==="palace").access_policy.audience,"all_mia_world_agents_and_public_visitors");
+});

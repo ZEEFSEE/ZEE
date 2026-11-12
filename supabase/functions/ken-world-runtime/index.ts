@@ -59,7 +59,7 @@ async function record(c:any,identityId:string,deviceId:string,eventType:string,s
  if(worldError)throw new Error("KEN_WORLD_EVENT_SAVE_FAILED");
  const narrative=String(payload.narrative||eventType+"："+(target||sceneId||"世界")).slice(0,1800);
  const {error:memoryError}=await fam(c).rpc("ken_append_runtime_event",{
-  p_identity_id:identityId,p_device_id:deviceId,p_event_type:"KEN_WORLD_EXPERIENCE",p_fact_class:"EPISODIC_EXPERIENCE",
+  p_identity_id:identityId,p_device_id:deviceId,p_event_type:"KEN_WORLD_EXPERIENCE",p_fact_class:"OBSERVATION",
   p_narrative:narrative,p_payload:{event_type:eventType,scene_id:sceneId,target_id:target,...payload,visibility:"PRIVATE",provenance:"AUTHORED_SCENE_DATA"},
   p_source_system:"KEN_WORLD_RUNTIME",p_source_ref:crypto.randomUUID(),p_source_confidence:1,p_importance:0.58,
   p_idempotency_key:"ken-world:"+crypto.randomUUID()

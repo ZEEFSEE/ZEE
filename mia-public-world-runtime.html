@@ -106,7 +106,7 @@ function renderKenPresence(){
  const p=kenState.position||activeScene.spawn;
  const target={x:Number.isFinite(Number(p.x))?Number(p.x):activeScene.spawn.x,z:Number.isFinite(Number(p.z))?Number(p.z):activeScene.spawn.z};
  const targetKey=activeScene.id+":"+target.x.toFixed(3)+":"+target.z.toFixed(3);
- if(!kenAvatar||kenAvatar.parent!==scene){kenAvatar=createKenAvatar();scene.add(kenAvatar);kenAvatar.position.set(target.x,.45,target.z);kenPath=[];kenPathIndex=0;kenLastTargetKey=targetKey;}
+ if(!kenAvatar||kenAvatar.parent!==scene){kenAvatar=createKenAvatar();scene.add(kenAvatar);kenPath=[];kenPathIndex=0;const pending=kenState.position_status==="anchor_targeted"?kenState.perception_frame?.pending_anchor_target:null;const from=pending?.from_position;if(from&&Number.isFinite(Number(from.x))&&Number.isFinite(Number(from.z))){kenAvatar.position.set(Number(from.x),.45,Number(from.z));const route=findWalkPath(activeScene,{x:Number(from.x),z:Number(from.z)},target);if(route.reachable){kenPath=route.path;kenPathIndex=0;}else{panel.textContent="KEN 的目标位置已同步，但场景路径未通过验证；正在恢复实际位置。";}}else kenAvatar.position.set(target.x,.45,target.z);kenLastTargetKey=targetKey;}
  else if(targetKey!==kenLastTargetKey){kenLastTargetKey=targetKey;const route=findWalkPath(activeScene,{x:kenAvatar.position.x,z:kenAvatar.position.z},target);if(route.reachable){kenPath=route.path;kenPathIndex=0;}else{kenPath=[];kenPathIndex=0;panel.textContent="KEN 的目标位置已同步，但当前场景的障碍物路径未通过验证；他会保留可验证的位置。";return;}}
  panel.textContent="KEN 已同步到当前场景："+activeScene.name+"；位置来源："+(kenState.position?.provenance||"虚拟场景状态")+"；场景内移动使用已登记障碍物路径，不代表现实世界定位。";
 }

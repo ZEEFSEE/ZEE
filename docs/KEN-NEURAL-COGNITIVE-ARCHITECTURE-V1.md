@@ -45,7 +45,7 @@ These are software structures. A node is not a literal biological neuron; a syna
 
 ## Runtime cycle
 
-1. Authenticate the shared Mia login and independently verify the KEN owner binding.
+1. Authenticate the existing Mia login session; the same world session can enter KEN and other residents without a per-agent owner-binding step.
 2. Route the current message to relevant cognitive regions.
 3. Load the current session context and recent KEN memory events.
 4. Search the separate KEN historical archive using bounded lexical retrieval.
@@ -62,7 +62,7 @@ These are software structures. A node is not a literal biological neuron; a syna
 - Seventeen directed baseline synapses seeded.
 - KEN chat runtime upgraded to use region routing, bounded historical-message retrieval, neural-node retrieval, and cognitive-cycle audit.
 - Each successful chat turn now creates a private episodic node and evidence-linked associative synapses to the activated region anchors; extracted memory candidates also enter the owner-review learning ledger.
-- KEN chat now verifies the active `ken_token_owners` binding in addition to validating the signed Mia session.
+- KEN chat uses the existing Mia login session as the shared Mia-world entry; it validates the signed Mia session directly and does not require a KEN-specific owner binding, separate account, or registration.
 - AGNES remains the only KEN model provider. No Groq route is used.
 - Existing KEN archive remains separate and unchanged.
 - Mia production chat, Mia personality, Mia memories, and children's private records were not modified.

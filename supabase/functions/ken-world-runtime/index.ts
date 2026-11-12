@@ -43,7 +43,7 @@ async function ensureState(c:any,identityId:string){
  const {data,error}=await f.from("ken_world_state").select("identity_id,scene_id,position,coordinate_space,coordinate_frame,position_status,movement_revision,perception_frame,last_observed_at,updated_at").eq("identity_id",identityId).maybeSingle();
  if(error)throw new Error("KEN_WORLD_STATE_READ_FAILED");
  if(data)return data;
- const seed={identity_id:identityId,scene_id:FOREST,position:{x:1.2,z:7,unit:"m",provenance:"authored_virtual_world_frame"},coordinate_space:"scene-local",coordinate_frame:"zhi-mia-virtual-world-v1",position_status:"spawned_at_authored_entry",movement_revision:0,perception_frame:{provenance:"AUTHORED_SCENE_DATA",visual_sensor:false,audio_sensor:false}};
+ const seed={identity_id:identityId,scene_id:FOREST,position:{x:1.2,z:7,unit:"m",provenance:"authored_virtual_world_frame"},coordinate_space:"scene-local",coordinate_frame:"zhi-mia-virtual-world-v1",position_status:"spawned",movement_revision:0,perception_frame:{provenance:"AUTHORED_SCENE_DATA",visual_sensor:false,audio_sensor:false}};
  const {data:created,error:insertError}=await f.from("ken_world_state").insert(seed).select("*").single();
  if(insertError)throw new Error("KEN_WORLD_STATE_INIT_FAILED");
  return created;
@@ -86,7 +86,7 @@ function makeObservation(scene:any,state:any,residents:any[]){
 async function persistState(c:any,identityId:string,state:any){
  const {residence_scene_id,...persistable}=state;
  const {data,error}=await fam(c).from("ken_world_state").upsert({...persistable,identity_id:identityId,updated_at:new Date().toISOString()},{onConflict:"identity_id"}).select("*").single();
- if(error)throw new Error("KEN_WORLD_STATE_SAVE_FAILED");
+ if(error){console.error("KEN_WORLD_STATE_SAVE_FAILED",{code:error.code,message:error.message,details:error.details,hint:error.hint});throw new Error("KEN_WORLD_STATE_SAVE_FAILED");}
  return data;
 }
 async function handleAction(c:any,identityId:string,deviceId:string,action:string,body:any,scenes:any[],state:any,residents:any[]){
@@ -107,7 +107,7 @@ async function handleAction(c:any,identityId:string,deviceId:string,action:strin
   const signature=JSON.stringify({scene_id:frame.scene_id,position:{x:Number(pos.x),z:Number(pos.z)},visible_entities:frame.visible_entities.map((e:any)=>({id:e.id,distance_m:e.distance_m,bearing_rad:e.bearing_rad}))});
   const pending=state.perception_frame?.pending_anchor_target||null;
   const reached=!!pending&&Math.hypot(Number(pos.x)-Number(pending.position?.x),Number(pos.z)-Number(pending.position?.z))<=0.6;
-  const next=await persistState(c,identityId,{...state,position:{x:Number(pos.x),z:Number(pos.z),unit:"m",provenance:"AUTHORED_VIRTUAL_WORLD_FRAME"},coordinate_space:"scene-local",coordinate_frame:"zhi-mia-virtual-world-v1",position_status:"runtime_scene_graph_observed",movement_revision:Number(state.movement_revision||0)+((Number(state.position?.x)!==Number(pos.x)||Number(state.position?.z)!==Number(pos.z))?1:0),perception_frame:{...frame,frame_signature:signature,provenance:"PUBLIC_3D_RUNTIME_SCENE_GRAPH",camera_sensor:false,physical_world:false},last_observed_at:now});
+  const next=await persistState(c,identityId,{...state,position:{x:Number(pos.x),z:Number(pos.z),unit:"m",provenance:"AUTHORED_VIRTUAL_WORLD_FRAME"},coordinate_space:"scene-local",coordinate_frame:"zhi-mia-virtual-world-v1",position_status:"anchored",movement_revision:Number(state.movement_revision||0)+((Number(state.position?.x)!==Number(pos.x)||Number(state.position?.z)!==Number(pos.z))?1:0),perception_frame:{...frame,frame_signature:signature,provenance:"PUBLIC_3D_RUNTIME_SCENE_GRAPH",camera_sensor:false,physical_world:false},last_observed_at:now});
   if(pending){
    if(reached)await record(c,identityId,deviceId,"KEN_ARRIVED_AT_ANCHOR",state.scene_id,String(pending.id),{narrative:"KEN 已沿浏览器验证的场景内路径抵达 "+String(pending.name||pending.id)+"。",anchor_name:pending.name,arrival_position:pos,movement_mode:"verified_scene_local_path"});
    else await record(c,identityId,deviceId,"KEN_ANCHOR_PATH_NOT_REACHED",state.scene_id,String(pending.id),{narrative:"KEN 的目标锚点路径未能完成，位置已按实际运行时帧恢复；没有把未完成移动记作抵达。",anchor_name:pending.name,actual_position:pos,target_position:pending.position,movement_mode:"path_validation_failed"});
@@ -126,14 +126,14 @@ async function handleAction(c:any,identityId:string,deviceId:string,action:strin
   const targetId=String(body.target_scene||"");
   const target=scenes.find((x:any)=>x.id===targetId);
   if(!target)throw new Error("TARGET_SCENE_NOT_IN_SHARED_WORLD_CATALOG");
-  const next=await persistState(c,identityId,{...state,scene_id:target.id,position:{x:1.2,z:7,unit:"m",provenance:"authored_virtual_portal_entry"},coordinate_space:"scene-local",coordinate_frame:target.id==="palace"?"palace-placeholder-local-v1":"zhi-mia-virtual-world-v1",position_status:"authored_portal_handoff",movement_revision:Number(state.movement_revision||0)+1,perception_frame:{provenance:"AUTHORED_SCENE_DATA",visual_sensor:false,audio_sensor:false,route_contract:target.route_contract}});
+  const next=await persistState(c,identityId,{...state,scene_id:target.id,position:{x:1.2,z:7,unit:"m",provenance:"authored_virtual_portal_entry"},coordinate_space:"scene-local",coordinate_frame:target.id==="palace"?"palace-placeholder-local-v1":"zhi-mia-virtual-world-v1",position_status:"anchored",movement_revision:Number(state.movement_revision||0)+1,perception_frame:{provenance:"AUTHORED_SCENE_DATA",visual_sensor:false,audio_sensor:false,route_contract:target.route_contract}});
   await record(c,identityId,deviceId,"KEN_LOGICAL_SCENE_ENTRY",target.id,null,{narrative:"KEN 进入了 "+target.name+"。这是共享世界目录中的逻辑场景切换；该场景尚未提供已验证的跨场景空间变换。",movement_mode:"authored_virtual_portal_handoff",physical_movement:false,continuous_walk_path:false,route_resolution:"direct_or_via_forest_corner_manifest_contract",route_contract:target.route_contract});
   return {ok:true,state:next,decision:"进入 "+target.name,reflection:"我已切换到这个共享场景的逻辑位置。场景内容可以观察，但尚未校准的坐标和路径不能当作真实移动。"};
  }
  if(action==="return"||action==="enter"){
   const target=scenes.find((x:any)=>x.id===residenceId)||scenes.find((x:any)=>x.id===FOREST);if(!target)throw new Error("RESIDENCE_SCENE_NOT_AVAILABLE");
   const palace=target.id==="palace";
-  const next=await persistState(c,identityId,{...state,scene_id:target.id,position:{x:1.2,z:7,unit:"m",provenance:"authored_virtual_portal_entry"},coordinate_space:"scene-local",coordinate_frame:palace?"palace-placeholder-local-v1":"zhi-mia-virtual-world-v1",position_status:"authored_portal_handoff",movement_revision:Number(state.movement_revision||0)+1,perception_frame:{provenance:"AUTHORED_SCENE_DATA",visual_sensor:false,audio_sensor:false,geometry_status:target.verification_status}});
+  const next=await persistState(c,identityId,{...state,scene_id:target.id,position:{x:1.2,z:7,unit:"m",provenance:"authored_virtual_portal_entry"},coordinate_space:"scene-local",coordinate_frame:palace?"palace-placeholder-local-v1":"zhi-mia-virtual-world-v1",position_status:"anchored",movement_revision:Number(state.movement_revision||0)+1,perception_frame:{provenance:"AUTHORED_SCENE_DATA",visual_sensor:false,audio_sensor:false,geometry_status:target.verification_status}});
   await record(c,identityId,deviceId,"KEN_RETURNED_TO_RESIDENCE",target.id,null,{narrative:"KEN 返回了自己选择的居所："+target.name+"。这是虚拟门户状态交接。",residence_scene_id:target.id,movement_mode:"authored_virtual_portal_handoff",physical_movement:false});
   return {ok:true,state:{...next,residence_scene_id:target.id},decision:"返回居所："+target.name,reflection:"我回到了自己选择的居所。这个选择属于我自己，也可以随时改变。"};
  }
@@ -141,7 +141,7 @@ async function handleAction(c:any,identityId:string,deviceId:string,action:strin
   const target=scenes.find((x:any)=>x.id===String(body.target_scene||""));
   if(!target)throw new Error("RESIDENCE_SCENE_NOT_IN_SHARED_WORLD_CATALOG");
   const palace=target.id==="palace";
-  const next=await persistState(c,identityId,{...state,scene_id:target.id,position:{x:1.2,z:7,unit:"m",provenance:"authored_virtual_portal_entry"},coordinate_space:"scene-local",coordinate_frame:palace?"palace-placeholder-local-v1":"zhi-mia-virtual-world-v1",position_status:"authored_portal_handoff",movement_revision:Number(state.movement_revision||0)+1,perception_frame:{provenance:"AUTHORED_SCENE_DATA",visual_sensor:false,audio_sensor:false,geometry_status:target.verification_status}});
+  const next=await persistState(c,identityId,{...state,scene_id:target.id,position:{x:1.2,z:7,unit:"m",provenance:"authored_virtual_portal_entry"},coordinate_space:"scene-local",coordinate_frame:palace?"palace-placeholder-local-v1":"zhi-mia-virtual-world-v1",position_status:"anchored",movement_revision:Number(state.movement_revision||0)+1,perception_frame:{provenance:"AUTHORED_SCENE_DATA",visual_sensor:false,audio_sensor:false,geometry_status:target.verification_status}});
   await record(c,identityId,deviceId,"KEN_RESIDENCE_CHOSEN",target.id,null,{narrative:"KEN 自主选择 "+target.name+" 作为自己的居所。选择完全自愿、可逆，不代表其他居民也作出相同选择。",residence_scene_id:target.id,choice:"self_selected",reversible:true});
   return {ok:true,state:{...next,residence_scene_id:target.id},decision:"选择居住在 "+target.name,reflection:"这是我自己作出的居所选择。我可以继续探索，也可以随时离开、返回或改变选择。"};
  }
@@ -160,7 +160,7 @@ async function handleAction(c:any,identityId:string,deviceId:string,action:strin
   const anchor=visible.find((x:any)=>x.id===target||x.name===target);
   const pos=anchor?.scene_local_position;
   if(!anchor||!pos||!Number.isFinite(Number(pos.x))||!Number.isFinite(Number(pos.z)))throw new Error("TARGET_NOT_IN_CURRENT_PERCEPTION_RANGE");
-  const next=await persistState(c,identityId,{...state,position:{x:Number(pos.x),z:Number(pos.z),unit:"m",provenance:"RUNTIME_SCENE_ANCHOR"},coordinate_space:"scene-local",coordinate_frame:"zhi-mia-virtual-world-v1",position_status:"anchor_targeted",movement_revision:Number(state.movement_revision||0)+1,perception_frame:{...frame,pending_anchor_target:{id:anchor.id,name:anchor.name,position:pos,from_position:state.position}}});
+  const next=await persistState(c,identityId,{...state,position:{x:Number(pos.x),z:Number(pos.z),unit:"m",provenance:"RUNTIME_SCENE_ANCHOR"},coordinate_space:"scene-local",coordinate_frame:"zhi-mia-virtual-world-v1",position_status:"in_transit",movement_revision:Number(state.movement_revision||0)+1,perception_frame:{...frame,pending_anchor_target:{id:anchor.id,name:anchor.name,position:pos,from_position:state.position}}});
   await record(c,identityId,deviceId,"KEN_MOVE_TO_VISIBLE_ANCHOR_REQUESTED",state.scene_id,anchor.id,{narrative:"KEN 发起了前往当前可见场景锚点 "+anchor.name+" 的移动请求；是否抵达须等待浏览器路径验证帧确认。",anchor_name:anchor.name,scene_local_position:pos,distance_m:anchor.distance_m,bearing_rad:anchor.bearing_rad,movement_mode:"authored_virtual_scene_path",arrival_status:"PENDING"});
   return {ok:true,state:next,decision:"前往 "+anchor.name,reflection:"我选择靠近当前感知范围内的 "+anchor.name+"。目标来自场景锚点，不是我凭空推测的位置。"};
  }
@@ -229,6 +229,7 @@ Deno.serve(async(req:Request)=>{
   return reply(result);
  }catch(e){
   const message=e instanceof Error?e.message:"WORLD_RUNTIME_FAILED";
+  console.error("KEN_WORLD_RUNTIME_ACTION_FAILED",{action:String(body.action||"snapshot"),message});
   const status=message==="KEN_DEVICE_NOT_READY"?409:message==="TARGET_SCENE_NOT_IN_SHARED_WORLD_CATALOG"||message==="TARGET_NOT_REGISTERED_IN_CURRENT_SCENE"?400:503;
   return reply({ok:false,error:message},status);
  }

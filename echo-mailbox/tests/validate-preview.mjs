@@ -12,7 +12,7 @@ const schema = readFileSync(new URL("../../supabase/design/echo-mailbox-v2-schem
 assert.match(html, /data-lang="zh"/, "Chinese language toggle must exist");
 assert.match(html, /data-lang="en"/, "English language toggle must exist");
 assert.match(html, /publish-consent/, "Explicit publication consent must exist");
-assert.match(html, /does not send or store|不会发送或保存/, "Preview must clearly disclose that it does not submit");
+assert.match(html, /submitting will send your thought|提交时会尝试将想法发送/, "The form must disclose that it submits through the dedicated endpoint");
 assert.match(html, /addEventListener\('submit'/, "Form must have an explicit safe submit handler");
 assert.match(html, /functions.*echo-submit/, "Submissions must use the dedicated Echo endpoint");
 assert.match(html, /echo_publications/, "Archive must read only the public Echo archive");

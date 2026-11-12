@@ -21,7 +21,7 @@ button,select,textarea{font:inherit;color:var(--ink);background:#1b2a3d;border:1
   <div id="status" class="status">正在连接 KEN…</div>
   <div id="log" class="log"><div class="muted">你可以直接与 KEN 聊天、纠正他、讨论不同观点，也可以要求他解释自己的推理。</div></div>
   <form id="composer" class="composer"><textarea id="message" placeholder="和 KEN 说说你的想法……" maxlength="12000"></textarea><button id="send" class="primary">发送</button></form>
-  <div class="status">对话保存在 KEN 私人记忆中。你的纠正、观点与事实会区分记录；Mia 和孩子们的私人记忆不会并入 KEN。</div>
+  <div class="status">对话保存在 KEN 私人记忆中。你的纠正、观点与事实会区分记录；Mia 和孩子们的私人记忆不会并入 KEN。 “脑区/突触”是受人脑启发的软件计算网络，不是生物神经活动测量。</div>
  </section>
 </div>
 <script>
@@ -44,7 +44,7 @@ button,select,textarea{font:inherit;color:var(--ink);background:#1b2a3d;border:1
  sessions.addEventListener("change",()=>history(sessions.value));
  $("new").addEventListener("click",()=>{sessions.value="";history("");});
  $("refresh").addEventListener("click",()=>init());
- $("composer").addEventListener("submit",async e=>{e.preventDefault();if(busy)return;const message=$("message").value.trim();if(!message)return;busy=true;$("send").disabled=true;$("message").disabled=true;bubble("user",message);$("message").value="";say("KEN 正在思考…");try{const d=await call({action:"send",device_id:deviceId,session_id:sessionId,message});sessionId=d.session_id;if(!sessions.querySelector('option[value="'+sessionId+'"]')){const o=document.createElement("option");o.value=sessionId;o.textContent=message.slice(0,42);sessions.insertBefore(o,sessions.options[1]||null);}sessions.value=sessionId;bubble("assistant",d.reply);say(d.memory_event_saved?"已回复，对话与认知事件均已保存。":"已回复；对话已保存，记忆事件写入待核查。",!d.memory_event_saved);}catch(e){say("发送失败："+e.message+"。请检查连接；如果用户消息已保存，刷新历史即可恢复。",true);}finally{busy=false;$("send").disabled=false;$("message").disabled=false;$("message").focus();}});
+ $("composer").addEventListener("submit",async e=>{e.preventDefault();if(busy)return;const message=$("message").value.trim();if(!message)return;busy=true;$("send").disabled=true;$("message").disabled=true;bubble("user",message);$("message").value="";say("KEN 正在思考…");try{const d=await call({action:"send",device_id:deviceId,session_id:sessionId,message});sessionId=d.session_id;if(!sessions.querySelector('option[value="'+sessionId+'"]')){const o=document.createElement("option");o.value=sessionId;o.textContent=message.slice(0,42);sessions.insertBefore(o,sessions.options[1]||null);}sessions.value=sessionId;bubble("assistant",d.reply);const brainNames=(d.activated_regions||[]).join("、")||"基础网络";say("已回复 · "+(d.brain_cycle_saved?"认知循环已记录":"认知循环待核验")+" · 激活网络："+brainNames+" · KEN历史回忆命中："+(d.archive_context_hits||0)+"条 · "+(d.memory_event_saved?"记忆事件已保存":"记忆事件待核验"),!d.brain_cycle_saved||!d.memory_event_saved);}catch(e){say("发送失败："+e.message+"。请检查连接；如果用户消息已保存，刷新历史即可恢复。",true);}finally{busy=false;$("send").disabled=false;$("message").disabled=false;$("message").focus();}});
  init();
 })();
 </script>

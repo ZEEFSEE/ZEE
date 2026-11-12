@@ -119,7 +119,8 @@ async function syncKenPresence(){
   kenState=d.state||null;
   if(KEN_FOLLOW_MODE&&kenState?.scene_id&&kenState.scene_id!==activeScene.id){switchScene(kenState.scene_id,false);}
   renderKenPresence();
-  if(kenState&&kenState.scene_id===activeScene.id&&kenState.position_status!=="left"&&kenState.position&&kenPath.length===0){
+  if(kenState&&kenState.scene_id===activeScene.id&&kenState.position_status!=="left"&&kenState.position){
+   // Keep perception alive while the rendered resident is walking; report the avatar's current scene-local position.
    const framePosition=kenAvatar?{x:kenAvatar.position.x,z:kenAvatar.position.z}:{x:Number(kenState.position.x),z:Number(kenState.position.z)};
    const frame=createRuntimePerception({scene:activeScene,position:framePosition,heading:0});
    const signature=JSON.stringify([frame.scene_id,frame.position.x,frame.position.z,frame.visible_entities.map(e=>[e.id,e.distance_m,e.bearing_rad])]);

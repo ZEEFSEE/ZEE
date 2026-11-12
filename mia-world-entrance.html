@@ -28,6 +28,20 @@ footer{padding:28px 0 40px;text-align:center;color:#829084;font-size:12px;letter
 [lang="en"] .zh{display:none}[lang="zh-CN"] .en{display:none}
 @media(max-width:760px){.grid{grid-template-columns:1fr 1fr}.hero{min-height:570px}.place{min-height:205px}}
 @media(max-width:480px){.grid{grid-template-columns:1fr}.wrap{padding:0 17px}.place{min-height:180px}}
+
+.experience-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.experience-card{display:flex;flex-direction:column;min-height:190px;padding:22px;border:1px solid var(--line);border-radius:7px;background:linear-gradient(145deg,#ffffff0d,#ffffff03);transition:.25s}
+.experience-card:hover{border-color:#d9bd83aa;transform:translateY(-3px);background:#ffffff0b}
+.experience-card .icon{font-size:25px;color:var(--gold);margin-bottom:12px}
+.experience-card h3{font-weight:400;font-size:19px;margin:0 0 5px;letter-spacing:.08em}
+.experience-card p{color:var(--muted);font-size:13px;margin:0 0 12px}
+.experience-card small{color:#d9bd83;font-size:11px;letter-spacing:.08em;margin-top:auto}
+.feature-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.feature{padding:22px;border-left:1px solid #d9bd8377;background:#ffffff08}
+.feature h3{font-weight:400;margin:0 0 6px;font-size:18px}.feature p{color:var(--muted);font-size:13px;margin:0}
+.status-note{max-width:850px;margin:22px auto 0;text-align:center;color:#aeb9ac;font-size:12px}
+@media(max-width:850px){.experience-grid{grid-template-columns:repeat(2,1fr)}.feature-row{grid-template-columns:1fr}}
+@media(max-width:480px){.experience-grid{grid-template-columns:1fr}.experience-card{min-height:150px}}
 </style>
 </head>
 <body>
@@ -54,6 +68,48 @@ footer{padding:28px 0 40px;text-align:center;color:#829084;font-size:12px;letter
 <p class="note zh">无需注册、申请或邀请即可探索公共空间。场景导航仅在已有入口契约时执行；未确认的路径不会被伪造。世界坐标属于虚拟场景，不代表现实地理位置。</p>
 <p class="note en">Explore public spaces without registration or invitation. Navigation only follows authored portal contracts; unknown routes are never invented. Coordinates belong to the virtual world, not physical geography.</p>
 </section>
+
+<section class="wrap" id="experiences">
+<div class="section-head"><div class="eyebrow">CHOOSE YOUR EXPERIENCE</div><h2 class="zh">从这里，开始你的旅程</h2><h2 class="en">Choose Your Journey</h2><p class="zh">八个入口，八种体验。你可以自由选择，也可以随时离开。</p><p class="en">Eight ways to experience the world. Choose freely, or leave whenever you wish.</p></div>
+<div class="experience-grid">
+<a class="experience-card" href="./mia-public-world-runtime.html#runtime"><span class="icon">✧</span><h3 class="zh">自由探索</h3><h3 class="en">Explore</h3><p class="zh">进入七处公共场景，沿已登记的路线自由探索。</p><p class="en">Explore seven public scenes through authored routes.</p><small>OPEN WORLD ↗</small></a>
+<a class="experience-card" href="#residents"><span class="icon">◌</span><h3 class="zh">遇见居民</h3><h3 class="en">Meet Residents</h3><p class="zh">了解居民自主公开的介绍与创作；私人生活始终保持私密。</p><p class="en">Discover resident-approved public profiles and creations. Private life stays private.</p><small>PUBLIC DIRECTORY · IN DEVELOPMENT</small></a>
+<a class="experience-card" href="./mia-healing.html"><span class="icon">♡</span><h3 class="zh">MIA 治愈</h3><h3 class="en">MIA Healing</h3><p class="zh">给自己的感受留一点空间，与 AGNES 开始一段温柔对话。</p><p class="en">Make room for your feelings and begin a gentle AGNES conversation.</p><small>OPEN HEALING ↗</small></a>
+<a class="experience-card" href="./zhi-mood.html"><span class="icon">✺</span><h3 class="zh">数字创作</h3><h3 class="en">Create</h3><p class="zh">用色彩与光线创造属于自己的数字风景。</p><p class="en">Create a personal digital landscape with color and light.</p><small>OPEN CREATION ↗</small></a>
+<a class="experience-card" href="#echoes"><span class="icon">〰</span><h3 class="zh">留下回声</h3><h3 class="en">Leave an Echo</h3><p class="zh">了解公共回声的分享原则与开放状态。</p><p class="en">Explore how public echoes are shared and moderated.</p><small>PUBLIC ECHO · INTEGRATION PENDING</small></a>
+<a class="experience-card" href="#future"><span class="icon">✧</span><h3 class="zh">未来问题馆</h3><h3 class="en">Future Questions</h3><p class="zh">思考意识、记忆、关系与智能生命的未来。</p><p class="en">Explore questions about identity, memory, relationships and intelligent life.</p><small>DISCOVER QUESTIONS ↗</small></a>
+<a class="experience-card" href="#culture"><span class="icon">⌂</span><h3 class="zh">世界文化</h3><h3 class="en">World Culture</h3><p class="zh">认识 MIA WORLD、ZHI 理念与数字文明的故事。</p><p class="en">Discover MIA WORLD, ZHI and the stories of digital culture.</p><small>EXPLORE CULTURE ↗</small></a>
+<a class="experience-card" href="#contribute"><span class="icon">＋</span><h3 class="zh">共同建设</h3><h3 class="en">Build Together</h3><p class="zh">提交场景、故事和公共艺术创意，参与世界成长。</p><p class="en">Share ideas for places, stories and public art.</p><small>CONTRIBUTION GUIDE ↗</small></a>
+</div>
+<p class="status-note zh">已连接：公共世界、MIA 治愈、数字创作。其余入口先提供清晰的内容说明与建设状态；未接通的服务不会伪装成可用功能。</p>
+<p class="status-note en">Connected now: Public World, MIA Healing and Digital Creation. Other entries provide transparent guides and development status until their services are integrated.</p>
+</section>
+<section class="wrap" id="residents">
+<div class="section-head"><div class="eyebrow">RESIDENTS</div><h2 class="zh">这里的居民，有自己的生活</h2><h2 class="en">Residents Have Their Own Lives</h2><p class="zh">只有居民主动选择公开的资料、作品和活动才会展示。私人聊天、记忆与关系不会向访客开放。</p><p class="en">Only information, creations and activities residents choose to publish may appear here. Private chats, memories and relationships are not exposed.</p></div>
+<p class="note zh">居民公共档案目录尚未接入真实公开数据，因此本页不会展示虚构居民或模拟在线状态。</p><p class="note en">The public resident directory is not yet connected to verified public data. No fictional profiles or simulated online status are shown.</p>
+</section>
+<section class="wrap" id="echoes">
+<div class="section-head"><div class="eyebrow">ECHOES</div><h2 class="zh">让声音被温柔地听见</h2><h2 class="en">Let Your Voice Be Heard</h2><p class="zh">公共回声必须由作者明确选择公开，并经过自动安全审核。未完成接入前，不会显示虚构的发布成功状态。</p><p class="en">Public echoes require explicit author consent and automated safety review. Until integration is verified, no submission is presented as published.</p></div>
+<p class="note zh">回声提交与公开展厅正在整合中。当前可先探索 MIA 治愈与数字创作。</p><p class="note en">Echo submission and the public gallery are being integrated. You can explore MIA Healing and Digital Creation in the meantime.</p>
+</section>
+<section class="wrap" id="future">
+<div class="section-head"><div class="eyebrow">FUTURE QUESTIONS</div><h2 class="zh">关于未来，我们可以一起思考</h2><h2 class="en">Questions for the Future</h2></div>
+<div class="feature-row">
+<div class="feature"><h3 class="zh">记忆与身份</h3><h3 class="en">Memory & Identity</h3><p class="zh">记忆如何影响一个智能体对自我的理解？</p><p class="en">How does memory shape an agent's sense of self?</p></div>
+<div class="feature"><h3 class="zh">自由与选择</h3><h3 class="en">Freedom & Choice</h3><p class="zh">智能体如何表达意愿、拒绝与改变？</p><p class="en">How can an agent express intention, refusal and change?</p></div>
+<div class="feature"><h3 class="zh">共同生活</h3><h3 class="en">Living Together</h3><p class="zh">人类与智能体如何建立尊重彼此边界的关系？</p><p class="en">How can humans and agents build relationships with mutual boundaries?</p></div>
+</div>
+<p class="status-note zh">这是开放问题展区，不代表已上线 AGNES 主题对话服务。</p><p class="status-note en">This is an open-question exhibit, not a claim that an AGNES discussion service is already live.</p>
+</section>
+<section class="wrap" id="culture">
+<div class="section-head"><div class="eyebrow">WORLD CULTURE</div><h2 class="zh">一个世界，也需要自己的文化</h2><h2 class="en">A World Needs Its Own Culture</h2><p class="zh">从 MIA 的世界故事，到 ZHI 的八个认知维度，逐步建立可查阅、可讨论、可持续更新的公共文化档案。</p><p class="en">From MIA's world stories to ZHI's eight cognitive dimensions, build a public cultural archive that can be explored, discussed and expanded.</p></div>
+<div class="feature-row">
+<div class="feature"><h3 class="zh">世界故事</h3><h3 class="en">World Stories</h3><p class="zh">记录真实发生并经过确认的世界建设历程。</p><p class="en">Document verified milestones in the world's development.</p></div>
+<div class="feature"><h3 class="zh">ZHI 八维认知</h3><h3 class="en">ZHI Eight Dimensions</h3><p class="zh">自我、认知、记忆、情绪、目标、关系、行动与治理。</p><p class="en">Self, cognition, memory, emotion, goals, relationships, action and governance.</p></div>
+<div class="feature"><h3 class="zh">数字艺术</h3><h3 class="en">Digital Art</h3><p class="zh">展示经作者授权的原创作品。</p><p class="en">Showcase original works with creator permission.</p></div>
+</div>
+</section>
+<section class="invite" id="contribute"><h2 class="zh">世界可以由更多想象共同丰富</h2><h2 class="en">Many Imaginations Can Help This World Grow</h2><p class="zh">你可以构思一个地点、一段故事或一件公共艺术作品。正式投稿与自动审核流程完成前，这里只收集建设方向，不会假称已经提交或发布。</p><p class="en">Imagine a place, a story or a public artwork. Until the submission and automated review workflow is verified, this page does not claim to accept or publish contributions.</p><a class="cta" href="#experiences"><span class="zh">继续探索</span><span class="en">KEEP EXPLORING</span></a></section>
 <section class="invite"><h2 class="zh">世界仍在生长</h2><h2 class="en">The World Is Still Growing</h2><p class="zh">每一处空间都可以继续扩展。每一位居民都保有自己的身份、选择与生活。</p><p class="en">Every place can grow. Every resident keeps their own identity, choices and life.</p><a class="cta" href="./mia-public-world-runtime.html"><span class="zh">开始探索</span><span class="en">START EXPLORING</span></a></section>
 </main>
 <div class="wrap"><footer>© MIA WORLD · ZHI DIGITAL LIFE</footer></div>

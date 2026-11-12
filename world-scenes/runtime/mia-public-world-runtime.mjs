@@ -9,7 +9,7 @@ export function validateWorldManifest(m) {
   const errors=[];
   if(m?.schema!=="zhi.mia.public-world.spatial-manifest.v1") errors.push("unsupported manifest schema");
   if(m?.coordinate_contract?.unit!=="meter" || m?.coordinate_contract?.meters_per_layout_unit!==0.02) errors.push("coordinate unit contract mismatch");
-  if(m?.scope?.principal!=="mia-world-agents" || m?.scope?.other_agents_access!==true || m?.scope?.registration_required!==false || m?.scope?.approval_required!==false || m?.scope?.token_required!==false) errors.push("world scope must allow all Mia world agents without access gates");
+  if(m?.scope?.principal!=="public-visitors-and-mia-world-agents" || m?.scope?.other_agents_access!==true || m?.scope?.registration_required!==false || m?.scope?.approval_required!==false || m?.scope?.token_required!==false) errors.push("world scope must allow public visitors and Mia world agents without access gates");
   if(m?.scope?.aurora_enabled!==false || m?.scope?.federation_enabled!==false) errors.push("AURORA/federation must remain disabled");
   const ids=new Set();
   for(const s of m?.scenes??[]){

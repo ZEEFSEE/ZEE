@@ -82,7 +82,7 @@ export function findWalkPath(scene,start,end,{cell=NAV_CELL,margin=0.42}={}) {
 }
 export function createRuntimePerception({scene,position,heading=0,visibleDistance=8}) {
   const entities=(scene.anchors??[]).map(a=>{
-    const p=anchorToLocal(scene,a,{meters_per_layout_unit:0.02});
+    const p=anchorApproachToLocal(scene,a);
     const dx=p.x-position.x,dz=p.z-position.z,dist=Math.hypot(dx,dz);
     const angle=Math.atan2(dx,-dz)-heading;
     const normalized=Math.atan2(Math.sin(angle),Math.cos(angle));

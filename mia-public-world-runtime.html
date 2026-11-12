@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#edf2e9"><title>MIA 世界 · 七处场景空间运行时</title>
+<meta name="theme-color" content="#edf2e9"><title>MIA 世界 · 公共访客场景</title>
 <style>
 :root{color-scheme:light;--ink:#26382c;--muted:#667568;--line:#d5dfd3;--paper:#f4f7f1}
 *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
@@ -29,7 +29,7 @@ small{color:var(--muted)}pre{white-space:pre-wrap;overflow:auto;max-height:240px
  <div class="controls">
   <button id="return-forest">返回森林角落</button><button id="reset-position">重置当前位置</button>
  </div>
- <section class="panel"><strong id="runtime-status">正在加载六个场景的空间契约…</strong><p id="runtime-detail">校验场景、入口、地面、碰撞体和可行走路径。</p><div id="runtime-tags"></div></section>
+ <section class="panel"><strong id="runtime-status">正在加载七处公共场景的空间契约…</strong><p id="runtime-detail">校验场景、入口、地面、碰撞体和可行走路径。</p><div id="runtime-tags"></div></section>
  <section class="grid">
   <div class="panel"><strong>当前空间状态</strong><pre id="state-output">等待场景初始化…</pre></div>
   <div class="panel"><strong>运行时感知帧</strong><small>来自当前 3D 场景实体锚点和代理位置；不是摄像头或现实世界传感器。</small><pre id="perception-output">等待运行时…</pre></div>
@@ -90,8 +90,6 @@ function updateState(){
  $("#state-output").textContent=JSON.stringify({scene_id:activeScene.id,scene_name:activeScene.name,local_position:{...position,unit:"m"},world_position:world,walking:path.length>0,colliders:activeScene.obstacles.length,coordinate_status:"authored_virtual_world_frame"},null,2);
  const frame=createRuntimePerception({scene:activeScene,position,heading:avatarHeading});
  $("#perception-output").textContent=JSON.stringify(frame,null,2);
- latestSceneFrame={schema:"zhi.mia.browser-scene-frame.v1",subject:"prototype-mia",identity_id:"cb6d01b4-0e3f-46ee-8946-360aa91db1ea",captured_at:frame.generated_at,scene:{id:activeScene.id,name:activeScene.name,coordinate_frame:"zhi-mia-virtual-world-v1",position:{x:position.x,z:position.z,unit:"m",coordinate_space:"scene-local"},world_position:world,available_anchors:activeScene.anchors.map(a=>({id:a.id,name:a.name,approach:{x:a.approach.x,z:a.approach.z}}))},heading_rad:avatarHeading,visible_entities:frame.visible_entities,recent_visits:recentVisits.slice(-12),navigation_contracts:(manifest.scene_transitions||[]),runtime:{engine:"three.js",source:"scene-graph",walkable:isWalkable(activeScene,position.x,position.z),collider_count:activeScene.obstacles.length,physical_world:false,camera_sensor:false}};
- if(window.parent!==window)window.parent.postMessage(latestSceneFrame,location.origin);
 }
 function setStatus(title,detail){$("#runtime-status").textContent=title;$("#runtime-detail").textContent=detail;}
 function disposeActiveScene(){
@@ -146,8 +144,6 @@ function renderButtons(){
  for(const s of manifest.scenes){const b=document.createElement("button");b.textContent=s.name;b.className=s.id===activeScene.id?"active":"";b.addEventListener("click",async()=>{try{await goToScene(s.id);renderButtons();}catch(e){setStatus("无法切换场景",e.message);}});root.append(b);}
 }
 $("#return-forest").addEventListener("click",async()=>{try{await goToScene("mia-forest-corner");renderButtons();}catch(e){setStatus("返回失败",e.message);}});
-$("#auto-explore").addEventListener("click",explore);
-$("#stop-explore").addEventListener("click",stopExplore);
 $("#reset-position").addEventListener("click",()=>{position={...activeScene.spawn};avatar.position.set(position.x,.45,position.z);path=[];pathIndex=0;moveResolve?.();moveResolve=null;updateState();});
 try{
  const r=await fetch("./world-scenes/public-destinations/world-spatial-manifest.v1.json",{cache:"no-store"});if(!r.ok)throw Error("空间清单 HTTP "+r.status);

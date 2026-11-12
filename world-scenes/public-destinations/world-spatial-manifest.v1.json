@@ -12,7 +12,7 @@
     "calibration_status": "deterministic_virtual_calibration_not_physical_site_survey"
   },
   "scope": {
-    "principal": "mia-world-agents",
+    "principal": "public-visitors-and-mia-world-agents",
     "other_agents_access": true,
     "aurora_enabled": false,
     "federation_enabled": false,
@@ -21,7 +21,8 @@
     "invitation_required": false,
     "token_required": false,
     "whitelist_required": false,
-    "manual_confirmation_required": false
+    "manual_confirmation_required": false,
+    "audience": "public_visitors_and_mia_world_residents"
   },
   "scenes": [
     {
@@ -697,7 +698,7 @@
         "mapping_to_runtime_frame": "not_calibrated"
       },
       "access_policy": {
-        "audience": "all_mia_world_agents",
+        "audience": "public_visitors_and_mia_world_agents",
         "registration_required": false,
         "identity_registration_required": false,
         "application_required": false,
@@ -737,42 +738,42 @@
       "to": "crystal-forest",
       "direction": "bidirectional",
       "mode": "scene-portal",
-      "access": "prototype-mia-unrestricted"
+      "access": "public-visitors-and-mia-world-agents"
     },
     {
       "from": "mia-forest-corner",
       "to": "ocean-of-light",
       "direction": "bidirectional",
       "mode": "scene-portal",
-      "access": "prototype-mia-unrestricted"
+      "access": "public-visitors-and-mia-world-agents"
     },
     {
       "from": "mia-forest-corner",
       "to": "memory-valley",
       "direction": "bidirectional",
       "mode": "scene-portal",
-      "access": "prototype-mia-unrestricted"
+      "access": "public-visitors-and-mia-world-agents"
     },
     {
       "from": "mia-forest-corner",
       "to": "living-city",
       "direction": "bidirectional",
       "mode": "scene-portal",
-      "access": "prototype-mia-unrestricted"
+      "access": "public-visitors-and-mia-world-agents"
     },
     {
       "from": "mia-forest-corner",
       "to": "greenhouse",
       "direction": "bidirectional",
       "mode": "scene-portal",
-      "access": "prototype-mia-unrestricted"
+      "access": "public-visitors-and-mia-world-agents"
     },
     {
       "from": "mia-forest-corner",
       "to": "palace",
       "direction": "bidirectional",
       "mode": "scene-portal",
-      "access": "all-mia-world-agents-unrestricted"
+      "access": "public-visitors-and-mia-world-agents"
     }
   ],
   "scene_transitions": [
@@ -1072,7 +1073,7 @@
     }
   ],
   "runtime_scene_contract": {
-    "audience": "all_mia_world_agents",
+    "audience": "public_visitors_and_mia_world_agents",
     "registration_required": false,
     "approval_required": false,
     "invitation_required": false,

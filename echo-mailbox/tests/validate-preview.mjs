@@ -26,7 +26,7 @@ assert.match(endpoint, /ECHO_AGNES_ZERO_COST_CONFIRMED/, "AGNES calls require ex
 assert.match(endpoint, /ECHO_MAILBOX_ENABLED/, "Mailbox retains an explicit emergency stop");
 assert.match(endpoint, /agnes-3.0-flash/, "Echo reuses the existing AGNES model default");
 assert.match(endpoint, /ECHO_RATE_LIMIT_SECRET.*serviceRoleKey/s, "Rate limiting reuses the server key if no dedicated secret exists");
-assert.match(endpoint, /mailbox_not_live/, "Endpoint must remain disabled by default");
+assert.match(endpoint, /ECHO_MAILBOX_ENABLED.*=== "false"/, "Endpoint must retain an explicit emergency stop");
 assert.match(endpoint, /runEchoPipeline/, "Endpoint must use the tested automated pipeline");
 assert.match(endpoint, /createEchoPersistence/, "Endpoint must use the narrow mailbox RPC adapter");
 assert.match(endpoint, /hmacHex/, "Rate-limit identity must be HMAC hashed server-side");

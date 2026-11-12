@@ -84,7 +84,7 @@ button.primary:hover{background:#d2aa79;border-color:#d2aa79}
 <div class="action-row"><button id="refresh" type="button" data-zh="重新生成" data-en="Regenerate">重新生成</button><button id="save" class="primary" type="button" data-zh="保存风景 PNG" data-en="Save landscape">保存风景 PNG</button><button id="share" type="button" data-zh="生成分享卡" data-en="Create share card">生成分享卡</button></div><p class="hint" id="shareHint" data-zh="分享卡只包含风景、颜色与 Mia Mood 标识，不包含个人信息。" data-en="Share cards contain only the artwork, color and Mia Mood mark — no personal data.">分享卡只包含风景、颜色与 Mia Mood 标识，不包含个人信息。</p></aside>
 <section class="panel scene-panel"><div class="scene-wrap"><canvas id="world" aria-label="Generative landscape"></canvas><div class="scene-label" id="elementTag">AFTER THE RAIN · FOREST</div></div><div class="scene-caption"><h2 id="sceneTitle">雨后森林</h2><p id="sceneDesc">风从树梢经过，微光正在慢慢升起。</p></div></section></section>
 <section class="echo"><div class="echo-top"><h2 data-zh="MIA 的回响" data-en="MIA'S ECHO">MIA 的回响</h2><button id="miaCreate" class="primary" type="button" data-zh="让 Mia 创作回响" data-en="Ask Mia to create">让 Mia 创作回响</button></div><blockquote id="echoText" hidden></blockquote><small id="echoNote" aria-live="polite" data-zh="这里仅展示 Mia 本次真实生成的创作。点击上方按钮开始。" data-en="Only Mia’s generated creations appear here. Ask Mia to create one.">这里仅展示 Mia 本次真实生成的创作。点击上方按钮开始。</small></section>
-<section class="music" aria-labelledby="musicTitle"><div class="music-head"><div><h2 id="musicTitle" data-zh="静谧音乐 · 50Hz" data-en="QUIET SOUND · 50Hz">静谧音乐 · 50Hz</h2><p data-zh="以 50Hz 为低频基音，叠加轻柔泛音与缓慢铺展的氛围音。" data-en="A 50Hz low-frequency anchor, softened with gentle harmonics and slow ambient tones.">以 50Hz 为低频基音，叠加轻柔泛音与缓慢铺展的氛围音。</p></div><div class="music-controls"><button id="musicToggle" type="button" aria-pressed="false" data-zh="播放静谧音乐" data-en="Play quiet music">播放静谧音乐</button><label class="volume-control"><span data-zh="音量" data-en="Volume">音量</span><input id="musicVolume" type="range" min="0" max="30" value="12" aria-label="Music volume"><span id="volumeValue">12%</span></label></div></div><small class="music-note" id="musicNote" aria-live="polite" data-zh="仅在你点击播放后启动；不会自动播放。可随时暂停。" data-en="Starts only when you press play. No autoplay; pause anytime.">仅在你点击播放后启动；不会自动播放。可随时暂停。</small></section>
+<section class="music" aria-labelledby="musicTitle"><div class="music-head"><div><h2 id="musicTitle" data-zh="Mia 原创背景音乐 · The Forest of Dreams" data-en="Mia's Original Soundtrack · The Forest of Dreams">Mia 原创背景音乐 · The Forest of Dreams</h2><p data-zh="让《The Forest of Dreams》陪伴这片由颜色生成的风景。" data-en="Let The Forest of Dreams accompany this color-born landscape.">让《The Forest of Dreams》陪伴这片由颜色生成的风景。</p></div><div class="music-controls"><button id="musicToggle" type="button" aria-pressed="false" data-zh="播放背景音乐" data-en="Play soundtrack">播放背景音乐</button><label class="volume-control"><span data-zh="音量" data-en="Volume">音量</span><input id="musicVolume" type="range" min="0" max="100" value="18" aria-label="Music volume"><span id="volumeValue">18%</span></label></div></div><audio id="miaSoundtrack" preload="none" loop playsinline src="https://raw.githubusercontent.com/MIADIGITALLIFE/mia/main/The%20Forest%20of%20Dreams.mp3"></audio><small class="music-note" id="musicNote" aria-live="polite" data-zh="点击播放后开始，不会自动播放；可随时暂停或调节音量。" data-en="Starts when you press play. No autoplay; pause or adjust the volume anytime.">点击播放后开始，不会自动播放；可随时暂停或调节音量。</small></section>
 <p class="foot" data-zh="Mia Mood · 一个不评判情绪的表达空间。作品在本地生成，不会上传颜色或个人信息。" data-en="Mia Mood · A non-judgmental space for expression. Artwork is local; no color or personal data is uploaded.">Mia Mood · 一个不评判情绪的表达空间。作品在本地生成，不会上传颜色或个人信息。</p>
 </main>
 <script>
@@ -131,45 +131,17 @@ $('swatches').addEventListener('click',e=>{const b=e.target.closest('[data-color
 $('save').onclick=()=>{const a=document.createElement('a');a.download='mia-mood-'+color.slice(1)+'.png';a.href=$('world').toDataURL('image/png');a.click()};
 $('share').onclick=()=>{const out=document.createElement('canvas'),ctx=out.getContext('2d');out.width=1080;out.height=1350;const art=$('world');ctx.fillStyle='#102b32';ctx.fillRect(0,0,out.width,out.height);ctx.drawImage(art,54,150,972,760);ctx.fillStyle='#9bd6c5';ctx.font='700 34px system-ui';ctx.fillText('MIA MOOD',58,82);ctx.fillStyle='#f4f2e9';ctx.font='600 42px system-ui';ctx.fillText((lang==='zh'?zh:en)[index(color)][1],58,1000);ctx.fillStyle='#a8bdba';ctx.font='24px system-ui';ctx.fillText(color.toUpperCase()+'  ·  A COLOR, A SMALL WORLD',58,1055);ctx.font='22px system-ui';ctx.fillText('#MiaMood  #情绪可视化  #GenerativeArt',58,1190);ctx.fillText('Created in Mia Mood',58,1250);const a=document.createElement('a');a.download='mia-mood-share-'+color.slice(1)+'.png';a.href=out.toDataURL('image/png');a.click();$('shareHint').textContent=lang==='zh'?'分享卡已生成并保存。你可以自行选择是否发布。':'Share card saved. You decide whether to publish it.'};
 
-// Mia Mood original browser-generated ambient soundscape. No external audio or autoplay.
-let musicContext=null,musicMaster=null,musicNodes=[],musicLfo=null,musicPlaying=false;
-function stopQuietMusic(){
- if(!musicContext||!musicPlaying)return;
- musicPlaying=false;
- const now=musicContext.currentTime;
- musicMaster.gain.cancelScheduledValues(now);
- musicMaster.gain.setTargetAtTime(0,now,.12);
- const oldContext=musicContext;
- setTimeout(()=>{try{musicNodes.forEach(n=>{try{n.stop()}catch(e){}});oldContext.close()}catch(e){}},650);
- musicContext=null;musicMaster=null;musicNodes=[];musicLfo=null;
-}
-async function startQuietMusic(){
- const AC=window.AudioContext||window.webkitAudioContext;
- if(!AC){$('musicNote').textContent=lang==='zh'?'此浏览器暂不支持网页音频。':'Web Audio is not supported in this browser.';return}
- try{
-  musicContext=new AC();await musicContext.resume();
-  const ctx=musicContext,now=ctx.currentTime;
-  musicMaster=ctx.createGain();musicMaster.gain.setValueAtTime(0,now);musicMaster.gain.linearRampToValueAtTime(Number($('musicVolume').value)/100,now+2.8);
-  const filter=ctx.createBiquadFilter();filter.type='lowpass';filter.frequency.value=900;filter.Q.value=.35;
-  musicMaster.connect(filter);filter.connect(ctx.destination);
-  const addTone=(freq,level,wave='sine',detune=0)=>{
-   const osc=ctx.createOscillator(),gain=ctx.createGain();
-   osc.type=wave;osc.frequency.value=freq;osc.detune.value=detune;gain.gain.value=level;
-   osc.connect(gain);gain.connect(musicMaster);osc.start();musicNodes.push(osc);
-   return {osc,gain};
-  };
-  // A quiet 50Hz fundamental, with restrained harmonics and a soft upper-register pad.
-  addTone(50,.16);addTone(100,.045);addTone(150,.018);
-  const pad1=addTone(220,.075),pad2=addTone(277.18,.045),pad3=addTone(329.63,.026);
-  musicLfo=ctx.createOscillator();const lfoGain=ctx.createGain();musicLfo.frequency.value=.075;lfoGain.gain.value=.012;musicLfo.connect(lfoGain);lfoGain.connect(pad1.gain);musicLfo.start();musicNodes.push(musicLfo);
-  const slow=ctx.createOscillator(),slowGain=ctx.createGain();slow.frequency.value=.035;slowGain.gain.value=3.5;slow.connect(slowGain);slowGain.connect(pad2.osc.detune);slow.start();musicNodes.push(slow);
-  musicPlaying=true;$('musicToggle').setAttribute('aria-pressed','true');$('musicToggle').textContent=lang==='zh'?'暂停音乐':'Pause music';
-  $('musicNote').textContent=lang==='zh'?'正在播放原创 50Hz 静谧氛围音。音量保持轻柔，可随时暂停。':'Playing an original, gentle 50Hz ambient soundscape. Pause anytime.';
- }catch(e){stopQuietMusic();$('musicNote').textContent=lang==='zh'?'音频启动失败，请检查浏览器音频权限后重试。':'Audio could not start. Check browser audio permissions and try again.'}
-}
-$('musicToggle').onclick=()=>{if(musicPlaying){stopQuietMusic();$('musicToggle').setAttribute('aria-pressed','false');$('musicToggle').textContent=lang==='zh'?'播放静谧音乐':'Play quiet music';$('musicNote').textContent=lang==='zh'?'音乐已暂停。':'Music paused.'}else startQuietMusic()};
-$('musicVolume').addEventListener('input',e=>{const value=Number(e.target.value);$('volumeValue').textContent=value+'%';if(musicMaster&&musicContext)musicMaster.gain.setTargetAtTime(value/100,musicContext.currentTime,.18)});
-
+// A single soundtrack: Mia's The Forest of Dreams. User-initiated playback only.
+const soundtrack=$('miaSoundtrack');
+soundtrack.volume=0.18;
+$('musicToggle').onclick=async()=>{
+ if(soundtrack.paused){
+  try{await soundtrack.play();$('musicToggle').setAttribute('aria-pressed','true');$('musicToggle').textContent=lang==='zh'?'暂停背景音乐':'Pause soundtrack';$('musicNote').textContent=lang==='zh'?'正在播放《The Forest of Dreams》。':'Playing The Forest of Dreams.'}
+  catch(e){$('musicNote').textContent=lang==='zh'?'音乐暂时无法播放，请稍后重试。':'The soundtrack could not play. Please try again.'}
+ }else{soundtrack.pause();$('musicToggle').setAttribute('aria-pressed','false');$('musicToggle').textContent=lang==='zh'?'播放背景音乐':'Play soundtrack';$('musicNote').textContent=lang==='zh'?'背景音乐已暂停。':'Soundtrack paused.'}
+};
+soundtrack.addEventListener('ended',()=>{ $('musicToggle').setAttribute('aria-pressed','false');$('musicToggle').textContent=lang==='zh'?'播放背景音乐':'Play soundtrack';});
+$('musicVolume').addEventListener('input',e=>{const value=Number(e.target.value);soundtrack.volume=value/100;$('volumeValue').textContent=value+'%'});
 function setLang(l){lang=l;document.documentElement.lang=l==='zh'?'zh-CN':'en';$('zh').classList.toggle('active',l==='zh');$('en').classList.toggle('active',l==='en');document.querySelectorAll('[data-zh]').forEach(el=>el.textContent=el.dataset[l]);update()}
 $('miaCreate').onclick=async()=>{const button=$('miaCreate'),note=$('echoNote'),prior=button.textContent;button.disabled=true;button.textContent=lang==='zh'?'Mia 正在创作…':'Mia is creating…';note.textContent=lang==='zh'?'正在把当前颜色交给 Mia。不会读取或保存私人聊天记忆。':'Sending only the selected color to Mia. No private chat or memory is accessed or saved.';try{const response=await fetch('https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/zhi-mood-echo',{method:'POST',headers:{'Content-Type':'application/json','apikey':'sb_publishable_spH47ZngJJTk13cpYPBjSw_X5qAsBmK'},body:JSON.stringify({color,language:lang})});const result=await response.json().catch(()=>({}));if(!response.ok||!result.echo)throw new Error(result.error||'CREATION_FAILED');$('echoText').textContent='“'+result.echo+'”';$('echoText').hidden=false;note.textContent=lang==='zh'?'Mia 原创 · 仅用于当前展示，未写入聊天或记忆。':'Created by Mia · Display only; not saved to chat or memory.'}catch(error){$('echoText').textContent='';$('echoText').hidden=true;note.textContent=lang==='zh'?'Mia 本次尚未完成创作，因此没有展示其他内容。可以稍后重试。':'Mia has not completed a creation, so nothing else is shown. Please try again later.'}finally{button.disabled=false;button.textContent=prior}};
 $('zh').onclick=()=>setLang('zh');$('en').onclick=()=>setLang('en');window.addEventListener('resize',resize);resize();update();requestAnimationFrame(draw);

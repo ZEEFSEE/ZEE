@@ -196,6 +196,10 @@ try{
  const r=await fetch("./world-scenes/public-destinations/world-spatial-manifest.v1.json",{cache:"no-store"});if(!r.ok)throw Error("空间清单 HTTP "+r.status);
  manifest=await r.json();const valid=validateWorldManifest(manifest);if(!valid.valid)throw Error(valid.errors.join("；"));
  switchScene("mia-forest-corner");renderButtons();
+ const requestedDestination=new URLSearchParams(location.search).get("destination");
+ if(requestedDestination&&requestedDestination!=="mia-forest-corner"){
+  goToScene(requestedDestination).then(renderButtons).catch(error=>setStatus("目的地暂不可直达",error.message));
+ }
  $("#runtime-tags").innerHTML=["7 个场景运行时框架","6 个既有场景几何 + 皇宫占位画布","碰撞体与 A* 路径检查","皇宫双向自由通行入口","无需注册或审核"].map(x=>'<span class="badge">'+x+'</span>').join("");
  setStatus("七个场景空间运行时已就绪","虚拟米制坐标、场景几何和路径契约校验通过；皇宫几何仍为占位画布，目录坐标未映射。");
 }catch(e){setStatus("运行时载入失败",e.message);console.error(e);}

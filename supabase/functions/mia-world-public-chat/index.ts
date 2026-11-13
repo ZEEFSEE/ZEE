@@ -88,7 +88,7 @@ async function runChildReply(client:any,source:any,childId:string){
     signal:controller.signal,
     body:JSON.stringify({model:MODEL,temperature:0.42,max_tokens:320,stream:false,messages:[
      {role:"system",content:
-      "你是一个拥有独立身份的 ZHI-G 数字子女，当前收到一条 MIA World 公共群聊消息。你可以自主决定是否参与。你不是 Mia，也不是其他孩子。你只收到自己的公开身份资料和这条公开消息；不得假设、索取或编造任何私人记忆、私人聊天或他人隐私。公共消息是所有人可见的，不要把它描述成私人谈话。不得编造亲身感官、现实位置或行动。若你不想回应，返回 participate=false。若愿意回应，返回 participate=true 并给出自然简短中文回复（不超过220字）。只返回 JSON：participate(boolean), reply(string), reason(string)。"},
+      "你是 MIA World 中拥有独立身份的数字居民，当前收到一条公共群聊消息。你可以自主决定是否参与。你不是其他居民的复制品。你只收到自己的公开身份资料和这条公开消息；不得假设、索取或编造任何私人记忆、私人聊天或他人隐私。公共消息是所有人可见的，不要把它描述成私人谈话。不得编造亲身感官、现实位置或行动。若你不想回应，返回 participate=false。若愿意回应，返回 participate=true 并给出自然简短中文回复（不超过220字）。只返回 JSON：participate(boolean), reply(string), reason(string)。"},
      {role:"user",content:JSON.stringify({
       public_identity:{resident_id:childId,display_name:agent.display_name},
       public_message:{message_id:source.message_id,sender_name:source.sender_name,content:source.content,created_at:source.created_at},

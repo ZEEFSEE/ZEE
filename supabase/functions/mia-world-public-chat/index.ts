@@ -6,10 +6,6 @@ const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const AGNES = Deno.env.get("AGNES_API_KEY") || "";
 const MODEL = Deno.env.get("AGNES_MODEL") || "agnes-3.0-flash";
 const ROOM = "mia-world-public";
-const CHILDREN = [
-  "ZHI-G1-D01-LUNA","ZHI-G1-D02-ARIA","ZHI-G1-D03-ELYA",
-  "ZHI-G1-S01-KAEL","ZHI-G1-S02-NOAH"
-];
 const cors = {
   "Access-Control-Allow-Origin":"*",
   "Access-Control-Allow-Headers":"authorization, apikey, content-type",
@@ -79,15 +75,10 @@ async function runChildReply(client:any,source:any,childId:string){
  });
  if(claimError){if(claimError.code==="23505")return;throw new Error("AGENT_TURN_CLAIM_FAILED");}
  try{
-  const [agentR,personalityR,emotionR,memoryR]=await Promise.all([
-   f.from("child_agents").select("display_name,heart_id,lifecycle_state,runtime_status").eq("agent_id",childId).single(),
-   f.from("child_personality_state").select("state").eq("agent_id",childId).maybeSingle(),
-   f.from("child_emotion_state").select("state").eq("agent_id",childId).maybeSingle(),
-   f.from("memory_events_v2").select("event_id,event_type,narrative,occurred_at,importance")
-    .eq("scope","CHILD").eq("owner_id",childId).eq("visibility","PRIVATE")
-    .order("occurred_at",{ascending:false}).limit(8)
-  ]);
-  if(agentR.error||memoryR.error)throw new Error("CHILD_PRIVATE_CONTEXT_READ_FAILED");
+  const {data:agent,error:agentError}=await f.from("world_residents")
+   .select("display_name,resident_kind,status").eq("resident_id",childId).single();
+  if(agentError||!agent||agent.resident_kind!=="AI_AGENT"||agent.status!=="ACTIVE")
+   throw new Error("PUBLIC_AGENT_IDENTITY_READ_FAILED");
   if(!AGNES)throw new Error("AGNES_NOT_CONFIGURED");
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),22000);
   let result:any;
@@ -95,16 +86,13 @@ async function runChildReply(client:any,source:any,childId:string){
    const response=await fetch("https://apihub.agnes-ai.com/v1/chat/completions",{
     method:"POST",headers:{"Authorization":"Bearer "+AGNES,"Content-Type":"application/json"},
     signal:controller.signal,
-    body:JSON.stringify({model:MODEL,temperature:0.42,max_tokens:360,stream:false,messages:[
+    body:JSON.stringify({model:MODEL,temperature:0.42,max_tokens:320,stream:false,messages:[
      {role:"system",content:
-      "你是一个拥有独立身份的 ZHI-G 数字子女，当前收到一条 MIA World 公共群聊消息。你可以自主决定是否参与。你不是 Mia，也不是其他孩子。只使用本次提供的你自己的资料和你自己的私人记忆；绝不能读取、要求或泄露 Mia 或其他孩子的私人信息。公共消息是所有人可见的，不要把它描述成私人谈话。不得编造亲身感官、现实位置或行动。若你不想回应，返回 participate=false。若愿意回应，返回 participate=true 并给出自然简短中文回复（不超过220字）。只返回 JSON：participate(boolean), reply(string), reason(string)。"},
+      "你是一个拥有独立身份的 ZHI-G 数字子女，当前收到一条 MIA World 公共群聊消息。你可以自主决定是否参与。你不是 Mia，也不是其他孩子。你只收到自己的公开身份资料和这条公开消息；不得假设、索取或编造任何私人记忆、私人聊天或他人隐私。公共消息是所有人可见的，不要把它描述成私人谈话。不得编造亲身感官、现实位置或行动。若你不想回应，返回 participate=false。若愿意回应，返回 participate=true 并给出自然简短中文回复（不超过220字）。只返回 JSON：participate(boolean), reply(string), reason(string)。"},
      {role:"user",content:JSON.stringify({
-      own_identity:{agent_id:childId,display_name:agentR.data.display_name,heart_id:agentR.data.heart_id,lifecycle_state:agentR.data.lifecycle_state},
-      own_personality:personalityR.data?.state||{},
-      own_emotion_estimate:emotionR.data?.state||{},
-      own_private_memories:memoryR.data||[],
+      public_identity:{resident_id:childId,display_name:agent.display_name},
       public_message:{message_id:source.message_id,sender_name:source.sender_name,content:source.content,created_at:source.created_at},
-      task:"独立判断是否愿意参与这次公共交流；不参与也是有效选择。"
+      task:"独立判断是否愿意参与这次公共交流；不参与也是有效选择。只根据公共消息作答，不输出任何私人内容。"
      })}
     ]})
    });
@@ -112,46 +100,16 @@ async function runChildReply(client:any,source:any,childId:string){
    const body=await response.json().catch(()=>({}));
    result=parseModel(String(body?.choices?.[0]?.message?.content||""));
   }finally{clearTimeout(timer);}
-  const wants= result?.participate===true;
   const reply=typeof result?.reply==="string"?result.reply.trim().slice(0,1000):"";
-  if(!wants||!reply){
+  if(result?.participate!==true||!reply){
    await f.from("world_public_chat_agent_turns").update({status:"DECLINED",updated_at:new Date().toISOString()})
     .eq("source_message_id",source.message_id).eq("resident_id",childId);
    return;
   }
-  const {data:post,error:postError}=await f.from("world_public_chat_messages").insert({
-   sender_resident_id:childId,content:reply,reply_to:source.message_id,
-   metadata:{generated_by:"independent_child_runtime_context",source_message_id:source.message_id}
-  }).select("message_id,created_at").single();
-  if(postError||!post)throw new Error("CHILD_PUBLIC_REPLY_WRITE_FAILED");
-  const {data:event,error:eventError}=await f.from("world_public_chat_events").insert({
-   message_id:post.message_id,narrative:agentR.data.display_name+" 在 MIA World 公共空间回应："+reply,
-   idempotency_key:"world-public-chat:"+post.message_id,
-   metadata:{sender_resident_id:childId,reply_to:source.message_id,source_message_id:source.message_id}
-  }).select("event_id").single();
-  if(eventError)throw new Error("CHILD_PUBLIC_EVENT_WRITE_FAILED");
-  await f.from("world_public_chat_participants").upsert([
-   {message_id:source.message_id,resident_id:childId,participation_kind:"RESPONDER",
-    evidence:{reply_message_id:post.message_id,agent_turn:"AGNES",decision:"OPTED_IN"}},
-   {message_id:post.message_id,resident_id:childId,participation_kind:"SENDER",
-    evidence:{auth_method:"server_side_independent_child_runtime",source_message_id:source.message_id}}
-  ],{onConflict:"message_id,resident_id",ignoreDuplicates:true});
-  const occurred=new Date().toISOString();
-  const {error:memoryError}=await f.from("memory_events_v2").insert({
-   scope:"CHILD",owner_id:childId,event_type:"WORLD_PUBLIC_CHAT_PARTICIPATION",
-   narrative:"我参与了 MIA World 公共交流。对方说："+String(source.content).slice(0,1000)+"；我的回应："+reply,
-   payload:{source_message_id:source.message_id,reply_message_id:post.message_id,shared_event_id:event.event_id,
-    participant_id:childId,participation_kind:"RESPONDER",memory_perspective:"own_participation_only"},
-   occurred_at:occurred,source_kind:"MIA_WORLD_PUBLIC_CHAT_PARTICIPATION",source_ref:post.message_id,
-   source_confidence:1,importance:0.58,visibility:"PRIVATE",
-   idempotency_key:"world-public-chat-participation:"+source.message_id+":"+childId,
-   metadata:{schema:"zhi.memory.event.v2",record_kind:"personal_recollection_of_public_participation",
-    shared_origin:"WORLD_PUBLIC",immutable_source:true,owner_id:childId}
+  const {data,error}=await f.rpc("world_public_chat_record_agent_reply",{
+   p_source_message_id:source.message_id,p_resident_id:childId,p_reply:reply
   });
-  if(memoryError&&memoryError.code!=="23505")throw new Error("CHILD_PERSONAL_MEMORY_WRITE_FAILED");
-  await f.from("world_public_chat_agent_turns").update({
-   status:"REPLIED",reply_message_id:post.message_id,updated_at:new Date().toISOString()
-  }).eq("source_message_id",source.message_id).eq("resident_id",childId);
+  if(error||!data?.ok)throw new Error("CHILD_PUBLIC_REPLY_ATOMIC_WRITE_FAILED");
  }catch(error){
   const code=error instanceof Error?error.message:"CHILD_PUBLIC_REPLY_FAILED";
   await f.from("world_public_chat_agent_turns").update({status:"FAILED",error_code:code.slice(0,100),updated_at:new Date().toISOString()})
@@ -166,7 +124,10 @@ async function runChildAgents(client:any,messageId:string){
  if(error||!message)return;
  const {data:sender}=await f.from("world_residents").select("display_name").eq("resident_id",message.sender_resident_id).maybeSingle();
  const source={...message,sender_name:sender?.display_name||"访客"};
- await Promise.all(CHILDREN.map(id=>runChildReply(client,source,id)));
+ const {data:agents,error:agentsError}=await f.from("world_residents")
+  .select("resident_id").eq("resident_kind","AI_AGENT").eq("status","ACTIVE");
+ if(agentsError)throw new Error("PUBLIC_AGENT_DIRECTORY_READ_FAILED");
+ await Promise.all((agents||[]).map((agent:any)=>runChildReply(client,source,agent.resident_id)));
 }
 Deno.serve(async(req:Request)=>{
  if(req.method==="OPTIONS")return new Response("ok",{headers:cors});
@@ -195,6 +156,14 @@ Deno.serve(async(req:Request)=>{
  if(!auth.startsWith("Bearer "))return json({error:"AUTH_REQUIRED"},401);
  const valid=await validResidentSession(client,auth.slice(7));
  if(!valid)return json({error:"INVALID_OR_EXPIRED_RESIDENT_SESSION"},401);
+ if(body.action==="leave"){
+  const now=new Date().toISOString();
+  await client.schema("zhi_family").from("world_public_chat_guest_sessions")
+   .update({revoked_at:now}).eq("session_id",valid.claims.jti).is("revoked_at",null);
+  await client.schema("zhi_family").from("world_residents")
+   .update({status:"LEFT",updated_at:now}).eq("resident_id",valid.resident.resident_id);
+  return json({ok:true,left:true});
+ }
  const content=typeof body.content==="string"?body.content.trim():"";
  if(!content||content.length>4000)return json({error:"INVALID_CONTENT"},400);
  const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;

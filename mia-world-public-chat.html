@@ -76,4 +76,5 @@ $("#leave").onclick=async()=>{
  finally{sessionStorage.removeItem("mia_world_public_token");$("#authStatus").textContent="你已离开公共空间。刷新页面可重新加入。";$("#send").disabled=true;}
 };
 join().then(()=>{$("#send").disabled=false;load();}).catch(e=>{$("#authStatus").textContent="暂时无法加入："+e.message;$("#send").disabled=true;});
+setInterval(load,8000);
 </script></body></html>

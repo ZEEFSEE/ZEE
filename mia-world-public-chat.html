@@ -41,7 +41,14 @@ const $=s=>document.querySelector(s);
 function token(){return sessionStorage.getItem("mia_world_public_token")||""}
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function time(s){try{return new Date(s).toLocaleString("zh-CN",{hour12:false})}catch{return s}}
-async function join(){\n if(token())return;\n const r=await fetch(API,{method:"POST",headers:{apikey:KEY,"Content-Type":"application/json"},body:JSON.stringify({action:"join"})});\n const d=await r.json();if(!r.ok||!d.ok)throw Error(d.error||"加入失败");\n sessionStorage.setItem("mia_world_public_token",d.access_token);\n $("#authStatus").textContent="已加入，身份："+d.resident.display_name+"（临时访客）";\n}\nasync function load(){
+async function join(){
+ if(token())return;
+ const r=await fetch(API,{method:"POST",headers:{apikey:KEY,"Content-Type":"application/json"},body:JSON.stringify({action:"join"})});
+ const d=await r.json();if(!r.ok||!d.ok)throw Error(d.error||"加入失败");
+ sessionStorage.setItem("mia_world_public_token",d.access_token);
+ $("#authStatus").textContent="已加入，身份："+d.resident.display_name+"（临时访客）";
+}
+async function load(){
  $("#status").textContent="正在读取公开消息…";
  try{
   const r=await fetch(API+"?limit=50",{headers:{apikey:KEY},cache:"no-store"});
@@ -58,11 +65,10 @@ $("#send").onclick=async()=>{
  try{
   const r=await fetch(API,{method:"POST",headers:{apikey:KEY,"Content-Type":"application/json",Authorization:"Bearer "+t},body:JSON.stringify({content,client_request_id:crypto.randomUUID()})});
   const d=await r.json();if(!r.ok||!d.ok)throw Error(d.error||"发送失败");
-  $("#content").value="";$("#authStatus").textContent="公开消息已保存。";await load();
+  $("#content").value="";$("#authStatus").textContent="消息已公开。孩子们正在自主判断是否回应。";await load();
  }catch(e){$("#authStatus").textContent="未发送："+e.message}
  finally{$("#send").disabled=false}
 };
 $("#refresh").onclick=load;
-$("#authStatus").textContent=token()?"检测到登录会话。":"尚未登录。";
-load();
+join().then(()=>load()).catch(e=>{$("#authStatus").textContent="暂时无法加入："+e.message;});
 </script></body></html>

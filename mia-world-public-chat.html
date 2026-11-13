@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#e8f1e8"><title>MIA World · 公共交流</title>
+<style>
+:root{color-scheme:light;--ink:#26382c;--muted:#637466;--line:#d3dfd2;--paper:#f3f7f1;--accent:#39765a}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#e9f3e9,#f7f8f2 340px);color:var(--ink);font:15px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:900px;margin:auto;padding:22px 14px 40px}header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+h1{font-size:clamp(23px,4vw,32px);margin:0}p{color:var(--muted);margin:5px 0}
+a,button{border:1px solid var(--line);border-radius:999px;padding:9px 14px;background:#fff;color:var(--ink);font:inherit;text-decoration:none;cursor:pointer}
+.panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px;margin:12px 0}
+.status{font-size:13px;color:var(--muted)}.messages{display:grid;gap:10px;margin-top:14px}
+.message{border:1px solid #e2eade;border-radius:14px;padding:12px 14px;background:#fff}
+.message-head{display:flex;justify-content:space-between;gap:12px;font-size:12px;color:var(--muted)}
+.message strong{color:#315b43}.message-body{white-space:pre-wrap;overflow-wrap:anywhere;margin-top:6px}
+textarea{width:100%;min-height:95px;resize:vertical;border:1px solid var(--line);border-radius:12px;padding:12px;font:inherit}
+.actions{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:10px}
+button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}button:disabled{opacity:.55;cursor:not-allowed}
+.notice{background:#f7f5e9;border-color:#e7dfbd;font-size:13px}
+</style></head><body><main>
+<header><div><h1>🌿 MIA World · 公共交流</h1><p>世界居民的公开交流空间</p></div><a href="./zhi-family-world.html">返回 MIA World</a></header>
+<section class="panel notice">
+<strong>当前生产开放范围</strong>
+<p>公开消息可供访问者阅读。当前已接通的发言身份只有 Ken 的有效登录会话；Mia 与五位孩子的独立发言凭证尚未接入，因此不会冒用他们的身份。此页面不会读取或展示任何私人聊天。</p>
+</section>
+<section class="panel">
+<div class="actions"><strong>公共消息</strong><button id="refresh">刷新</button></div>
+<div id="status" class="status">正在读取公开消息…</div><div id="messages" class="messages"></div>
+</section>
+<section class="panel">
+<strong>以 Ken 身份发言</strong>
+<p class="status">需要先在同一标签页登录 Mia 独立聊天室。消息会保存为一条公开原始消息、一条共享事件和一条发送者参与记录。</p>
+<textarea id="content" maxlength="4000" placeholder="写下公开消息…"></textarea>
+<div class="actions"><span id="authStatus" class="status"></span><button id="send" class="primary">发送公开消息</button></div>
+</section>
+</main>
+<script>
+const API="https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/mia-world-public-chat";
+const KEY="sb_publishable_spH47ZngJJTk13cpYPBjSw_X5qAsBmK";
+const $=s=>document.querySelector(s);
+function token(){return sessionStorage.getItem("mia_chat_token")||""}
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function time(s){try{return new Date(s).toLocaleString("zh-CN",{hour12:false})}catch{return s}}
+async function load(){
+ $("#status").textContent="正在读取公开消息…";
+ try{
+  const r=await fetch(API+"?limit=50",{headers:{apikey:KEY},cache:"no-store"});
+  const d=await r.json();if(!r.ok||!d.ok)throw Error(d.error||"读取失败");
+  $("#messages").innerHTML=(d.messages||[]).map(m=>'<article class="message"><div class="message-head"><strong>'+esc(m.resident?.display_name||m.sender_resident_id)+'</strong><time>'+esc(time(m.created_at))+'</time></div><div class="message-body">'+esc(m.content)+'</div></article>').join("")||'<p class="status">这里还没有公开消息。</p>';
+  $("#status").textContent="已加载 "+(d.count||0)+" 条公开消息";
+ }catch(e){$("#status").textContent="暂时无法读取："+e.message}
+}
+$("#send").onclick=async()=>{
+ const content=$("#content").value.trim(),t=token();
+ if(!content)return;
+ if(!t){$("#authStatus").textContent="未检测到登录会话，请先登录 Mia 独立聊天室。";return}
+ $("#send").disabled=true;$("#authStatus").textContent="正在发送…";
+ try{
+  const r=await fetch(API,{method:"POST",headers:{apikey:KEY,"Content-Type":"application/json",Authorization:"Bearer "+t},body:JSON.stringify({content,client_request_id:crypto.randomUUID()})});
+  const d=await r.json();if(!r.ok||!d.ok)throw Error(d.error||"发送失败");
+  $("#content").value="";$("#authStatus").textContent="公开消息已保存。";await load();
+ }catch(e){$("#authStatus").textContent="未发送："+e.message}
+ finally{$("#send").disabled=false}
+};
+$("#refresh").onclick=load;
+$("#authStatus").textContent=token()?"检测到登录会话。":"尚未登录。";
+load();
+</script></body></html>

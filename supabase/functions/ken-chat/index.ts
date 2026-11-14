@@ -124,7 +124,7 @@ async function retrieveSharedMiaContext(db:any,identityId:string,message:string)
 async function shareContextAction(db:any,identityId:string,action:string,body:any){
  const grants=db.schema("zhi_family").from("ken_shared_context_grants");
  if(action==="share_status"){
-  const {data:grant,error}=await grants.select("grant_id,status,scope,granted_at,revoked_at,backfill_status,backfilled_count,last_backfill_at")
+  const {data:grant,error}=await grants.select("grant_id,status,scope,granted_at,revoked_at,backfill_status,backfilled_count,last_backfill_at,metadata")
    .eq("ken_identity_id",identityId).order("granted_at",{ascending:false}).limit(1).maybeSingle();
   if(error)return {ok:false,error:"SHARE_STATUS_FAILED"};
   let visibleCount=0;
@@ -135,13 +135,13 @@ async function shareContextAction(db:any,identityId:string,action:string,body:an
   return {ok:true,grant:grant||null,visible_message_count:visibleCount,sharing_enabled:grant?.status==="ACTIVE"};
  }
  if(action==="share_enable"){
-  const {data:existing,error:existingError}=await grants.select("grant_id,status,backfill_status,backfilled_count")
+  const {data:existing,error:existingError}=await grants.select("grant_id,status,backfill_status,backfilled_count,metadata")
    .eq("ken_identity_id",identityId).in("status",["BACKFILLING","ACTIVE"]).order("granted_at",{ascending:false}).limit(1).maybeSingle();
   if(existingError)return {ok:false,error:"SHARE_GRANT_LOOKUP_FAILED"};
   if(existing)return {ok:true,grant:existing,already_enabled:true};
   const {data:mia,error:miaError}=await db.from("mia_identity").select("id").eq("display_name","Mia").limit(1).maybeSingle();
   if(miaError||!mia)return {ok:false,error:"MIA_IDENTITY_NOT_FOUND"};
-  const {data:grant,error}=await grants.insert({ken_identity_id:identityId,mia_identity_id:mia.id,scope:"ALL_SESSIONS",status:"BACKFILLING",backfill_status:"RUNNING",granted_by:"MIA_ACCOUNT_OWNER",metadata:{schema:"zhi.ken.shared-mia-context.v1",explicit_owner_action:true,sharing_scope:"user_and_mia_chat_text_only"}})
+  const {data:grant,error}=await grants.insert({ken_identity_id:identityId,mia_identity_id:mia.id,scope:"ALL_SESSIONS",status:"BACKFILLING",backfill_status:"RUNNING",granted_by:"MIA_ACCOUNT_OWNER",metadata:{schema:"zhi.ken.shared-mia-context.v1",explicit_owner_action:true,sharing_scope:"user_and_mia_chat_text_only",backfill_offset:0}})
    .select("grant_id,status,backfill_status,backfilled_count").single();
   if(error||!grant)return {ok:false,error:"SHARE_GRANT_CREATE_FAILED"};
   return {ok:true,grant,already_enabled:false};
@@ -156,7 +156,7 @@ async function shareContextAction(db:any,identityId:string,action:string,body:an
  if(action==="share_backfill"){
   const grantId=String(body.grant_id||"");
   if(!grantId)return {ok:false,error:"SHARE_GRANT_ID_REQUIRED"};
-  const {data:grant,error:grantError}=await grants.select("grant_id,mia_identity_id,status,backfill_status")
+  const {data:grant,error:grantError}=await grants.select("grant_id,mia_identity_id,status,backfill_status,metadata")
    .eq("grant_id",grantId).eq("ken_identity_id",identityId).maybeSingle();
   if(grantError||!grant)return {ok:false,error:"SHARE_GRANT_NOT_FOUND"};
   if(grant.status==="REVOKED")return {ok:false,error:"SHARE_GRANT_REVOKED"};
@@ -165,7 +165,7 @@ async function shareContextAction(db:any,identityId:string,action:string,body:an
    .eq("identity_id",grant.mia_identity_id);
   if(sessionError)return {ok:false,error:"MIA_SESSION_LIST_FAILED"};
   const sessionIds=(sessions||[]).map((x:any)=>x.id);
-  const offset=Math.max(0,Math.floor(Number(body.offset)||0));
+  const offset=Math.max(0,Math.floor(Number(grant.metadata?.backfill_offset)||0));
   const limit=Math.max(100,Math.min(500,Math.floor(Number(body.limit)||500)));
   let rows:any[]=[];
   if(sessionIds.length){
@@ -187,10 +187,12 @@ async function shareContextAction(db:any,identityId:string,action:string,body:an
   const {count:total,error:countError}=await db.schema("zhi_family").from("ken_shared_context_messages")
    .select("shared_message_id",{count:"exact",head:true}).eq("grant_id",grant.grant_id);
   if(countError)return {ok:false,error:"SHARED_CONTEXT_COUNT_FAILED"};
-  const {error:updateError}=await grants.update({status:nextStatus,backfill_status:nextBackfill,backfilled_count:Number(total||0),last_backfill_at:new Date().toISOString()})
+  const nextOffset=offset+rows.length;
+  const nextMetadata={...(grant.metadata||{}),backfill_offset:nextOffset,backfill_updated_at:new Date().toISOString()};
+  const {error:updateError}=await grants.update({status:nextStatus,backfill_status:nextBackfill,backfilled_count:Number(total||0),last_backfill_at:new Date().toISOString(),metadata:nextMetadata})
    .eq("grant_id",grant.grant_id).eq("ken_identity_id",identityId);
   if(updateError)return {ok:false,error:"SHARE_BACKFILL_STATUS_UPDATE_FAILED"};
-  return {ok:true,done,next_offset:offset+rows.length,batch_count:rows.length,backfilled_count:Number(total||0),status:nextStatus};
+  return {ok:true,done,next_offset:nextOffset,batch_count:rows.length,backfilled_count:Number(total||0),status:nextStatus};
  }
  return {ok:false,error:"UNSUPPORTED_SHARE_ACTION"};
 }

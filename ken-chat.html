@@ -85,7 +85,7 @@ button,select,textarea{font:inherit;color:var(--ink);background:#1b2a3d;border:1
     $("shareStatus").textContent="已授权 · "+Number(d.visible_message_count||0)+" 条";
     $("shareDetail").textContent="KEN 可检索已授权的 MIA 对话文字。原始消息仍保留在 MIA；撤销后 KEN 的检索立即停止。";
    }
-   $("shareEnable").disabled=!!g&&(g.status==="ACTIVE"||g.status==="BACKFILLING");
+   $("shareEnable").disabled=!!g&&g.status==="ACTIVE";$("shareEnable").textContent=g?.status==="BACKFILLING"?"继续同步历史对话":"授权并同步全部 MIA 对话";
    $("shareRevoke").disabled=!g||g.status==="REVOKED";
    return d;
   }catch(e){$("shareStatus").textContent="状态读取失败";$("shareDetail").textContent=e.message;return null;}
@@ -96,7 +96,7 @@ button,select,textarea{font:inherit;color:var(--ink);background:#1b2a3d;border:1
    const started=await call({action:"share_enable",device_id:deviceId});
    const grant=started.grant;
    if(grant.status==="ACTIVE"){await refreshShare();return;}
-   let offset=0,done=false,total=Number(grant.backfilled_count||0);
+   let offset=Number(grant.backfilled_count||0),done=false,total=Number(grant.backfilled_count||0);
    $("shareStatus").textContent="正在同步";
    while(!done){
     const batch=await call({action:"share_backfill",device_id:deviceId,grant_id:grant.grant_id,offset,limit:500});

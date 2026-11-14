@@ -83,7 +83,7 @@ button,select,textarea{font:inherit;color:var(--ink);background:#1b2a3d;border:1
     $("shareDetail").textContent="授权已开启，历史消息正在分批导入。已同步 "+Number(g.backfilled_count||0)+" 条；同步完成后 KEN 才会开始检索。";
    }else{
     $("shareStatus").textContent="已授权 · "+Number(d.visible_message_count||0)+" 条";
-    $("shareDetail").textContent="KEN 可检索已授权的 MIA 对话文字。原始消息仍保留在 MIA；撤销后 KEN 的检索立即停止。";
+    $("shareDetail").textContent="KEN 可检索已授权的 MIA 对话文字，并把相关经历整理为带原始消息来源的私人记忆候选；用户明确陈述、MIA 自己的观点和双方共同经历会分开记录，均不会自动晋升为已确认事实。原始消息仍保留在 MIA；撤销后 KEN 的检索立即停止。";
    }
    $("shareEnable").disabled=!!g&&g.status==="ACTIVE";$("shareEnable").textContent=g?.status==="BACKFILLING"?"继续同步历史对话":"授权并同步全部 MIA 对话";
    $("shareRevoke").disabled=!g||g.status==="REVOKED";

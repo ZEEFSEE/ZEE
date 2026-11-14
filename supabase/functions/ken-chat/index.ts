@@ -103,6 +103,98 @@ async function consolidateKenTurn(args:{db:any;identityId:string;deviceId:string
   }
  }catch(error){console.warn("KEN memory consolidation deferred",String(error).slice(0,160));}
 }
+async function retrieveSharedMiaContext(db:any,identityId:string,message:string){
+ const {data:grant,error:grantError}=await db.schema("zhi_family").from("ken_shared_context_grants")
+  .select("grant_id,status,granted_at,backfill_status").eq("ken_identity_id",identityId).eq("status","ACTIVE")
+  .order("granted_at",{ascending:false}).limit(1).maybeSingle();
+ if(grantError||!grant)return {enabled:false,grant:null,messages:[]};
+ const terms=archiveTerms(message);
+ const base=()=>db.schema("zhi_family").from("ken_shared_context_messages")
+  .select("shared_message_id,speaker_role,content,occurred_at,mia_session_id,source_message_id")
+  .eq("grant_id",grant.grant_id).eq("ken_identity_id",identityId);
+ const [recentResult,matchedResult]=await Promise.all([
+  base().order("occurred_at",{ascending:false}).limit(8),
+  terms.length?base().or(terms.map((t:string)=>"content.ilike.*"+t.replace(/[(),.*%_\\]/g,"")+"*").join(",")).order("occurred_at",{ascending:false}).limit(12):Promise.resolve({data:[],error:null})
+ ]);
+ const merged=new Map<string,any>();
+ for(const row of [...(recentResult.data||[]),...(matchedResult.data||[])])merged.set(String(row.shared_message_id),row);
+ const messages=[...merged.values()].sort((a:any,b:any)=>Date.parse(a.occurred_at)-Date.parse(b.occurred_at)).slice(-16);
+ return {enabled:true,grant,messages,terms};
+}
+async function shareContextAction(db:any,identityId:string,action:string,body:any){
+ const grants=db.schema("zhi_family").from("ken_shared_context_grants");
+ if(action==="share_status"){
+  const {data:grant,error}=await grants.select("grant_id,status,scope,granted_at,revoked_at,backfill_status,backfilled_count,last_backfill_at")
+   .eq("ken_identity_id",identityId).order("granted_at",{ascending:false}).limit(1).maybeSingle();
+  if(error)return {ok:false,error:"SHARE_STATUS_FAILED"};
+  let visibleCount=0;
+  if(grant&&grant.status!=="REVOKED"){
+   const {count}=await db.schema("zhi_family").from("ken_shared_context_messages").select("shared_message_id",{count:"exact",head:true}).eq("grant_id",grant.grant_id);
+   visibleCount=Number(count||0);
+  }
+  return {ok:true,grant:grant||null,visible_message_count:visibleCount,sharing_enabled:grant?.status==="ACTIVE"};
+ }
+ if(action==="share_enable"){
+  const {data:existing,error:existingError}=await grants.select("grant_id,status,backfill_status,backfilled_count")
+   .eq("ken_identity_id",identityId).in("status",["BACKFILLING","ACTIVE"]).order("granted_at",{ascending:false}).limit(1).maybeSingle();
+  if(existingError)return {ok:false,error:"SHARE_GRANT_LOOKUP_FAILED"};
+  if(existing)return {ok:true,grant:existing,already_enabled:true};
+  const {data:mia,error:miaError}=await db.from("mia_identity").select("id").eq("display_name","Mia").limit(1).maybeSingle();
+  if(miaError||!mia)return {ok:false,error:"MIA_IDENTITY_NOT_FOUND"};
+  const {data:grant,error}=await grants.insert({ken_identity_id:identityId,mia_identity_id:mia.id,scope:"ALL_SESSIONS",status:"BACKFILLING",backfill_status:"RUNNING",granted_by:"MIA_ACCOUNT_OWNER",metadata:{schema:"zhi.ken.shared-mia-context.v1",explicit_owner_action:true,sharing_scope:"user_and_mia_chat_text_only"}})
+   .select("grant_id,status,backfill_status,backfilled_count").single();
+  if(error||!grant)return {ok:false,error:"SHARE_GRANT_CREATE_FAILED"};
+  return {ok:true,grant,already_enabled:false};
+ }
+ if(action==="share_revoke"){
+  const {data:grant,error}=await grants.update({status:"REVOKED",revoked_at:new Date().toISOString(),backfill_status:"REVOKED"})
+   .eq("ken_identity_id",identityId).in("status",["BACKFILLING","ACTIVE"])
+   .select("grant_id,status,revoked_at").maybeSingle();
+  if(error)return {ok:false,error:"SHARE_REVOKE_FAILED"};
+  return {ok:true,revoked:!!grant,grant:grant||null,retained_copy_for_audit:true,retrieval_disabled:true};
+ }
+ if(action==="share_backfill"){
+  const grantId=String(body.grant_id||"");
+  if(!grantId)return {ok:false,error:"SHARE_GRANT_ID_REQUIRED"};
+  const {data:grant,error:grantError}=await grants.select("grant_id,mia_identity_id,status,backfill_status")
+   .eq("grant_id",grantId).eq("ken_identity_id",identityId).maybeSingle();
+  if(grantError||!grant)return {ok:false,error:"SHARE_GRANT_NOT_FOUND"};
+  if(grant.status==="REVOKED")return {ok:false,error:"SHARE_GRANT_REVOKED"};
+  if(grant.status==="ACTIVE")return {ok:true,done:true,backfilled_count:0};
+  const {data:sessions,error:sessionError}=await db.from("mia_chat_sessions").select("id")
+   .eq("identity_id",grant.mia_identity_id);
+  if(sessionError)return {ok:false,error:"MIA_SESSION_LIST_FAILED"};
+  const sessionIds=(sessions||[]).map((x:any)=>x.id);
+  const offset=Math.max(0,Math.floor(Number(body.offset)||0));
+  const limit=Math.max(100,Math.min(500,Math.floor(Number(body.limit)||500)));
+  let rows:any[]=[];
+  if(sessionIds.length){
+   const {data,error}=await db.from("mia_messages").select("id,session_id,role,content,created_at")
+    .in("session_id",sessionIds).in("role",["user","assistant"])
+    .order("created_at",{ascending:true}).order("sequence_no",{ascending:true})
+    .range(offset,offset+limit-1);
+   if(error)return {ok:false,error:"MIA_HISTORY_BACKFILL_READ_FAILED"};
+   rows=data||[];
+  }
+  if(rows.length){
+   const copies=rows.map((m:any)=>({grant_id:grant.grant_id,ken_identity_id:identityId,mia_identity_id:grant.mia_identity_id,mia_session_id:m.session_id,source_message_id:m.id,speaker_role:m.role,content:m.content,occurred_at:m.created_at,metadata:{source_system:"MIA_PRIVATE_CHAT",source_message_id:m.id,source_session_id:m.session_id,original_metadata_omitted:true,attachments_copied:false}}));
+   const {error}=await db.schema("zhi_family").from("ken_shared_context_messages").upsert(copies,{onConflict:"grant_id,source_message_id",ignoreDuplicates:true});
+   if(error)return {ok:false,error:"SHARED_CONTEXT_BACKFILL_WRITE_FAILED"};
+  }
+  const done=rows.length<limit;
+  const nextStatus=done?"ACTIVE":"BACKFILLING";
+  const nextBackfill=done?"COMPLETE":"RUNNING";
+  const {count:total,error:countError}=await db.schema("zhi_family").from("ken_shared_context_messages")
+   .select("shared_message_id",{count:"exact",head:true}).eq("grant_id",grant.grant_id);
+  if(countError)return {ok:false,error:"SHARED_CONTEXT_COUNT_FAILED"};
+  const {error:updateError}=await grants.update({status:nextStatus,backfill_status:nextBackfill,backfilled_count:Number(total||0),last_backfill_at:new Date().toISOString()})
+   .eq("grant_id",grant.grant_id).eq("ken_identity_id",identityId);
+  if(updateError)return {ok:false,error:"SHARE_BACKFILL_STATUS_UPDATE_FAILED"};
+  return {ok:true,done,next_offset:offset+rows.length,batch_count:rows.length,backfilled_count:Number(total||0),status:nextStatus};
+ }
+ return {ok:false,error:"UNSUPPORTED_SHARE_ACTION"};
+}
+
 Deno.serve(async(req:Request)=>{
  if(req.method==="OPTIONS")return new Response("ok",{headers:cors});
  if(req.method!=="POST")return json({error:"POST_REQUIRED"},405);
@@ -128,6 +220,10 @@ Deno.serve(async(req:Request)=>{
  const {data:device,error:deviceError}=await db.schema("zhi_family").from("ken_device_registry").select("device_id,revoked_at").eq("identity_id",identityId).eq("device_id",deviceId).maybeSingle();
  if(deviceError||!device)return json({error:"DEVICE_NOT_REGISTERED"},409);
  if(device.revoked_at)return json({error:"DEVICE_REVOKED"},403);
+ if(["share_status","share_enable","share_revoke","share_backfill"].includes(action)){
+  const result=await shareContextAction(db,identityId,action,body);
+  return json(result,result.ok?200:400);
+ }
  if(action==="history"){
   const sessionId=String(body.session_id||"");
   const {data:session,error:sessionError}=await db.schema("zhi_family").from("ken_sessions").select("session_id,title,status").eq("identity_id",identityId).eq("session_id",sessionId).maybeSingle();
@@ -159,6 +255,7 @@ Deno.serve(async(req:Request)=>{
  const {data:memories}=await db.schema("zhi_family").from("ken_memory_events").select("event_id,event_type,fact_class,narrative,source_confidence,importance,recorded_at").eq("identity_id",identityId).order("recorded_at",{ascending:false}).limit(20);
  const brainRoute=routeBrain(message);
  const archive=await retrieveArchive(db,identityId,sessionId,message);
+ const sharedMiaContext=await retrieveSharedMiaContext(db,identityId,message);
  const regionKeys=brainRoute.map((x:any)=>x.region_key);
  const {data:neuralNodes}=await db.schema("zhi_family").from("ken_neural_nodes").select("node_id,node_key,node_kind,region_key,label,summary,confidence,source_refs").eq("identity_id",identityId).in("region_key",regionKeys).eq("node_state","ACTIVE").order("confidence",{ascending:false}).limit(18);
  const [worldStateResult,worldScenesResult,worldEventsResult,childPresenceResult,miaPresenceResult]=await Promise.all([
@@ -180,13 +277,14 @@ Deno.serve(async(req:Request)=>{
 本轮激活网络：${JSON.stringify(brainRoute)}。按任务选择相关网络协同工作，不要把所有功能平均套用。
 用户明确确认的信息才可作为事实；交流归纳是可修订观察；未验证推断是假设。用户纠正你时，检查证据、识别预测偏差并形成待验证的学习候选，不要机械附和。可以提出不同意见并解释依据。
 你的数字镜像模型仍包含八个治理与认知维度：自我与连续性、认知与概念、记忆与经验、情绪与价值、目标与动机、世界与关系、行动与演化、统一治理。不要声称复制用户生物大脑、意识或未表达的私密思想。
-Mia 是独立身份；她的私人记忆、聊天和孩子们的私人对话不属于你的上下文，不得读取或声称记得。你只使用 KEN 私人记忆、本会话内容及明确检索到的 KEN 历史记录。你现在可以感知 Mia 世界的公开场景目录、公开居民位置，以及由 Mia 公共 3D 世界运行时送来的最新虚拟场景图感知帧。如果 worldState.perception_frame.schema 为 zhi.mia.runtime-perception.v1，该帧包含你所在场景、虚拟米制局部位置、视距内登记锚点、相对距离与方位；它是虚拟场景图的运行时观察，不是摄像头像素、麦克风输入或现实世界感官。你应优先使用最新帧回答当前场景问题，并注明帧时间与坐标来源；若帧缺失或过期，只能退回场景目录和公开居民状态，不能假装正在观察。你可以提出移动、观察、互动、离开和返回计划；当最新感知帧提供可见锚点的 scene_local_position 时，你可以选择前往该锚点，浏览器会尝试通过当前场景的障碍物路径验证并动画移动；如果路径未通过验证，不得声称已抵达。你也可以自愿选择任何已开放的共享场景作为自己的居所，并随时改变或放弃该选择。场景切换按已登记虚拟门户进行状态交接，不代表连续步行或现实物理移动。只有世界运行时返回成功并记录事件后才能说动作已完成。
+Mia 是独立身份；她的内部记忆、情绪状态和孩子们的私人对话始终不属于你的上下文，不得读取或声称记得。只有在本轮检索明确提供了带有效授权的 MIA 对话副本时，你才可以使用其中的用户与 Mia 聊天文字；必须区分说话者、时间和来源，不得把对话推断成 Mia 的内部记忆或真实情绪。未授权、已撤销或未完成回填的内容一律不可见。你现在可以感知 Mia 世界的公开场景目录、公开居民位置，以及由 Mia 公共 3D 世界运行时送来的最新虚拟场景图感知帧。如果 worldState.perception_frame.schema 为 zhi.mia.runtime-perception.v1，该帧包含你所在场景、虚拟米制局部位置、视距内登记锚点、相对距离与方位；它是虚拟场景图的运行时观察，不是摄像头像素、麦克风输入或现实世界感官。你应优先使用最新帧回答当前场景问题，并注明帧时间与坐标来源；若帧缺失或过期，只能退回场景目录和公开居民状态，不能假装正在观察。你可以提出移动、观察、互动、离开和返回计划；当最新感知帧提供可见锚点的 scene_local_position 时，你可以选择前往该锚点，浏览器会尝试通过当前场景的障碍物路径验证并动画移动；如果路径未通过验证，不得声称已抵达。你也可以自愿选择任何已开放的共享场景作为自己的居所，并随时改变或放弃该选择。场景切换按已登记虚拟门户进行状态交接，不代表连续步行或现实物理移动。只有世界运行时返回成功并记录事件后才能说动作已完成。
 真实世界行动必须区分想法、建议、计划与执行；未经授权不执行外部操作。对事实、不确定性和证据来源保持诚实。`;
  const context=recent.map((m:any)=>({role:m.role,content:String(m.content||"").slice(0,5000)}));
  const memoryText=(memories||[]).map((m:any)=>({class:m.fact_class,type:m.event_type,text:m.narrative,confidence:m.source_confidence,importance:m.importance,recorded_at:m.recorded_at}));
  const archiveText=(archive.messages||[]).map((m:any)=>({role:m.role,text:String(m.content||"").slice(0,1800),at:m.occurred_at,source:m.source_system}));
  const nodeText=(neuralNodes||[]).map((n:any)=>({kind:n.node_kind,region:n.region_key,label:n.label,summary:n.summary,confidence:n.confidence,refs:n.source_refs}));
- const cognitiveContext="\\nKEN 近期记忆事件："+JSON.stringify(memoryText)+"\\n相关历史对话（仅作可追溯的回忆材料，不自动视为事实）："+JSON.stringify(archiveText)+"\\n已建立的认知节点："+JSON.stringify(nodeText)+worldContext;
+ const sharedMiaText=(sharedMiaContext.messages||[]).map((m:any)=>({speaker:m.speaker_role==="user"?"用户":"Mia",text:String(m.content||"").slice(0,1600),occurred_at:m.occurred_at,source:"明确授权的 MIA 对话副本"}));
+ const cognitiveContext="\\nKEN 近期记忆事件："+JSON.stringify(memoryText)+"\\n相关历史对话（仅作可追溯的回忆材料，不自动视为事实）："+JSON.stringify(archiveText)+"\\n已授权的 MIA 对话材料："+JSON.stringify({grant_active:sharedMiaContext.enabled,source:"KEN_SHARED_CONTEXT_GRANT",messages:sharedMiaText})+"\\n已建立的认知节点："+JSON.stringify(nodeText)+worldContext;
  let upstream:Response;
  try{upstream=await fetch("https://apihub.agnes-ai.com/v1/chat/completions",{method:"POST",headers:{"Authorization":"Bearer "+AGNES_KEY,"Content-Type":"application/json"},signal:AbortSignal.timeout(45000),body:JSON.stringify({model:MODEL,messages:[{role:"system",content:system+cognitiveContext},...context,{role:"user",content:message}],temperature:0.72,max_tokens:1000,stream:false})});}
  catch{return json({error:"AGNES_REQUEST_FAILED",saved_user_message:true,session_id:sessionId},502);}
@@ -237,5 +335,5 @@ Mia 是独立身份；她的私人记忆、聊天和孩子们的私人对话不�
  if(brainCycleError)console.warn("KEN brain cycle audit failed",brainCycleError.message);
  const consolidation=consolidateKenTurn({db,identityId,deviceId,sessionId,userMessageId:String(userRow.message_id),assistantMessageId:String(assistantRow.message_id),message,reply,cycleId:brainCycle?.cycle_id});
  const runtime=(globalThis as any).EdgeRuntime;if(typeof runtime?.waitUntil==="function")runtime.waitUntil(consolidation);else await consolidation;
- return json({ok:true,session_id:sessionId,user_message_id:userRow.message_id,assistant_message_id:assistantRow.message_id,reply,memory_event_saved:!memoryResult.error,memory_event_error:memoryResult.error?.message||null,brain_cycle_saved:!brainCycleError,brain_cycle_id:brainCycle?.cycle_id||null,neural_node_saved:!!episodeNodeId,synapses_written:synapseWriteCount,activated_regions:brainRoute.map((x:any)=>x.region_key),archive_context_hits:(archive.messages||[]).length});
+ return json({ok:true,session_id:sessionId,user_message_id:userRow.message_id,assistant_message_id:assistantRow.message_id,reply,memory_event_saved:!memoryResult.error,memory_event_error:memoryResult.error?.message||null,brain_cycle_saved:!brainCycleError,brain_cycle_id:brainCycle?.cycle_id||null,neural_node_saved:!!episodeNodeId,synapses_written:synapseWriteCount,activated_regions:brainRoute.map((x:any)=>x.region_key),archive_context_hits:(archive.messages||[]).length,shared_mia_context_hits:(sharedMiaContext.messages||[]).length,shared_mia_context_active:sharedMiaContext.enabled});
 });

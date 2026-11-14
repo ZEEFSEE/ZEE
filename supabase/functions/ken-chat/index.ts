@@ -93,7 +93,7 @@ async function consolidateKenTurn(args:{db:any;identityId:string;deviceId:string
      const learningType=group.fact==="EXPLICIT_FACT"?"MEMORY_CANDIDATE":group.fact==="OBSERVATION"?"SELF_MODEL_REVISION":"NEW_ASSOCIATION";
      const {error:learningError}=await args.db.schema("zhi_family").from("ken_learning_events").insert({
       identity_id:args.identityId,cycle_id:args.cycleId||null,learning_type:learningType,
-      source_refs:[{source_system:"KEN_AGNES_MEMORY_CONSOLIDATION",source_ref:args.userMessageId,event_id:eventData?.event_id||null,evidence}],
+      source_refs:[{source_system:"KEN_AGNES_MEMORY_CONSOLIDATION",source_ref:args.userMessageId,event_id:eventData?.memory_event_id||eventData?.event_id||null,evidence}],
       prior_state:{},proposed_state:{fact_class:group.fact,text:textValue,review_status:group.fact==="EXPLICIT_FACT"?"CANDIDATE_REQUIRES_OWNER_CONFIRMATION":"REVISABLE",auto_promoted:false},
       confidence
      });

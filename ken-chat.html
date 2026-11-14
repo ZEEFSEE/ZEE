@@ -96,7 +96,7 @@ button,select,textarea{font:inherit;color:var(--ink);background:#1b2a3d;border:1
    const started=await call({action:"share_enable",device_id:deviceId});
    const grant=started.grant;
    if(grant.status==="ACTIVE"){await refreshShare();return;}
-   let offset=Number(grant.backfilled_count||0),done=false,total=Number(grant.backfilled_count||0);
+   let offset=Number(grant.metadata?.backfill_offset||0),done=false,total=Number(grant.backfilled_count||0);
    $("shareStatus").textContent="正在同步";
    while(!done){
     const batch=await call({action:"share_backfill",device_id:deviceId,grant_id:grant.grant_id,offset,limit:500});

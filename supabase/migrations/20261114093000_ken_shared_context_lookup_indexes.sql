@@ -1,0 +1,3 @@
+create index if not exists ken_shared_context_messages_mia_identity_idx on zhi_family.ken_shared_context_messages(mia_identity_id);
+create index if not exists ken_shared_context_messages_mia_session_idx on zhi_family.ken_shared_context_messages(mia_session_id);
+create index if not exists ken_shared_context_messages_source_message_idx on zhi_family.ken_shared_context_messages(source_message_id);

@@ -19,6 +19,12 @@ button,select,textarea{font:inherit;color:var(--ink);background:#1b2a3d;border:1
  <section id="app" class="panel hidden">
   <div class="toolbar"><select id="sessions" aria-label="对话历史"><option value="">新对话</option></select><button id="new">新对话</button><button id="refresh">刷新</button></div>
   <section class="world"><div class="world-head"><strong>🌐 Mia 世界 · KEN 感知</strong><span id="worldStatus" class="muted">正在同步世界状态…</span></div><div class="world-note"><a href="./ken-world-runtime.html?resident=KEN">进入 KEN 同步 3D 世界（保持当前 Mia 登录会话）</a></div><div class="world-grid"><select id="worldScene" aria-label="目标场景"></select><select id="worldTarget" aria-label="当前场景互动目标"><option value="">选择场景目标</option></select></div><div class="world-actions"><button id="worldRefresh">刷新世界状态</button><button id="worldObserve">观察当前场景</button><button id="worldMove" class="primary">前往场景</button><button id="worldHome">选择为我的居所</button><button id="worldGoTarget">前往可见锚点</button><button id="worldInteract">与目标互动</button><button id="worldAutonomy" class="primary">KEN 自主探索一步</button><button id="worldReturn">返回自己的居所</button><button id="worldLeave">离开世界</button></div><div id="worldDetail" class="world-note">共享场景资料、公开居民位置与 KEN 自己的世界经历。画面传感器和空间校准状态会如实标注。</div></section>
+  <section class="world" id="miaSharePanel">
+   <div class="world-head"><strong>🔗 KEN · MIA 对话记忆共享</strong><span id="shareStatus" class="muted">默认关闭</span></div>
+   <div class="world-note">开启后，KEN 可以检索你与 MIA 的历史及后续聊天文字，并区分双方发言。不会共享 MIA 内部记忆、情绪状态、孩子们的私人对话或附件。此授权可随时撤销。</div>
+   <div class="world-actions"><button id="shareEnable" class="primary">授权并同步全部 MIA 对话</button><button id="shareRevoke">撤销共享授权</button><button id="shareRefresh">刷新授权状态</button></div>
+   <div id="shareDetail" class="world-note">尚未开启。未经明确授权，KEN 不会读取 MIA 私人聊天。</div>
+  </section>
   <div id="status" class="status">正在连接 KEN…</div>
   <div id="log" class="log"><div class="muted">你可以直接与 KEN 聊天、纠正他、讨论不同观点，也可以要求他解释自己的推理。</div></div>
   <form id="composer" class="composer"><textarea id="message" placeholder="和 KEN 说说你的想法……" maxlength="12000"></textarea><button id="send" class="primary">发送</button></form>
@@ -65,7 +71,54 @@ button,select,textarea{font:inherit;color:var(--ink);background:#1b2a3d;border:1
  $("worldAutonomy").addEventListener("click",()=>worldAction("autonomous_step").catch(()=>{}));
  $("worldReturn").addEventListener("click",()=>worldAction("return").catch(()=>{}));
  $("worldLeave").addEventListener("click",()=>worldAction("leave").catch(()=>{}));
- async function init(){try{say("正在验证登录并恢复 KEN…");const d=await call({action:"init",client_instance_key:deviceKey(),platform:navigator.platform||"web"});deviceId=d.device?.device_id||d.device?.id||"";if(!deviceId)throw new Error("设备注册响应缺少 device_id");sessions.innerHTML='<option value="">新对话</option>';for(const s of d.sessions||[]){const o=document.createElement("option");o.value=s.session_id;o.textContent=s.title||"KEN 对话";sessions.append(o);}say("KEN 已连接。选择旧对话，或直接开始新对话。");await loadWorld();}catch(e){say("连接失败："+e.message,true);}}
+ async function refreshShare(){
+  try{
+   const d=await call({action:"share_status",device_id:deviceId});
+   const g=d.grant;
+   if(!g||g.status==="REVOKED"){
+    $("shareStatus").textContent="未授权";
+    $("shareDetail").textContent="KEN 当前无法读取 MIA 私人聊天。你可以选择授权全部历史及后续对话，也可以保持关闭。";
+   }else if(g.status==="BACKFILLING"){
+    $("shareStatus").textContent="正在同步历史";
+    $("shareDetail").textContent="授权已开启，历史消息正在分批导入。已同步 "+Number(g.backfilled_count||0)+" 条；同步完成后 KEN 才会开始检索。";
+   }else{
+    $("shareStatus").textContent="已授权 · "+Number(d.visible_message_count||0)+" 条";
+    $("shareDetail").textContent="KEN 可检索已授权的 MIA 对话文字。原始消息仍保留在 MIA；撤销后 KEN 的检索立即停止。";
+   }
+   $("shareEnable").disabled=!!g&&(g.status==="ACTIVE"||g.status==="BACKFILLING");
+   $("shareRevoke").disabled=!g||g.status==="REVOKED";
+   return d;
+  }catch(e){$("shareStatus").textContent="状态读取失败";$("shareDetail").textContent=e.message;return null;}
+ }
+ async function enableShare(){
+  $("shareEnable").disabled=true;$("shareRevoke").disabled=true;
+  try{
+   const started=await call({action:"share_enable",device_id:deviceId});
+   const grant=started.grant;
+   if(grant.status==="ACTIVE"){await refreshShare();return;}
+   let offset=0,done=false,total=Number(grant.backfilled_count||0);
+   $("shareStatus").textContent="正在同步";
+   while(!done){
+    const batch=await call({action:"share_backfill",device_id:deviceId,grant_id:grant.grant_id,offset,limit:500});
+    done=!!batch.done;offset=Number(batch.next_offset||offset);total=Number(batch.backfilled_count||total);
+    $("shareDetail").textContent="正在导入历史对话："+total+" 条已同步。此过程只复制双方聊天文字，不复制附件或私人记忆。";
+   }
+   await refreshShare();
+   say("MIA 对话共享已授权并完成历史同步："+total+" 条。");
+  }catch(e){$("shareStatus").textContent="同步未完成";$("shareDetail").textContent=e.message+"。可点击刷新状态后继续。";$("shareEnable").disabled=false;}
+ }
+ async function revokeShare(){
+  $("shareRevoke").disabled=true;
+  try{
+   const d=await call({action:"share_revoke",device_id:deviceId});
+   await refreshShare();
+   say(d.revoked?"MIA 对话共享授权已撤销；KEN 已停止检索共享副本。":"当前没有生效的共享授权。");
+  }catch(e){$("shareRevoke").disabled=false;$("shareDetail").textContent="撤销失败："+e.message;}
+ }
+ $("shareEnable").addEventListener("click",enableShare);
+ $("shareRevoke").addEventListener("click",revokeShare);
+ $("shareRefresh").addEventListener("click",()=>refreshShare());
+ async function init(){try{say("正在验证登录并恢复 KEN…");const d=await call({action:"init",client_instance_key:deviceKey(),platform:navigator.platform||"web"});deviceId=d.device?.device_id||d.device?.id||"";if(!deviceId)throw new Error("设备注册响应缺少 device_id");sessions.innerHTML='<option value="">新对话</option>';for(const s of d.sessions||[]){const o=document.createElement("option");o.value=s.session_id;o.textContent=s.title||"KEN 对话";sessions.append(o);}say("KEN 已连接。选择旧对话，或直接开始新对话。");await loadWorld();await refreshShare();}catch(e){say("连接失败："+e.message,true);}}
  async function history(id){sessionId=id||"";log.innerHTML="";if(!id){say("新对话已准备好。");return;}try{const d=await call({action:"history",device_id:deviceId,session_id:id});(d.messages||[]).forEach(m=>bubble(m.role,m.content));say("已恢复 "+(d.messages||[]).length+" 条对话记录。");}catch(e){say("读取历史失败："+e.message,true);}}
  sessions.addEventListener("change",()=>history(sessions.value));
  $("new").addEventListener("click",()=>{sessions.value="";history("");});

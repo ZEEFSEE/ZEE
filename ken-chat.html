@@ -43,6 +43,7 @@ button,select,textarea{font:inherit;color:var(--ink);background:#1b2a3d;border:1
  let deviceId="",sessionId="",busy=false;
  if(!token){gate.classList.remove("hidden");return;}
  app.classList.remove("hidden");
+  document.querySelector(".world")?.setAttribute("hidden","");
  const say=(s,bad=false)=>{status.textContent=s;status.classList.toggle("error",bad);};
  const bubble=(who,content)=>{const el=document.createElement("div");el.className="bubble "+(who==="user"?"user":"ken");const label=document.createElement("div");label.className="who";label.textContent=who==="user"?"你":"KEN";const body=document.createElement("div");body.textContent=content;el.append(label,body);log.append(el);log.scrollTop=log.scrollHeight;};
  const call=async payload=>{const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json","apikey":KEY,"Authorization":"Bearer "+token},body:JSON.stringify(payload),cache:"no-store"});const d=await r.json().catch(()=>({}));if(!r.ok||!d.ok)throw new Error(d.error||("HTTP "+r.status));return d;};

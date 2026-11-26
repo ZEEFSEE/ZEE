@@ -209,7 +209,7 @@ $("#reset-position").addEventListener("click",()=>{position={...activeScene.spaw
 try{
  const r=await fetch("./world-scenes/public-destinations/world-spatial-manifest.v1.json",{cache:"no-store"});if(!r.ok)throw Error("空间清单 HTTP "+r.status);
  manifest=await r.json();const valid=validateWorldManifest(manifest);if(!valid.valid)throw Error(valid.errors.join("；"));
- switchScene("mia-forest-corner");renderButtons();syncKenPresence();if(MIA_TOKEN)setInterval(syncKenPresence,3600000);
+ switchScene("mia-forest-corner");renderButtons();syncKenPresence();// Presence is synced on entry and user actions; no idle heartbeat.
  const requestedDestination=new URLSearchParams(location.search).get("destination");
  if(requestedDestination&&requestedDestination!=="mia-forest-corner"){
   goToScene(requestedDestination).then(renderButtons).catch(error=>setStatus("目的地暂不可直达",error.message));

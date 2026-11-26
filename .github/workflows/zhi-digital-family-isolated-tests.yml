@@ -26,5 +26,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Run seven-resident protoception isolation tests
+        run: node --test mia-digital-family/tests/protoception-engine.v1.test.mjs
       - name: Run isolated family and world simulation tests
         run: node --test mia-digital-family/tests/*.test.mjs

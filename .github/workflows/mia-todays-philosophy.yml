@@ -3,9 +3,6 @@ name: Mia Today's Philosophy
 
 # Schedule uses GitHub Actions IANA timezone support; local Singapore time is authoritative.
 on:
-  schedule:
-    - cron: "35 8 * * *"
-      timezone: "Asia/Singapore" # 08:35 SGT daily
   workflow_dispatch:
 
 permissions: {}

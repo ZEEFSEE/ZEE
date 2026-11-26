@@ -61,7 +61,7 @@ test("unknown residents, missing provenance and duplicate keys fail closed", () 
 });
 
 test("long-term memory and evolution writes remain disabled in pilot", () => {
-  assert.equal(validateProtoceptionEvent(createProtoceptionTestEvent("ARIA", "COGNITIVE_EMERGENCE", { memory_action: "PROMOTE" })).code, "MEMORY_WRITE_DISABLED");
+  assert.equal(validateProtoceptionEvent(createProtoceptionTestEvent("ZHI-G1-D02-ARIA", "COGNITIVE_EMERGENCE", { memory_action: "PROMOTE" })).code, "MEMORY_WRITE_DISABLED");
   assert.equal(validateProtoceptionEvent(createProtoceptionTestEvent("KAEL", "STRUCTURAL_SENSATION", { evolution_action: "UPDATE" })).code, "EVOLUTION_WRITE_DISABLED");
 });
 

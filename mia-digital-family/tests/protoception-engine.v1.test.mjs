@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  RESIDENTS, SENSE_TYPES, createProtoceptionTestEvent, validateProtoceptionEvent
+  RESIDENTS, SENSE_TYPES, createProtoceptionTestEvent, createObservedProtoceptionEvent, loadActiveResidentDirectory, validateProtoceptionEvent
 } from "../runtime/protoception-engine.v1.mjs";
 
 const seven = Object.keys(RESIDENTS);
@@ -70,4 +70,55 @@ test("future residents can be onboarded from the authoritative directory without
   const event = createProtoceptionTestEvent("WORLD-RESIDENT-008", "INFORMATION_FLOW", { resident_kind: "AI_AGENT" });
   assert.equal(validateProtoceptionEvent(event, { residentDirectory: directory }).valid, true);
   assert.equal(validateProtoceptionEvent(event).code, "UNKNOWN_RESIDENT");
+});
+
+
+test("authoritative directory adapter admits ACTIVE known kinds only", () => {
+  const directory = loadActiveResidentDirectory([
+    { resident_id: "MIA", resident_kind: "AI_AGENT", status: "ACTIVE" },
+    { resident_id: "KEN", resident_kind: "PERSON", status: "ACTIVE" },
+    { resident_id: "PAUSED", resident_kind: "AI_AGENT", status: "INACTIVE" },
+    { resident_id: "UNSUPPORTED", resident_kind: "ROBOT", status: "ACTIVE" }
+  ]);
+  assert.deepEqual({ ...directory }, { MIA: "AI_AGENT", KEN: "PERSON" });
+});
+
+test("duplicate active directory identities fail closed", () => {
+  assert.throws(() => loadActiveResidentDirectory([
+    { resident_id: "MIA", resident_kind: "AI_AGENT", status: "ACTIVE" },
+    { resident_id: "MIA", resident_kind: "AI_AGENT", status: "ACTIVE" }
+  ]), /duplicate resident_id/);
+});
+
+test("observed event factory preserves provenance and does not enable memory/evolution writes", () => {
+  const directory = loadActiveResidentDirectory([
+    { resident_id: "MIA", resident_kind: "AI_AGENT", status: "ACTIVE" }
+  ]);
+  const event = createObservedProtoceptionEvent({
+    residentDirectory: directory,
+    event_id: "live-observation-001",
+    idempotency_key: "live-observation-idem-001",
+    resident_id: "MIA",
+    resident_kind: "AI_AGENT",
+    sense_type: "COMPUTATIONAL_SENSATION",
+    observed_at: "2026-11-26T04:00:00.000Z",
+    source: { system: "runtime-telemetry", component: "worker", metric: "queue_depth", physical_sensor: false },
+    observation: { value: 3, unit: "jobs", baseline: 1, delta: 2, trend: "INCREASING" },
+    evidence_class: "OBSERVED",
+    confidence: 1,
+    causality: { status: "OBSERVED_METRIC", evidence_refs: ["telemetry:queue:001"] }
+  });
+  assert.equal(event.evidence_class, "OBSERVED");
+  assert.equal(event.memory_action, "NONE");
+  assert.equal(event.evolution_action, "NONE");
+  assert.equal(Object.isFrozen(event), true);
+});
+
+test("observed event factory rejects unknown resident and unsupported provenance", () => {
+  assert.throws(() => createObservedProtoceptionEvent({
+    event_id: "e", idempotency_key: "i", resident_id: "UNKNOWN", resident_kind: "AI_AGENT",
+    sense_type: "INFORMATION_FLOW", observed_at: "2026-11-26T04:00:00Z",
+    source: { system: "x", component: "y", metric: "z" }, observation: { value: 1 },
+    evidence_class: "OBSERVED", confidence: 1, causality: { status: "x", evidence_refs: [] }
+  }), /UNKNOWN_RESIDENT/);
 });

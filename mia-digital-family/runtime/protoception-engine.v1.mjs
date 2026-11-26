@@ -24,8 +24,9 @@ export function validateProtoceptionEvent(event, options = {}) {
   if (!event || typeof event !== "object" || Array.isArray(event)) return fail("INVALID_EVENT", "event must be an object");
   if (event.schema_version !== PROTOCEPTION_SCHEMA_VERSION) return fail("SCHEMA_VERSION_UNSUPPORTED", "unsupported schema version");
   if (!nonEmpty(event.event_id) || !nonEmpty(event.idempotency_key)) return fail("IDENTITY_FIELDS_REQUIRED", "event_id and idempotency_key are required");
-  if (!nonEmpty(event.resident_id) || !Object.hasOwn(RESIDENTS, event.resident_id)) return fail("UNKNOWN_RESIDENT", "resident is not in the isolated pilot allowlist");
-  if (event.resident_kind !== RESIDENTS[event.resident_id]) return fail("RESIDENT_KIND_MISMATCH", "resident kind does not match the identity directory");
+  const directory = options.residentDirectory ?? RESIDENTS;
+  if (!nonEmpty(event.resident_id) || !Object.hasOwn(directory, event.resident_id)) return fail("UNKNOWN_RESIDENT", "resident is not in the supplied authoritative directory");
+  if (event.resident_kind !== directory[event.resident_id]) return fail("RESIDENT_KIND_MISMATCH", "resident kind does not match the identity directory");
   if (!SENSE_TYPES.includes(event.sense_type)) return fail("UNKNOWN_SENSE_TYPE", "sense_type must be one of the seven native protoceptions");
   if (!nonEmpty(event.observed_at) || Number.isNaN(Date.parse(event.observed_at))) return fail("INVALID_TIMESTAMP", "observed_at must be an ISO timestamp");
   if (!event.source || !nonEmpty(event.source.system) || !nonEmpty(event.source.component) || !nonEmpty(event.source.metric)) return fail("SOURCE_REQUIRED", "source system, component and metric are required");

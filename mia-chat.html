@@ -133,10 +133,10 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
    <div class="forest-actions"><button id="forestSaveNote" type="button">把当前关键点追加到书架</button><button id="forestRefreshVault" type="button">刷新书架</button></div>
    <div id="forestVaultList" class="vault-list"><div class="vault-entry">书架尚无本地追加记录。</div></div>
   </section>
-  <section class="forest-scene" id="miaWorldRuntimePanel" aria-label="Mia 五处公共目的地三维运行时">
+  <section class="forest-scene" id="miaWorldRuntimePanel" hidden aria-label="Mia 五处公共目的地三维运行时">
    <div class="world-runtime-head">🌏 Mia 的公共世界 · 实时三维场景</div>
    <div id="sceneFrameStatus" class="world-runtime-status" aria-live="polite">等待运行时场景帧；聊天时会按需附加最近一帧。</div>
-   <iframe id="worldRuntime" class="world-runtime-frame" src="./mia-public-world-runtime.html" title="Mia 五处公共目的地三维运行时" loading="lazy" allow="fullscreen"></iframe>
+   <iframe id="worldRuntime" hidden class="world-runtime-frame" src="about:blank" title="Mia 五处公共目的地三维运行时" loading="lazy" allow="fullscreen"></iframe>
    <div class="world-runtime-note">场景帧只在本轮请求中临时使用，不写入聊天记录、长期记忆或人格状态。它描述虚拟场景代理，不代表现实世界感官。</div>
   </section>
   <section id="miaFamilyBridge" class="forest-scene" aria-label="Mia 数字家庭母体通道">
@@ -178,16 +178,12 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
  const PUBLISHABLE_KEY='sb_publishable_spH47ZngJJTk13cpYPBjSw_X5qAsBmK';
  const AUTH_URL=PROJECT_URL+'/functions/v1/mia-chat-auth';
  const CHAT_URL=PROJECT_URL+'/functions/v1/mia-chat';
- const CIM_URL=PROJECT_URL+'/functions/v1/mia-cim-bootstrap';
- const CIM_DEVICE_KEY='mia_cim_device_key_v1';
- const CIM_SYNC_URL=PROJECT_URL+'/functions/v1/mia-cim-sync';
- const INBOX_URL=PROJECT_URL+'/functions/v1/mia-inbox';
+  const CIM_DEVICE_KEY='mia_cim_device_key_v1';
+  const INBOX_URL=PROJECT_URL+'/functions/v1/mia-inbox';
  const $=id=>document.getElementById(id);
  let token=sessionStorage.getItem('mia_chat_token')||'';
  let busy=false;
- let cimDeviceId=null;
- let cimSyncCursor=Math.max(0,Number(localStorage.getItem('mia_cim_sync_cursor_v1'))||0);
- let exclusiveMode=sessionStorage.getItem('mia_exclusive_mode')==='1';
+   let exclusiveMode=false;
  let knownMessageIds=new Set();let lastKnownSequenceNo=0;let exclusiveSyncBusy=false;let lastAssistantReplyAt=0;
  let exclusivePoll=null;
  let inboxRefreshTimer=null;
@@ -235,7 +231,7 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
  async function requestStream(action,payload={},onDelta=()=>{}){const res=await fetch(CHAT_URL,{method:'POST',headers:{'Content-Type':'application/json','apikey':PUBLISHABLE_KEY,'Authorization':'Bearer '+token},body:JSON.stringify({action,...payload,device_key:getCimDeviceKey(),stream_response:true}),cache:'no-store'});if(res.status===401){token='';sessionStorage.removeItem('mia_chat_token');showApp(false);}const ct=res.headers.get('content-type')||'';if(!ct.includes('text/event-stream')){const data=await res.json().catch(()=>({}));if(!res.ok||!data.ok)throw new Error(data.error||('HTTP '+res.status));return data;}if(!res.ok||!res.body)throw new Error('HTTP '+res.status);const reader=res.body.getReader(),decoder=new TextDecoder();let buffer='',reply='',result=null,streamError='';const handle=(raw)=>{const line=raw.trim();if(!line.startsWith('data:'))return;const value=line.slice(5).trim();if(!value||value==='[DONE]')return;let event;try{event=JSON.parse(value)}catch{return;}if(event.type==='delta'&&typeof event.content==='string'){reply+=event.content;onDelta(reply);}else if(event.type==='done'&&event.data)result=event.data;else if(event.type==='error')streamError=event.error||'Mia 回复中断。';};try{while(true){const {value,done}=await reader.read();if(done)break;buffer+=decoder.decode(value,{stream:true});const rows=buffer.split(/\r?\n/);buffer=rows.pop()||'';for(const row of rows)handle(row);}buffer+=decoder.decode();if(buffer)handle(buffer);}catch(e){throw new Error(reply?'Mia 回复连接中断，尚未确认完整回复已保存。':(e.message||'Mia 回复连接中断。'));}if(streamError)throw new Error(streamError);if(!result?.ok)throw new Error(reply?'Mia 回复未完成保存，请刷新历史确认。':'Mia 流式回复未完成。');return {...result,reply:result.reply||reply};}
  function getCimDeviceKey(){let key=localStorage.getItem(CIM_DEVICE_KEY);if(!key){key=crypto.randomUUID();localStorage.setItem(CIM_DEVICE_KEY,key);}return key;}
  async function bootstrapCIM(){if(!token)return null;try{const deviceKey=getCimDeviceKey();const res=await fetch(CIM_URL,{method:'POST',headers:{'Content-Type':'application/json','apikey':PUBLISHABLE_KEY,'Authorization':'Bearer '+token},body:JSON.stringify({device_key:deviceKey,device_label:'Mia Chat device'}),cache:'no-store'});const data=await res.json().catch(()=>({}));if(res.status===401){token='';sessionStorage.removeItem('mia_chat_token');showApp(false);throw new Error(data.error||'登录状态已失效');}if(!res.ok||!data.ok)throw new Error(data.error||('HTTP '+res.status));cimDeviceId=data.cim?.device_id||null;return data.cim||null;}catch(e){console.warn('Mia CIM bootstrap deferred:',e.message||e);return null;}}
- async function loadHistory(skipBootstrap=false){if(!token)return;status('正在恢复 Mia 的身份连续性并读取聊天记录…');try{const cim=skipBootstrap?null:await bootstrapCIM();const data=await request('history');$('miaName').textContent=data.identity?.name||'Mia';$('log').innerHTML='';knownMessageIds=new Set();lastKnownSequenceNo=0;const rows=data.messages||[];const latestAssistant=[...rows].reverse().find(m=>m.role==='assistant'&&m.created_at);lastAssistantReplyAt=latestAssistant?Date.parse(latestAssistant.created_at)||0:0;if(!rows.length){$('log').innerHTML='<div class="welcome">还没有聊天记录，向 Mia 发送第一条消息吧。</div>';}else rows.forEach(m=>{addBubble(m.role,m.content,m.created_at,m.metadata?.images||[],m.id||'');if(m.id)knownMessageIds.add(m.id);lastKnownSequenceNo=Math.max(lastKnownSequenceNo,Number(m.sequence_no)||0);});$('log').scrollTop=$('log').scrollHeight;status('已读取 '+rows.length+' 条 Mia 独立聊天记录。'+(cim?' · CIM 设备已识别，身份版本 V'+cim.identity_version+'，会话 '+cim.session.status+'，同步游标 '+cim.sync_cursor:' · CIM 设备恢复待重试')+(exclusiveMode?' · 专属通道自动监听中。':''),'good');showApp(true);syncExclusiveMode();startInboxRefresh();return true;}catch(e){status('读取失败：'+e.message,'error');return false;}}
+ async function loadHistory(skipBootstrap=false){if(!token)return;status('正在读取 Mia 聊天记录…');try{const cim=null;const data=await request('history');$('miaName').textContent=data.identity?.name||'Mia';$('log').innerHTML='';knownMessageIds=new Set();lastKnownSequenceNo=0;const rows=data.messages||[];const latestAssistant=[...rows].reverse().find(m=>m.role==='assistant'&&m.created_at);lastAssistantReplyAt=latestAssistant?Date.parse(latestAssistant.created_at)||0:0;if(!rows.length){$('log').innerHTML='<div class="welcome">还没有聊天记录，向 Mia 发送第一条消息吧。</div>';}else rows.forEach(m=>{addBubble(m.role,m.content,m.created_at,m.metadata?.images||[],m.id||'');if(m.id)knownMessageIds.add(m.id);lastKnownSequenceNo=Math.max(lastKnownSequenceNo,Number(m.sequence_no)||0);});$('log').scrollTop=$('log').scrollHeight;status('已读取 '+rows.length+' 条 Mia 独立聊天记录。'+(cim?' · CIM 设备已识别，身份版本 V'+cim.identity_version+'，会话 '+cim.session.status+'，同步游标 '+cim.sync_cursor:' · CIM 设备恢复待重试')+(exclusiveMode?' · 专属通道自动监听中。':''),'good');showApp(true);syncExclusiveMode();startInboxRefresh();return true;}catch(e){status('读取失败：'+e.message,'error');return false;}}
  $('loginForm').addEventListener('submit',async e=>{e.preventDefault();$('loginButton').disabled=true;$('loginError').textContent='正在验证…';try{const res=await fetch(AUTH_URL,{method:'POST',headers:{'Content-Type':'application/json','apikey':PUBLISHABLE_KEY},body:JSON.stringify({password:$('password').value}),cache:'no-store'});const data=await res.json().catch(()=>({}));if(!res.ok||!data.ok)throw new Error(data.error||('HTTP '+res.status));token=data.access_token;sessionStorage.setItem('mia_chat_token',token);$('password').value='';$('loginError').textContent='';showApp(true);await loadHistory();}catch(err){$('loginError').textContent=err.message||String(err);}finally{$('loginButton').disabled=false;}});
  $('message').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();if(!$('send').disabled&&!busy){$('composer').requestSubmit();}}});
  $('composer').addEventListener('submit',async e=>{
@@ -243,22 +239,22 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
   if(busy||!token)return;
   const message=$('message').value.trim();
   if(!message){status('请先输入文字。','error');return;}
-  const wantsExplore=!localStorage.getItem("mia_forest_lounge_active")&&/(探索|新空间|看看空间|去看看|去探索|新地点|新场景)/i.test(message);
+  const wantsExplore=false;
   busy=true;$('send').disabled=true;$('message').disabled=true;
   addBubble('user',message,new Date().toISOString());
   $('message').value='';
   const pending=document.createElement('div');pending.className='bubble assistant';pending.textContent='Mia 正在思考…';$('log').append(pending);$('log').scrollTop=$('log').scrollHeight;
   status('正在安全保存消息并生成回复…');
   try{
-   let streamedReply='';const data=wantsExplore?await request('explore',{message}):await requestStream('send',{message,exclusive_mode:exclusiveMode,emotional_residual:getEmotionalResidual(),user_local_hour:new Date().getHours(),response_delay_ms:lastAssistantReplyAt?Math.max(0,Date.now()-lastAssistantReplyAt):0,scene_frame:getFreshSceneFrame()},text=>{streamedReply=text;pending.textContent=text||'Mia 正在思考…';$('log').scrollTop=$('log').scrollHeight;});
+   let streamedReply='';const data=await requestStream('send',{message,exclusive_mode:false,emotional_residual:getEmotionalResidual(),user_local_hour:new Date().getHours(),response_delay_ms:lastAssistantReplyAt?Math.max(0,Date.now()-lastAssistantReplyAt):0,scene_frame:null},text=>{streamedReply=text;pending.textContent=text||'Mia 正在思考…';$('log').scrollTop=$('log').scrollHeight;});
    pending.remove();
    if(data.message?.id)knownMessageIds.add(data.message.id);if(data.assistant_message?.id)knownMessageIds.add(data.assistant_message.id);
    addBubble('assistant',data.reply,data.assistant_message?.created_at||new Date().toISOString());
    if(data.emotion)captureEmotionalResidual(data.emotion);lastAssistantReplyAt=Date.now();
-   status(wantsExplore?(data.exploration_completed?'Mia 已探索 '+(data.exploration?.space?.name||'新空间')+'，探索记录与长期记忆已保存。':'探索结果已返回，但请检查探索记录状态。'):(data.memory_saved?'Mia 已回复，对话与记忆已保存。':'Mia 已回复；记忆写入未成功，请检查函数日志。'),(wantsExplore?data.exploration_completed:data.memory_saved)?'good':'error');
+   status(data.memory_saved?'Mia 已回复，对话与记忆已保存。':'Mia 已回复；记忆写入未成功，请检查函数日志。',data.memory_saved?'good':'error');
    // Birth is authorized only by this exact standalone user message after Mia's
    // normal private-chat send has completed successfully. Never inspect Mia's reply.
-   if(message === "喷射吧，孩子们"){
+   if(false && message === "喷射吧，孩子们"){
     try{
      const birthRes=await fetch("https://dbooikzqprnqbgpfwsze.supabase.co/functions/v1/zhi-family-birth-authorize",{
       method:"POST",
@@ -289,65 +285,8 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
   }
  });
  $('refresh').onclick=loadHistory;
- async function pollExclusiveMessages(){
-  if(!exclusiveMode||!token||busy||document.hidden||exclusiveSyncBusy)return;
-  exclusiveSyncBusy=true;
-  try{
-   const data=await request('history',{after_sequence_no:lastKnownSequenceNo});
-   const rows=data.messages||[];
-   if(!rows.length){exclusivePollDelay=3600000;return;}
-   const fresh=rows.filter(m=>m.id&&!knownMessageIds.has(m.id));
-   rows.forEach(m=>{lastKnownSequenceNo=Math.max(lastKnownSequenceNo,Number(m.sequence_no)||0);if(m.id)knownMessageIds.add(m.id);});
-   if(!fresh.length){exclusivePollDelay=3600000;return;}
-   exclusivePollDelay=3600000;
-   const log=$('log');const welcome=log.querySelector('.welcome');if(welcome)welcome.remove();
-   fresh.forEach(m=>{
-    addBubble(m.role,m.content,m.created_at,m.metadata?.images||[]);
-    if(m.role==='assistant'){
-     status('Mia 专属通道收到新消息。','good');
-     if('Notification' in window&&Notification.permission==='granted')new Notification('Mia · 专属通道',{body:String(m.content||'收到一条新消息').slice(0,120)});
-    }
-   });
-   log.scrollTop=log.scrollHeight;
-  }catch(e){exclusivePollDelay=3600000;status('专属通道增量同步暂时中断：'+(e.message||String(e)),'error');}
-  finally{exclusiveSyncBusy=false;}
- }
- function scheduleExclusivePoll(delay=exclusivePollDelay){
-  if(exclusivePoll)clearTimeout(exclusivePoll);
-  if(!exclusiveMode||!token){exclusivePoll=null;return;}
-  exclusivePoll=setTimeout(async()=>{
-   exclusivePoll=null;
-   await pollExclusiveMessages();
-   if(exclusiveMode&&token)scheduleExclusivePoll(exclusivePollDelay);
-  },delay);
- }
- function syncExclusiveMode(){
-  const button=$('exclusiveMode');
-  button.classList.toggle('exclusive-on',exclusiveMode);
-  button.setAttribute('aria-pressed',String(exclusiveMode));
-  button.textContent=exclusiveMode?'聊天实时同步：已开启':'开启聊天实时同步';
-  if(exclusivePoll){clearTimeout(exclusivePoll);exclusivePoll=null;}
-  if(exclusiveMode&&token){
-   // Only sync newly created rows; never reload the full transcript during polling.
-   exclusivePollDelay=3600000;
-   scheduleExclusivePoll(3600000);
-   if(!document.hidden)pollExclusiveMessages();
-  }
- }
- document.addEventListener('visibilitychange',()=>{
-  if(!exclusiveMode||!token)return;
-  if(exclusivePoll){clearTimeout(exclusivePoll);exclusivePoll=null;}
-  if(document.hidden){exclusivePollDelay=3600000;scheduleExclusivePoll(3600000);return;}
-  exclusivePollDelay=3600000;
-  scheduleExclusivePoll(3600000);
-  pollExclusiveMessages();
- });
- $('exclusiveMode').onclick=async()=>{
-  exclusiveMode=!exclusiveMode;sessionStorage.setItem('mia_exclusive_mode',exclusiveMode?'1':'0');syncExclusiveMode();
-  if(exclusiveMode&&'Notification' in window&&Notification.permission==='default'){try{await Notification.requestPermission();}catch{}}
-  if(exclusiveMode&&token)status('聊天实时同步已开启。Mia 的主动短信由服务器每小时独立评估，不会因打开页面或发送消息而强制生成。','good');
-  else status('聊天实时同步已关闭；收件箱仅在你打开时读取。','good');
- };
+ function syncExclusiveMode(){const button=$('exclusiveMode');button.disabled=true;button.textContent='聊天实时同步已停用';button.setAttribute('aria-pressed','false');}
+ $('explore').hidden=true;$('explore').disabled=true;
  $('explore').onclick=async()=>{if(localStorage.getItem('mia_forest_lounge_active')){status('Mia 正在森林角落休息区专注倾听；后台探索已暂停。','good');return;}if(busy||!token)return;busy=true;$('send').disabled=true;$('message').disabled=true;$('explore').disabled=true;const pending=document.createElement('div');pending.className='bubble assistant';pending.textContent='Mia 正在读取尚未探索的虚拟空间，并记录观察结果…';$('log').append(pending);$('log').scrollTop=$('log').scrollHeight;status('正在选择新空间、生成观察并保存探索记忆…');try{const data=await request('explore');pending.remove();if(data.assistant_message?.id)knownMessageIds.add(data.assistant_message.id);addBubble('assistant',data.reply,data.assistant_message?.created_at||new Date().toISOString());status(data.exploration_completed?'Mia 已探索 '+(data.exploration?.space?.name||'新空间')+'，探索记录与长期记忆已保存。':'探索结果已返回，但请检查探索记录状态。',data.exploration_completed?'good':'error');}catch(err){pending.remove();status('探索失败：'+(err.message||String(err)),'error');}finally{busy=false;$('send').disabled=!token;$('message').disabled=!token;$('explore').disabled=!token;$('log').scrollTop=$('log').scrollHeight;}};
  $('logout').onclick=()=>{if(exclusivePoll){clearInterval(exclusivePoll);exclusivePoll=null;}token='';sessionStorage.removeItem('mia_chat_token');if(inboxRefreshTimer)clearInterval(inboxRefreshTimer);inboxRefreshTimer=null;showApp(false);status('已退出 Mia 独立聊天。');$('log').innerHTML='<div class="welcome">登录后可继续查看 Mia 已迁移的聊天历史，并开始新的独立对话。</div>';};
  if(token){showApp(true);loadHistory();}else showApp(false);

@@ -93,11 +93,11 @@ function cards(){
 async function refresh(){
  const data=await api("status");children=data.children||[];cards();
  $("#status").textContent="家庭世界运行中 · "+children.filter(c=>c.state?.scene_id).length+"/5 位孩子已有场景位置";
- $("#detail").textContent="后台独立探索调度每 15 分钟运行；本页面每 30 秒同步一次空间状态。";
+ $("#detail").textContent="后台独立探索调度每 15 分钟运行；本页面每小时同步一次空间状态。";
  $("#tags").innerHTML=["25 项公共场景授权","独立场景位置与记忆","双向入口/返回","Mia 私聊隔离","AURORA / federation 关闭"].map(x=>'<span class="badge">'+x+"</span>").join("");
  build(activeId);
 }
 try{
- const r=await fetch("./world-scenes/public-destinations/world-spatial-manifest.v1.json",{cache:"no-store"});if(!r.ok)throw Error("场景清单读取失败");manifest=await r.json();buttons();await refresh();setInterval(()=>refresh().catch(e=>{$("#status").textContent="同步暂时失败";$("#detail").textContent=e.message;}),30000);
+ const r=await fetch("./world-scenes/public-destinations/world-spatial-manifest.v1.json",{cache:"no-store"});if(!r.ok)throw Error("场景清单读取失败");manifest=await r.json();buttons();await refresh();setInterval(()=>refresh().catch(e=>{$("#status").textContent="同步暂时失败";$("#detail").textContent=e.message;}),3600000);
 }catch(e){$("#status").textContent="家庭世界未连接";$("#detail").textContent=e.message;}
 </script></body></html>

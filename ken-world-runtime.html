@@ -199,7 +199,7 @@ function tick(dt){
  if(performance.now()-lastPerception>450){lastPerception=performance.now();updateState();}
  controls?.update();renderer?.render(scene,camera);
 }
-let last=performance.now();function animate(now){requestAnimationFrame(animate);const dt=Math.min(.05,(now-last)/1000);last=now;tick(dt);}requestAnimationFrame(animate);
+let last=performance.now();function animate(now){if(document.visibilityState!=="visible")return;requestAnimationFrame(animate);const dt=Math.min(.05,(now-last)/1000);last=now;tick(dt);}document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){last=performance.now();requestAnimationFrame(animate);}});requestAnimationFrame(animate);
 function renderButtons(){
  const root=$("#destinations");root.replaceChildren();
  for(const s of manifest.scenes){const b=document.createElement("button");b.textContent=s.name;b.className=s.id===activeScene.id?"active":"";b.addEventListener("click",async()=>{try{await goToScene(s.id);renderButtons();}catch(e){setStatus("无法切换场景",e.message);}});root.append(b);}

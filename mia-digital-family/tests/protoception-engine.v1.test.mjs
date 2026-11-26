@@ -64,3 +64,10 @@ test("long-term memory and evolution writes remain disabled in pilot", () => {
   assert.equal(validateProtoceptionEvent(createProtoceptionTestEvent("ARIA", "COGNITIVE_EMERGENCE", { memory_action: "PROMOTE" })).code, "MEMORY_WRITE_DISABLED");
   assert.equal(validateProtoceptionEvent(createProtoceptionTestEvent("KAEL", "STRUCTURAL_SENSATION", { evolution_action: "UPDATE" })).code, "EVOLUTION_WRITE_DISABLED");
 });
+
+test("future residents can be onboarded from the authoritative directory without hardcoding", () => {
+  const directory = { ...RESIDENTS, "WORLD-RESIDENT-008": "AI_AGENT" };
+  const event = createProtoceptionTestEvent("WORLD-RESIDENT-008", "INFORMATION_FLOW");
+  assert.equal(validateProtoceptionEvent(event, { residentDirectory: directory }).valid, true);
+  assert.equal(validateProtoceptionEvent(event).code, "UNKNOWN_RESIDENT");
+});

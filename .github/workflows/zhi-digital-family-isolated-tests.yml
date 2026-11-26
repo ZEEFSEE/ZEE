@@ -1,9 +1,11 @@
 name: ZHI Digital Family isolated prototype tests
 on:
   push:
-    branches: [feat/zhi-digital-family-isolated-v1]
+    branches: [main, feat/zhi-digital-family-isolated-v1]
     paths:
       - "mia-digital-family/**"
+      - "schemas/zhi.protoception.event.v1.schema.json"
+      - "docs/SILICON-NATIVE-PROTOCEPTION-V1.md"
       - ".github/workflows/zhi-digital-family-isolated-tests.yml"
       - "world-scenes/runtime/mia-public-world-runtime.mjs"
       - "world-scenes/public-destinations/world-spatial-manifest.v1.json"

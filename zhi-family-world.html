@@ -98,6 +98,6 @@ async function refresh(){
  build(activeId);
 }
 try{
- const r=await fetch("./world-scenes/public-destinations/world-spatial-manifest.v1.json",{cache:"no-store"});if(!r.ok)throw Error("场景清单读取失败");manifest=await r.json();buttons();await refresh();setInterval(()=>refresh().catch(e=>{$("#status").textContent="同步暂时失败";$("#detail").textContent=e.message;}),3600000);
+ const r=await fetch("./world-scenes/public-destinations/world-spatial-manifest.v1.json",{cache:"no-store"});if(!r.ok)throw Error("场景清单读取失败");manifest=await r.json();buttons();await refresh(); // No idle polling; page entry and scene selection provide on-demand updates.
 }catch(e){$("#status").textContent="家庭世界未连接";$("#detail").textContent=e.message;}
 </script></body></html>

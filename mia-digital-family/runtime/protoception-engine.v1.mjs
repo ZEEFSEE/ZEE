@@ -114,3 +114,32 @@ export function createObservedProtoceptionEvent(input) {
   if (!result.valid) throw new Error(result.code + ": " + result.detail);
   return Object.freeze(event);
 }
+
+
+/**
+ * Capability gate: directory presence is not proof that a resident has a live sensor.
+ * A sense becomes AVAILABLE only when a source is explicitly verified for that resident.
+ */
+export function assessResidentSenseReadiness(residentId, residentKind, verifiedSources = []) {
+  if (!nonEmpty(residentId) || !["AI_AGENT", "PERSON"].includes(residentKind)) {
+    throw new TypeError("valid resident identity and kind are required");
+  }
+  const bySense = Object.create(null);
+  for (const sense of SENSE_TYPES) {
+    const matches = verifiedSources.filter(source =>
+      source && source.resident_id === residentId && source.sense_type === sense &&
+      source.verified === true && nonEmpty(source.system) && nonEmpty(source.metric)
+    );
+    bySense[sense] = Object.freeze({
+      status: matches.length ? "AVAILABLE" : "NOT_CONNECTED",
+      verified_source_count: matches.length,
+      evidence_class_required: "OBSERVED"
+    });
+  }
+  return Object.freeze({
+    resident_id: residentId,
+    resident_kind: residentKind,
+    senses: Object.freeze(bySense),
+    live_sense_count: Object.values(bySense).filter(v => v.status === "AVAILABLE").length
+  });
+}

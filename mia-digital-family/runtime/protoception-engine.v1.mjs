@@ -70,3 +70,47 @@ export function createProtoceptionTestEvent(residentId, senseType, overrides = {
     ...overrides
   };
 }
+
+
+/** Normalize rows returned by the authoritative zhi_family.world_residents query.
+ * Only ACTIVE residents with supported kinds are admitted. No fallback identity is synthesized.
+ */
+export function loadActiveResidentDirectory(rows) {
+  if (!Array.isArray(rows)) throw new TypeError("resident directory rows must be an array");
+  const directory = Object.create(null);
+  for (const row of rows) {
+    if (!row || row.status !== "ACTIVE") continue;
+    if (!nonEmpty(row.resident_id)) continue;
+    if (!["AI_AGENT", "PERSON"].includes(row.resident_kind)) continue;
+    if (Object.hasOwn(directory, row.resident_id)) throw new Error("duplicate resident_id in authoritative directory");
+    directory[row.resident_id] = row.resident_kind;
+  }
+  return Object.freeze(directory);
+}
+
+/** Build an event only from an explicit source observation. Missing source facts fail closed. */
+export function createObservedProtoceptionEvent(input) {
+  if (!input || typeof input !== "object") throw new TypeError("input is required");
+  const event = {
+    schema_version: PROTOCEPTION_SCHEMA_VERSION,
+    event_id: input.event_id,
+    idempotency_key: input.idempotency_key,
+    resident_id: input.resident_id,
+    resident_kind: input.resident_kind,
+    sense_type: input.sense_type,
+    observed_at: input.observed_at,
+    source: input.source,
+    observation: input.observation,
+    evidence_class: input.evidence_class,
+    confidence: input.confidence,
+    causality: input.causality,
+    privacy_scope: input.privacy_scope ?? "PRIVATE",
+    recipients: input.recipients ?? [],
+    consent_ref: input.consent_ref ?? null,
+    memory_action: "NONE",
+    evolution_action: "NONE"
+  };
+  const result = validateProtoceptionEvent(event, { residentDirectory: input.residentDirectory });
+  if (!result.valid) throw new Error(result.code + ": " + result.detail);
+  return Object.freeze(event);
+}

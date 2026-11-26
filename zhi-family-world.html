@@ -81,7 +81,7 @@ function build(id){
 }
 function resize(){if(!renderer||!camera)return;const w=Math.max(1,mount.clientWidth),h=Math.max(1,mount.clientHeight);camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h);}
 window.addEventListener("resize",resize);
-function animate(){requestAnimationFrame(animate);controls?.update();renderer?.render(scene,camera);}animate();
+function animate(){if(document.visibilityState!=="visible")return;requestAnimationFrame(animate);controls?.update();renderer?.render(scene,camera);}document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")animate();});animate();
 function buttons(){const root=$("#scene-buttons");root.replaceChildren();for(const s of manifest.scenes){const b=document.createElement("button");b.textContent=s.name;b.className=s.id===activeId?"active":"";b.onclick=()=>{activeId=s.id;build(activeId);buttons();};root.append(b);}}
 function cards(){
  const root=$("#children");root.replaceChildren();

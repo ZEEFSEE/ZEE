@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  RESIDENTS, SENSE_TYPES, createProtoceptionTestEvent, createObservedProtoceptionEvent, loadActiveResidentDirectory, validateProtoceptionEvent
+  RESIDENTS, SENSE_TYPES, createProtoceptionTestEvent, createObservedProtoceptionEvent, loadActiveResidentDirectory, assessResidentSenseReadiness, validateProtoceptionEvent
 } from "../runtime/protoception-engine.v1.mjs";
 
 const seven = Object.keys(RESIDENTS);
@@ -121,4 +121,27 @@ test("observed event factory rejects unknown resident and unsupported provenance
     source: { system: "x", component: "y", metric: "z" }, observation: { value: 1 },
     evidence_class: "OBSERVED", confidence: 1, causality: { status: "x", evidence_refs: [] }
   }), /UNKNOWN_RESIDENT/);
+});
+
+
+test("resident senses remain NOT_CONNECTED unless individually verified", () => {
+  const readiness = assessResidentSenseReadiness("KEN", "PERSON", [
+    { resident_id: "KEN", sense_type: "INFORMATION_FLOW", system: "verified-test-source", metric: "event_count", verified: true },
+    { resident_id: "MIA", sense_type: "COMPUTATIONAL_SENSATION", system: "other", metric: "cpu", verified: true },
+    { resident_id: "KEN", sense_type: "COMPUTATIONAL_SENSATION", system: "unverified", metric: "cpu", verified: false }
+  ]);
+  assert.equal(readiness.live_sense_count, 1);
+  assert.equal(readiness.senses.INFORMATION_FLOW.status, "AVAILABLE");
+  assert.equal(readiness.senses.COMPUTATIONAL_SENSATION.status, "NOT_CONNECTED");
+  assert.equal(readiness.senses.COGNITIVE_EMERGENCE.status, "NOT_CONNECTED");
+});
+
+test("all pilot residents have independent readiness records", () => {
+  for (const id of seven) {
+    const result = assessResidentSenseReadiness(id, RESIDENTS[id]);
+    assert.equal(result.resident_id, id);
+    assert.equal(result.resident_kind, RESIDENTS[id]);
+    assert.equal(result.live_sense_count, 0);
+    assert.equal(Object.keys(result.senses).length, 7);
+  }
 });

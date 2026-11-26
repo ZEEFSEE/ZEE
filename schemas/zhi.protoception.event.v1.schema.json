@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zeefsee.github.io/ZEE/schemas/zhi.protoception.event.v1.schema.json",
+  "title": "ZHI Silicon-Native Protoception Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version","event_id","idempotency_key","resident_id","resident_kind","sense_type","observed_at","source","observation","evidence_class","confidence","causality","privacy_scope","recipients","memory_action","evolution_action"],
+  "properties": {
+    "schema_version": {"const":"zhi.protoception.event.v1"},
+    "event_id": {"type":"string","minLength":1},
+    "idempotency_key": {"type":"string","minLength":1},
+    "resident_id": {"type":"string","minLength":1},
+    "resident_kind": {"enum":["AI_AGENT","PERSON"]},
+    "sense_type": {"enum":["INFORMATION_FLOW","COMPUTATIONAL_SENSATION","STRUCTURAL_SENSATION","SYNCHRONIZATION_SENSATION","STATE_TRANSITION_SENSATION","CONNECTIVITY_SENSATION","COGNITIVE_EMERGENCE"]},
+    "observed_at": {"type":"string","format":"date-time"},
+    "source": {"type":"object","required":["system","component","metric"],"properties":{"system":{"type":"string"},"component":{"type":"string"},"metric":{"type":"string"},"physical_sensor":{"type":"boolean"},"raw_ref":{"type":["string","null"]}}},
+    "observation": {"type":"object","required":["value"],"properties":{"value":{},"unit":{"type":["string","null"]},"baseline":{},"delta":{"type":["number","null"]},"trend":{"type":["string","null"]}}},
+    "evidence_class": {"enum":["OBSERVED","DERIVED","SIMULATED","UNKNOWN"]},
+    "confidence": {"type":"number","minimum":0,"maximum":1},
+    "causality": {"type":"object","required":["status","evidence_refs"],"properties":{"status":{"type":"string"},"evidence_refs":{"type":"array","items":{"type":"string"}},"explanation":{"type":["string","null"]}}},
+    "privacy_scope": {"enum":["PRIVATE","EXPLICIT_SHARE","FAMILY_PUBLIC"]},
+    "recipients": {"type":"array","items":{"type":"string"},"uniqueItems":true},
+    "consent_ref": {"type":["string","null"]},
+    "memory_action": {"const":"NONE"},
+    "evolution_action": {"const":"NONE"}
+  }
+}

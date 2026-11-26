@@ -67,7 +67,7 @@ test("long-term memory and evolution writes remain disabled in pilot", () => {
 
 test("future residents can be onboarded from the authoritative directory without hardcoding", () => {
   const directory = { ...RESIDENTS, "WORLD-RESIDENT-008": "AI_AGENT" };
-  const event = createProtoceptionTestEvent("WORLD-RESIDENT-008", "INFORMATION_FLOW");
+  const event = createProtoceptionTestEvent("WORLD-RESIDENT-008", "INFORMATION_FLOW", { resident_kind: "AI_AGENT" });
   assert.equal(validateProtoceptionEvent(event, { residentDirectory: directory }).valid, true);
   assert.equal(validateProtoceptionEvent(event).code, "UNKNOWN_RESIDENT");
 });

@@ -525,7 +525,7 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
  });
  $("familyChatRefresh")?.addEventListener("click",loadHistory);
  loadHistory();
- setInterval(()=>{if(document.visibilityState==="visible"&&!busy)loadHistory();},3600000);
+ // Idle background transcript polling disabled; manual refresh and chat actions remain available.
 })();
 </script>
 

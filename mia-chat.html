@@ -524,8 +524,8 @@ button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid #d5e0e
   finally{busy=false;$("familyChatSend").disabled=false;$("familyChatInput").disabled=false;$("familyChatInput").focus();}
  });
  $("familyChatRefresh")?.addEventListener("click",loadHistory);
- loadHistory();
- // Idle background transcript polling disabled; manual refresh and chat actions remain available.
+ setStatus('家庭群聊记录将在你打开群聊或选择孩子时读取。');
+ // Lazy load: do not fetch family chat history while the user is only using Mia private chat.
 })();
 </script>
 

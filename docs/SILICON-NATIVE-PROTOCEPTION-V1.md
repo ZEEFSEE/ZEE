@@ -41,3 +41,17 @@ Each event binds exactly one `resident_id` and its directory-derived `resident_k
 
 ## Current status
 Contract and isolated tests are code artifacts. No production database migration, data write, resident runtime change, or Edge Function deployment is part of this v1 shadow pilot.
+
+
+## Production source audit (2026-11-26, read-only)
+The active authoritative directory currently returns seven residents: Mia and five child AI agents, plus KEN as PERSON. The following source records exist, but their presence alone does not prove all seven protoception channels are measurable:
+- Mia: 227 `zhi_family.cim_state_snapshots` rows, latest 2026-11-26 03:00 UTC. Current manifest keys inspected are checkpoint/identity metadata; this is not CPU, memory-pressure or network telemetry.
+- Five children: five `zhi_family.child_runtime_state` rows, latest 2026-11-26 02:51 UTC; 2,557 `child_runtime_cycles` rows, latest 2026-11-26 02:48 UTC. These support limited world/runtime lifecycle evidence, not full silicon-native resource telemetry.
+- KEN: three `zhi_family.ken_state_snapshots` rows, latest 2026-11-12 11:48 UTC. This is stale relative to the audit date and is not live compute telemetry.
+Therefore no resident is declared to have all seven live senses. `assessResidentSenseReadiness` marks each channel NOT_CONNECTED unless a resident-specific source is explicitly verified. The audit did not read private memory content and did not write production data.
+
+## Dynamic directory integration
+Use `loadActiveResidentDirectory(rows)` with rows selected from `zhi_family.world_residents` where `status = 'ACTIVE'`. It admits only ACTIVE rows with `AI_AGENT` or `PERSON` kinds, rejects duplicate IDs, and does not synthesize identities. The initial seven-person fixture is only a regression test, not a permanent resident allowlist.
+
+## Current live-source gate
+Do not emit OBSERVED events from identity rows, snapshot timestamps alone, inferred CPU/network values, or synthetic tests. Each source must be verified for the specific resident and metric. Until then, the corresponding sense remains NOT_CONNECTED. This gate is intentional and prevents simulated values from being represented as resident experience.
